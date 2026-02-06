@@ -58,3 +58,10 @@ C:\Users\User\Documents\GitHub\LSS-prototype\LSS prototype\LSS prototype\obj\Deb
 C:\Users\User\Documents\GitHub\LSS-prototype\LSS prototype\LSS prototype\obj\Debug\LSS prototype.csproj.CoreCompileInputs.cache
 C:\Users\User\Documents\GitHub\LSS-prototype\LSS prototype\LSS prototype\obj\Debug\LSS prototype.exe
 C:\Users\User\Documents\GitHub\LSS-prototype\LSS prototype\LSS prototype\obj\Debug\LSS prototype.pdb
+C:\Users\User\Documents\GitHub\LSS-prototype\LSS prototype\LSS prototype\bin\Debug\EntityFramework.dll
+C:\Users\User\Documents\GitHub\LSS-prototype\LSS prototype\LSS prototype\bin\Debug\EntityFramework.SqlServer.dll
+C:\Users\User\Documents\GitHub\LSS-prototype\LSS prototype\LSS prototype\bin\Debug\System.Data.SQLite.dll
+C:\Users\User\Documents\GitHub\LSS-prototype\LSS prototype\LSS prototype\bin\Debug\System.Data.SQLite.EF6.dll
+C:\Users\User\Documents\GitHub\LSS-prototype\LSS prototype\LSS prototype\bin\Debug\EntityFramework.xml
+C:\Users\User\Documents\GitHub\LSS-prototype\LSS prototype\LSS prototype\bin\Debug\EntityFramework.SqlServer.xml
+C:\Users\User\Documents\GitHub\LSS-prototype\LSS prototype\LSS prototype\obj\Debug\LSS prot.E4FD32F5.Up2Date

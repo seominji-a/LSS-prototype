@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Data.SQLite;
 
 namespace LSS_prototype
 {
@@ -22,6 +23,8 @@ namespace LSS_prototype
         public Login()
         {
             InitializeComponent();
+            var db = new DB_Manager();
+            db.InitDB();
         }
     }
 }

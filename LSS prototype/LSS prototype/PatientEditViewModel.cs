@@ -8,22 +8,22 @@ using System.Windows.Input;
 
 namespace LSS_prototype
 {
-    public class PatientAddViewModel
+    public class PatientEditViewModel
     {
         public string LoginId { get; set; }
         public string Password { get; set; }
 
-        public ICommand SaveCommand { get; }
+        public ICommand EditCommand { get; }
         public ICommand CancelCommand { get; }
 
         public Action<bool?> CloseAction { get; set; }
-        public PatientAddViewModel()
+        public PatientEditViewModel()
         {
-            SaveCommand = new RelayCommand(Save);
+            EditCommand = new RelayCommand(Edit);
             CancelCommand = new RelayCommand(Cancel);
         }
 
-        private void Save()
+        private void Edit()
         {
             // TODO: DB 저장
             CloseAction?.Invoke(true);

@@ -9,6 +9,9 @@
             <DataTemplate DataType="{x:Type vm:PatientAddViewModel}">
                 <view:PatientAddDialog />
             </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:PatientEditViewModel}">
+                <view:PatientEditDialog />
+            </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

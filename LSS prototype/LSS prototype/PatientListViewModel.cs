@@ -16,16 +16,25 @@ namespace LSS_prototype
         public ICommand PatientAddCommand { get; }
         public ICommand SyncClickCommand { get; }
 
+        public ICommand PatientEditCommand { get; }
+
         public PatientListViewModel()
         {
             _dialogService = new Dialog();
             PatientAddCommand = new RelayCommand(AddPatient);
+            PatientEditCommand = new RelayCommand(EditPatient);
             SyncClickCommand = new RelayCommand(SyncButtonClicked);
         }
 
         private void AddPatient()
         {
             var vm = new PatientAddViewModel();
+            var result = _dialogService.ShowDialog(vm);
+        }
+
+        private void EditPatient()
+        {
+            var vm = new PatientEditViewModel();
             var result = _dialogService.ShowDialog(vm);
         }
 

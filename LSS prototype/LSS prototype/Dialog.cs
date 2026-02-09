@@ -26,15 +26,22 @@ namespace LSS_prototype
                 AllowsTransparency = true,
                 Background = System.Windows.Media.Brushes.Transparent // 배경 투명 (Border로 디자인)
             };
+            var vm = viewModel as dynamic;
 
-            if (viewModel is PatientAddViewModel vm)
+            try
             {
-                vm.RequestClose += (result) =>
+                // 뷰모델에 CloseAction이 있는지 확인하고 연결합니다.
+                vm.CloseAction = new Action<bool?>((result) =>
                 {
-                    window.DialogResult = result; // DialogResult를 설정하면 창이 자동으로 닫힙니다.
+                    window.DialogResult = result;
                     window.Close();
-                };
+                });
             }
+            catch
+            {
+                // CloseAction이 없는 일반 객체일 경우를 대비해 비워둡니다.
+            }
+
 
             window.DataContext = viewModel;
             return window.ShowDialog();

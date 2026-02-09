@@ -67,7 +67,7 @@
                             </Style>
                         </Button.Resources>
                     </Button>
-                    <Button Content="Edit Patient" HorizontalAlignment="Left" Margin="1691,393,0,0" VerticalAlignment="Top" Height="83" Width="219" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold">
+                    <Button Content="Edit Patient" HorizontalAlignment="Left" Margin="1691,393,0,0" VerticalAlignment="Top" Height="83" Width="219" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold"  Command="{Binding PatientEditCommand}">
                         <Button.Resources>
                             <Style TargetType="{x:Type Border}">
                                 <Setter Property="CornerRadius" Value="10                             "/>

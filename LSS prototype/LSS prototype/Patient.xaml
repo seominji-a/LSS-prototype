@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LSS_prototype"
         mc:Ignorable="d"
-        Title="PATIENT" Height="1080" Width="1920" WindowState="Maximized" ResizeMode="NoResize" Topmost="True" >
+        Title="PATIENT" Height="1080" Width="1920" WindowState="Maximized" ResizeMode="NoResize" >
+
     <Grid>
         <TabControl>
             <TabItem Header="Scaduled Patient" Margin="0,-1,-475,-33" FontSize="36">
@@ -26,14 +27,14 @@
                     <Rectangle HorizontalAlignment="Left" Height="181" Margin="1128,759,0,0" VerticalAlignment="Top" Width="530" RadiusX="15.54" RadiusY="15.54" Fill="#FFF3ECEC" Grid.ColumnSpan="3"/>
                     <TextBlock HorizontalAlignment="Left" Margin="30,57,0,0" TextWrapping="Wrap" Text="PATIENT LIST" VerticalAlignment="Top" FontSize="60"/>
                     <TextBlock HorizontalAlignment="Left" Margin="36,137,0,0" TextWrapping="Wrap" Text="Scheduled Patient" VerticalAlignment="Top" FontSize="40" Foreground="#FF483E3E"/>
-                    <Button Content="Sync" HorizontalAlignment="Left" Margin="354,296,0,0" VerticalAlignment="Top" Height="83" Width="219" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold" Grid.Column="2">
+                    <Button Content="Sync" HorizontalAlignment="Left" Margin="354,296,0,0" VerticalAlignment="Top" Height="83" Width="219" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold" Grid.Column="2"  Command="{Binding SyncClickCommand}">
                         <Button.Resources>
                             <Style TargetType="{x:Type Border}">
                                 <Setter Property="CornerRadius" Value="10                             "/>
                             </Style>
                         </Button.Resources>
                     </Button>
-                    <Button Content="Home" HorizontalAlignment="Left" Margin="354,394,0,0" VerticalAlignment="Top" Height="83" Width="219" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold" Grid.Column="2">
+                    <Button Content="Home" HorizontalAlignment="Left" Margin="354,394,0,0" VerticalAlignment="Top" Height="83" Width="219" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold" Grid.Column="2" Click="HomeButton_Click">
                         <Button.Resources>
                             <Style TargetType="{x:Type Border}">
                                 <Setter Property="CornerRadius" Value="10                             "/>
@@ -59,14 +60,14 @@
                     <Rectangle HorizontalAlignment="Left" Height="181" Margin="565,759,0,0" VerticalAlignment="Top" Width="529" RadiusX="15.54" RadiusY="15.54" Fill="#FFF3ECEC"/>
                     <Rectangle HorizontalAlignment="Left" Height="181" Margin="1128,759,0,0" VerticalAlignment="Top" Width="530" RadiusX="15.54" RadiusY="15.54" Fill="#FFF3ECEC"/>
                     <ScrollBar HorizontalAlignment="Left" Margin="1669,294,0,0" VerticalAlignment="Top" Height="750" Width="15"/>
-                    <Button Content="Add Patient" HorizontalAlignment="Left" Margin="1691,296,0,0" VerticalAlignment="Top" Height="83" Width="219" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold">
+                    <Button Content="Add Patient" HorizontalAlignment="Left" Margin="1691,296,0,0" VerticalAlignment="Top" Height="83" Width="219" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold"  Command="{Binding PatientAddCommand}">
                         <Button.Resources>
                             <Style TargetType="{x:Type Border}">
                                 <Setter Property="CornerRadius" Value="10                             "/>
                             </Style>
                         </Button.Resources>
                     </Button>
-                    <Button Content="Edit Patient" HorizontalAlignment="Left" Margin="1691,393,0,0" VerticalAlignment="Top" Height="83" Width="219" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold">
+                    <Button Content="Edit Patient" HorizontalAlignment="Left" Margin="1691,393,0,0" VerticalAlignment="Top" Height="83" Width="219" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold"  Command="{Binding PatientEditCommand}">
                         <Button.Resources>
                             <Style TargetType="{x:Type Border}">
                                 <Setter Property="CornerRadius" Value="10                             "/>
@@ -80,7 +81,7 @@
                             </Style>
                         </Button.Resources>
                     </Button>
-                    <Button Content="Home" HorizontalAlignment="Left" Margin="1691,585,0,0" VerticalAlignment="Top" Height="83" Width="219" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold">
+                    <Button Content="Home" HorizontalAlignment="Left" Margin="1691,585,0,0" VerticalAlignment="Top" Height="83" Width="219" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold"  Click="HomeButton_Click">
                         <Button.Resources>
                             <Style TargetType="{x:Type Border}">
                                 <Setter Property="CornerRadius" Value="10                             "/>
@@ -93,3 +94,4 @@
 
     </Grid>
 </Window>
+

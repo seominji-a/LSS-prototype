@@ -1,0 +1,63 @@
+﻿<UserControl x:Class="LSS_prototype.Views.PatientEditDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="550">
+
+    <Border Background="White" CornerRadius="20" BorderBrush="#EEEEEE" BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="25" Direction="-90" RenderingBias="Quality" ShadowDepth="5" Opacity="0.15"/>
+        </Border.Effect>
+
+        <Grid Margin="40">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Editer Current Patient" FontSize="32" FontWeight="ExtraBold" 
+                       Margin="0,0,0,40" HorizontalAlignment="Left" Foreground="#222222"/>
+
+            <StackPanel Grid.Row="1">
+                <TextBlock Text="Patient Name" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
+                <TextBox Text="{Binding PatientName, UpdateSourceTrigger=PropertyChanged}" 
+                         FontSize="22" Padding="15,10" Margin="0,0,0,30" Height="55" VerticalContentAlignment="Center" Background="#F9F9F9" BorderThickness="0,0,0,2" BorderBrush="#CCCCCC"/>
+
+                <TextBlock Text="Patient Code" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
+                <TextBox Text="{Binding PatientCode, UpdateSourceTrigger=PropertyChanged}" 
+                         FontSize="22" Padding="15,10" Margin="0,0,0,30" Height="55" VerticalContentAlignment="Center" Background="#F9F9F9" BorderThickness="0,0,0,2" BorderBrush="#CCCCCC"/>
+
+                <TextBlock Text="Date of Birth" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
+                <TextBox Text="{Binding BirthDate, UpdateSourceTrigger=PropertyChanged}" 
+                         FontSize="22" Padding="15,10" Margin="0,0,0,30" Height="55" VerticalContentAlignment="Center" Background="#F9F9F9" BorderThickness="0,0,0,2" BorderBrush="#CCCCCC"/>
+
+                <TextBlock Text="Sex" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
+                <TextBox Text="{Binding Sex, UpdateSourceTrigger=PropertyChanged}" 
+                         FontSize="22" Padding="15,10" Margin="0,0,0,40" Height="55" VerticalContentAlignment="Center" Background="#F9F9F9" BorderThickness="0,0,0,2" BorderBrush="#CCCCCC"/>
+            </StackPanel>
+
+            <UniformGrid Grid.Row="2" Columns="2" Margin="0,10,0,0">
+                <Button Content="Edit" Command="{Binding EditCommand}" 
+                        Height="65" FontSize="22" FontWeight="Black" Background="#4A90E2" Foreground="White" Margin="0,0,10,0">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="12"/>
+                        </Style>
+                    </Button.Resources>
+                </Button>
+
+                <Button Content="CANCEL" Command="{Binding CancelCommand}" 
+                        Height="65" FontSize="22" FontWeight="Black" Background="#E0E0E0" Margin="10,0,0,0">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="12"/>
+                        </Style>
+                    </Button.Resources>
+                </Button>
+            </UniformGrid>
+        </Grid>
+    </Border>
+</UserControl>

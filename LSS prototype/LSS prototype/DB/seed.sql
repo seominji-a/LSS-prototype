@@ -34,15 +34,18 @@ INSERT INTO USER
     DEVICE_ID,
     LOGIN_ID,
     PASSWORD_HASH,
+	PASSWORD_SALT,
     ROLE_CODE,
     USER_NAME,
     USER_ROLE
+	
 )
 VALUES
 (
     1001,
     'ADMIN',
-    'd53aa49dea244d2c0907e31950e5ccf87c482851062c03b586e00a86e0cabb64',
+    'VnmB8HboXt9R//YZzRk+sXWMzhK7HSfknslWgxVp2Qk=',
+	'tUZndrX59Uep+Ml7uIjRHrUJXyUE6CNMwjFuB/ZVG6o=',
     'S',
     '시스템관리자',
     'ADMIN'

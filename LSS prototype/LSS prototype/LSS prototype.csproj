@@ -121,6 +121,7 @@
     <Compile Include="ImageComment.xaml.cs">
       <DependentUpon>ImageComment.xaml</DependentUpon>
     </Compile>
+    <Compile Include="LoginModelView.cs" />
     <Compile Include="Patient.xaml.cs">
       <DependentUpon>Patient.xaml</DependentUpon>
     </Compile>

@@ -19,9 +19,28 @@ namespace LSS_prototype
     /// </summary>
     public partial class Patient : Window
     {
+
+        public string PatientId { get; set; }
+        public int PatientCode { get; set; }
+        public string Name { get; set; }
+
+        public DateTime BRITH_DATE { get; set; }
+
+        public char Sex { get; set; }
+
+        public DateTime Reg_Date { get; set; }
         public Patient()
         {
             InitializeComponent();
+            DataContext = new PatientViewModel();
+            this.DataContext = new PatientListViewModel();
+        }
+
+        private void HomeButton_Click(object sender, RoutedEventArgs e)
+        {
+            var win = new User();
+            win.Show();
+            this.Close(); // 필요하면
         }
     }
 }

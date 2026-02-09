@@ -117,15 +117,24 @@
     </ApplicationDefinition>
     <Compile Include="Common.cs" />
     <Compile Include="DB_Manager.cs" />
+    <Compile Include="Dialog.cs" />
     <Compile Include="ImageComment.xaml.cs">
       <DependentUpon>ImageComment.xaml</DependentUpon>
     </Compile>
     <Compile Include="Patient.xaml.cs">
       <DependentUpon>Patient.xaml</DependentUpon>
     </Compile>
+    <Compile Include="PatientAddDialog.xaml.cs">
+      <DependentUpon>PatientAddDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="PatientAddViewModel.cs" />
+    <Compile Include="PatientListViewModel.cs" />
+    <Compile Include="PatientModel.cs" />
+    <Compile Include="PatientViewModel.cs" />
     <Compile Include="Registered Patient.xaml.cs">
       <DependentUpon>Registered Patient.xaml</DependentUpon>
     </Compile>
+    <Compile Include="RelayCommand.cs" />
     <Compile Include="Review.xaml.cs">
       <DependentUpon>Review.xaml</DependentUpon>
     </Compile>
@@ -159,6 +168,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="Patient.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PatientAddDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

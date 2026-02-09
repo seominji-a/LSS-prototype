@@ -16,7 +16,9 @@ namespace LSS_prototype
         public const string DB_PATH = "./LSS_TEST.db"; // .db 경로 
         public const string DB_INIT_PATH = "../../../DB/db_init.sql"; // 초기 DB 테이블 생성 파일 경로 
         public const string DB_SEED_PATH = "../../../DB/seed.sql"; // 초기 DB 테이블 데이터 생성 경로 
-        public const int DB_VERSION = 5; // DB Version 
+
+        public const int DB_VERSION = 20; // DB Version 
+
     }
 
     /// <summary>
@@ -25,6 +27,8 @@ namespace LSS_prototype
     public static class Query
     {
         public const string INSERT_DB_VERSION = "INSERT INTO DB_VERSION(version) VALUES (@version)"; // DB VERSION INSERT QUERY 
+        public const string SELECT_VERSION = "SELECT version FROM DB_VERSION"; // DB 버전 SELECT QUERY
+        public const string LOGIN_HASH_CHECK = "SELECT PASSWORD_HASH, PASSWORD_SALT FROM USER WHERE LOGIN_ID = @loginId"; // 로그인 시 해싱및 솔트값 확인 쿼리문
     }
 
 }

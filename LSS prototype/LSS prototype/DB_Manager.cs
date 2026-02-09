@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Data.SQLite;
 using System.IO;
 using System.Windows;
+using System.Threading;
 
 /// <summary>
 //  작성자 : 박한용
@@ -24,82 +25,98 @@ namespace LSS_prototype
 
         public void InitDB()
         {
-            bool first_create = false; // DB 최초 생성 판별 변수
-            
+            bool first_create = false;
+
             try
-            {           
+            {
                 bool dbExists = File.Exists(_dbPath);
 
-                if (dbExists == false)   // .db 파일이 존재하는가 ? 
+                if (!dbExists) // DB 파일 미존재 시, DB 및 테이블 생성 
                 {
                     SQLiteConnection.CreateFile(_dbPath);
-                    first_create = true; 
+                    first_create = true;
                 }
-
-                else // 존재했을땐, DB상의 버전과, 코드상의 버전을 확인
+                else // DB파일 존재 시 버전 확인 -> 사용자에게 업데이트 YES/NO 물어보고 진행 
                 {
-                    SQLiteConnection conn_ = new SQLiteConnection("Data Source=" + Common.DB_PATH);
-                    conn_.Open();
+                    bool needRecreate = false;
 
-                    SQLiteCommand cmd = new SQLiteCommand("SELECT version FROM DB_VERSION", conn_);
-                    int dbVersion = Convert.ToInt32(cmd.ExecuteScalar());
-
-                    conn_.Close();
-
-                    if (dbVersion < this._db_version)
+                    using (var conn_ = new SQLiteConnection($"Data Source={Common.DB_PATH};"))
                     {
-                        MessageBoxResult result = MessageBox.Show(
-                            "DB 버전이 다릅니다.\n기존 로컬 DB가 삭제되고 신규 DB가 생성됩니다.\n진행하시겠습니까? ( 기존 데이터 삭제 )",
-                            "DB 업데이트 확인",
-                            MessageBoxButton.YesNo,
-                            MessageBoxImage.Warning);
+                        conn_.Open();
 
-                        if (result == MessageBoxResult.Yes)
+                        using (var cmd = new SQLiteCommand(Query.SELECT_VERSION, conn_))
                         {
-                            File.Delete(Common.DB_PATH);
-                            InitDB();
-                            return;
+                            int dbVersion = Convert.ToInt32(cmd.ExecuteScalar());
+
+                            if (dbVersion < this._db_version)
+                            {
+                                var result = MessageBox.Show(
+                                    "DB 버전이 다릅니다.\n기존 로컬 DB가 삭제되고 신규 DB가 생성됩니다.\n진행하시겠습니까?",
+                                    "DB 업데이트 확인",
+                                    MessageBoxButton.YesNo,
+                                    MessageBoxImage.Warning);
+
+                                if (result == MessageBoxResult.Yes) // 진짜 삭제 후 db를 재설치 하시겠습니까? ( 이 때, 기존 테이블까지 다 delete 됨 주의 )  
+                                    needRecreate = true;
+                                else
+                                    return;
+                            }
                         }
-                        else return;
+                    }
+
+                    if (needRecreate)
+                    {
+                        SQLiteConnection.ClearAllPools();
+                        GC.Collect();
+                        GC.WaitForPendingFinalizers();
+                        GC.Collect();
+
+                        Thread.Sleep(300); // 자원이 정리될 최소한의 시간 확보
+
+                        if (File.Exists(Common.DB_PATH))
+                            File.Delete(Common.DB_PATH);
+
+                        InitDB(); // 자원 해제 및 기존 db 삭제 후 재귀방식으로 InitDB 함수 재호출
+                        return;
                     }
                 }
 
-                if (first_create) // CREATE 및 INSERT ( 기초 데이터 셋팅 ) 
+                if (first_create)
                 {
-                    var conn = new SQLiteConnection($"Data Source={_dbPath};");
-                    conn.Open();
+                    using (var conn = new SQLiteConnection($"Data Source={_dbPath};"))
+                    {
+                        conn.Open();
 
-                    string initSql = File.ReadAllText(_db_init_Path);
-                    new SQLiteCommand(initSql, conn).ExecuteNonQuery();
+                        string initSql = File.ReadAllText(_db_init_Path);
+                        using (var initCmd = new SQLiteCommand(initSql, conn))
+                            initCmd.ExecuteNonQuery();
 
-                    string seedSql = File.ReadAllText(_db_seed_Path);
-                    new SQLiteCommand(seedSql, conn).ExecuteNonQuery();
+                        string seedSql = File.ReadAllText(_db_seed_Path);
+                        using (var seedCmd = new SQLiteCommand(seedSql, conn))
+                            seedCmd.ExecuteNonQuery();
 
-                    SQLiteCommand verCmd = new SQLiteCommand(Query.INSERT_DB_VERSION, conn);
-                    verCmd.Parameters.AddWithValue("@version", this._db_version);
-                    verCmd.ExecuteNonQuery();
-
-                    conn.Close();
+                        using (var verCmd = new SQLiteCommand(Query.INSERT_DB_VERSION, conn))
+                        {
+                            verCmd.Parameters.AddWithValue("@version", this._db_version);
+                            verCmd.ExecuteNonQuery();
+                        }
+                    }
                 }
-            }
-            catch (IOException)
-            {
-                MessageBox.Show(
-                    "DB 파일이 다른 프로그램에서 열려 있습니다.\n\n" +
-                    "DB를 닫으신 후 프로그램을 재실행하세요.",
-                    "DB 파일 업데이트 실패",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-
-                Application.Current.Shutdown();
             }
             catch (Exception ex)
             {
                 Console.WriteLine("DB Init Error : " + ex.Message);
-                if(first_create) File.Delete(_dbPath); // db생성은 정상이지만 테이블 생성에서 에러난 경우 db자체 삭제
-                throw; //이 부분이 제대로 처리안되면 프로그램 실행 자체 STOP 
+
+                if (first_create && File.Exists(_dbPath))
+                    File.Delete(_dbPath);
+
+                throw;
             }
         }
+
+
+
+
 
     }
 }

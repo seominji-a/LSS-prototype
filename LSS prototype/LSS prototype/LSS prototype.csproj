@@ -130,7 +130,6 @@
     <Compile Include="PatientAddViewModel.cs" />
     <Compile Include="PatientListViewModel.cs" />
     <Compile Include="PatientModel.cs" />
-    <Compile Include="PatientViewModel.cs" />
     <Compile Include="Registered Patient.xaml.cs">
       <DependentUpon>Registered Patient.xaml</DependentUpon>
     </Compile>

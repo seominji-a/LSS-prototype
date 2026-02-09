@@ -32,7 +32,6 @@ namespace LSS_prototype
         public Patient()
         {
             InitializeComponent();
-            DataContext = new PatientViewModel();
             this.DataContext = new PatientListViewModel();
         }
 

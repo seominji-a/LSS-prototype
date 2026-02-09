@@ -18,11 +18,13 @@ namespace LSS_prototype
             var window = new Window
             {
                 Content = viewModel,
+                Width = 550,
                 SizeToContent = SizeToContent.WidthAndHeight,
                 WindowStartupLocation = WindowStartupLocation.CenterScreen,
                 Topmost = true,
                 WindowStyle = WindowStyle.None,
-                AllowsTransparency = true
+                AllowsTransparency = true,
+                Background = System.Windows.Media.Brushes.Transparent // 배경 투명 (Border로 디자인)
             };
 
             window.DataContext = viewModel;

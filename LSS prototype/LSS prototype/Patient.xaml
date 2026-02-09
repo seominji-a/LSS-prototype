@@ -81,7 +81,7 @@
                             </Style>
                         </Button.Resources>
                     </Button>
-                    <Button Content="Home" HorizontalAlignment="Left" Margin="1691,585,0,0" VerticalAlignment="Top" Height="83" Width="219" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold">
+                    <Button Content="Home" HorizontalAlignment="Left" Margin="1691,585,0,0" VerticalAlignment="Top" Height="83" Width="219" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold"  Click="HomeButton_Click">
                         <Button.Resources>
                             <Style TargetType="{x:Type Border}">
                                 <Setter Property="CornerRadius" Value="10                             "/>

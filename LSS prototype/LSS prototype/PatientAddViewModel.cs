@@ -16,7 +16,7 @@ namespace LSS_prototype
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
 
-        public Action<bool?> CloseAction { get; set; }
+        public Action<bool?> RequestClose { get; set; }
         public PatientAddViewModel()
         {
             SaveCommand = new RelayCommand(Save);
@@ -26,12 +26,12 @@ namespace LSS_prototype
         private void Save()
         {
             // TODO: DB 저장
-            CloseAction?.Invoke(true);
+            RequestClose?.Invoke(true);
         }
 
         private void Cancel()
         {
-            CloseAction?.Invoke(false);
+            RequestClose?.Invoke(false);
         }
     }
 }

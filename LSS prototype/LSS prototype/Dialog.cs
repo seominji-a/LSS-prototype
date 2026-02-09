@@ -27,6 +27,15 @@ namespace LSS_prototype
                 Background = System.Windows.Media.Brushes.Transparent // 배경 투명 (Border로 디자인)
             };
 
+            if (viewModel is PatientAddViewModel vm)
+            {
+                vm.RequestClose += (result) =>
+                {
+                    window.DialogResult = result; // DialogResult를 설정하면 창이 자동으로 닫힙니다.
+                    window.Close();
+                };
+            }
+
             window.DataContext = viewModel;
             return window.ShowDialog();
         }

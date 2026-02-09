@@ -22,7 +22,7 @@ namespace LSS_prototype
 
         public event EventHandler CanExecuteChanged
         {
-            // CommandManager가 버튼의 활성화/비활성 상태를 자동으로 체크하도록 연결합니다.
+            // CommandManager가 버튼의 활성화/비활성 상태를 자동으로 체크하도록 연결
             add => CommandManager.RequerySuggested += value;
             remove => CommandManager.RequerySuggested -= value;
         }

@@ -10,8 +10,13 @@ namespace LSS_prototype
 {
     public class PatientAddViewModel
     {
-        public string LoginId { get; set; }
-        public string Password { get; set; }
+        public string PatientName { get; set; }
+        public int PatientCode { get; set; }
+
+        public DateTime Birth { get; set; }
+
+        public char Sex { get; set; }
+
 
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }

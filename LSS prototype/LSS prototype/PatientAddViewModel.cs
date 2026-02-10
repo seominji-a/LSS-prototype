@@ -11,9 +11,9 @@ namespace LSS_prototype
     public class PatientAddViewModel
     {
         public string PatientName { get; set; }
-        public int PatientCode { get; set; }
+        public int? PatientCode { get; set; }
 
-        public DateTime Birth { get; set; }
+        public DateTime? BirthDate { get; set; }
 
         public char Sex { get; set; }
 

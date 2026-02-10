@@ -31,12 +31,30 @@
                          FontSize="22" Padding="15,10" Margin="0,0,0,30" Height="55" VerticalContentAlignment="Center" Background="#F9F9F9" BorderThickness="0,0,0,2" BorderBrush="#CCCCCC"/>
 
                 <TextBlock Text="Date of Birth" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
-                <TextBox Text="{Binding BirthDate, UpdateSourceTrigger=PropertyChanged}" 
-                         FontSize="22" Padding="15,10" Margin="0,0,0,30" Height="55" VerticalContentAlignment="Center" Background="#F9F9F9" BorderThickness="0,0,0,2" BorderBrush="#CCCCCC"/>
+                <DatePicker SelectedDate="{Binding BirthDate, UpdateSourceTrigger=PropertyChanged}" FontSize="22" Margin="0,0,0,40" Height="55" VerticalContentAlignment="Center" BorderThickness="0,0,0,2" BorderBrush="#CCCCCC" Background="#FFF9F9F9">
+                    <DatePicker.Resources>
+                        <Style TargetType="{x:Type DatePickerTextBox}">
+                            <Setter Property="Control.Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="{x:Type DatePickerTextBox}">
+                                        <TextBox x:Name="PART_TextBox"
+                     Text="{Binding Path=Text, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                     FontSize="{TemplateBinding FontSize}"
+                     VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                     BorderThickness="0"
+                     Background="Transparent" BorderBrush="#FFF9F9F9"/>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </DatePicker.Resources>
+                </DatePicker>
 
                 <TextBlock Text="Sex" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
-                <TextBox Text="{Binding Sex, UpdateSourceTrigger=PropertyChanged}" 
-                         FontSize="22" Padding="15,10" Margin="0,0,0,40" Height="55" VerticalContentAlignment="Center" Background="#F9F9F9" BorderThickness="0,0,0,2" BorderBrush="#CCCCCC"/>
+                <ComboBox SelectedValue="{Binding Sex, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Content" FontSize="22" Padding="15,10" Margin="0,0,0,40" Height="55" VerticalContentAlignment="Center" Background="#FFF9F9F9" BorderThickness="0,0,0,2" BorderBrush="#CCCCCC">
+                    <ComboBoxItem Content="M"/>
+                    <ComboBoxItem Content="F"/>
+                </ComboBox>
             </StackPanel>
 
             <UniformGrid Grid.Row="2" Columns="2" Margin="0,10,0,0">

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
 
 namespace LSS_prototype
 {
@@ -19,12 +20,12 @@ namespace LSS_prototype
             {
                 Content = viewModel,
                 Width = 550,
-                SizeToContent = SizeToContent.WidthAndHeight,
+                Height = 700,
                 WindowStartupLocation = WindowStartupLocation.CenterScreen,
                 Topmost = true,
                 WindowStyle = WindowStyle.None,
                 AllowsTransparency = true,
-                Background = System.Windows.Media.Brushes.Transparent // 배경 투명 (Border로 디자인)
+                Background = Brushes.Transparent
             };
             var vm = viewModel as dynamic;
 

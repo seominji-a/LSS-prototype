@@ -8,7 +8,9 @@
         Title="Scan" Height="1080" Width="1920" WindowState="Maximized" ResizeMode="NoResize" Topmost="True" WindowStyle="None"    
         >
     <Grid>
-        <Button Content="Add USER" HorizontalAlignment="Left" Margin="1678,283,0,0" VerticalAlignment="Top" Height="83" Width="232" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold">
+        <Button Content="Add USER" HorizontalAlignment="Left" Margin="1678,283,0,0" VerticalAlignment="Top" 
+                Height="83" Width="232" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold"
+                Command="{Binding AddUserCommand}">
             <Button.Resources>
                 <Style TargetType="{x:Type Border}">
                     <Setter Property="CornerRadius" Value="10                             "/>

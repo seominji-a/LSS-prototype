@@ -18,44 +18,40 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0" Text="User Add" FontSize="32" FontWeight="ExtraBold" 
+            <TextBlock Grid.Row="0" Text="USER ADD" FontSize="32" FontWeight="ExtraBold" 
                        Margin="0,0,0,40" HorizontalAlignment="Left" Foreground="#222222"/>
 
             <StackPanel Grid.Row="1">
-                <TextBlock Text="NAME" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
-                <TextBox Text="{Binding PatientName, UpdateSourceTrigger=PropertyChanged}" 
-                         FontSize="22" Padding="15,10" Margin="0,0,0,30" Height="55" VerticalContentAlignment="Center" Background="#F9F9F9" BorderThickness="0,0,0,2" BorderBrush="#CCCCCC"/>
+                <TextBlock Text="USER NAME" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
+                <TextBox Text="{Binding UserName, UpdateSourceTrigger=PropertyChanged}" 
+                        Style="{StaticResource DefaultDIALOGTEXTStyle}"/>
 
                 <TextBlock Text="USER ID" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
-                <TextBox Text="{Binding PatientCode, UpdateSourceTrigger=PropertyChanged}" 
-                         FontSize="22" Padding="15,10" Margin="0,0,0,30" Height="55" VerticalContentAlignment="Center" Background="#F9F9F9" BorderThickness="0,0,0,2" BorderBrush="#CCCCCC"/>
+                <TextBox Text="{Binding UserID, UpdateSourceTrigger=PropertyChanged}" 
+                         Style="{StaticResource DefaultDIALOGTEXTStyle}"/>
 
-                <TextBlock Text="PASSWORD" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
-                <TextBox Text="{Binding BirthDate, UpdateSourceTrigger=PropertyChanged}" 
-                         FontSize="22" Padding="15,10" Margin="0,0,0,30" Height="55" VerticalContentAlignment="Center" Background="#F9F9F9" BorderThickness="0,0,0,2" BorderBrush="#CCCCCC"/>
+                <TextBlock Text="Password" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
+                <PasswordBox x:Name="txtPassword" Style="{StaticResource DefaultPasswordBoxStyle}" />
 
                 <TextBlock Text="Role" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
-                <TextBox Text="{Binding Sex, UpdateSourceTrigger=PropertyChanged}" 
-                         FontSize="22" Padding="15,10" Margin="0,0,0,40" Height="55" VerticalContentAlignment="Center" Background="#F9F9F9" BorderThickness="0,0,0,2" BorderBrush="#CCCCCC"/>
+                <ComboBox SelectedValue="{Binding Role, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Content" Style="{StaticResource DefaultDIALOGSexStyle}">
+                    <ComboBoxItem Content="Physician"/>
+                    <ComboBoxItem Content="Therapist"/>
+                    <ComboBoxItem Content="Nurse"/>
+                    <ComboBoxItem Content="Technician"/>
+                    <ComboBoxItem Content="Researcher"/>
+                    <ComboBoxItem Content="Other"/>
+                </ComboBox>
             </StackPanel>
 
             <UniformGrid Grid.Row="2" Columns="2" Margin="0,10,0,0">
-                <Button Content="Submit" Command="{Binding SubmitCommand}" 
-                        Height="65" FontSize="22" FontWeight="Black" Background="#4A90E2" Foreground="White" Margin="0,0,10,0">
-                    <Button.Resources>
-                        <Style TargetType="Border">
-                            <Setter Property="CornerRadius" Value="12"/>
-                        </Style>
-                    </Button.Resources>
+                <Button Content="SUBMIT" Command="{Binding SubmitCommand}" 
+                        CommandParameter="{Binding ElementName=txtPassword}"
+                      Style="{StaticResource DefaultDIALOGbuttonblueStyle}" >
                 </Button>
 
                 <Button Content="CANCEL" Command="{Binding CancelCommand}" 
-                        Height="65" FontSize="22" FontWeight="Black" Background="#E0E0E0" Margin="10,0,0,0">
-                    <Button.Resources>
-                        <Style TargetType="Border">
-                            <Setter Property="CornerRadius" Value="12"/>
-                        </Style>
-                    </Button.Resources>
+                       Style="{StaticResource DefaultDIALOGbuttonwhiteStyle}" >
                 </Button>
             </UniformGrid>
         </Grid>

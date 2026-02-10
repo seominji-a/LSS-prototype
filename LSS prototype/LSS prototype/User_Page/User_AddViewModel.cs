@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Data.SQLite;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -12,6 +13,7 @@ namespace LSS_prototype.User_Page
         public Action<bool?> CloseAction { get; set; }
         public ICommand SubmitCommand { get; }
         public ICommand CancelCommand { get; }
+        private DB_Manager _dbManager;
 
         private string _userName;
         public string UserName
@@ -37,10 +39,11 @@ namespace LSS_prototype.User_Page
         public User_AddViewModel()
         {
             SubmitCommand = new RelayCommand(ExecuteSubmit);
-            CancelCommand = new RelayCommand(ExecuteCancel);  // ✅ 수정
+            CancelCommand = new RelayCommand(ExecuteCancel);
+            _dbManager = new DB_Manager();
         }
 
-        private void ExecuteCancel(object parameter)  // ✅ parameter 추가
+        private void ExecuteCancel()  
         {
             CloseAction?.Invoke(false);
         }
@@ -49,29 +52,36 @@ namespace LSS_prototype.User_Page
         {
             var pwBox = parameter as PasswordBox;
             string password = pwBox?.Password;
-
-            // 유효성 검사
-            if (string.IsNullOrWhiteSpace(UserName) ||
-                string.IsNullOrWhiteSpace(UserID) ||
-                string.IsNullOrWhiteSpace(password))
-            {
-                MessageBox.Show("필수 입력값을 확인하세요.", "확인",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            if (UserID.Length < 3)
-            {
-                MessageBox.Show("USER ID는 최소 3자 이상을 권장합니다.", "확인",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
             try
             {
-                // TODO: DB 저장 로직
+                if (string.IsNullOrWhiteSpace(UserID) ||
+                    string.IsNullOrWhiteSpace(UserName) ||
+                    string.IsNullOrWhiteSpace(Role) ||
+                    string.IsNullOrEmpty(password))
+                {
+                    MessageBox.Show("필수 입력값이 비어있습니다.", "확인",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
 
-                CloseAction?.Invoke(true);
+                try
+                {
+                    bool sucess = _dbManager.InsertUser(UserID.Trim(), UserName.Trim(), Role.Trim(), password);
+                    if (sucess) MessageBox.Show("사용자 정보 ADD 성공");
+                    CloseAction?.Invoke(true);
+                }
+                catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Constraint)
+                {
+                    // UNIQUE 제약(예: LOGIN_ID UNIQUE) 걸렸을 때 흔히 이쪽으로 옴
+                    MessageBox.Show("이미 존재하는 아이디이거나 제약조건 오류입니다.\n" + ex.Message, "오류",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"저장 중 오류가 발생했습니다.\n{ex.Message}", "오류",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                // CloseAction?.Invoke(true); 창닫는건 잠시 보류 
             }
             catch (Exception ex)
             {

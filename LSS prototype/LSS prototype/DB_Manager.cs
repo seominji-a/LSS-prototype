@@ -134,7 +134,7 @@ namespace LSS_prototype
                 conn.Open();
 
                 // DB에서 해당 LOGIN_ID의 해시값과 솔트값 조회
-                using (SQLiteCommand cmd = new SQLiteCommand(Query.LOGIN_HASH_CHECK,conn))
+                using (SQLiteCommand cmd = new SQLiteCommand(Query.LOGIN_HASH_CHECK, conn))
                 {
                     cmd.Parameters.AddWithValue("@loginId", loginId);
 
@@ -162,6 +162,9 @@ namespace LSS_prototype
                 }
             }
         }
+        #endregion
+
+        #region [ 해싱 및 솔트 ]
 
         /// <summary>
         /// 입력된 비밀번호가 저장된 해시값과 일치하는지 검증
@@ -194,7 +197,68 @@ namespace LSS_prototype
                 return Convert.ToBase64String(hashBytes);
             }
         }
+        /// <summary>
+        /// salt 생성 함수 
+        /// </summary>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        private static string GenerateSalt()
+        {
+            byte[] saltBytes = new byte[32];
+
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(saltBytes);
+            }
+            return Convert.ToBase64String(saltBytes);
+        }
         #endregion
+
+        #region [ User_Page DB CRUD ]
+        /// <summary>
+        /// 사용자 추가 쿼리문 및 비밀번호 솔트 및 해싱 이용 암호화 저장 
+        /// </summary>
+        /// <param name="loginId"></param>
+        /// <param name="userName"></param>
+        /// <param name="userRole"></param>
+        /// <param name="password"></param
+        /// <param name="device_id">테스트 위해 기본값 1001 </param>
+        /// <param name="device_id">테스트 위해 기본값 N </param>
+        /// <returns></returns>
+        public bool InsertUser(string loginId, string userName, string userRole, string password, string device_id = "1001", string role_code ="N")
+        {
+
+            string passwordSalt = GenerateSalt();
+            string passwordHash = GenerateHash(password, passwordSalt);
+
+            using (var conn = new SQLiteConnection("Data Source=" + Common.DB_PATH))
+            {
+                conn.Open();
+
+                using (var cmd = new SQLiteCommand(conn))
+                {
+                    cmd.CommandText = Query.INSERT_ADD_USER;
+
+                    cmd.Parameters.AddWithValue("@loginId", loginId);
+                    cmd.Parameters.AddWithValue("@hash", passwordHash);
+                    cmd.Parameters.AddWithValue("@salt", passwordSalt);
+                    cmd.Parameters.AddWithValue("@userName", userName);
+                    cmd.Parameters.AddWithValue("@userRole", userRole);
+                    cmd.Parameters.AddWithValue("@device_id", device_id);
+                    cmd.Parameters.AddWithValue("@role_code", role_code);
+
+
+                    int result = cmd.ExecuteNonQuery();
+                    bool isSuccess = result == 1;
+
+                    return isSuccess;
+                }
+            }
+        }
+
+
+        #endregion
+
 
     }
 }

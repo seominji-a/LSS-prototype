@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:LSS_prototype"
              xmlns:view="clr-namespace:LSS_prototype.Views"
-             StartupUri="Patient.xaml">
+             StartupUri="Patient_Page/Patient.xaml">
     <Application.Resources>
         <ResourceDictionary>
 

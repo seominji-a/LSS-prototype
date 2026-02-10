@@ -24,34 +24,33 @@
             <StackPanel Grid.Row="1">
                 <TextBlock Text="Patient Name" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
                 <TextBox Text="{Binding PatientName, UpdateSourceTrigger=PropertyChanged}" 
-                         FontSize="22" Padding="15,10" Margin="0,0,0,30" Height="55" VerticalContentAlignment="Center" Background="#F9F9F9" BorderThickness="0,0,0,2" BorderBrush="#CCCCCC"/>
+                          Style="{StaticResource DefaultDIALOGTEXTStyle}"/>
 
                 <TextBlock Text="Patient Code" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
                 <TextBox Text="{Binding PatientCode, UpdateSourceTrigger=PropertyChanged}" 
-                         FontSize="22" Padding="15,10" Margin="0,0,0,30" Height="55" VerticalContentAlignment="Center" Background="#F9F9F9" BorderThickness="0,0,0,2" BorderBrush="#CCCCCC"/>
+                         Style="{StaticResource DefaultDIALOGTEXTStyle}"/>
 
                 <TextBlock Text="Date of Birth" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
-                <DatePicker SelectedDate="{Binding BirthDate, UpdateSourceTrigger=PropertyChanged}" FontSize="22" Margin="0,0,0,40" Height="55" VerticalContentAlignment="Center" BorderThickness="0,0,0,2" BorderBrush="#CCCCCC" Background="#FFF9F9F9">
+                <DatePicker SelectedDate="{Binding BirthDate, UpdateSourceTrigger=PropertyChanged}"  Style="{StaticResource DefaultDIALOGDateStyle}">
                     <DatePicker.Resources>
                         <Style TargetType="{x:Type DatePickerTextBox}">
                             <Setter Property="Control.Template">
                                 <Setter.Value>
                                     <ControlTemplate TargetType="{x:Type DatePickerTextBox}">
                                         <TextBox x:Name="PART_TextBox"
-                     Text="{Binding Path=Text, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                     FontSize="{TemplateBinding FontSize}"
-                     VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                     BorderThickness="0"
-                     Background="Transparent" BorderBrush="#FFF9F9F9"/>
+                                            Text="{Binding Path=Text, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                            FontSize="{TemplateBinding FontSize}"
+                                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                            BorderThickness="0"
+                                            Background="Transparent" BorderBrush="#FFF9F9F9"/>
                                     </ControlTemplate>
                                 </Setter.Value>
                             </Setter>
                         </Style>
                     </DatePicker.Resources>
                 </DatePicker>
-
                 <TextBlock Text="Sex" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
-                <ComboBox SelectedValue="{Binding Sex, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Content" FontSize="22" Padding="15,10" Margin="0,0,0,40" Height="55" VerticalContentAlignment="Center" Background="#FFF9F9F9" BorderThickness="0,0,0,2" BorderBrush="#CCCCCC">
+                <ComboBox SelectedValue="{Binding Sex, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Content" Style="{StaticResource DefaultDIALOGSexStyle}">
                     <ComboBoxItem Content="M"/>
                     <ComboBoxItem Content="F"/>
                 </ComboBox>
@@ -59,21 +58,11 @@
 
             <UniformGrid Grid.Row="2" Columns="2" Margin="0,10,0,0">
                 <Button Content="Edit" Command="{Binding EditCommand}" 
-                        Height="65" FontSize="22" FontWeight="Black" Background="#4A90E2" Foreground="White" Margin="0,0,10,0">
-                    <Button.Resources>
-                        <Style TargetType="Border">
-                            <Setter Property="CornerRadius" Value="12"/>
-                        </Style>
-                    </Button.Resources>
+                        Style="{StaticResource DefaultDIALOGbuttonblueStyle}">
                 </Button>
 
                 <Button Content="CANCEL" Command="{Binding CancelCommand}" 
-                        Height="65" FontSize="22" FontWeight="Black" Background="#E0E0E0" Margin="10,0,0,0">
-                    <Button.Resources>
-                        <Style TargetType="Border">
-                            <Setter Property="CornerRadius" Value="12"/>
-                        </Style>
-                    </Button.Resources>
+                        Style="{StaticResource DefaultDIALOGbuttonwhiteStyle}">
                 </Button>
             </UniformGrid>
         </Grid>

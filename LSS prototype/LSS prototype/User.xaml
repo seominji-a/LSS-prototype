@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LSS_prototype"
         mc:Ignorable="d"
-        Title="Scan" Height="1080" Width="1920" WindowState="Maximized" ResizeMode="NoResize" Topmost="True"    
+        Title="Scan" Height="1080" Width="1920" WindowState="Maximized" ResizeMode="NoResize" Topmost="True" WindowStyle="None"    
         >
     <Grid>
         <Button Content="Add USER" HorizontalAlignment="Left" Margin="1678,283,0,0" VerticalAlignment="Top" Height="83" Width="232" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold">

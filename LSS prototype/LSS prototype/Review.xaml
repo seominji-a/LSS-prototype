@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LSS_prototype"
         mc:Ignorable="d"
-        Title="REVIEW" Height="1080" Width="1920" WindowState="Maximized" ResizeMode="NoResize" Topmost="True"   >
+        Title="REVIEW" Height="1080" Width="1920" WindowState="Maximized" ResizeMode="NoResize" Topmost="True"  WindowStyle="None" >
     <Grid>
         <TabControl>
             <TabItem Header="REVIEW IMAGE" Margin="-2,962,-473,-1009" FontSize="36">

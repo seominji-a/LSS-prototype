@@ -121,50 +121,68 @@
     <Compile Include="ImageComment.xaml.cs">
       <DependentUpon>ImageComment.xaml</DependentUpon>
     </Compile>
-    <Compile Include="LoginModelView.cs" />
-    <Compile Include="Patient.xaml.cs">
+    <Compile Include="Login_Page\LoginModelView.cs" />
+    <Compile Include="Patient_Page\Patient.xaml.cs">
       <DependentUpon>Patient.xaml</DependentUpon>
     </Compile>
-    <Compile Include="PatientAddDialog.xaml.cs">
+    <Compile Include="Patient_Page\PatientAddDialog.xaml.cs">
       <DependentUpon>PatientAddDialog.xaml</DependentUpon>
     </Compile>
-    <Compile Include="PatientAddViewModel.cs" />
+	
+    <Compile Include="Patient_Page\PatientAddViewModel.cs" />
 
-    <Compile Update="PatientAddViewModel.cs">
+    <Compile Update="Patient_Page\PatientAddViewModel.cs">
     <DependentUpon>PatientAddDialog.xaml</DependentUpon>
     </Compile>
 
-    <Compile Include="PatientEditDialog.xaml.cs">
-      <DependentUpon>PatientEditDialog.xaml</DependentUpon>
+    <Compile Include="Patient_Page\PatientEditDialog.xaml.cs">
+      <DependentUpon>Patient_Page\PatientEditDialog.xaml</DependentUpon>
     </Compile>
-    <Compile Include="PatientEditViewModel.cs" />
+    <Compile Include="Patient_Page\PatientEditViewModel.cs" />
 
-   <Compile Update="PatientEditViewModel.cs">
-    <DependentUpon>PatientEditDialog.xaml</DependentUpon>
-    </Compile>
-
-    <Compile Include="PatientListViewModel.cs" />
-
-     <Compile Update="PatientListViewModel.cs">
-    <DependentUpon>Patient.xaml</DependentUpon>
+   <Compile Update="Patient_PagePatientEditViewModel.cs">
+    <DependentUpon>Patient_Page\PatientEditDialog.xaml</DependentUpon>
     </Compile>
 
-    <Compile Include="PatientModel.cs" />
+    <Compile Include="Patient_Page\PatientListViewModel.cs" />
 
-     <Compile Update="PatientModel.cs">
-    <DependentUpon>Patient.xaml</DependentUpon>
+     <Compile Update="Patient_Page\PatientListViewModel.cs">
+    <DependentUpon>Patient_Page\Patient.xaml</DependentUpon>
     </Compile>
 
-    <Compile Include="Registered Patient.xaml.cs">
-      <DependentUpon>Registered Patient.xaml</DependentUpon>
+    <Compile Include="Patient_Page\PatientModel.cs" />
+
+	<Compile Update="Patient_Page\PatientModel.cs">
+	<DependentUpon>Patient_Page\Patient.xaml</DependentUpon>
+	</Compile>
+
+    <Compile Include="Patient_Page\Registered Patient.xaml.cs">
+      <DependentUpon>Patient_Page\Registered Patient.xaml</DependentUpon>
     </Compile>
     <Compile Include="RelayCommand.cs" />
     <Compile Include="Review.xaml.cs">
       <DependentUpon>Review.xaml</DependentUpon>
     </Compile>
-    <Compile Include="User.xaml.cs">
+    <Compile Include="User_Page\Admin_Edit.xaml.cs">
+      <DependentUpon>Admin_Edit.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="User_Page\Admin_EditViewModel.cs" />
+    <Compile Include="User_Page\User.xaml.cs">
       <DependentUpon>User.xaml</DependentUpon>
     </Compile>
+    <Compile Include="User_Page\UserViewModel.cs" />
+    <Compile Include="User_Page\User_Add.xaml.cs">
+      <DependentUpon>User_Add.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="User_Page\User_AddViewModel.cs" />
+    <Compile Include="User_Page\User_Delete.xaml.cs">
+      <DependentUpon>User_Delete.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="User_Page\User_DeleteViewModel.cs" />
+    <Compile Include="User_Page\User_Edit.xaml.cs">
+      <DependentUpon>User_Edit.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="User_Page\User_EditViewModel.cs" />
     <Compile Include="VideoComment.xaml.cs">
       <DependentUpon>VideoComment.xaml</DependentUpon>
     </Compile>
@@ -172,7 +190,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Login.xaml">
+    <Page Include="Login_Page\Login.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -184,26 +202,26 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Login.xaml.cs">
+    <Compile Include="Login_Page\Login.xaml.cs">
       <DependentUpon>Login.xaml</DependentUpon>
     </Compile>
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="Patient.xaml">
+    <Page Include="Patient_Page\Patient.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="PatientAddDialog.xaml">
+    <Page Include="Patient_Page\PatientAddDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="PatientEditDialog.xaml">
+    <Page Include="Patient_Page\PatientEditDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Registered Patient.xaml">
+    <Page Include="Patient_Page\Registered Patient.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -211,7 +229,23 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="User.xaml">
+    <Page Include="User_Page\Admin_Edit.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="User_Page\User.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="User_Page\User_Add.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="User_Page\User_Delete.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="User_Page\User_Edit.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -221,6 +255,23 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
+    <Compile Update="User_Page\UserViewModel.cs">
+		<DependentUpon>User.xaml</DependentUpon>
+	</Compile>
+	<Compile Update="User_Page\Admin_EditViewModel.cs">
+		<DependentUpon>Admin_Edit.xaml</DependentUpon>
+	</Compile>
+
+	<Compile Update="User_Page\User_AddViewModel.cs">
+		<DependentUpon>User_Add.xaml</DependentUpon>
+	</Compile>
+	<Compile Update="User_Page\User_DeleteViewModel.cs">
+		<DependentUpon>User_Delete.xaml</DependentUpon>
+	</Compile>
+	
+	<Compile Update="User_Page\User_EditViewModel.cs">
+		<DependentUpon>User_Edit.xaml</DependentUpon>
+	</Compile>
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

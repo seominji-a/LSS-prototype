@@ -196,5 +196,40 @@ namespace LSS_prototype
         }
         #endregion
 
+        #region [ 환자 생성 담당부 ]
+        public bool AddPatient(PatientAddViewModel patient)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.INSERT_PATIENT, conn))
+                {
+                    cmd.Parameters.AddWithValue("@PatientName", patient.PatientName);
+                    cmd.Parameters.AddWithValue("@PatientCode", patient.PatientCode);
+                    cmd.Parameters.AddWithValue("@BirthDate", patient.BirthDate);
+                    cmd.Parameters.AddWithValue("@Sex", patient.Sex);
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+        #endregion
+
+        #region [ 환자 수정 담당부 ]
+        public bool EditPatient(PatientAddViewModel patient)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.EDIT_PATIENT, conn))
+                {
+                    cmd.Parameters.AddWithValue("@PatientName", patient.PatientName);
+                    cmd.Parameters.AddWithValue("@PatientCode", patient.PatientCode);
+                    cmd.Parameters.AddWithValue("@BirthDate", patient.BirthDate);
+                    cmd.Parameters.AddWithValue("@Sex", patient.Sex);
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+        #endregion
     }
 }

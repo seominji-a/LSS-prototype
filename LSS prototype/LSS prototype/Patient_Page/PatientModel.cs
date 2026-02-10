@@ -10,16 +10,4 @@ namespace LSS_prototype
     {
        
     }
-
-
-    public class PatientRepository
-    {
-        public List<Patient> GetPatients()
-        {
-            return new List<Patient>
-            {
-                new Patient { PatientId = "P001", Name = "홍길동" }
-            };
-        }
-    }
 }

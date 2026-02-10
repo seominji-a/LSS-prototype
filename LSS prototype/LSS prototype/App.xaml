@@ -89,6 +89,85 @@
                 </Setter>
             </Style>
 
+            <Style x:Key="DefaultDIALOGTEXTStyle" TargetType="TextBox">
+                <Setter Property="FontSize" Value="22"/>
+                <Setter Property="Padding" Value="15,10"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Height" Value="55"/>
+                <Setter Property="Margin" Value="0,0,0,30"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Background" Value="#F9F9F9"/>
+                <Setter Property="BorderThickness" Value="0,0,0,2"/>
+                <Setter Property="BorderBrush" Value="#CCCCCC"/>
+                <Style.Resources>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="CornerRadius" Value="10"/>
+                    </Style>
+                </Style.Resources>
+            </Style>
+
+
+            <Style x:Key="DefaultDIALOGDateStyle" TargetType="DatePicker">
+                <Setter Property="FontSize" Value="22"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Height" Value="55"/>
+                <Setter Property="Margin" Value="0,0,0,40"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Background" Value="#F9F9F9"/>
+                <Setter Property="BorderThickness" Value="0,0,0,2"/>
+                <Setter Property="BorderBrush" Value="#CCCCCC"/>
+                <Style.Resources>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="CornerRadius" Value="10"/>
+                    </Style>
+                </Style.Resources>
+            </Style>
+
+            <Style x:Key="DefaultDIALOGSexStyle" TargetType="ComboBox">
+                <Setter Property="FontSize" Value="22"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Padding" Value="15,10"/>
+                <Setter Property="Height" Value="55"/>
+                <Setter Property="Margin" Value="0,0,0,40"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Background" Value="#F9F9F9"/>
+                <Setter Property="BorderThickness" Value="0,0,0,2"/>
+                <Setter Property="BorderBrush" Value="#CCCCCC"/>
+                <Style.Resources>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="CornerRadius" Value="10"/>
+                    </Style>
+                </Style.Resources>
+            </Style>
+
+            <Style x:Key="DefaultDIALOGbuttonblueStyle" TargetType="Button">
+                <Setter Property="FontSize" Value="22"/>
+                <Setter Property="FontWeight" Value="Black"/>
+                <Setter Property="Height" Value="65"/>
+                <Setter Property="Margin" Value="0,0,10,0"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Background" Value="#4A90E2"/>
+                <Style.Resources>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="CornerRadius" Value="12"/>
+                    </Style>
+                </Style.Resources>
+            </Style>
+
+            <Style x:Key="DefaultDIALOGbuttonwhiteStyle" TargetType="Button">
+                <Setter Property="FontSize" Value="22"/>
+                <Setter Property="FontWeight" Value="Black"/>
+                <Setter Property="Height" Value="65"/>
+                <Setter Property="Margin" Value="10,0,0,0"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Background" Value="#E0E0E0"/>
+                <Style.Resources>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="CornerRadius" Value="12"/>
+                    </Style>
+                </Style.Resources>
+            </Style>
+
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -129,12 +129,32 @@
       <DependentUpon>PatientAddDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="PatientAddViewModel.cs" />
+
+    <Compile Update="PatientAddViewModel.cs">
+    <DependentUpon>PatientAddDialog.xaml</DependentUpon>
+    </Compile>
+
     <Compile Include="PatientEditDialog.xaml.cs">
       <DependentUpon>PatientEditDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="PatientEditViewModel.cs" />
+
+   <Compile Update="PatientEditViewModel.cs">
+    <DependentUpon>PatientEditDialog.xaml</DependentUpon>
+    </Compile>
+
     <Compile Include="PatientListViewModel.cs" />
+
+     <Compile Update="PatientListViewModel.cs">
+    <DependentUpon>Patient.xaml</DependentUpon>
+    </Compile>
+
     <Compile Include="PatientModel.cs" />
+
+     <Compile Update="PatientModel.cs">
+    <DependentUpon>Patient.xaml</DependentUpon>
+    </Compile>
+
     <Compile Include="Registered Patient.xaml.cs">
       <DependentUpon>Registered Patient.xaml</DependentUpon>
     </Compile>

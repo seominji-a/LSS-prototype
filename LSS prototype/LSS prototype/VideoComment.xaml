@@ -8,7 +8,8 @@
         Title="VideoComment" Height="1080" Width="1920"
         WindowState="Maximized"
         ResizeMode="NoResize"
-        Topmost="True">
+        Topmost="True"
+        WindowStyle="None">
     <Grid>
         <Border BorderBrush="Black"
             BorderThickness="2"

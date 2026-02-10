@@ -136,18 +136,18 @@
     </Compile>
 
     <Compile Include="Patient_Page\PatientEditDialog.xaml.cs">
-      <DependentUpon>Patient_Page\PatientEditDialog.xaml</DependentUpon>
+      <DependentUpon>PatientEditDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Patient_Page\PatientEditViewModel.cs" />
 
-   <Compile Update="Patient_PagePatientEditViewModel.cs">
-    <DependentUpon>Patient_Page\PatientEditDialog.xaml</DependentUpon>
+   <Compile Update="Patient_Page\PatientEditViewModel.cs">
+    <DependentUpon>PatientEditDialog.xaml</DependentUpon>
     </Compile>
 
     <Compile Include="Patient_Page\PatientListViewModel.cs" />
 
      <Compile Update="Patient_Page\PatientListViewModel.cs">
-    <DependentUpon>Patient_Page\Patient.xaml</DependentUpon>
+    <DependentUpon>Patient.xaml</DependentUpon>
     </Compile>
 
     <Compile Include="Patient_Page\PatientModel.cs" />
@@ -157,7 +157,7 @@
 	</Compile>
 
     <Compile Include="Patient_Page\Registered Patient.xaml.cs">
-      <DependentUpon>Patient_Page\Registered Patient.xaml</DependentUpon>
+      <DependentUpon>Registered Patient.xaml</DependentUpon>
     </Compile>
     <Compile Include="RelayCommand.cs" />
     <Compile Include="Review.xaml.cs">

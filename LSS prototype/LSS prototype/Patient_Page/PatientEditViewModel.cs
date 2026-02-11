@@ -27,7 +27,7 @@ namespace LSS_prototype
 
         public DateTime? BirthDate { get; set; }
 
-        public char Sex { get; set; }
+        public string Sex { get; set; }
 
         public ICommand EditCommand { get; }
         public ICommand CancelCommand { get; }

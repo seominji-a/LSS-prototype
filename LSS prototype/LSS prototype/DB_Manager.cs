@@ -304,7 +304,7 @@ namespace LSS_prototype
                                 PatientCode = Convert.ToInt32(reader["PATIENT_CODE"]),
                                 Name = reader["PATIENT_NAME"].ToString(),
                                 BRITH_DATE = Convert.ToDateTime(reader["BIRTH_DATE"]),
-                                Sex = Convert.ToChar(reader["SEX"])
+                                Sex = reader["SEX"].ToString()
                             });
                         }
                     }

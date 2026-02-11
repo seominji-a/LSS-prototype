@@ -14,7 +14,7 @@ namespace LSS_prototype
 
         public DateTime BRITH_DATE { get; set; }
 
-        public char Sex { get; set; }
+        public string Sex { get; set; }
 
         public DateTime Reg_Date { get; set; }
     }

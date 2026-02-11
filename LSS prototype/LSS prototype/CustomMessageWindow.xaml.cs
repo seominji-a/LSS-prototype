@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -33,8 +34,23 @@ namespace LSS_prototype
         {
             InitializeComponent();
 
-            this.Owner = Application.Current.MainWindow;
-            this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            var owner = Application.Current?.Windows?
+                .OfType<Window>()
+                .FirstOrDefault(w => w.IsActive)
+                ?? Application.Current?.Windows?
+                .OfType<Window>()
+                .FirstOrDefault(w => w.IsVisible);
+
+            if (owner != null && owner.IsVisible)
+            {
+                this.Owner = owner;
+                this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            }
+            else
+            {
+                // ✅ Owner를 못 잡는 초기화 단계에서는 화면 중앙에 띄우기
+                this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            }
 
             MessageText.Text = message;
 

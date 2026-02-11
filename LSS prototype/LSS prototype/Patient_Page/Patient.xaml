@@ -82,17 +82,29 @@
                         </StackPanel>
 
                         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-                            <UniformGrid x:Name="RegisteredGrid" Columns="3" VerticalAlignment="Top" Margin="0,0,20,0">
-                                <Border Style="{StaticResource PatientCardStyle}"/>
-                                <Border Style="{StaticResource PatientCardStyle}"/>
-                                <Border Style="{StaticResource PatientCardStyle}"/>
-                                <Border Style="{StaticResource PatientCardStyle}"/>
-                                <Border Style="{StaticResource PatientCardStyle}"/>
-                                <Border Style="{StaticResource PatientCardStyle}"/>
-                                <Border Style="{StaticResource PatientCardStyle}"/>
-                                <Border Style="{StaticResource PatientCardStyle}"/>
-                                <Border Style="{StaticResource PatientCardStyle}"/>
-                            </UniformGrid>
+                            <ItemsControl ItemsSource="{Binding RegisteredPatients}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Columns="3" VerticalAlignment="Top" Margin="0,0,20,0"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource PatientCardStyle}" Margin="10">
+                                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                <TextBlock Text="{Binding Name}" FontSize="35" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="{Binding PatientCode}" FontSize="35" Foreground="Gray" HorizontalAlignment="Center"/>
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,0">
+                                                    <TextBlock Text="{Binding BRITH_DATE, StringFormat=yyyy-MM-dd}"/>
+                                                    <TextBlock Text=" / "/>
+                                                    <TextBlock Text="{Binding Sex}"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </ScrollViewer>
                     </Grid>
 

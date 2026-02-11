@@ -231,5 +231,37 @@ namespace LSS_prototype
             }
         }
         #endregion
+
+        #region [ 환자 로드 담당부 ]
+        public List<PatientModel> GetAllPatients()
+        {
+            // 2. 리스트 생성 시에도 PatientModel을 사용합니다.
+            List<PatientModel> list = new List<PatientModel>();
+
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                string sql = "SELECT * FROM PATIENT";
+                using (var cmd = new SQLiteCommand(sql, conn))
+                {
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            // 3. 'Patient' 창 객체가 아닌 'PatientModel' 데이터 객체를 생성합니다.
+                            list.Add(new PatientModel
+                            {
+                                PatientCode = Convert.ToInt32(reader["PATIENT_CODE"]),
+                                Name = reader["PATIENT_NAME"].ToString(),
+                                BRITH_DATE = Convert.ToDateTime(reader["BIRTH_DATE"]),
+                                Sex = Convert.ToChar(reader["SEX"])
+                            });
+                        }
+                    }
+                }
+            }
+            return list;
+        }
+        #endregion
     }
 }

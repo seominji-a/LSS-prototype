@@ -133,7 +133,9 @@
                                 Style="{StaticResource DefaultRoundedButtonStyle}" 
                                 Command="{Binding PatientEditCommand}"/>
                         <Button x:Name="BtnDelete" Content="Delete Patient" 
-                                Style="{StaticResource DefaultRoundedButtonStyle}"/>
+                                Style="{StaticResource DefaultRoundedButtonStyle}"
+                                Command="{Binding PatientDeleteCommand}"
+                                />
                         <Button x:Name="BtnHomeRegistered" Content="Home" 
                                 Style="{StaticResource DefaultRoundedButtonStyle}" 
                                 Click="HomeButton_Click"/>

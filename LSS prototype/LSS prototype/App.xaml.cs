@@ -1,4 +1,6 @@
-﻿using System;
+﻿
+using LSS_prototype.Login_Page;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
@@ -13,5 +15,6 @@ namespace LSS_prototype
     /// </summary>
     public partial class App : Application
     {
+        public static SessionActivityMonitor ActivityMonitor { get; } = new SessionActivityMonitor();
     }
 }

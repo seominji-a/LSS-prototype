@@ -4,7 +4,7 @@
              xmlns:vm="clr-namespace:LSS_prototype"
              xmlns:vm_user="clr-namespace:LSS_prototype.User_Page"
              xmlns:view="clr-namespace:LSS_prototype.Views"
-             StartupUri="Patient_Page/Patient.xaml">
+             StartupUri="Login_Page/Login.xaml">
     <Application.Resources>
         <ResourceDictionary>
 

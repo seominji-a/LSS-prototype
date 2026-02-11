@@ -126,8 +126,9 @@ namespace LSS_prototype
         /// 입력받은 ID/PW로 DB 조회 후 해시 비교를 수행
         /// </summary>
         /// <returns>로그인 성공 여부 (true: 성공, false: 실패)</returns>
-        public bool Login_check(string loginId, string password)
+        public bool Login_check(string loginId, string password, out string roleCode)
         {
+            roleCode = null; // 
             // using 문을 사용하여 DB 연결 자동 해제 
             using (SQLiteConnection conn = new SQLiteConnection("Data Source=" + Common.DB_PATH))
             {
@@ -144,14 +145,20 @@ namespace LSS_prototype
                         // 해당 ID를 가진 사용자가 존재하는지 확인
                         if (reader.Read())
                         {
-                            // 1. DB에 저장된 해시값과 솔트값 가져오기
+                            // 1. DB에 저장된 해시값과 솔트값 가져오기 + 로그인 성공 대비 권한값(ROLE) 도 가져오기
                             string storedHash = reader["PASSWORD_HASH"].ToString();
                             string storedSalt = reader["PASSWORD_SALT"].ToString();
+                            string dbRoleCode = reader["ROLE_CODE"].ToString();
 
                             // 2. 입력받은 비밀번호 검증
                             bool isPasswordCorrect = VerifyPassword(password, storedHash, storedSalt);
 
-                            return isPasswordCorrect;
+                            if (isPasswordCorrect)
+                            {
+                                roleCode = dbRoleCode;
+                                return true;
+                            }
+                            return false;      
                         }
                         else
                         {

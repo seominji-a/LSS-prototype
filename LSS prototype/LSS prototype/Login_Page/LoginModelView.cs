@@ -1,7 +1,9 @@
-﻿using System.ComponentModel;
+﻿using LSS_prototype.Login_Page;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace LSS_prototype
@@ -34,17 +36,19 @@ namespace LSS_prototype
         // 실제 로그인 로직이 들어갈 함수
         private void ExecuteLogin(object parameter)
         {
-            var passwordBox = parameter as System.Windows.Controls.PasswordBox;
+            var passwordBox = parameter as PasswordBox;
             string password = passwordBox?.Password; // 패스워드박스는 특성상 ID 처럼 바인딩이 UI단에서 바로안됨.
-
+            string roleCode = string.Empty;
             DB_Manager dbManager = new DB_Manager();
 
-            if (dbManager.Login_check(UserId, password))
+            if (dbManager.Login_check(UserId, password, out roleCode))
             {
+                AuthToken.SignIn(UserId, roleCode);   // 토큰/세션 관리 시작
                 MessageBox.Show("로그인 성공!", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
-                // 메인 화면 띄우기
-                MainWindow mainWin = new MainWindow();
-                mainWin.Show();
+
+                Patient patient = new Patient();
+                patient.Show();
+                App.ActivityMonitor.Start(patient);
 
                 Application.Current.Windows.OfType<Login>().FirstOrDefault()?.Close();
             }

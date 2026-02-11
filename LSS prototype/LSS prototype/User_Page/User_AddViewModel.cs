@@ -52,38 +52,34 @@ namespace LSS_prototype.User_Page
         {
             var pwBox = parameter as PasswordBox;
             string password = pwBox?.Password;
+
+            // 유효성 검사
+            if (string.IsNullOrWhiteSpace(UserID) ||
+                string.IsNullOrWhiteSpace(UserName) ||
+                string.IsNullOrWhiteSpace(Role) ||
+                string.IsNullOrEmpty(password))
+            {
+                MessageBox.Show("필수 입력값이 비어있습니다.", "확인",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // DB 작업
             try
             {
-                if (string.IsNullOrWhiteSpace(UserID) ||
-                    string.IsNullOrWhiteSpace(UserName) ||
-                    string.IsNullOrWhiteSpace(Role) ||
-                    string.IsNullOrEmpty(password))
+                bool success = _dbManager.InsertUser(UserID.Trim(), UserName.Trim(), Role.Trim(), password);
+                if (success)
                 {
-                    MessageBox.Show("필수 입력값이 비어있습니다.", "확인",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                try
-                {
-                    bool sucess = _dbManager.InsertUser(UserID.Trim(), UserName.Trim(), Role.Trim(), password);
-                    if (sucess) MessageBox.Show("사용자 정보 ADD 성공");
+                    MessageBox.Show("사용자 정보 ADD 성공");
                     CloseAction?.Invoke(true);
                 }
-                catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Constraint)
-                {
-                    // UNIQUE 제약(예: LOGIN_ID UNIQUE) 걸렸을 때 흔히 이쪽으로 옴
-                    MessageBox.Show("이미 존재하는 아이디이거나 제약조건 오류입니다.\n" + ex.Message, "오류",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"저장 중 오류가 발생했습니다.\n{ex.Message}", "오류",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-                // CloseAction?.Invoke(true); 창닫는건 잠시 보류 
             }
-            catch (Exception ex)
+            catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Constraint)
+            {
+                MessageBox.Show("이미 존재하는 아이디입니다.\n" + ex.Message, "오류",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            catch (Exception ex) // 유니크 제약조건을 제외한 모든 에러를 해당 catch에서 해결 
             {
                 MessageBox.Show($"저장 중 오류가 발생했습니다.\n{ex.Message}", "오류",
                     MessageBoxButton.OK, MessageBoxImage.Error);

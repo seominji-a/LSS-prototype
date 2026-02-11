@@ -115,12 +115,17 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Auth\SessionActivityMonitor.cs" />
     <Compile Include="Common.cs" />
+    <Compile Include="CustomMessageWindow.xaml.cs">
+      <DependentUpon>CustomMessageWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="DB_Manager.cs" />
     <Compile Include="Dialog.cs" />
     <Compile Include="ImageComment.xaml.cs">
       <DependentUpon>ImageComment.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Auth\AuthToken.cs" />
     <Compile Include="Login_Page\LoginModelView.cs" />
     <Compile Include="Patient_Page\Patient.xaml.cs">
       <DependentUpon>Patient.xaml</DependentUpon>
@@ -128,34 +133,25 @@
     <Compile Include="Patient_Page\PatientAddDialog.xaml.cs">
       <DependentUpon>PatientAddDialog.xaml</DependentUpon>
     </Compile>
-	
     <Compile Include="Patient_Page\PatientAddViewModel.cs" />
-
     <Compile Update="Patient_Page\PatientAddViewModel.cs">
-    <DependentUpon>PatientAddDialog.xaml</DependentUpon>
+      <DependentUpon>PatientAddDialog.xaml</DependentUpon>
     </Compile>
-
     <Compile Include="Patient_Page\PatientEditDialog.xaml.cs">
       <DependentUpon>PatientEditDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Patient_Page\PatientEditViewModel.cs" />
-
-   <Compile Update="Patient_Page\PatientEditViewModel.cs">
-    <DependentUpon>PatientEditDialog.xaml</DependentUpon>
+    <Compile Update="Patient_Page\PatientEditViewModel.cs">
+      <DependentUpon>PatientEditDialog.xaml</DependentUpon>
     </Compile>
-
     <Compile Include="Patient_Page\PatientListViewModel.cs" />
-
-     <Compile Update="Patient_Page\PatientListViewModel.cs">
-    <DependentUpon>Patient.xaml</DependentUpon>
+    <Compile Update="Patient_Page\PatientListViewModel.cs">
+      <DependentUpon>Patient.xaml</DependentUpon>
     </Compile>
-
     <Compile Include="Patient_Page\PatientModel.cs" />
-
-	<Compile Update="Patient_Page\PatientModel.cs">
-	<DependentUpon>Patient_Page\Patient.xaml</DependentUpon>
-	</Compile>
-
+    <Compile Update="Patient_Page\PatientModel.cs">
+      <DependentUpon>Patient_Page\Patient.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Patient_Page\Registered Patient.xaml.cs">
       <DependentUpon>Registered Patient.xaml</DependentUpon>
     </Compile>
@@ -186,6 +182,10 @@
     <Compile Include="VideoComment.xaml.cs">
       <DependentUpon>VideoComment.xaml</DependentUpon>
     </Compile>
+    <Page Include="CustomMessageWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="ImageComment.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -256,22 +256,20 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Update="User_Page\UserViewModel.cs">
-		<DependentUpon>User.xaml</DependentUpon>
-	</Compile>
-	<Compile Update="User_Page\Admin_EditViewModel.cs">
-		<DependentUpon>Admin_Edit.xaml</DependentUpon>
-	</Compile>
-
-	<Compile Update="User_Page\User_AddViewModel.cs">
-		<DependentUpon>User_Add.xaml</DependentUpon>
-	</Compile>
-	<Compile Update="User_Page\User_DeleteViewModel.cs">
-		<DependentUpon>User_Delete.xaml</DependentUpon>
-	</Compile>
-	
-	<Compile Update="User_Page\User_EditViewModel.cs">
-		<DependentUpon>User_Edit.xaml</DependentUpon>
-	</Compile>
+      <DependentUpon>User.xaml</DependentUpon>
+    </Compile>
+    <Compile Update="User_Page\Admin_EditViewModel.cs">
+      <DependentUpon>Admin_Edit.xaml</DependentUpon>
+    </Compile>
+    <Compile Update="User_Page\User_AddViewModel.cs">
+      <DependentUpon>User_Add.xaml</DependentUpon>
+    </Compile>
+    <Compile Update="User_Page\User_DeleteViewModel.cs">
+      <DependentUpon>User_Delete.xaml</DependentUpon>
+    </Compile>
+    <Compile Update="User_Page\User_EditViewModel.cs">
+      <DependentUpon>User_Edit.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

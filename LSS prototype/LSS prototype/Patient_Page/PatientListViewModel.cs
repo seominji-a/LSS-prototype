@@ -40,7 +40,8 @@ namespace LSS_prototype
 
         private void SyncButtonClicked()
         {
-            MessageBox.Show("당일 예약된 EMR 환자 정보가 최신 상태로 업데이트되었습니다 .");
+            //MessageBox.Show("당일 예약된 EMR 환자 정보가 최신 상태로 업데이트되었습니다 .");
+            new CustomMessageWindow("당일 예약된 EMR 환자 정보가 최신 상태로 업데이트되었습니다.").Show();
         }
     }
 }

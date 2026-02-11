@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LSS_prototype
 {
-    internal class PatientModel
+    public class PatientModel
     {
         public string PatientId { get; set; }
         public int PatientCode { get; set; }

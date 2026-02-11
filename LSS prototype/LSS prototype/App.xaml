@@ -116,6 +116,9 @@
                 <Setter Property="Background" Value="#F9F9F9"/>
                 <Setter Property="BorderThickness" Value="0,0,0,2"/>
                 <Setter Property="BorderBrush" Value="#CCCCCC"/>
+                <Setter Property="Focusable" Value="False"/>
+                <Setter Property="IsHitTestVisible" Value="True"/>
+                <Setter Property="Cursor" Value="Hand"/>
                 <Style.Resources>
                     <Style TargetType="{x:Type Border}">
                         <Setter Property="CornerRadius" Value="10"/>
@@ -166,6 +169,17 @@
                         <Setter Property="CornerRadius" Value="12"/>
                     </Style>
                 </Style.Resources>
+            </Style>
+
+            <Style x:Key="SelectablePatientCardStyle" TargetType="Border" BasedOn="{StaticResource PatientCardStyle}">
+                <Setter Property="BorderBrush" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="4"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                        <Setter Property="BorderBrush" Value="#FF0078D7"/>
+                        <Setter Property="Background" Value="#FFF0F8FF"/>
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
         </ResourceDictionary>

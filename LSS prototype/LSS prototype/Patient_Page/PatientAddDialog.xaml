@@ -31,7 +31,7 @@
                          Style="{StaticResource DefaultDIALOGTEXTStyle}"/>
 
                 <TextBlock Text="Date of Birth" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
-                <DatePicker x:Name="DpBirthDate" SelectedDate="{Binding BirthDate, UpdateSourceTrigger=PropertyChanged}"  Style="{StaticResource DefaultDIALOGDateStyle}" Focusable="False" IsHitTestVisible="True" Cursor="Hand" PreviewMouseUp="DpBirthDate_PreviewMouseUp" >
+                <DatePicker x:Name="DpBirthDate" SelectedDate="{Binding BirthDate, UpdateSourceTrigger=PropertyChanged}"  Style="{StaticResource DefaultDIALOGDateStyle}" PreviewMouseUp="DpBirthDate_PreviewMouseUp" >
                     <DatePicker.Resources>
                         <Style TargetType="{x:Type DatePickerTextBox}">
                             <Setter Property="Control.Template">

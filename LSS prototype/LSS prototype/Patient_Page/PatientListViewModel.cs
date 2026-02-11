@@ -24,12 +24,25 @@ namespace LSS_prototype
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
+        //로드에 관한 처리
         private ObservableCollection<PatientModel> _registeredPatients;
         public ObservableCollection<PatientModel> RegisteredPatients
         {
             get => _registeredPatients;
             set { _registeredPatients = value;
                 OnPropertyChanged();
+            }
+        }
+
+        //환자 리스트에서 환자 데이터 선택에 관한 처리
+        private PatientModel _selectedPatient;
+        public PatientModel SelectedPatient
+        {
+            get => _selectedPatient;
+            set
+            {
+                _selectedPatient = value;
+                OnPropertyChanged(); // 선택 변경 알림
             }
         }
 
@@ -73,8 +86,25 @@ namespace LSS_prototype
 
         private void EditPatient()
         {
-            var vm = new PatientEditViewModel();
+            // 1. 선택된 환자가 있는지 검사
+            if (SelectedPatient == null)
+            {
+                MessageBox.Show("수정할 환자를 선택해주세요.");
+                return;
+            }
+
+            // 2. 수정용 ViewModel 생성 및 선택된 데이터 전달
+            // 생성자를 통해 데이터를 넘기거나 프로퍼티로 복사해줍니다.
+            var vm = new PatientEditViewModel(SelectedPatient);
+
+            // 3. 다이얼로그 표시 및 결과 확인
             var result = _dialogService.ShowDialog(vm);
+
+            // 4. 수정 성공(true) 시 리스트 다시 불러오기
+            if (result == true)
+            {
+                LoadPatients();
+            }
         }
 
         private void SyncButtonClicked()

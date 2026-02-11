@@ -35,7 +35,8 @@ namespace LSS_prototype
                                               " VALUES (@loginId, @hash, @salt, @userName, @userRole, @device_id, @role_code)"; // 사용자 추가
         public const string EDIT_PATIENT = "UPDATE PATIENT " +"SET PATIENT_CODE = @PatientCode, " +"PATIENT_NAME = @PatientName, " + "BIRTH_DATE = @BirthDate, " 
                                                 +"    SEX = @Sex " + "WHERE PATIENT_CODE = @OriginalPatientCode";
-        
+        public const string SELECT_PATIENTLIST = "SELECT * FROM PATIENT";
+
 
 
     }

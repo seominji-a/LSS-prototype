@@ -263,7 +263,7 @@ namespace LSS_prototype
             }
         }
 
-
+        #endregion
 
         #region [ 환자 생성 담당부 ]
         public bool AddPatient(PatientAddViewModel patient)

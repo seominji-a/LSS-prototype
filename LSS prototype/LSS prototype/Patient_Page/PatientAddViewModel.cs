@@ -45,7 +45,7 @@ namespace LSS_prototype
                 return;
             }
 
-            // 3. 생년월일 검사 (추가 권장)
+            // 3. 생년월일 검사
             if (BirthDate == null)
             {
                 MessageBox.Show("생년월일을 선택해주세요.");

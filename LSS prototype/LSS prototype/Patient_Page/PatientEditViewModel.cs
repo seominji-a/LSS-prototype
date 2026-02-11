@@ -16,7 +16,7 @@ namespace LSS_prototype
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
-        // 3. 속성 변경 알림 헬퍼 메서드
+        // 속성 변경 알림 헬퍼 메서드
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));

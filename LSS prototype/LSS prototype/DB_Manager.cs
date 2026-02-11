@@ -286,7 +286,7 @@ namespace LSS_prototype
         #region [ 환자 로드 담당부 ]
         public List<PatientModel> GetAllPatients()
         {
-            // 2. 리스트 생성 시에도 PatientModel을 사용합니다.
+            // 리스트 생성 시에도 PatientModel을 사용합니다.
             List<PatientModel> list = new List<PatientModel>();
 
             using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
@@ -298,7 +298,7 @@ namespace LSS_prototype
                     {
                         while (reader.Read())
                         {
-                            // 3. 'Patient' 창 객체가 아닌 'PatientModel' 데이터 객체를 생성합니다.
+                            // 'Patient' 창 객체가 아닌 'PatientModel' 데이터 객체를 생성합니다.
                             list.Add(new PatientModel
                             {
                                 PatientId = Convert.ToInt32(reader["PATIENT_ID"]),
@@ -323,7 +323,6 @@ namespace LSS_prototype
                 using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
                 {
                     conn.Open();
-                    // 수정용 SQL 쿼리 (이미지 1의 INSERT 구조와 유사하지만 UPDATE 사용)
 
                     using (var cmd = new SQLiteCommand(Query.EDIT_PATIENT, conn))
                     {
@@ -345,6 +344,29 @@ namespace LSS_prototype
         }
         #endregion
 
+        #region [ 환자 삭제 담당부 ]
+        public bool DeletePatient(int patientId)
+        {
+            try
+            {
+                using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+                {
+                    conn.Open();
+                    using (var cmd = new SQLiteCommand(Query.DELETE_PATIENT, conn))
+                    {
+                        // 고유 ID만 있으면 삭제가 가능합니다.
+                        cmd.Parameters.AddWithValue("@Patient_id", patientId);
 
+                        return cmd.ExecuteNonQuery() > 0;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"DB 삭제 오류: {ex.Message}");
+                return false;
+            }
+        }
+        #endregion
     }
 }

@@ -51,11 +51,14 @@ namespace LSS_prototype
 
         public ICommand PatientEditCommand { get; }
 
+        public ICommand PatientDeleteCommand { get; }
+
         public PatientListViewModel()
         {
             _dialogService = new Dialog();
             PatientAddCommand = new RelayCommand(AddPatient);
             PatientEditCommand = new RelayCommand(EditPatient);
+            PatientDeleteCommand = new RelayCommand(DeletePatient);
             SyncClickCommand = new RelayCommand(SyncButtonClicked);
             LoadPatients();
         }
@@ -104,6 +107,29 @@ namespace LSS_prototype
             if (result == true)
             {
                 LoadPatients();
+            }
+        }
+
+        private void DeletePatient()
+        {
+            // 1. 선택된 환자가 있는지 확인
+            if (SelectedPatient == null)
+            {
+                MessageBox.Show("삭제할 환자를 선택해주세요.");
+                return;
+            }
+
+            // 2. 삭제 확인 메시지
+            if (MessageBox.Show($"{SelectedPatient.Name} 환자 정보를 삭제하시겠습니까?", "삭제 확인",
+                MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            {
+                var repo = new DB_Manager();
+                // 3. 모델에 담긴 PatientId를 넘겨줍니다.
+                if (repo.DeletePatient(SelectedPatient.PatientId))
+                {
+                    MessageBox.Show("삭제되었습니다.");
+                    LoadPatients(); // 목록 새로고침
+                }
             }
         }
 

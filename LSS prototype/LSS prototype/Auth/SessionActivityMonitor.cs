@@ -103,10 +103,10 @@ namespace LSS_prototype.Login_Page
 
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    MessageBox.Show("세션이 만료되었습니다. 다시 로그인해주세요.",
-                        "세션 만료",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
+                    var msg = new CustomMessageWindow(
+                     "세션이 만료되었습니다. 다시 로그인해주세요.",
+                     CustomMessageWindow.MessageBoxType.Ok);
+                    msg.ShowDialog();  // ← ShowDialog 사용 (로그인 화면 뜨기 전까지 대기)
 
                     AuthToken.SignOut();
                     NavigateToLoginPage();

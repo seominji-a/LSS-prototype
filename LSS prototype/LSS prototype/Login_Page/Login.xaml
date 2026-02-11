@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LSS_prototype"
         mc:Ignorable="d"
-        Title="Login" Height="900" Width="1200" Background="#FFF1EBEB" ResizeMode="NoResize" Topmost="True">
+                Title="Login" Height="900" Width="1200" Background="#FFF1EBEB" ResizeMode="NoResize" Topmost="True" WindowStartupLocation="CenterScreen" WindowStyle="None">
 
     <Window.DataContext>
         <local:LoginViewModel />

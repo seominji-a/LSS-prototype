@@ -25,6 +25,8 @@ namespace LSS_prototype
         public string PatientName { get; set; }
         public int? PatientCode { get; set; }
 
+        public int Patient_id { get; set; }
+
         public DateTime? BirthDate { get; set; }
 
         public string Sex { get; set; }
@@ -35,10 +37,12 @@ namespace LSS_prototype
         public Action<bool?> CloseAction { get; set; }
         public PatientEditViewModel(PatientModel selected)
         {
+            Patient_id = selected.PatientId;
             PatientCode = selected.PatientCode;
             PatientName = selected.Name;
             BirthDate = selected.BRITH_DATE;
             Sex = selected.Sex;
+
             EditCommand = new RelayCommand(UpdatePatient);
             CancelCommand = new RelayCommand(Cancel);
         }

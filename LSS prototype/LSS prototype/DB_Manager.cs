@@ -301,6 +301,7 @@ namespace LSS_prototype
                             // 3. 'Patient' 창 객체가 아닌 'PatientModel' 데이터 객체를 생성합니다.
                             list.Add(new PatientModel
                             {
+                                PatientId = Convert.ToInt32(reader["PATIENT_ID"]),
                                 PatientCode = Convert.ToInt32(reader["PATIENT_CODE"]),
                                 Name = reader["PATIENT_NAME"].ToString(),
                                 BRITH_DATE = Convert.ToDateTime(reader["BIRTH_DATE"]),
@@ -323,18 +324,14 @@ namespace LSS_prototype
                 {
                     conn.Open();
                     // 수정용 SQL 쿼리 (이미지 1의 INSERT 구조와 유사하지만 UPDATE 사용)
-                    string sql = @"UPDATE PATIENT 
-                           SET PATIENT_NAME = @Name, 
-                               BIRTH_DATE = @Birth, 
-                               SEX = @Sex 
-                           WHERE PATIENT_CODE = @Code";
 
-                    using (var cmd = new SQLiteCommand(sql, conn))
+                    using (var cmd = new SQLiteCommand(Query.EDIT_PATIENT, conn))
                     {
-                        cmd.Parameters.AddWithValue("@Name", vm.PatientName);
-                        cmd.Parameters.AddWithValue("@Birth", vm.BirthDate.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+                        cmd.Parameters.AddWithValue("@Patient_id", vm.Patient_id);
+                        cmd.Parameters.AddWithValue("@PatientName", vm.PatientName);
+                        cmd.Parameters.AddWithValue("@PatientCode", vm.PatientCode);
+                        cmd.Parameters.AddWithValue("@BirthDate", vm.BirthDate.Value.ToString("yyyy-MM-dd HH:mm:ss"));
                         cmd.Parameters.AddWithValue("@Sex", vm.Sex);
-                        cmd.Parameters.AddWithValue("@Code", vm.PatientCode);
 
                         return cmd.ExecuteNonQuery() > 0;
                     }

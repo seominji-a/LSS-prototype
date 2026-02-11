@@ -8,7 +8,7 @@ namespace LSS_prototype
 {
     public class PatientModel
     {
-        public string PatientId { get; set; }
+        public int PatientId { get; set; }
         public int PatientCode { get; set; }
         public string Name { get; set; }
 

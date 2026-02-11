@@ -6,20 +6,16 @@ using System.Threading.Tasks;
 
 namespace LSS_prototype
 {
-    internal class PatientModel
+    public class PatientModel
     {
-       
-    }
+        public string PatientId { get; set; }
+        public int PatientCode { get; set; }
+        public string Name { get; set; }
 
+        public DateTime BRITH_DATE { get; set; }
 
-    public class PatientRepository
-    {
-        public List<Patient> GetPatients()
-        {
-            return new List<Patient>
-            {
-                new Patient { PatientId = "P001", Name = "홍길동" }
-            };
-        }
+        public char Sex { get; set; }
+
+        public DateTime Reg_Date { get; set; }
     }
 }

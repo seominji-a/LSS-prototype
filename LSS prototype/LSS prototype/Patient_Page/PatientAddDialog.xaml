@@ -31,7 +31,7 @@
                          Style="{StaticResource DefaultDIALOGTEXTStyle}"/>
 
                 <TextBlock Text="Date of Birth" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
-                <DatePicker SelectedDate="{Binding BirthDate, UpdateSourceTrigger=PropertyChanged}"  Style="{StaticResource DefaultDIALOGDateStyle}">
+                <DatePicker x:Name="DpBirthDate" SelectedDate="{Binding BirthDate, UpdateSourceTrigger=PropertyChanged}"  Style="{StaticResource DefaultDIALOGDateStyle}" PreviewMouseUp="DpBirthDate_PreviewMouseUp" >
                     <DatePicker.Resources>
                         <Style TargetType="{x:Type DatePickerTextBox}">
                             <Setter Property="Control.Template">
@@ -42,7 +42,7 @@
                                  FontSize="{TemplateBinding FontSize}"
                                  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                                  BorderThickness="0"
-                                 Background="Transparent" BorderBrush="#FFF9F9F9"/>
+                                 Background="Transparent" BorderBrush="#FFF9F9F9" Focusable="False" Cursor="Hand" IsReadOnly="True"/>
                                     </ControlTemplate>
                                 </Setter.Value>
                             </Setter>

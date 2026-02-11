@@ -264,6 +264,88 @@ namespace LSS_prototype
         }
 
 
+
+        #region [ 환자 생성 담당부 ]
+        public bool AddPatient(PatientAddViewModel patient)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.INSERT_PATIENT, conn))
+                {
+                    cmd.Parameters.AddWithValue("@PatientName", patient.PatientName);
+                    cmd.Parameters.AddWithValue("@PatientCode", patient.PatientCode);
+                    cmd.Parameters.AddWithValue("@BirthDate", patient.BirthDate);
+                    cmd.Parameters.AddWithValue("@Sex", patient.Sex);
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+        #endregion
+
+        #region [ 환자 로드 담당부 ]
+        public List<PatientModel> GetAllPatients()
+        {
+            // 2. 리스트 생성 시에도 PatientModel을 사용합니다.
+            List<PatientModel> list = new List<PatientModel>();
+
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.SELECT_PATIENTLIST, conn))
+                {
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            // 3. 'Patient' 창 객체가 아닌 'PatientModel' 데이터 객체를 생성합니다.
+                            list.Add(new PatientModel
+                            {
+                                PatientCode = Convert.ToInt32(reader["PATIENT_CODE"]),
+                                Name = reader["PATIENT_NAME"].ToString(),
+                                BRITH_DATE = Convert.ToDateTime(reader["BIRTH_DATE"]),
+                                Sex = Convert.ToChar(reader["SEX"])
+                            });
+                        }
+                    }
+                }
+            }
+            return list;
+        }
+        #endregion
+
+        #region [ 환자 수정 담당부 ]
+        public bool UpdatePatient(PatientEditViewModel vm)
+        {
+            try
+            {
+                using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+                {
+                    conn.Open();
+                    // 수정용 SQL 쿼리 (이미지 1의 INSERT 구조와 유사하지만 UPDATE 사용)
+                    string sql = @"UPDATE PATIENT 
+                           SET PATIENT_NAME = @Name, 
+                               BIRTH_DATE = @Birth, 
+                               SEX = @Sex 
+                           WHERE PATIENT_CODE = @Code";
+
+                    using (var cmd = new SQLiteCommand(sql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Name", vm.PatientName);
+                        cmd.Parameters.AddWithValue("@Birth", vm.BirthDate.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+                        cmd.Parameters.AddWithValue("@Sex", vm.Sex);
+                        cmd.Parameters.AddWithValue("@Code", vm.PatientCode);
+
+                        return cmd.ExecuteNonQuery() > 0;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"DB 수정 오류: {ex.Message}");
+                return false;
+            }
+        }
         #endregion
 
 

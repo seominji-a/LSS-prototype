@@ -17,7 +17,7 @@ namespace LSS_prototype
         public const string DB_INIT_PATH = "../../../DB/db_init.sql"; // 초기 DB 테이블 생성 파일 경로 
         public const string DB_SEED_PATH = "../../../DB/seed.sql"; // 초기 DB 테이블 데이터 생성 경로 
 
-        public const int DB_VERSION = 20; // DB Version 
+        public const int DB_VERSION = 22; // DB Version 
 
     }
 
@@ -33,5 +33,10 @@ namespace LSS_prototype
         public const string SELECT_PATIENT_LIST = "SELECT * FROM PATIENT";
         public const string INSERT_ADD_USER = "INSERT INTO USER(LOGIN_ID, PASSWORD_HASH,PASSWORD_SALT, USER_NAME, USER_ROLE, DEVICE_ID, ROLE_CODE)" +
                                               " VALUES (@loginId, @hash, @salt, @userName, @userRole, @device_id, @role_code)"; // 사용자 추가
+        public const string EDIT_PATIENT = "UPDATE PATIENT " +"SET PATIENT_CODE = @PatientCode, " +"PATIENT_NAME = @PatientName, " + "BIRTH_DATE = @BirthDate, " 
+                                                +"    SEX = @Sex " + "WHERE PATIENT_CODE = @OriginalPatientCode";
+        
+
+
     }
 }

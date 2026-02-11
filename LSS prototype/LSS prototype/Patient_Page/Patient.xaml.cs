@@ -21,15 +21,6 @@ namespace LSS_prototype
     public partial class Patient : Window
     {
 
-        public string PatientId { get; set; }
-        public int PatientCode { get; set; }
-        public string Name { get; set; }
-
-        public DateTime BRITH_DATE { get; set; }
-
-        public char Sex { get; set; }
-
-        public DateTime Reg_Date { get; set; }
         public Patient()
         {
             InitializeComponent();

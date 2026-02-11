@@ -33,8 +33,7 @@ namespace LSS_prototype
         public const string SELECT_PATIENT_LIST = "SELECT * FROM PATIENT";
         public const string INSERT_ADD_USER = "INSERT INTO USER(LOGIN_ID, PASSWORD_HASH,PASSWORD_SALT, USER_NAME, USER_ROLE, DEVICE_ID, ROLE_CODE)" +
                                               " VALUES (@loginId, @hash, @salt, @userName, @userRole, @device_id, @role_code)"; // 사용자 추가
-        public const string EDIT_PATIENT = "UPDATE PATIENT " +"SET PATIENT_CODE = @PatientCode, " +"PATIENT_NAME = @PatientName, " + "BIRTH_DATE = @BirthDate, " 
-                                                +"    SEX = @Sex " + "WHERE PATIENT_CODE = @OriginalPatientCode";
+        public const string EDIT_PATIENT = "UPDATE PATIENT SET PATIENT_NAME = @PatientName, PATIENT_CODE= @PatientCode, BIRTH_DATE = @BirthDate, SEX = @Sex WHERE PATIENT_ID = @Patient_id";
         public const string SELECT_PATIENTLIST = "SELECT * FROM PATIENT";
 
 

@@ -44,7 +44,8 @@ namespace LSS_prototype
             if (dbManager.Login_check(UserId, password, out roleCode))
             {
                 AuthToken.SignIn(UserId, roleCode);   // 토큰/세션 관리 시작
-                MessageBox.Show("로그인 성공!", "알림", MessageBoxButton.OK, MessageBoxImage.Information);
+                var msg = new CustomMessageWindow( "로그인 성공", CustomMessageWindow.MessageBoxType.AutoClose, autoCloseSeconds: 1);
+                msg.ShowDialog();
 
                 Patient patient = new Patient();
                 patient.Show();
@@ -54,8 +55,7 @@ namespace LSS_prototype
             }
             else
             {
-                MessageBox.Show("아이디 또는 비밀번호가 올바르지 않습니다.", "로그인 실패",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                new CustomMessageWindow("아이디 또는 비밀번호가 올바르지 않습니다.").ShowDialog();
             }
         }
 

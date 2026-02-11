@@ -49,7 +49,7 @@ namespace LSS_prototype
             // DB_Manager의 업데이트 메서드 호출
             if (repo.UpdatePatient(this))
             {
-                MessageBox.Show("수정되었습니다.");
+                new CustomMessageWindow("수정되었습니다.").Show();
                 CloseAction?.Invoke(true); // 성공 결과와 함께 창 닫기
             }
         

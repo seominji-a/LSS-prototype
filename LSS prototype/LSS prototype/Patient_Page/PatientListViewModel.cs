@@ -70,7 +70,7 @@ namespace LSS_prototype
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"데이터 로드 중 오류 발생: {ex.Message}");
+                new CustomMessageWindow($"데이터 로드 중 오류 발생{ex.Message}").Show();
             }
         }
 
@@ -89,7 +89,7 @@ namespace LSS_prototype
             // 1. 선택된 환자가 있는지 검사
             if (SelectedPatient == null)
             {
-                MessageBox.Show("수정할 환자를 선택해주세요.");
+                new CustomMessageWindow("수정할 환자를 선택해주세요.").Show();
                 return;
             }
 

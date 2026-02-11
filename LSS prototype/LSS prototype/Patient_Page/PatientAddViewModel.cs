@@ -34,28 +34,28 @@ namespace LSS_prototype
             // 1. 환자 코드 검사 (null 또는 0 체크)
             if (PatientCode == null || PatientCode == 0)
             {
-                MessageBox.Show("환자 코드를 입력해주세요.");
+                new CustomMessageWindow("환자 코드를 입력해주세요.").Show();
                 return;
             }
 
             // 2. 이름 검사
             if (string.IsNullOrWhiteSpace(PatientName))
             {
-                MessageBox.Show("환자 이름을 입력해주세요.");
+                new CustomMessageWindow("환자 이름을 입력해주세요.").Show();
                 return;
             }
 
-            // 3. 생년월일 검사 (추가 권장)
+            // 3. 생년월일 검사
             if (BirthDate == null)
             {
-                MessageBox.Show("생년월일을 선택해주세요.");
+                new CustomMessageWindow("생년월일을 선택해주세요.").Show();
                 return;
             }
 
             // 4. 성별 검사
             if (string.IsNullOrWhiteSpace(Sex))
             {
-                MessageBox.Show("성별을 선택해주세요.");
+                new CustomMessageWindow("성별을 선택해주세요.").Show();
                 return;
             }
 
@@ -64,12 +64,12 @@ namespace LSS_prototype
 
             if (result)
             {
-                MessageBox.Show("환자가 정상적으로 등록되었습니다.");
+                new CustomMessageWindow("환자가 정상적으로 등록되었습니다.").Show();
                 CloseAction?.Invoke(true);
             }
             else
             {
-                MessageBox.Show("등록 중 오류가 발생했습니다.");
+                new CustomMessageWindow("등록 중 오류가 발생했습니다..").Show();
                 CloseAction?.Invoke(false);
             }
         }

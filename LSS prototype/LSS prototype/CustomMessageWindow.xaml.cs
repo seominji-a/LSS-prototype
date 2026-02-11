@@ -34,6 +34,18 @@ namespace LSS_prototype
         {
             InitializeComponent();
 
+            // NOTE:
+            // CustomMessageWindow는 앱 초기화(DB Init / Version Check) 단계에서도 호출됨.
+            // 이 시점에서는 MainWindow가 아직 표시되지 않았을 수 있음.
+            // WPF는 "표시된 적 없는 Window"를 Owner로 지정하면 예외 발생함.
+            //
+            // 그래서:
+            // 1. Active Window → Owner
+            // 2. Visible Window → Owner
+            // 3. 없으면 Owner 미설정 + CenterScreen
+            //
+            // 이 로직 제거하면 Init 단계에서 팝업 호출 시 에러 발생 가능. ( DB 초기화 시 에러 발생하여 추가하였음 ) 
+
             var owner = Application.Current?.Windows?
                 .OfType<Window>()
                 .FirstOrDefault(w => w.IsActive)
@@ -47,8 +59,7 @@ namespace LSS_prototype
                 this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             }
             else
-            {
-                // ✅ Owner를 못 잡는 초기화 단계에서는 화면 중앙에 띄우기
+            {  
                 this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
             }
 

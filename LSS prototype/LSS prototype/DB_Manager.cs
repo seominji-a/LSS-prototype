@@ -341,7 +341,7 @@ namespace LSS_prototype
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"DB 수정 오류: {ex.Message}");
+                new CustomMessageWindow($"DB 수정 오류 {ex.Message}").Show();
                 return false;
             }
         }

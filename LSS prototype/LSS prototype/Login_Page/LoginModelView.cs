@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -29,12 +30,12 @@ namespace LSS_prototype
 
         public LoginViewModel()
         {
-            // LoginCommand가 실행되면 ExecuteLogin 함수를 실행
-            LoginCommand = new RelayCommand(ExecuteLogin);
+            //LoginCommand = new RelayCommand(ExecuteLogin);
+           LoginCommand = new AsyncRelayCommand(async (param) => await ExecuteLogin(param));
         }
 
         // 실제 로그인 로직이 들어갈 함수
-        private async void ExecuteLogin(object parameter)
+        private async Task ExecuteLogin(object parameter)
         {
             var passwordBox = parameter as PasswordBox;
             string password = passwordBox?.Password; // 패스워드박스는 특성상 ID 처럼 바인딩이 UI단에서 바로안됨.
@@ -82,7 +83,13 @@ namespace LSS_prototype
             }
             else
             {
-                new CustomMessageWindow("아이디 또는 비밀번호가 올바르지 않습니다.").Show();
+                // ✅ Show() 금지: await 걸어서 command 잠금 유지
+                var msg = new CustomMessageWindow(
+                    "아이디 또는 비밀번호가 올바르지 않습니다.",
+                    CustomMessageWindow.MessageBoxType.AutoClose,
+                    1); // 1초 자동 닫힘 추천 (OK로 하고 싶으면 Ok로 바꿔도 됨)
+
+                await msg.ShowAsync();
             }
         }
 

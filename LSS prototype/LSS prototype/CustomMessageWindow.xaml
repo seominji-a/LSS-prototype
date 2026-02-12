@@ -11,7 +11,7 @@
 
     <Grid>
         <!-- 전체 화면을 덮는 50% 어두운 배경 -->
-        <Grid Background="#80000000" 
+        <Grid 
               MouseDown="Overlay_MouseDown"
               x:Name="OverlayGrid">
 

@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace LSS_prototype
 {
     /// <summary>
     //  작성자 : 박한용
-    /// 목적 : 경로, 파일명등 공용변수를 선언하기 위함
+    /// 목적 : 경로, 파일명, 공통 사용 클래스 선언하기 위함
     /// 주의 : Const 사용 ( 변경 절대 불가 )
     /// </summary>
     public static class Common
@@ -39,4 +40,44 @@ namespace LSS_prototype
 
 
     }
+
+    /// <summary>
+    /// 버튼 중복 클릭 및 페이지 중복실행 막는 클래스 
+    /// </summary>
+    public class AsyncRelayCommand : ICommand
+    {
+        private readonly Func<object, Task> _execute;
+        private bool _isExecuting;
+
+        public AsyncRelayCommand(Func<object, Task> execute)
+        {
+            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+        }
+
+        public bool CanExecute(object parameter) => true;
+
+        public async void Execute(object parameter)
+        {
+            // 중복터치 방지
+            if (_isExecuting) return;
+
+            _isExecuting = true;
+            try
+            {
+                await _execute(parameter);
+            }
+            finally
+            {
+                _isExecuting = false;
+            }
+        }
+
+        //  WPF가 재평가할 필요 없음 (항상 true니까)
+        public event EventHandler CanExecuteChanged
+        {
+            add { }
+            remove { }
+        }
+    }
+
 }

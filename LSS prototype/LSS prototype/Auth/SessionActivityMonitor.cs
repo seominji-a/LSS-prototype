@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Windows;
 
-namespace LSS_prototype.Login_Page
+namespace LSS_prototype.Auth
 {
     public class SessionActivityMonitor
     {
@@ -96,35 +96,47 @@ namespace LSS_prototype.Login_Page
 
         private void CheckSessionTimeout(object state)
         {
-            if (AuthToken.IsExpired())
+            try
             {
-                _timeoutCheckTimer.Change(Timeout.Infinite, Timeout.Infinite);
-                _windowCheckTimer.Change(Timeout.Infinite, Timeout.Infinite);
-
-                Application.Current.Dispatcher.Invoke(() =>
+                if (AuthToken.IsExpired())
                 {
-                    MessageBox.Show("세션이 만료되었습니다. 다시 로그인해주세요.",
-                        "세션 만료",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
+                    _timeoutCheckTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                    _windowCheckTimer.Change(Timeout.Infinite, Timeout.Infinite);
 
-                    AuthToken.SignOut();
-                    NavigateToLoginPage();
-                });
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        SessionStateManager.SuspendSession(); //  현재 세션 일시정지 및 창숨기기
+                        var msg = new CustomMessageWindow(
+                         "세션이 만료되었습니다. 다시 로그인해주세요.",
+                         CustomMessageWindow.MessageBoxType.Ok, 0, true);
+                        msg.ShowDialog();  // ← ShowDialog 사용 (로그인 화면 뜨기 전까지 대기)
+
+                        AuthToken.SignOut();
+                        NavigateToLoginPage();
+                    });
+                }
             }
+            catch(Exception ex)
+            {
+                Console.WriteLine("세션 닫기문제 발생");
+                throw; // 세션관련된 기능이 동작하지않으면 치명적이므로 테스트기간동안 throw 처리 
+            }
+            
         }
 
         private void NavigateToLoginPage()
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
+                // ★ 숨겨진 창들은 그대로 두고, 로그인 창만 띄우기
                 var loginWindow = new Login();
                 loginWindow.Show();
                 Application.Current.MainWindow = loginWindow;
 
+                // ★ 로그인 창 제외한 보이는 창만 닫기 (숨겨진 창은 유지)
                 var windowsToClose = Application.Current.Windows
                     .Cast<Window>()
-                    .Where(w => w != loginWindow)
+                    .Where(w => w != loginWindow && w.IsVisible)
                     .ToList();
 
                 foreach (var window in windowsToClose)

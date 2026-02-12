@@ -59,8 +59,7 @@ namespace LSS_prototype.User_Page
                 string.IsNullOrWhiteSpace(Role) ||
                 string.IsNullOrEmpty(password))
             {
-                MessageBox.Show("필수 입력값이 비어있습니다.", "확인",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                new CustomMessageWindow("필수 입력값이 비어있습니다..").Show();
                 return;
             }
 
@@ -70,19 +69,18 @@ namespace LSS_prototype.User_Page
                 bool success = _dbManager.InsertUser(UserID.Trim(), UserName.Trim(), Role.Trim(), password);
                 if (success)
                 {
-                    MessageBox.Show("사용자 정보 ADD 성공");
+                    new CustomMessageWindow("사용자 정보 추가 성공").Show();
                     CloseAction?.Invoke(true);
                 }
             }
             catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Constraint)
             {
-                MessageBox.Show("이미 존재하는 아이디입니다.\n" + ex.Message, "오류",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+
+                new CustomMessageWindow("이미 존재하는 아이디입니다.").Show();
             }
             catch (Exception ex) // 유니크 제약조건을 제외한 모든 에러를 해당 catch에서 해결 
             {
-                MessageBox.Show($"저장 중 오류가 발생했습니다.\n{ex.Message}", "오류",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                new CustomMessageWindow($"저장 중 오류가 발생했습니다.\n{ex.Message}").Show();
             }
         }
 

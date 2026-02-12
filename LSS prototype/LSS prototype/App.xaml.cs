@@ -1,5 +1,5 @@
 ﻿
-using LSS_prototype.Login_Page;
+using LSS_prototype.Auth;
 using System;
 using System.Collections.Generic;
 using System.Configuration;

@@ -12,7 +12,8 @@
     <Grid>
         <!-- 전체 화면을 덮는 50% 어두운 배경 -->
         <Grid Background="#80000000" 
-              MouseDown="Overlay_MouseDown">
+              MouseDown="Overlay_MouseDown"
+              x:Name="OverlayGrid">
 
             <!-- 중앙에 위치한 밝은 모달 창 -->
             <Border Background="White"
@@ -20,7 +21,7 @@
                     BorderThickness="2"
                     CornerRadius="8"
                     Width="450"
-                    Height="200"
+                    Height="240"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center">
 
@@ -35,13 +36,25 @@
 
                 <Grid Margin="30">
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
+                    <!-- 타이머 표시 영역 (우측 상단) -->
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <TextBlock x:Name="CountdownText"
+                                   Text=""
+                                   FontSize="13"
+                                   Foreground="#FF9800"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Top"/>
+                    </Grid>
+
                     <!-- 메시지 텍스트 -->
                     <TextBlock x:Name="MessageText"
-                               Grid.Row="0"
+                               Grid.Row="1"
                                Text="메시지 내용"
                                FontSize="15"
                                TextWrapping="Wrap"
@@ -51,7 +64,7 @@
                                Foreground="#333333"/>
 
                     <!-- 버튼 영역 -->
-                    <StackPanel Grid.Row="1"
+                    <StackPanel Grid.Row="2"
                                 Orientation="Horizontal"
                                 HorizontalAlignment="Center"
                                 Margin="0,20,0,0">
@@ -93,7 +106,7 @@
                             </Button.Style>
                         </Button>
 
-                        <!-- Yes 버튼 (기본 숨김) -->
+                        <!-- Yes 버튼 -->
                         <Button x:Name="YesButton"
                                 Content="예"
                                 Width="120"
@@ -132,7 +145,7 @@
                             </Button.Style>
                         </Button>
 
-                        <!-- No 버튼 (기본 숨김) -->
+                        <!-- No 버튼 -->
                         <Button x:Name="NoButton"
                                 Content="아니오"
                                 Width="120"

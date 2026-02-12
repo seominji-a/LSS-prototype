@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LSS_prototype.Login_Page
+namespace LSS_prototype.Auth
 {
     /// <summary>
     /// 로그인 성공 시 세션 및 토큰 생성 클래스 

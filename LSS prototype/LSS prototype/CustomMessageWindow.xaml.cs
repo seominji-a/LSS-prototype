@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Effects;
 using System.Windows.Threading;
 
 namespace LSS_prototype
@@ -9,9 +13,9 @@ namespace LSS_prototype
     {
         public enum MessageBoxType
         {
-            Ok,           // 확인만
-            YesNo,        // 예/아니오
-            AutoClose     // 자동 닫기
+            Ok,
+            YesNo,
+            AutoClose
         }
 
         public enum MessageBoxResult
@@ -19,18 +23,66 @@ namespace LSS_prototype
             None,
             Ok,
             Yes,
-            No
+            No,
+            Timeout
         }
-
+        private bool _enableBlur = false;  //  블러 옵션 추가 ( 세션 종료 등 매우 중요한 알람 사용 시 적용 )
+        private List<Window> _blurredWindows = new List<Window>();  //  블러 적용된 창 목록 ( 메시지창을 제외한 모든 창 블러를 주기 위해 선언 )
         public MessageBoxResult Result { get; private set; } = MessageBoxResult.None;
 
-        public CustomMessageWindow(string message, MessageBoxType type = MessageBoxType.Ok, int autoCloseSeconds = 0)
+        private TaskCompletionSource<MessageBoxResult> _tcs;
+        private DispatcherTimer _timeoutTimer;
+
+        public CustomMessageWindow(string message, MessageBoxType type = MessageBoxType.Ok, int autoCloseSeconds = 0, bool enableBlur = false)
         {
             InitializeComponent();
 
-            MessageText.Text = message;
+            // NOTE:
+            // CustomMessageWindow는 앱 초기화(DB Init / Version Check) 단계에서도 호출됨.
+            // 이 시점에서는 MainWindow가 아직 표시되지 않았을 수 있음.
+            // WPF는 "표시된 적 없는 Window"를 Owner로 지정하면 예외 발생함.
+            //
+            // 그래서:
+            // 1. Active Window → Owner
+            // 2. Visible Window → Owner
+            // 3. 없으면 Owner 미설정 + CenterScreen
+            //
+            // 이 로직 제거하면 Init 단계에서 팝업 호출 시 에러 발생 가능. ( DB 초기화 시 에러 발생하여 추가하였음 ) 
 
-            // 버튼 타입에 따라 표시
+            var owner = Application.Current?.Windows?
+                .OfType<Window>()
+                .FirstOrDefault(w => w.IsActive)
+                ?? Application.Current?.Windows?
+                .OfType<Window>()
+                .FirstOrDefault(w => w.IsVisible);
+
+            if (owner != null && owner.IsVisible)
+            {
+                this.Owner = owner;
+                this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            }
+            else
+            {  
+                this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            }
+
+            MessageText.Text = message;
+            _enableBlur = enableBlur;  //  블러 설정 저장
+
+            if (_enableBlur && this.Owner != null)
+            {
+                OverlayGrid.Background = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromArgb(204, 0, 0, 0));   // 불투명도는 80%로 잡고 화면 블러 더 키우고싶으면 블러이펙트값 수정하기
+
+                // 부모 창에 블러 효과
+                if (this.Owner != null)
+                {
+                    ApplyBlurToOwner();
+                }
+            }
+            // 기본적으로 타이머 숨김
+            CountdownText.Visibility = Visibility.Collapsed;
+
             switch (type)
             {
                 case MessageBoxType.Ok:
@@ -43,6 +95,11 @@ namespace LSS_prototype
                     OkButton.Visibility = Visibility.Collapsed;
                     YesButton.Visibility = Visibility.Visible;
                     NoButton.Visibility = Visibility.Visible;
+
+                    if (autoCloseSeconds > 0)
+                    {
+                        StartTimeout(autoCloseSeconds);
+                    }
                     break;
 
                 case MessageBoxType.AutoClose:
@@ -50,7 +107,6 @@ namespace LSS_prototype
                     YesButton.Visibility = Visibility.Collapsed;
                     NoButton.Visibility = Visibility.Collapsed;
 
-                    // 자동 닫기 타이머
                     if (autoCloseSeconds > 0)
                     {
                         var timer = new DispatcherTimer
@@ -60,44 +116,125 @@ namespace LSS_prototype
                         timer.Tick += (s, e) =>
                         {
                             timer.Stop();
-                            Result = MessageBoxResult.Ok;
-                            this.Close();
+                            CloseWithResult(MessageBoxResult.Ok);
                         };
                         timer.Start();
-
-                        // 남은 시간 표시 (선택사항)
-                        MessageText.Text = $"{message}\n\n{autoCloseSeconds}초 후 자동으로 닫힙니다.";
                     }
                     break;
             }
+
+            // ★  닫힐 때 블러 제거
+            this.Closed += (s, e) =>
+            {
+                if (_enableBlur && this.Owner != null)
+                {
+                    RemoveBlurFromOwner();
+                }
+            };
+        }
+
+        private void ApplyBlurToOwner()
+        {
+            var blurEffect = new BlurEffect
+            {
+                Radius = 30
+            };
+
+            // 현재 CustomMessageWindow를 제외한 모든 창
+            foreach (Window window in Application.Current.Windows)
+            {
+                if (window != this && window.IsVisible)
+                {
+                    window.Effect = blurEffect;
+                    _blurredWindows.Add(window);
+                }
+            }
+
+
+            foreach (Window window in Application.Current.Windows)
+            {
+                if (window != this && window.IsVisible)
+                {
+                    window.Effect = blurEffect;
+                    window.UpdateLayout(); // 
+                }
+            }
+            Dispatcher.Invoke(DispatcherPriority.Render, new Action(() => { })); //
+        }
+
+        //  블러 효과 제거
+        private void RemoveBlurFromOwner()
+        {
+            this.Owner.Effect = null;
+        }
+
+
+        private void StartTimeout(int seconds)
+        {
+            int remainingSeconds = seconds;
+
+            CountdownText.Text = $"{remainingSeconds}초 남음";
+            CountdownText.Visibility = Visibility.Visible;
+
+            _timeoutTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(1)
+            };
+
+            _timeoutTimer.Tick += (s, e) =>
+            {
+                remainingSeconds--;
+
+                if (remainingSeconds > 0)
+                {
+                    CountdownText.Text = $"{remainingSeconds}초 남음";
+                }
+                else
+                {
+                    _timeoutTimer.Stop();
+                    CloseWithResult(MessageBoxResult.Timeout);
+                }
+            };
+
+            _timeoutTimer.Start();
+        }
+
+        public Task<MessageBoxResult> ShowAsync()
+        {
+            _tcs = new TaskCompletionSource<MessageBoxResult>();
+            this.Show();
+            return _tcs.Task;
         }
 
         private void OkButton_Click(object sender, RoutedEventArgs e)
         {
-            Result = MessageBoxResult.Ok;
-            this.Close();
+            CloseWithResult(MessageBoxResult.Ok);
         }
 
         private void YesButton_Click(object sender, RoutedEventArgs e)
         {
-            Result = MessageBoxResult.Yes;
-            this.Close();
+            CloseWithResult(MessageBoxResult.Yes);
         }
 
         private void NoButton_Click(object sender, RoutedEventArgs e)
         {
-            Result = MessageBoxResult.No;
+            CloseWithResult(MessageBoxResult.No);
+        }
+
+        private void CloseWithResult(MessageBoxResult result)
+        {
+            _timeoutTimer?.Stop();
+
+            Result = result;
+            _tcs?.TrySetResult(result);
             this.Close();
         }
 
-        // 어두운 배경 클릭 시 - 세션은 연장되지만 창은 안 닫힘
         private void Overlay_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            // 이벤트가 버튼이 아닌 배경에서 발생했는지 확인
             if (e.Source is Grid)
             {
                 System.Diagnostics.Debug.WriteLine("[CustomMessageWindow] 배경 클릭 - 세션 연장됨");
-                // 창은 닫지 않음 (버튼만 클릭 시 닫힘)
             }
         }
     }

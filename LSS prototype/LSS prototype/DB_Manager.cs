@@ -54,13 +54,12 @@ namespace LSS_prototype
 
                             if (dbVersion < this._db_version)
                             {
-                                var result = MessageBox.Show(
-                                    "DB 버전이 다릅니다.\n기존 로컬 DB가 삭제되고 신규 DB가 생성됩니다.\n진행하시겠습니까?",
-                                    "DB 업데이트 확인",
-                                    MessageBoxButton.YesNo,
-                                    MessageBoxImage.Warning);
-
-                                if (result == MessageBoxResult.Yes) // 진짜 삭제 후 db를 재설치 하시겠습니까? ( 이 때, 기존 테이블까지 다 delete 됨 주의 )  
+                                var msg = new CustomMessageWindow(
+                                            "DB 버전이 다릅니다.\n 기존 로컬 DB가 삭제되고 신규 DB가 생성됩니다.\n진행하시겠습니까?",
+                                            CustomMessageWindow.MessageBoxType.YesNo,
+                                            autoCloseSeconds: 30);
+                                msg.ShowDialog();
+                                if (msg.Result == CustomMessageWindow.MessageBoxResult.Yes) // 진짜 삭제 후 db를 재설치 하시겠습니까? ( 이 때, 기존 테이블까지 다 delete 됨 주의 )  
                                     needRecreate = true;
                                 else
                                     return;
@@ -338,7 +337,7 @@ namespace LSS_prototype
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"DB 수정 오류: {ex.Message}");
+                new CustomMessageWindow($"DB 수정 오류 {ex.Message}").Show();
                 return false;
             }
         }

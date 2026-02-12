@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Effects;
 using System.Windows.Threading;
 
 namespace LSS_prototype
@@ -24,13 +26,14 @@ namespace LSS_prototype
             No,
             Timeout
         }
-
+        private bool _enableBlur = false;  //  블러 옵션 추가 ( 세션 종료 등 매우 중요한 알람 사용 시 적용 )
+        private List<Window> _blurredWindows = new List<Window>();  //  블러 적용된 창 목록 ( 메시지창을 제외한 모든 창 블러를 주기 위해 선언 )
         public MessageBoxResult Result { get; private set; } = MessageBoxResult.None;
 
         private TaskCompletionSource<MessageBoxResult> _tcs;
         private DispatcherTimer _timeoutTimer;
 
-        public CustomMessageWindow(string message, MessageBoxType type = MessageBoxType.Ok, int autoCloseSeconds = 0)
+        public CustomMessageWindow(string message, MessageBoxType type = MessageBoxType.Ok, int autoCloseSeconds = 0, bool enableBlur = false)
         {
             InitializeComponent();
 
@@ -64,7 +67,19 @@ namespace LSS_prototype
             }
 
             MessageText.Text = message;
+            _enableBlur = enableBlur;  //  블러 설정 저장
 
+            if (_enableBlur && this.Owner != null)
+            {
+                OverlayGrid.Background = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromArgb(204, 0, 0, 0));   // 불투명도는 80%로 잡고 화면 블러 더 키우고싶으면 블러이펙트값 수정하기
+
+                // 부모 창에 블러 효과
+                if (this.Owner != null)
+                {
+                    ApplyBlurToOwner();
+                }
+            }
             // 기본적으로 타이머 숨김
             CountdownText.Visibility = Visibility.Collapsed;
 
@@ -107,7 +122,52 @@ namespace LSS_prototype
                     }
                     break;
             }
+
+            // ★  닫힐 때 블러 제거
+            this.Closed += (s, e) =>
+            {
+                if (_enableBlur && this.Owner != null)
+                {
+                    RemoveBlurFromOwner();
+                }
+            };
         }
+
+        private void ApplyBlurToOwner()
+        {
+            var blurEffect = new BlurEffect
+            {
+                Radius = 30
+            };
+
+            // 현재 CustomMessageWindow를 제외한 모든 창
+            foreach (Window window in Application.Current.Windows)
+            {
+                if (window != this && window.IsVisible)
+                {
+                    window.Effect = blurEffect;
+                    _blurredWindows.Add(window);
+                }
+            }
+
+
+            foreach (Window window in Application.Current.Windows)
+            {
+                if (window != this && window.IsVisible)
+                {
+                    window.Effect = blurEffect;
+                    window.UpdateLayout(); // 
+                }
+            }
+            Dispatcher.Invoke(DispatcherPriority.Render, new Action(() => { })); //
+        }
+
+        //  블러 효과 제거
+        private void RemoveBlurFromOwner()
+        {
+            this.Owner.Effect = null;
+        }
+
 
         private void StartTimeout(int seconds)
         {

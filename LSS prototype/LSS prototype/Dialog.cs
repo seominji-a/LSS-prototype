@@ -31,16 +31,22 @@ namespace LSS_prototype
 
             try
             {
-                // 뷰모델에 CloseAction이 있는지 확인하고 연결합니다.
                 vm.CloseAction = new Action<bool?>((result) =>
                 {
-                    window.DialogResult = result;
+                    try
+                    {
+                        window.DialogResult = result;
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // Show()로 열린 창이면 DialogResult 설정 안 함
+                    }
                     window.Close();
                 });
             }
             catch
             {
-                // CloseAction이 없는 일반 객체일 경우를 대비해 비워둡니다.
+                // CloseAction이 없는 경우
             }
 
 

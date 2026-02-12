@@ -29,49 +29,34 @@ namespace LSS_prototype
             CancelCommand = new RelayCommand(Cancel);
         }
 
-        private void Save()
+        private void Save()//환자 정보 추가에 관한 입력, 검증만 담당
         {
-            // 1. 환자 코드 검사 (null 또는 0 체크)
             if (PatientCode == null || PatientCode == 0)
             {
                 new CustomMessageWindow("환자 코드를 입력해주세요.").Show();
                 return;
             }
 
-            // 2. 이름 검사
             if (string.IsNullOrWhiteSpace(PatientName))
             {
                 new CustomMessageWindow("환자 이름을 입력해주세요.").Show();
                 return;
             }
 
-            // 3. 생년월일 검사
             if (BirthDate == null)
             {
                 new CustomMessageWindow("생년월일을 선택해주세요.").Show();
                 return;
             }
 
-            // 4. 성별 검사
             if (string.IsNullOrWhiteSpace(Sex))
             {
                 new CustomMessageWindow("성별을 선택해주세요.").Show();
                 return;
             }
 
-            var repo = new DB_Manager();
-            bool result = repo.AddPatient(this);
-
-            if (result)
-            {
-                new CustomMessageWindow("환자가 정상적으로 등록되었습니다.").Show();
-                CloseAction?.Invoke(true);
-            }
-            else
-            {
-                new CustomMessageWindow("등록 중 오류가 발생했습니다..").Show();
-                CloseAction?.Invoke(false);
-            }
+            // ✅ 여기서는 저장하지 말고 그냥 닫기만
+            CloseAction?.Invoke(true);
         }
 
         private void Cancel()

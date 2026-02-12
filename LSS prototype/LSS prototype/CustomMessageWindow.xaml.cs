@@ -237,5 +237,14 @@ namespace LSS_prototype
                 System.Diagnostics.Debug.WriteLine("[CustomMessageWindow] 배경 클릭 - 세션 연장됨");
             }
         }
+
+        public static MessageBoxResult Show(string message,MessageBoxType type = MessageBoxType.Ok, int autoCloseSeconds = 0, bool enableBlur = false)
+        {
+            var win = new CustomMessageWindow(message, type, autoCloseSeconds, enableBlur);
+            win.ShowDialog();
+            return win.Result;
+        }
     }
+
+
 }

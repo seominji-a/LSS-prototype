@@ -26,7 +26,8 @@ namespace LSS_prototype
             No,
             Timeout
         }
-        private List<Window> _blurredWindows = new List<Window>();  //  블러 적용된 창 목록 ( 메시지창을 제외한 모든 창 블러를 주기 위해 선언 )
+
+        private List<Window> _blurredWindows = new List<Window>();
         public MessageBoxResult Result { get; private set; } = MessageBoxResult.None;
 
         private TaskCompletionSource<MessageBoxResult> _tcs;
@@ -36,18 +37,7 @@ namespace LSS_prototype
         {
             InitializeComponent();
 
-            // NOTE:
-            // CustomMessageWindow는 앱 초기화(DB Init / Version Check) 단계에서도 호출됨.
-            // 이 시점에서는 MainWindow가 아직 표시되지 않았을 수 있음.
-            // WPF는 "표시된 적 없는 Window"를 Owner로 지정하면 예외 발생함.
-            //
-            // 그래서:
-            // 1. Active Window → Owner
-            // 2. Visible Window → Owner
-            // 3. 없으면 Owner 미설정 + CenterScreen
-            //
-            // 이 로직 제거하면 Init 단계에서 팝업 호출 시 에러 발생 가능. ( DB 초기화 시 에러 발생하여 추가하였음 ) 
-
+            // Owner 설정 (DB 초기화 단계 고려)
             var owner = Application.Current?.Windows?
                 .OfType<Window>()
                 .FirstOrDefault(w => w.IsActive)
@@ -61,24 +51,17 @@ namespace LSS_prototype
                 this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             }
             else
-            {  
+            {
                 this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
             }
 
             MessageText.Text = message;
-
-            if ( this.Owner != null)
-            {
-
-                // 부모 창에 블러 효과
-                if (this.Owner != null)
-                {
-                    ApplyBlurToOwner();
-                }
-            }
-            // 기본적으로 타이머 숨김
             CountdownText.Visibility = Visibility.Collapsed;
 
+            //  블러 효과 적용
+            ApplyBlurToAllWindows();
+
+            // 버튼 타입 설정
             switch (type)
             {
                 case MessageBoxType.Ok:
@@ -119,21 +102,19 @@ namespace LSS_prototype
                     break;
             }
 
-            // ★  닫힐 때 블러 제거
+            //  창 닫힐 때 블러 제거
             this.Closed += (s, e) =>
             {
-                if (this.Owner != null)
-                {
-                    RemoveBlurFromOwner();
-                }
+                RemoveBlurFromAllWindows();
             };
         }
 
-        private void ApplyBlurToOwner()
+        //  모든 창에 블러 효과 적용
+        private void ApplyBlurToAllWindows()
         {
             var blurEffect = new BlurEffect
             {
-                Radius = 15
+                Radius = 10  // 블러 강도
             };
 
             foreach (Window window in Application.Current.Windows)
@@ -146,8 +127,8 @@ namespace LSS_prototype
             }
         }
 
-        // 블러 효과 제거
-        private void RemoveBlurFromOwner()
+        //  모든 창에서 블러 효과 제거
+        private void RemoveBlurFromAllWindows()
         {
             foreach (var window in _blurredWindows)
             {
@@ -158,7 +139,6 @@ namespace LSS_prototype
             }
             _blurredWindows.Clear();
         }
-
 
         private void StartTimeout(int seconds)
         {
@@ -190,11 +170,11 @@ namespace LSS_prototype
             _timeoutTimer.Start();
         }
 
-        public Task<MessageBoxResult> ShowAsync()
+        public async Task<MessageBoxResult> ShowAsync()
         {
             _tcs = new TaskCompletionSource<MessageBoxResult>();
             this.Show();
-            return _tcs.Task;
+            return await _tcs.Task;
         }
 
         private void OkButton_Click(object sender, RoutedEventArgs e)
@@ -215,7 +195,6 @@ namespace LSS_prototype
         private void CloseWithResult(MessageBoxResult result)
         {
             _timeoutTimer?.Stop();
-
             Result = result;
             _tcs?.TrySetResult(result);
             this.Close();
@@ -229,13 +208,12 @@ namespace LSS_prototype
             }
         }
 
-        public static MessageBoxResult Show(string message,MessageBoxType type = MessageBoxType.Ok, int autoCloseSeconds = 0, bool enableBlur = false)
+        // 정적 헬퍼 메서드
+        public static MessageBoxResult Show(string message, MessageBoxType type = MessageBoxType.Ok, int autoCloseSeconds = 0)
         {
             var win = new CustomMessageWindow(message, type, autoCloseSeconds);
             win.ShowDialog();
             return win.Result;
         }
     }
-
-
 }

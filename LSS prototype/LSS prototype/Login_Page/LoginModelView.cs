@@ -63,7 +63,7 @@ namespace LSS_prototype
                     Application.Current.Windows.OfType<Login>().FirstOrDefault()?.Close();
 
                     //  세션 모니터링 재시작
-                    App.ActivityMonitor.Start(Application.Current.MainWindow);
+                    //App.ActivityMonitor.Start(Application.Current.MainWindow);
                 }
                 else
                 {
@@ -76,14 +76,14 @@ namespace LSS_prototype
 
                     Patient patient = new Patient();
                     patient.Show();
-                    App.ActivityMonitor.Start(patient);
+                    //App.ActivityMonitor.Start(patient);
 
                     Application.Current.Windows.OfType<Login>().FirstOrDefault()?.Close();
                 }
             }
             else
             {
-                // ✅ Show() 금지: await 걸어서 command 잠금 유지
+                
                 var msg = new CustomMessageWindow(
                     "아이디 또는 비밀번호가 올바르지 않습니다.",
                     CustomMessageWindow.MessageBoxType.AutoClose,

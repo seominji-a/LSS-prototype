@@ -96,8 +96,8 @@ namespace LSS_prototype
             {
                 var confirm = CustomMessageWindow.Show(
                     $"{vm.PatientName} 환자 정보를 생성하시겠습니까?",
-                    CustomMessageWindow.MessageBoxType.YesNo,
-                    enableBlur: true); // 최종 저장 여부 확인
+                    CustomMessageWindow.MessageBoxType.YesNo
+                    ); // 최종 저장 여부 확인
 
                 if (confirm == CustomMessageWindow.MessageBoxResult.Yes) // 최종 저장 여부에 관하여 수락
                 {
@@ -151,7 +151,7 @@ namespace LSS_prototype
             }
 
             // 2. 삭제 확인 메시지
-            if (CustomMessageWindow.Show( $"{SelectedPatient.Name} 환자 정보를 삭제하시겠습니까?", CustomMessageWindow.MessageBoxType.YesNo, enableBlur: true)== CustomMessageWindow.MessageBoxResult.Yes)
+            if (CustomMessageWindow.Show( $"{SelectedPatient.Name} 환자 정보를 삭제하시겠습니까?", CustomMessageWindow.MessageBoxType.YesNo)== CustomMessageWindow.MessageBoxResult.Yes)
             {
                 var repo = new DB_Manager();
 

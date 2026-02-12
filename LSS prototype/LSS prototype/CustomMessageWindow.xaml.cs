@@ -231,7 +231,7 @@ namespace LSS_prototype
 
         public static MessageBoxResult Show(string message,MessageBoxType type = MessageBoxType.Ok, int autoCloseSeconds = 0, bool enableBlur = false)
         {
-            var win = new CustomMessageWindow(message, type, autoCloseSeconds, enableBlur);
+            var win = new CustomMessageWindow(message, type, autoCloseSeconds);
             win.ShowDialog();
             return win.Result;
         }

@@ -33,7 +33,7 @@ namespace LSS_prototype
         {
             if (PatientCode == null || PatientCode == 0)
             {
-                new CustomMessageWindow("환자 코드를 입력해주세요.").Show();
+                new CustomMessageWindow("환자 코드를 입력해주세요.", CustomMessageWindow.MessageBoxType.Ok).Show();
                 return;
             }
 

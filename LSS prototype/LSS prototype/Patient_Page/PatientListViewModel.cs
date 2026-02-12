@@ -68,9 +68,8 @@ namespace LSS_prototype
             PatientAddCommand = new RelayCommand(AddPatient);
             PatientEditCommand = new RelayCommand(EditPatient);
             PatientDeleteCommand = new RelayCommand(DeletePatient);
-            SyncClickCommand = new RelayCommand(SyncButtonClicked);
-           
-            LoadPatients(); // 최초 실행 시 환자 데이터 로드
+            SyncClickCommand = new AsyncRelayCommand(async _ => await SyncButtonClicked());
+            LoadPatients();
         }
 
         // --- 로직 처리---
@@ -164,9 +163,10 @@ namespace LSS_prototype
             }
         }
 
-        private void SyncButtonClicked()
+        private async Task SyncButtonClicked()
         {
-            new CustomMessageWindow("당일 예약된 EMR 환자 정보가 최신 상태로 업데이트되었습니다.").Show();
+            await new CustomMessageWindow("EMR 환자 정보가 최신 상태로 업데이트되었습니다.",
+                CustomMessageWindow.MessageBoxType.AutoClose,3).ShowAsync();
         }
     }
 }

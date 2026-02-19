@@ -112,32 +112,48 @@ namespace LSS_prototype
         //  모든 창에 블러 효과 적용
         private void ApplyBlurToAllWindows()
         {
-            var blurEffect = new BlurEffect
+            try
             {
-                Radius = 10  // 블러 강도
-            };
-
-            foreach (Window window in Application.Current.Windows)
-            {
-                if (window != this && window.IsVisible)
+                var blurEffect = new BlurEffect
                 {
-                    window.Effect = blurEffect;
-                    _blurredWindows.Add(window);
+                    Radius = 10  // 블러 강도
+                };
+
+                foreach (Window window in Application.Current.Windows)
+                {
+                    if (window != this && window.IsVisible)
+                    {
+                        window.Effect = blurEffect;
+                        _blurredWindows.Add(window);
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message + "ApplyBlurToAllWindows Function Check");
+            }
+            
         }
 
         //  모든 창에서 블러 효과 제거
         private void RemoveBlurFromAllWindows()
         {
-            foreach (var window in _blurredWindows)
+            try
             {
-                if (window != null)
+                foreach (var window in _blurredWindows)
                 {
-                    window.Effect = null;
+                    if (window != null)
+                    {
+                        window.Effect = null;
+                    }
                 }
+                _blurredWindows.Clear();
             }
-            _blurredWindows.Clear();
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.Message + "RemoveBlurFromAllWindows Function Check");
+            }
+            
         }
 
         private void StartTimeout(int seconds)
@@ -208,7 +224,6 @@ namespace LSS_prototype
             }
         }
 
-        // 정적 헬퍼 메서드
         public static MessageBoxResult Show(string message, MessageBoxType type = MessageBoxType.Ok, int autoCloseSeconds = 0)
         {
             var win = new CustomMessageWindow(message, type, autoCloseSeconds);

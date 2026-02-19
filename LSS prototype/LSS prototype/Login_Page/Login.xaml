@@ -5,58 +5,253 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LSS_prototype"
         mc:Ignorable="d"
-                Title="Login" Height="900" Width="1200" Background="#FFF1EBEB" ResizeMode="NoResize" Topmost="True" WindowStartupLocation="CenterScreen" WindowStyle="None">
+        Title="Login"
+        Width="960"
+        Height="720"
+        ResizeMode="NoResize"
+        Topmost="True"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent">
 
     <Window.DataContext>
         <local:LoginViewModel />
     </Window.DataContext>
 
-    <Grid Background="#FFDCD6D6">
-        <TextBlock HorizontalAlignment="Left" Margin="509,216,0,0" TextWrapping="Wrap" VerticalAlignment="Top" FontSize="60" FontWeight="Bold" FontFamily="Batang">
-            <Run Text="L"/><Run Language="ko-kr" Text="ogin"/>
-        </TextBlock>
+    <Window.Resources>
+        <!-- 고정 조건 -->
+        <SolidColorBrush x:Key="Bg" Color="#F3F5F7"/>
+        <SolidColorBrush x:Key="Primary" Color="#173753"/>
+        <SolidColorBrush x:Key="PrimaryHover" Color="#1F4767"/>
+        <SolidColorBrush x:Key="PrimaryDown" Color="#102A3F"/>
 
-        <TextBlock HorizontalAlignment="Left" Margin="307,317,0,0" TextWrapping="Wrap" VerticalAlignment="Top" FontSize="30" FontWeight="Bold" FontFamily="Batang">
-            <Run Language="ko-kr" Text="ID"/>
-        </TextBlock>
+        <!-- 설정 버튼 -->
+        <SolidColorBrush x:Key="Secondary" Color="#5F6E82"/>
+        <SolidColorBrush x:Key="SecondaryHover" Color="#516175"/>
+        <SolidColorBrush x:Key="SecondaryDown" Color="#465669"/>
 
-        <Border CornerRadius="10.5" 
-                Background="#FFFBF8F8" 
-                BorderBrush="#FFF9F0F0" 
-                BorderThickness="1"
-                HorizontalAlignment="Left" Margin="302,368,0,0" 
-                VerticalAlignment="Top" Width="584" Height="48">
-            <TextBox Text="{Binding UserId, UpdateSourceTrigger=PropertyChanged}"
-                     FontSize="30" Background="Transparent" BorderThickness="0" 
-                     VerticalContentAlignment="Center" TextAlignment="Center" FontFamily="Batang"/>
-        </Border>
+        <SolidColorBrush x:Key="TextDark" Color="#1E293B"/>
+        <SolidColorBrush x:Key="TextMuted" Color="#64748B"/>
 
-        <TextBlock HorizontalAlignment="Left" Margin="307,459,0,0" TextWrapping="Wrap" VerticalAlignment="Top" FontSize="30" FontWeight="Bold" FontFamily="Batang">
-            <Run Text="P"/><Run Language="ko-kr" Text="assword"/>
-        </TextBlock>
+        <SolidColorBrush x:Key="InputBg" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="InputBorder" Color="#D6DEE8"/>
 
-        <Border CornerRadius="10.5" 
-                Background="#FFFBF8F8" 
-                BorderBrush="#FFF7F2F2" 
-                BorderThickness="1"
-                HorizontalAlignment="Left" Margin="302,499,0,0" 
-                VerticalAlignment="Top" Width="584" Height="48">
-            <PasswordBox x:Name="txtPassword"
-                         FontSize="30" Background="Transparent" BorderThickness="0" 
-                         VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
-        </Border>
+        <!-- 공통 입력 박스 Border 스타일 -->
+        <Style x:Key="InputBoxBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource InputBg}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource InputBorder}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Height" Value="64"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
 
-        <Button Command="{Binding LoginCommand}"
-                CommandParameter="{Binding ElementName=txtPassword}"
-                HorizontalAlignment="Left" Margin="303,613,0,0" 
-                VerticalAlignment="Top" Height="70" Width="584" 
-                BorderBrush="{x:Null}" FontSize="25" Background="#FF4E4747" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10"/>
-                </Style>
-            </Button.Resources>
-            <TextBlock Text="SIGN IN" TextAlignment="Center" FontFamily="Batang"/>
-        </Button>
-    </Grid>
+        <!-- Primary Button (로그인) -->
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource Primary}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="FontFamily" Value="Arial"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Height" Value="64"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="12"
+                                Padding="18,10">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource PrimaryHover}"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="{StaticResource PrimaryDown}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Secondary Button (설정) -->
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource Secondary}"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource SecondaryHover}"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="{StaticResource SecondaryDown}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 체크박스 -->
+        <Style x:Key="SimpleCheckBoxStyle" TargetType="CheckBox">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontFamily" Value="Arial"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </Window.Resources>
+
+    <Border Background="{StaticResource Bg}"
+            CornerRadius="16"
+            SnapsToDevicePixels="True">
+
+        <Grid>
+            <!-- 우측 상단 EXIT 버튼 -->
+            <Button Content="EXIT"
+        Width="90"
+        Height="36"
+        HorizontalAlignment="Right"
+        VerticalAlignment="Top"
+        Margin="0,20,20,0"
+        Background="Transparent"
+        Foreground="#94A3B8"
+        FontSize="30"
+        FontWeight="Bold"
+        BorderThickness="0"
+        FontFamily="Arial"
+        Cursor="Hand" Click="Button_Click">
+                <Button.Style>
+                    <Style TargetType="Button" >
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}">
+                                        <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="#EF4444"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+
+            <!-- 가운데 콘텐츠 영역 -->
+            <Grid HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  Width="720">
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="26"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="18"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="22"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="16"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- 타이틀 -->
+                <StackPanel Grid.Row="0" HorizontalAlignment="Center">
+                    <TextBlock Text="LOGIN"
+                               FontSize="72"
+                               FontWeight="Bold"
+                               FontFamily="Arial"
+                               Foreground="{StaticResource Primary}"
+                               HorizontalAlignment="Center"/>
+                    <Border Height="4"
+                            Width="140"
+                            Background="{StaticResource Primary}"
+                            CornerRadius="2"
+                            HorizontalAlignment="Center"
+                            Margin="0,18,0,0"/>
+                    <TextBlock Text="(주)에스원바이오 LSS"
+                               FontSize="18"
+                               FontFamily="Arial"
+                               Foreground="#94A3B8"
+                               HorizontalAlignment="Center"
+                               Margin="0,14,0,0"/>
+                </StackPanel>
+
+                <!-- ID -->
+                <StackPanel Grid.Row="2">
+                    <TextBlock Text="ID"
+                               FontSize="18"
+                               FontFamily="Arial"
+                               Foreground="{StaticResource TextMuted}"
+                               FontWeight="SemiBold"
+                               Margin="2,0,0,10"/>
+                    <Border Style="{StaticResource InputBoxBorderStyle}">
+                        <TextBox Text="{Binding UserId, UpdateSourceTrigger=PropertyChanged}"
+                                 FontSize="24"
+                                 FontFamily="Arial"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 VerticalContentAlignment="Center"
+                                 Padding="18,0"
+                                 Foreground="{StaticResource TextDark}"/>
+                    </Border>
+                </StackPanel>
+
+                <!-- PASSWORD -->
+                <StackPanel Grid.Row="4">
+                    <TextBlock Text="PASSWORD"
+                               FontSize="18"
+                               FontFamily="Arial"
+                               Foreground="{StaticResource TextMuted}"
+                               FontWeight="SemiBold"
+                               Margin="2,0,0,10"/>
+                    <Border Style="{StaticResource InputBoxBorderStyle}">
+                        <PasswordBox x:Name="txtPassword"
+                                     FontSize="24"
+                                     FontFamily="Arial"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     VerticalContentAlignment="Center"
+                                     Padding="18,0"
+                                     Foreground="{StaticResource TextDark}"/>
+                    </Border>
+                </StackPanel>
+
+                <!-- 체크박스 -->
+                <Grid Grid.Row="6">
+                    <CheckBox Content="유저 관리 모드"
+                              HorizontalAlignment="Right"
+                              Style="{StaticResource SimpleCheckBoxStyle}"/>
+                </Grid>
+
+                <!-- 버튼 -->
+                <Grid Grid.Row="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="160"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Command="{Binding LoginCommand}"
+                            CommandParameter="{Binding ElementName=txtPassword}">
+                        <TextBlock Text="로그인"/>
+                    </Button>
+
+                    <Button Grid.Column="2"
+                            x:Name="SettingsButton"
+                            Style="{StaticResource SecondaryButtonStyle}">
+                        <TextBlock Text="설정"/>
+                    </Button>
+                </Grid>
+
+            </Grid>
+        </Grid>
+
+    </Border>
 </Window>

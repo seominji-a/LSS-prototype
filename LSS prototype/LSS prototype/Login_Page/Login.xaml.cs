@@ -26,5 +26,10 @@ namespace LSS_prototype
             var db = new DB_Manager();
             db.InitDB();
         }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
+        }
     }
 }

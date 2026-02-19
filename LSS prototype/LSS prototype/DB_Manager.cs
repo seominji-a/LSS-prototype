@@ -127,8 +127,9 @@ namespace LSS_prototype
         /// <returns>로그인 성공 여부 (true: 성공, false: 실패)</returns>
         public bool Login_check(string loginId, string password, out string roleCode)
         {
-            roleCode = null; // 
+            roleCode = null; 
             // using 문을 사용하여 DB 연결 자동 해제 
+            
             using (SQLiteConnection conn = new SQLiteConnection("Data Source=" + Common.DB_PATH))
             {
                 conn.Open();
@@ -167,6 +168,7 @@ namespace LSS_prototype
                     }
                 }
             }
+            
         }
         #endregion
 
@@ -181,6 +183,7 @@ namespace LSS_prototype
         /// <returns>비밀번호 일치 여부 (true: 일치, false: 불일치)</returns>
         private static bool VerifyPassword(string inputPassword, string storedHash, string storedSalt)
         {
+            
             // 1. 입력받은 비밀번호를 DB의 솔트값으로 해싱
             string inputHash = GenerateHash(inputPassword, storedSalt);
             // 2. 생성된 해시값과 DB의 해시값 비교
@@ -317,53 +320,37 @@ namespace LSS_prototype
         #region [ 환자 수정 담당부 ]
         public bool UpdatePatient(PatientEditViewModel vm)
         {
-            try
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
             {
-                using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+                conn.Open();
+
+                using (var cmd = new SQLiteCommand(Query.EDIT_PATIENT, conn))
                 {
-                    conn.Open();
+                    cmd.Parameters.AddWithValue("@Patient_id", vm.Patient_id);
+                    cmd.Parameters.AddWithValue("@PatientName", vm.PatientName);
+                    cmd.Parameters.AddWithValue("@PatientCode", vm.PatientCode);
+                    cmd.Parameters.AddWithValue("@BirthDate", vm.BirthDate.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+                    cmd.Parameters.AddWithValue("@Sex", vm.Sex);
 
-                    using (var cmd = new SQLiteCommand(Query.EDIT_PATIENT, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@Patient_id", vm.Patient_id);
-                        cmd.Parameters.AddWithValue("@PatientName", vm.PatientName);
-                        cmd.Parameters.AddWithValue("@PatientCode", vm.PatientCode);
-                        cmd.Parameters.AddWithValue("@BirthDate", vm.BirthDate.Value.ToString("yyyy-MM-dd HH:mm:ss"));
-                        cmd.Parameters.AddWithValue("@Sex", vm.Sex);
-
-                        return cmd.ExecuteNonQuery() > 0;
-                    }
+                    return cmd.ExecuteNonQuery() > 0;
                 }
-            }
-            catch (Exception ex)
-            {
-                new CustomMessageWindow($"DB 수정 오류 {ex.Message}").Show();
-                return false;
-            }
+            } 
         }
         #endregion
 
         #region [ 환자 삭제 담당부 ]
         public bool DeletePatient(int patientId)
         {
-            try
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
             {
-                using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.DELETE_PATIENT, conn))
                 {
-                    conn.Open();
-                    using (var cmd = new SQLiteCommand(Query.DELETE_PATIENT, conn))
-                    {
-                        // 고유 ID만 있으면 삭제가 가능합니다.
-                        cmd.Parameters.AddWithValue("@Patient_id", patientId);
+                    // 고유 ID만 있으면 삭제가 가능합니다.
+                    cmd.Parameters.AddWithValue("@Patient_id", patientId);
 
-                        return cmd.ExecuteNonQuery() > 0;
-                    }
+                    return cmd.ExecuteNonQuery() > 0;
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"DB 삭제 오류: {ex.Message}");
-                return false;
             }
         }
         #endregion

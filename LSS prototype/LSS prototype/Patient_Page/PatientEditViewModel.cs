@@ -49,14 +49,20 @@ namespace LSS_prototype
 
         private void UpdatePatient()
         {
-            var repo = new DB_Manager();
-            // DB_Manager의 업데이트 메서드 호출
-            if (repo.UpdatePatient(this))
+            try
             {
-                new CustomMessageWindow("수정되었습니다.").Show();
-                CloseAction?.Invoke(true); // 성공 결과와 함께 창 닫기
+                var repo = new DB_Manager();
+                // DB_Manager의 업데이트 메서드 호출
+                if (repo.UpdatePatient(this))
+                {
+                    new CustomMessageWindow("수정되었습니다.").Show();
+                    CloseAction?.Invoke(true); // 성공 결과와 함께 창 닫기
+                }
             }
-        
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.Message + "UpdatePatient Function Check");
+            }
         }
 
         private void Cancel()

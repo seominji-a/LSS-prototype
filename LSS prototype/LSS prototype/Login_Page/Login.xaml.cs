@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Data.SQLite;
+using LSS_prototype.DB_CRUD;
 
 namespace LSS_prototype
 {

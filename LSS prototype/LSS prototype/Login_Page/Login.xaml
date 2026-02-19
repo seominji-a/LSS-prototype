@@ -93,13 +93,97 @@
             </Style.Triggers>
         </Style>
 
-        <!-- 체크박스 -->
+        <!-- ✅ 체크박스(터치 UX 개선 버전) : 기존코드 유지 + 체크박스만 개선 -->
+        <!-- ✅ 체크박스(터치 UX 개선 + 체크표시 안정화 버전) -->
         <Style x:Key="SimpleCheckBoxStyle" TargetType="CheckBox">
-            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="MinHeight" Value="64"/>
+            <Setter Property="MinWidth" Value="220"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="FontSize" Value="22"/>
             <Setter Property="FontFamily" Value="Arial"/>
-            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextDark}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Border x:Name="Root"
+                        CornerRadius="14"
+                        Background="Transparent"
+                        BorderBrush="{StaticResource InputBorder}"
+                        BorderThickness="2"
+                        Padding="{TemplateBinding Padding}"
+                        SnapsToDevicePixels="True">
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="44"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- 큰 체크 박스 -->
+                                <Border x:Name="Box"
+                                Width="40"
+                                Height="40"
+                                CornerRadius="10"
+                                Background="White"
+                                BorderBrush="{StaticResource InputBorder}"
+                                BorderThickness="2"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Left"
+                                SnapsToDevicePixels="True">
+
+                                    <!-- ✅ Viewbox로 체크마크를 박스에 맞춰 자동 스케일 -->
+                                    <Viewbox x:Name="CheckHost"
+                                     Visibility="Collapsed"
+                                     Stretch="Uniform"
+                                     Margin="6">
+                                        <Path Data="M 0 6 L 4 10 L 12 2"
+                                      Stroke="White"
+                                      StrokeThickness="2.5"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"/>
+                                    </Viewbox>
+                                </Border>
+
+                                <!-- 라벨 -->
+                                <ContentPresenter Grid.Column="2"
+                                          VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <!-- 체크됨 -->
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Box" Property="Background" Value="{StaticResource Primary}"/>
+                                <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource Primary}"/>
+                                <Setter TargetName="CheckHost" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="Root" Property="Background" Value="#0F173753"/>
+                            </Trigger>
+
+                            <!-- 오버 -->
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#0A173753"/>
+                            </Trigger>
+
+                            <!-- 눌림 -->
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#14173753"/>
+                            </Trigger>
+
+                            <!-- 비활성 -->
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
+
     </Window.Resources>
 
     <Border Background="{StaticResource Bg}"
@@ -107,28 +191,29 @@
             SnapsToDevicePixels="True">
 
         <Grid>
-            <!-- 우측 상단 EXIT 버튼 -->
+            <!-- ✅ 우측 하단 EXIT 버튼 -->
             <Button Content="EXIT"
-        Width="90"
-        Height="36"
-        HorizontalAlignment="Right"
-        VerticalAlignment="Top"
-        Margin="0,20,20,0"
-        Background="Transparent"
-        Foreground="#94A3B8"
-        FontSize="30"
-        FontWeight="Bold"
-        BorderThickness="0"
-        FontFamily="Arial"
-        Cursor="Hand" Click="Button_Click">
+                    Width="90"
+                    Height="36"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    Margin="0,0,20,20"
+                    Background="Transparent"
+                    Foreground="#94A3B8"
+                    FontSize="30"
+                    FontWeight="Bold"
+                    BorderThickness="0"
+                    FontFamily="Arial"
+                    Cursor="Hand"
+                    Click="Button_Click">
                 <Button.Style>
-                    <Style TargetType="Button" >
+                    <Style TargetType="Button">
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="Button">
                                     <Border Background="{TemplateBinding Background}">
                                         <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
+                                                          VerticalAlignment="Center"/>
                                     </Border>
                                 </ControlTemplate>
                             </Setter.Value>
@@ -173,7 +258,7 @@
                             CornerRadius="2"
                             HorizontalAlignment="Center"
                             Margin="0,18,0,0"/>
-                    <TextBlock Text="(주)에스원바이오 LSS"
+                    <TextBlock Text="(주)에스원바이오 LS"
                                FontSize="18"
                                FontFamily="Arial"
                                Foreground="#94A3B8"

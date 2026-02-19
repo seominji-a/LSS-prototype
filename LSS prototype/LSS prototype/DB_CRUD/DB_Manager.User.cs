@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LSS_prototype.User_Page;
+using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Linq;
@@ -155,6 +156,33 @@ namespace LSS_prototype.DB_CRUD
                     return isSuccess;
                 }
             }
+        }
+
+        public List<UserModel> GetAllUsers()
+        {
+            List<UserModel> list = new List<UserModel>();
+            using (var conn = new SQLiteConnection("Data Source=" + Common.DB_PATH))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.SELECT_USERLIST, conn))
+                {
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            list.Add(new UserModel
+                            {
+                                UserId = Convert.ToInt32(reader["USER_ID"]),
+                                Name = reader["USER_NAME"].ToString(),
+                                UserCode = reader["LOGIN_ID"].ToString(),
+                                Role = reader["USER_ROLE"].ToString(),
+                                Department = reader["ROLE_CODE"].ToString()
+                            });
+                        }
+                    }
+                }
+            }
+            return list;
         }
 
         #endregion

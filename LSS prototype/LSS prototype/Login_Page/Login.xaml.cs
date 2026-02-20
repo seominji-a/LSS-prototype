@@ -14,7 +14,7 @@ using System.Windows.Shapes;
 using System.Data.SQLite;
 using LSS_prototype.DB_CRUD;
 
-namespace LSS_prototype
+namespace LSS_prototype.Login_Page
 {
     /// <summary>
     /// Login.xaml에 대한 상호 작용 논리

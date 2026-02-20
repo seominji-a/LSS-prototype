@@ -7,7 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace LSS_prototype
+namespace LSS_prototype.Patient_Page
 {
     public class PatientAddViewModel
     {

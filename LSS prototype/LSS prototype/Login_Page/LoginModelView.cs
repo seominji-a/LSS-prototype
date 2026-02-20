@@ -1,5 +1,6 @@
 ﻿using LSS_prototype.Auth;
 using LSS_prototype.DB_CRUD;
+using LSS_prototype.Patient_Page;
 using System;
 using System.ComponentModel;
 using System.Linq;
@@ -9,7 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace LSS_prototype
+namespace LSS_prototype.Login_Page
 {
     public class LoginViewModel : INotifyPropertyChanged
     {

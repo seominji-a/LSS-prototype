@@ -1,4 +1,4 @@
-﻿<Window x:Class="LSS_prototype.Patient"
+﻿<Window x:Class="LSS_prototype.Patient_Page.Patient"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="PATIENT" Height="1080" Width="1920"

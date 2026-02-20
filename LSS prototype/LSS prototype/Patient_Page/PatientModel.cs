@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LSS_prototype
+namespace LSS_prototype.Patient_Page
 {
     public class PatientModel
     {

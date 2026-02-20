@@ -1,4 +1,5 @@
 ﻿using LSS_prototype.DB_CRUD;
+using LSS_prototype.Patient_Page;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -11,7 +12,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
-namespace LSS_prototype
+namespace LSS_prototype.Patient_Page
 {
     public class PatientEditViewModel : INotifyPropertyChanged
     {

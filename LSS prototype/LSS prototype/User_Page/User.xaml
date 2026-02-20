@@ -1,4 +1,4 @@
-﻿<Window x:Class="LSS_prototype.User"
+﻿<Window x:Class="LSS_prototype.User_Page.User"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -54,12 +54,13 @@
             <Setter Property="Foreground" Value="White"/>
         </Style>
 
-        <!-- 사이드 섹션 라벨 -->
+        <!-- 사이드 섹션 라벨 : 흰색, 중앙정렬, 폰트 업 -->
         <Style x:Key="SectionLabel" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#4A7FA5"/>
-            <Setter Property="FontSize"   Value="11"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Margin"     Value="4,0,0,8"/>
+            <Setter Property="Foreground"        Value="White"/>
+            <Setter Property="FontSize"          Value="13"/>
+            <Setter Property="FontWeight"        Value="Bold"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Margin"            Value="0,0,0,14"/>
         </Style>
 
         <!-- 컬럼 헤더 기본 (중간 컬럼 - 라운딩 없음) -->
@@ -291,19 +292,16 @@
                           HorizontalContentAlignment="Stretch"
                           >
 
-                    <!-- 커스텀 템플릿 : 배경 라운딩 + 헤더 명시적 포함 -->
                     <ListView.Template>
                         <ControlTemplate TargetType="ListView">
                             <Border Background="{StaticResource CardOuter}"
                                     CornerRadius="10"
                                     ClipToBounds="True">
                                 <DockPanel>
-                                    <!-- 헤더 명시적 선언 (Template 커스텀 시 필수) -->
                                     <GridViewHeaderRowPresenter
                                         DockPanel.Dock="Top"
                                         Columns="{Binding View.Columns, RelativeSource={RelativeSource TemplatedParent}}"
                                         ColumnHeaderContainerStyle="{Binding View.ColumnHeaderContainerStyle, RelativeSource={RelativeSource TemplatedParent}}"/>
-                                    <!-- 리스트 본문 -->
                                     <ScrollViewer ScrollViewer.VerticalScrollBarVisibility="Auto"
                                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                                         <ItemsPresenter Margin="0,8,0,10"/>
@@ -315,7 +313,6 @@
 
                     <ListView.View>
                         <GridView AllowsColumnReorder="False">
-                            <!-- 합계: 560+320+240+468 = 1588px -->
                             <GridViewColumn Header="USER NAME" Width="560"
                                             HeaderContainerStyle="{StaticResource ColumnHeaderFirst}"
                                             CellTemplate="{StaticResource NameCellTemplate}"/>
@@ -342,9 +339,9 @@
 
                 <!-- 하단 고정 : Home + EXIT -->
                 <StackPanel DockPanel.Dock="Bottom">
-                    <Border Height="1" Background="#244A66" Margin="0,0,0,14"/>
+                    <Border Height="1" Background="#244A66" Margin="0,0,0,16"/>
                     <Button Style="{StaticResource NavBtn}" Content="Home" Margin="0,0,0,10" Click="Home_Click"/>
-                    <Button Style="{StaticResource ExitBtn}"               Content="EXIT"    Click="Exit_Click"/>
+                    <Button Style="{StaticResource ExitBtn}" Content="EXIT" Click="Exit_Click"/>
                 </StackPanel>
 
                 <!-- 스크롤 영역 -->
@@ -352,7 +349,7 @@
                     <StackPanel>
 
                         <!-- 로고 -->
-                        <StackPanel HorizontalAlignment="Center" Margin="0,0,0,28">
+                        <StackPanel HorizontalAlignment="Center" Margin="0,0,0,36">
                             <TextBlock Text="LSS" FontSize="28" FontWeight="Bold"
                                        Foreground="White" HorizontalAlignment="Center"/>
                             <Border Height="2" Width="44" Background="#2A6496"
@@ -361,27 +358,30 @@
 
                         <!-- ① USER MANAGEMENT -->
                         <TextBlock Text="USER MANAGEMENT" Style="{StaticResource SectionLabel}"/>
-                        <Button Style="{StaticResource NavBtn}" Command="{Binding AddUserCommand}"    Content="Add User"    Margin="0,0,0,10"/>
-                        <Button Style="{StaticResource NavBtn}" Command="{Binding EditUserCommand}"   Content="Edit User"   Margin="0,0,0,10"/>
-                        <Button Style="{StaticResource NavBtn}" Command="{Binding DeleteUserCommand}" Content="Delete User" Margin="0,0,0,24"/>
+                        <Button Style="{StaticResource NavBtn}" Command="{Binding AddUserCommand}"
+                                Content="Add User"    Margin="0,0,0,12"/>
+                        <Button Style="{StaticResource NavBtn}" Command="{Binding EditUserCommand}"
+                                Content="Edit User"   Margin="0,0,0,12"/>
+                        <Button Style="{StaticResource NavBtn}" Command="{Binding DeleteUserCommand}"
+                                Content="Delete User" Margin="0,0,0,0"/>
 
-                        <Border Height="1" Background="#1E3F58" Margin="0,0,0,24"/>
+                        <Border Height="1" Background="#1E3F58" Margin="0,28,0,28"/>
 
                         <!-- ② ADMIN PRIVILEGES -->
                         <TextBlock Text="ADMIN PRIVILEGES" Style="{StaticResource SectionLabel}"/>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
-                            <Button Style="{StaticResource HalfBtn}" Command="{Binding DelegateCommand}" Content="Delegate" Margin="0,0,7,0"/>
-                            <Button Style="{StaticResource HalfBtn}" Command="{Binding DismissCommand}"  Content="Dismiss"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,12">
+                            <Button Style="{StaticResource HalfBtn}" Command="{Binding DelegateCommand}"
+                                    Content="Delegate" Margin="0,0,7,0"/>
+                            <Button Style="{StaticResource HalfBtn}" Command="{Binding DismissCommand}"
+                                    Content="Dismiss"/>
                         </StackPanel>
-                        <Button Style="{StaticResource NavBtn}" Command="{Binding EditAdminCommand}" Content="Edit Admin" Margin="0,0,0,24"/>
 
-                        <Border Height="1" Background="#1E3F58" Margin="0,0,0,24"/>
+                        <Border Height="1" Background="#1E3F58" Margin="0,28,0,28"/>
 
                         <!-- ③ SYSTEM SETTINGS -->
                         <TextBlock Text="SYSTEM SETTINGS" Style="{StaticResource SectionLabel}"/>
-                        <Button Style="{StaticResource NavBtn}" Command="{Binding HospitalNameCommand}" Content="Hospital Name" Margin="0,0,0,10"/>
-                        <Button Style="{StaticResource NavBtn}" Command="{Binding CStoreSetupCommand}"  Content="C-STORE Setup" Margin="0,0,0,10"/>
-                        <Button Style="{StaticResource NavBtn}" Command="{Binding MwlSetupCommand}"     Content="MWL Setup"     Margin="0,0,0,8"/>
+                        <Button Style="{StaticResource NavBtn}" Command="{Binding SettingCommand}"
+                                Content="SETTINGS" Margin="0,0,0,0"/>
 
                     </StackPanel>
                 </ScrollViewer>

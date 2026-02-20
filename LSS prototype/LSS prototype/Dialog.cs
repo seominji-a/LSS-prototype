@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LSS_prototype.User_Page;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,6 +12,7 @@ namespace LSS_prototype
     public interface IDialogService
     {
         bool? ShowDialog(object viewModel);
+        void ShowSetting();  
     }
     internal class Dialog : IDialogService
     {
@@ -52,6 +54,12 @@ namespace LSS_prototype
 
             window.DataContext = viewModel;
             return window.ShowDialog();
+        }
+        public void ShowSetting()  
+        {
+            var window = new setting();
+            window.Owner = Application.Current.MainWindow;
+            window.ShowDialog();
         }
     }
 }

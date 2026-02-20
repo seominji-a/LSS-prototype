@@ -2,7 +2,7 @@
 using System.Windows;
 
 
-namespace LSS_prototype
+namespace LSS_prototype.User_Page
 {
     /// <summary>
     /// User.xaml에 대한 상호 작용 논리

@@ -20,6 +20,7 @@ namespace LSS_prototype.User_Page
     public class UserViewModel : INotifyPropertyChanged
     {
         public ICommand AddUserCommand { get; }
+        public ICommand SettingCommand { get; }
         private readonly IDialogService _dialogService;
 
         private ObservableCollection<UserModel> _users = new ObservableCollection<UserModel>();
@@ -48,6 +49,7 @@ namespace LSS_prototype.User_Page
         {
             _dialogService = new Dialog();
             AddUserCommand = new RelayCommand(ExecuteAddUser);
+            SettingCommand = new RelayCommand(ExecuteOpenSetting); 
 
             LoadUsers();
         }
@@ -75,6 +77,10 @@ namespace LSS_prototype.User_Page
 
             if (result == true)
                 LoadUsers();
+        }
+        private void ExecuteOpenSetting(object parameter)  
+        {
+            _dialogService.ShowSetting();
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

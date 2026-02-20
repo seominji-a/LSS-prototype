@@ -118,7 +118,7 @@ namespace LSS_prototype.Auth
             }
             catch(Exception ex)
             {
-                Console.WriteLine("세션 닫기문제 발생");
+                Console.WriteLine(ex.Message + " 세션 닫기문제 발생");
                 throw; // 세션관련된 기능이 동작하지않으면 치명적이므로 테스트기간동안 throw 처리 
             }
             

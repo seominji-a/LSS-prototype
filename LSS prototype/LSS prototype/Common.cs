@@ -18,7 +18,7 @@ namespace LSS_prototype
         public const string DB_INIT_PATH = "../../../DB/db_init.sql"; // 초기 DB 테이블 생성 파일 경로 
         public const string DB_SEED_PATH = "../../../DB/seed.sql"; // 초기 DB 테이블 데이터 생성 경로 
 
-        public const int DB_VERSION = 29; // DB Version 
+        public const int DB_VERSION = 33; // DB Version 
 
     }
 
@@ -35,8 +35,9 @@ namespace LSS_prototype
         public const string INSERT_ADD_USER = "INSERT INTO USER(LOGIN_ID, PASSWORD_HASH,PASSWORD_SALT, USER_NAME, USER_ROLE, DEVICE_ID, ROLE_CODE)" +
                                               " VALUES (@loginId, @hash, @salt, @userName, @userRole, @device_id, @role_code)"; // 사용자 추가
         public const string EDIT_PATIENT = "UPDATE PATIENT SET PATIENT_NAME = @PatientName, PATIENT_CODE= @PatientCode, BIRTH_DATE = @BirthDate, SEX = @Sex WHERE PATIENT_ID = @Patient_id";
-        public const string SELECT_PATIENTLIST = "SELECT * FROM PATIENT";
+        public const string SELECT_PATIENTLIST = "SELECT * FROM PATIENT ORDER BY REG_DATE DESC"; // 최신순 데이터 
         public const string DELETE_PATIENT = "DELETE FROM PATIENT WHERE PATIENT_ID = @Patient_id";
+        public const string SELECT_USERLIST = "SELECT USER_ID, USER_NAME, LOGIN_ID, USER_ROLE, ROLE_CODE FROM USER ORDER BY USER_ID ASC"; // 유저조회 쿼리문 
 
 
     }
@@ -72,7 +73,6 @@ namespace LSS_prototype
             }
         }
 
-        //  WPF가 재평가할 필요 없음 (항상 true니까)
         public event EventHandler CanExecuteChanged
         {
             add { }

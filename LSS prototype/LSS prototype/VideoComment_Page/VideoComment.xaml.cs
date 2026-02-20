@@ -12,14 +12,14 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace LSS_prototype
+namespace LSS_prototype.VideoComment_Page
 {
     /// <summary>
-    /// Registered_Patient.xaml에 대한 상호 작용 논리
+    /// VideoComment.xaml에 대한 상호 작용 논리
     /// </summary>
-    public partial class Registered_Patient : Window
+    public partial class VideoComment : Window
     {
-        public Registered_Patient()
+        public VideoComment()
         {
             InitializeComponent();
         }

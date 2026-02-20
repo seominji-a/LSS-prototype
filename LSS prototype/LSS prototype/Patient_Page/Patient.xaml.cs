@@ -51,5 +51,10 @@ namespace LSS_prototype
             win.Show();//user 화면으로 전환
             this.Close();
         }
+
+        private void Exit_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

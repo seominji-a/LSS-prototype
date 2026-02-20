@@ -5,97 +5,387 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LSS_prototype"
         mc:Ignorable="d"
-        Title="Scan" Height="1080" Width="1920" WindowState="Maximized" ResizeMode="NoResize" Topmost="True" WindowStyle="None"    
-        >
+        Title="USER" Height="1080" Width="1920"
+        WindowState="Maximized" WindowStyle="None" ResizeMode="NoResize"
+        FontFamily="Arial" Background="#F3F5F7">
+
+    <Window.Resources>
+        <!-- 색상 팔레트 -->
+        <SolidColorBrush x:Key="Primary"     Color="#173753"/>
+        <SolidColorBrush x:Key="PrimaryFade" Color="#3B82F6"/>
+        <SolidColorBrush x:Key="Surface"     Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="CardOuter"   Color="#E9ECF0"/>
+        <SolidColorBrush x:Key="Border"      Color="#D6DEE8"/>
+        <SolidColorBrush x:Key="TextDark"    Color="#1E293B"/>
+        <SolidColorBrush x:Key="TextMid"     Color="#475569"/>
+        <SolidColorBrush x:Key="TextMuted"   Color="#94A3B8"/>
+        <SolidColorBrush x:Key="Panel"       Color="#0F2637"/>
+
+        <!-- 기본 버튼 -->
+        <Style x:Key="NavBtn" TargetType="Button">
+            <Setter Property="Background"      Value="{StaticResource Surface}"/>
+            <Setter Property="Foreground"      Value="{StaticResource Primary}"/>
+            <Setter Property="FontSize"        Value="18"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Height"          Value="62"/>
+            <Setter Property="Width"           Value="228"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 절반 너비 버튼 -->
+        <Style x:Key="HalfBtn" TargetType="Button" BasedOn="{StaticResource NavBtn}">
+            <Setter Property="Width"  Value="107"/>
+            <Setter Property="Height" Value="62"/>
+        </Style>
+
+        <!-- EXIT 버튼 -->
+        <Style x:Key="ExitBtn" TargetType="Button" BasedOn="{StaticResource NavBtn}">
+            <Setter Property="Background" Value="#111827"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <!-- 사이드 섹션 라벨 -->
+        <Style x:Key="SectionLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#4A7FA5"/>
+            <Setter Property="FontSize"   Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin"     Value="4,0,0,8"/>
+        </Style>
+
+        <!-- 컬럼 헤더 기본 (중간 컬럼 - 라운딩 없음) -->
+        <Style x:Key="ColumnHeader" TargetType="GridViewColumnHeader">
+            <Setter Property="Background"      Value="{StaticResource Primary}"/>
+            <Setter Property="Foreground"      Value="#E2E8F0"/>
+            <Setter Property="FontSize"        Value="15"/>
+            <Setter Property="FontWeight"      Value="Bold"/>
+            <Setter Property="Height"          Value="50"/>
+            <Setter Property="Padding"         Value="14,0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="GridViewColumnHeader">
+                        <Border Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}"
+                                CornerRadius="0">
+                            <TextBlock Text="{TemplateBinding Content}"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       FontSize="{TemplateBinding FontSize}"
+                                       FontWeight="{TemplateBinding FontWeight}"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#1E4D6B"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#0F3248"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 첫 번째 컬럼 헤더 : 왼쪽 위만 라운딩 -->
+        <Style x:Key="ColumnHeaderFirst" TargetType="GridViewColumnHeader" BasedOn="{StaticResource ColumnHeader}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="GridViewColumnHeader">
+                        <Border Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}"
+                                CornerRadius="10,0,0,0">
+                            <TextBlock Text="{TemplateBinding Content}"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       FontSize="{TemplateBinding FontSize}"
+                                       FontWeight="{TemplateBinding FontWeight}"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 마지막 컬럼 헤더 : 오른쪽 위만 라운딩 -->
+        <Style x:Key="ColumnHeaderLast" TargetType="GridViewColumnHeader" BasedOn="{StaticResource ColumnHeader}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="GridViewColumnHeader">
+                        <Border Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}"
+                                CornerRadius="0,10,0,0">
+                            <TextBlock Text="{TemplateBinding Content}"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       FontSize="{TemplateBinding FontSize}"
+                                       FontWeight="{TemplateBinding FontWeight}"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 리스트 행 스타일 -->
+        <Style x:Key="RowItem" TargetType="ListViewItem">
+            <Setter Property="Margin"           Value="0,0,0,8"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Cursor"           Value="Hand"/>
+            <Setter Property="Height"           Value="76"/>
+            <Setter Property="Foreground"       Value="{StaticResource TextDark}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListViewItem">
+                        <Border x:Name="RowBorder"
+                                Background="{StaticResource Surface}"
+                                BorderBrush="{StaticResource Border}"
+                                BorderThickness="1.5"
+                                CornerRadius="10"
+                                Margin="10,0"
+                                Padding="0">
+                            <GridViewRowPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="RowBorder" Property="Background"  Value="#1E3A5F"/>
+                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{StaticResource Primary}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{StaticResource PrimaryFade}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- USER NAME 셀 -->
+        <DataTemplate x:Key="NameCellTemplate">
+            <TextBlock Text="{Binding Name}"
+                       FontSize="22" FontWeight="Bold" Margin="14,0"
+                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListViewItem}}"
+                       VerticalAlignment="Center"/>
+        </DataTemplate>
+
+        <!-- LOGIN ID 셀 -->
+        <DataTemplate x:Key="UserCodeCellTemplate">
+            <TextBlock Text="{Binding UserCode}"
+                       FontSize="18" Margin="14,0"
+                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListViewItem}}"
+                       VerticalAlignment="Center"/>
+        </DataTemplate>
+
+        <!-- ROLE CODE 셀 -->
+        <DataTemplate x:Key="DeptCellTemplate">
+            <TextBlock Text="{Binding Department}"
+                       FontSize="18" Margin="14,0"
+                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListViewItem}}"
+                       VerticalAlignment="Center"/>
+        </DataTemplate>
+
+        <!-- ROLE 배지 셀 : ADMIN=빨강, 나머지=파랑 -->
+        <DataTemplate x:Key="RoleCellTemplate">
+            <Border x:Name="RoleBadge"
+                    Background="#EFF6FF" BorderBrush="#BFDBFE"
+                    BorderThickness="1" CornerRadius="6"
+                    Padding="12,5" Margin="14,0"
+                    HorizontalAlignment="Left" VerticalAlignment="Center">
+                <TextBlock x:Name="TxtRole"
+                           Text="{Binding Role}"
+                           FontSize="15" FontWeight="SemiBold"
+                           Foreground="#1D4ED8"/>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Role}" Value="ADMIN">
+                    <Setter TargetName="RoleBadge" Property="Background"  Value="#FEE2E2"/>
+                    <Setter TargetName="RoleBadge" Property="BorderBrush" Value="#FCA5A5"/>
+                    <Setter TargetName="TxtRole"   Property="Foreground"  Value="#B91C1C"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+    </Window.Resources>
+
     <Grid>
-        <Button Content="Add USER" HorizontalAlignment="Left" Margin="1678,283,0,0" VerticalAlignment="Top" 
-                Height="83" Width="232" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold"
-                Command="{Binding AddUserCommand}">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Button Content="Edit USER" HorizontalAlignment="Left" Margin="1678,381,0,0" VerticalAlignment="Top" Height="83" Width="232" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Button Content="Delete USER" HorizontalAlignment="Left" Margin="1678,478,0,0" VerticalAlignment="Top" Height="83" Width="232" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Button Content="Hospital Name" HorizontalAlignment="Left" Margin="1678,578,0,0" VerticalAlignment="Top" Height="83" Width="232" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Button Content="C-STORE Setup" HorizontalAlignment="Left" Margin="1678,679,0,0" VerticalAlignment="Top" Height="83" Width="232" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Button Content="MWL Setup" HorizontalAlignment="Left" Margin="1678,779,0,0" VerticalAlignment="Top" Height="83" Width="232" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Button Content="Edit ADMIN" HorizontalAlignment="Left" Margin="1678,877,0,0" VerticalAlignment="Top" Height="83" Width="232" BorderBrush="#FFDDDDDD" FontSize="25" FontWeight="Bold">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Rectangle HorizontalAlignment="Left" Height="147" Margin="18,356,0,0" VerticalAlignment="Top" Width="518" RadiusX="15.54" RadiusY="15.54" Fill="#FFF3ECEC"/>
-        <Button Content="Delegate" HorizontalAlignment="Left" Margin="1281,252,0,0" VerticalAlignment="Top" Height="67" Width="168" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FFADA5A5" Foreground="#FF191616">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Button Content="Dismiss" HorizontalAlignment="Left" Margin="1466,252,0,0" VerticalAlignment="Top" Height="67" Width="168" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <TextBlock HorizontalAlignment="Left" Margin="48,124,0,0" TextWrapping="Wrap" Text="USER LIST" VerticalAlignment="Top" FontSize="60"/>
-        <TextBlock HorizontalAlignment="Left" Margin="48,199,0,0" TextWrapping="Wrap" Text="Acount Mangement" VerticalAlignment="Top" FontSize="40" Foreground="#FF483E3E"/>
-        <Rectangle HorizontalAlignment="Left" Height="147" Margin="564,356,0,0" VerticalAlignment="Top" Width="518" RadiusX="15.54" RadiusY="15.54" Fill="#FFF3ECEC"/>
-        <Rectangle HorizontalAlignment="Left" Height="147" Margin="1115,356,0,0" VerticalAlignment="Top" Width="518" RadiusX="15.54" RadiusY="15.54" Fill="#FFF3ECEC"/>
-        <Rectangle HorizontalAlignment="Left" Height="148" Margin="18,540,0,0" VerticalAlignment="Top" Width="518" RadiusX="15.54" RadiusY="15.54" Fill="#FFF3ECEC"/>
-        <Rectangle HorizontalAlignment="Left" Height="148" Margin="564,540,0,0" VerticalAlignment="Top" Width="518" RadiusX="15.54" RadiusY="15.54" Fill="#FFF3ECEC"/>
-        <Rectangle HorizontalAlignment="Left" Height="148" Margin="1115,540,0,0" VerticalAlignment="Top" Width="518" RadiusX="15.54" RadiusY="15.54" Fill="#FFF3ECEC"/>
-        <Rectangle HorizontalAlignment="Left" Height="147" Margin="18,729,0,0" VerticalAlignment="Top" Width="518" RadiusX="15.54" RadiusY="15.54" Fill="#FFF3ECEC"/>
-        <Rectangle HorizontalAlignment="Left" Height="147" Margin="564,729,0,0" VerticalAlignment="Top" Width="518" RadiusX="15.54" RadiusY="15.54" Fill="#FFF3ECEC"/>
-        <Rectangle HorizontalAlignment="Left" Height="147" Margin="1115,729,0,0" VerticalAlignment="Top" Width="518" RadiusX="15.54" RadiusY="15.54" Fill="#FFF3ECEC"/>
-        <Rectangle HorizontalAlignment="Left" Height="147" Margin="18,907,0,0" VerticalAlignment="Top" Width="518" RadiusX="15.54" RadiusY="15.54" Fill="#FFF3ECEC"/>
-        <Rectangle HorizontalAlignment="Left" Height="147" Margin="564,907,0,0" VerticalAlignment="Top" Width="518" RadiusX="15.54" RadiusY="15.54" Fill="#FFF3ECEC"/>
-        <Rectangle HorizontalAlignment="Left" Height="147" Margin="1115,907,0,0" VerticalAlignment="Top" Width="518" RadiusX="15.54" RadiusY="15.54" Fill="#FFF3ECEC"/>
-        <Rectangle HorizontalAlignment="Left" Height="14" Margin="22,306,0,0" Stroke="Black" VerticalAlignment="Top" Width="1226" RadiusX="15.54" RadiusY="15.54" Fill="#FF483E3E"/>
-        <Rectangle HorizontalAlignment="Left" Height="0" Margin="48,319,0,0" Stroke="Black" VerticalAlignment="Top" Width="1208" Fill="Black"/>
-        <Button Content="EXIT" HorizontalAlignment="Left" Margin="1676,970,0,0" VerticalAlignment="Top" Height="84" Width="232" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <ScrollBar HorizontalAlignment="Left" Margin="1650,351,0,0" VerticalAlignment="Top" Height="750" Width="15"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="256"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ══════════════════════════════════════
+             메인 콘텐츠 영역
+             ══════════════════════════════════════ -->
+        <Border Grid.Column="0" Background="#F3F5F7">
+            <Grid Margin="32,24,24,24">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- 헤더 : 제목 + 검색창 -->
+                <Grid Grid.Row="0" Margin="0,0,0,18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="440"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="Operator" FontSize="54" FontWeight="Bold"
+                               Foreground="{StaticResource Primary}" VerticalAlignment="Center"/>
+
+                    <Border Grid.Column="1" Background="{StaticResource Surface}"
+                            BorderBrush="{StaticResource Border}" BorderThickness="1.5"
+                            CornerRadius="10" Height="52" VerticalAlignment="Center">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="52"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Background="#F1F5F9" CornerRadius="9,0,0,9">
+                                <TextBlock Text="🔍" FontSize="16"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <Grid Grid.Column="1">
+                                <TextBlock x:Name="PlaceholderText" Text="Search users..."
+                                           FontSize="17" Foreground="{StaticResource TextMuted}"
+                                           VerticalAlignment="Center" Margin="14,0,0,0"
+                                           IsHitTestVisible="False">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text, ElementName=txtSearch}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBox x:Name="txtSearch"
+                                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                         FontSize="17" BorderThickness="0" Background="Transparent"
+                                         Padding="14,0,0,0" VerticalContentAlignment="Center"
+                                         Foreground="{StaticResource TextDark}"
+                                         CaretBrush="{StaticResource Primary}"/>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- ListView -->
+                <ListView Grid.Row="1"
+                          x:Name="UserListView"
+                          ItemsSource="{Binding Users}"
+                          SelectedItem="{Binding SelectedUser}"
+                          ItemContainerStyle="{StaticResource RowItem}"
+                          BorderThickness="0"
+                          HorizontalContentAlignment="Stretch"
+                          >
+
+                    <!-- 커스텀 템플릿 : 배경 라운딩 + 헤더 명시적 포함 -->
+                    <ListView.Template>
+                        <ControlTemplate TargetType="ListView">
+                            <Border Background="{StaticResource CardOuter}"
+                                    CornerRadius="10"
+                                    ClipToBounds="True">
+                                <DockPanel>
+                                    <!-- 헤더 명시적 선언 (Template 커스텀 시 필수) -->
+                                    <GridViewHeaderRowPresenter
+                                        DockPanel.Dock="Top"
+                                        Columns="{Binding View.Columns, RelativeSource={RelativeSource TemplatedParent}}"
+                                        ColumnHeaderContainerStyle="{Binding View.ColumnHeaderContainerStyle, RelativeSource={RelativeSource TemplatedParent}}"/>
+                                    <!-- 리스트 본문 -->
+                                    <ScrollViewer ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                        <ItemsPresenter Margin="0,8,0,10"/>
+                                    </ScrollViewer>
+                                </DockPanel>
+                            </Border>
+                        </ControlTemplate>
+                    </ListView.Template>
+
+                    <ListView.View>
+                        <GridView AllowsColumnReorder="False">
+                            <!-- 합계: 560+320+240+468 = 1588px -->
+                            <GridViewColumn Header="USER NAME" Width="560"
+                                            HeaderContainerStyle="{StaticResource ColumnHeaderFirst}"
+                                            CellTemplate="{StaticResource NameCellTemplate}"/>
+                            <GridViewColumn Header="LOGIN ID"  Width="320"
+                                            HeaderContainerStyle="{StaticResource ColumnHeader}"
+                                            CellTemplate="{StaticResource UserCodeCellTemplate}"/>
+                            <GridViewColumn Header="ROLE CODE" Width="240"
+                                            HeaderContainerStyle="{StaticResource ColumnHeader}"
+                                            CellTemplate="{StaticResource DeptCellTemplate}"/>
+                            <GridViewColumn Header="ROLE"      Width="468"
+                                            HeaderContainerStyle="{StaticResource ColumnHeaderLast}"
+                                            CellTemplate="{StaticResource RoleCellTemplate}"/>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </Grid>
+        </Border>
+
+        <!-- ══════════════════════════════════════
+             오른쪽 사이드 패널
+             ══════════════════════════════════════ -->
+        <Border Grid.Column="1" Background="{StaticResource Panel}">
+            <DockPanel Margin="14,28,14,14">
+
+                <!-- 하단 고정 : Home + EXIT -->
+                <StackPanel DockPanel.Dock="Bottom">
+                    <Border Height="1" Background="#244A66" Margin="0,0,0,14"/>
+                    <Button Style="{StaticResource NavBtn}" Content="Home" Margin="0,0,0,10" Click="Home_Click"/>
+                    <Button Style="{StaticResource ExitBtn}"               Content="EXIT"    Click="Exit_Click"/>
+                </StackPanel>
+
+                <!-- 스크롤 영역 -->
+                <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+
+                        <!-- 로고 -->
+                        <StackPanel HorizontalAlignment="Center" Margin="0,0,0,28">
+                            <TextBlock Text="LSS" FontSize="28" FontWeight="Bold"
+                                       Foreground="White" HorizontalAlignment="Center"/>
+                            <Border Height="2" Width="44" Background="#2A6496"
+                                    Margin="0,8,0,0" HorizontalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- ① USER MANAGEMENT -->
+                        <TextBlock Text="USER MANAGEMENT" Style="{StaticResource SectionLabel}"/>
+                        <Button Style="{StaticResource NavBtn}" Command="{Binding AddUserCommand}"    Content="Add User"    Margin="0,0,0,10"/>
+                        <Button Style="{StaticResource NavBtn}" Command="{Binding EditUserCommand}"   Content="Edit User"   Margin="0,0,0,10"/>
+                        <Button Style="{StaticResource NavBtn}" Command="{Binding DeleteUserCommand}" Content="Delete User" Margin="0,0,0,24"/>
+
+                        <Border Height="1" Background="#1E3F58" Margin="0,0,0,24"/>
+
+                        <!-- ② ADMIN PRIVILEGES -->
+                        <TextBlock Text="ADMIN PRIVILEGES" Style="{StaticResource SectionLabel}"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
+                            <Button Style="{StaticResource HalfBtn}" Command="{Binding DelegateCommand}" Content="Delegate" Margin="0,0,7,0"/>
+                            <Button Style="{StaticResource HalfBtn}" Command="{Binding DismissCommand}"  Content="Dismiss"/>
+                        </StackPanel>
+                        <Button Style="{StaticResource NavBtn}" Command="{Binding EditAdminCommand}" Content="Edit Admin" Margin="0,0,0,24"/>
+
+                        <Border Height="1" Background="#1E3F58" Margin="0,0,0,24"/>
+
+                        <!-- ③ SYSTEM SETTINGS -->
+                        <TextBlock Text="SYSTEM SETTINGS" Style="{StaticResource SectionLabel}"/>
+                        <Button Style="{StaticResource NavBtn}" Command="{Binding HospitalNameCommand}" Content="Hospital Name" Margin="0,0,0,10"/>
+                        <Button Style="{StaticResource NavBtn}" Command="{Binding CStoreSetupCommand}"  Content="C-STORE Setup" Margin="0,0,0,10"/>
+                        <Button Style="{StaticResource NavBtn}" Command="{Binding MwlSetupCommand}"     Content="MWL Setup"     Margin="0,0,0,8"/>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
     </Grid>
 </Window>

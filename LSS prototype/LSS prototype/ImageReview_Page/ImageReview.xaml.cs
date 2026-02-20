@@ -11,26 +11,17 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using System.Data.SQLite;
-using LSS_prototype.DB_CRUD;
 
-namespace LSS_prototype
+namespace LSS_prototype.ImageReview_Page
 {
     /// <summary>
-    /// Login.xaml에 대한 상호 작용 논리
+    /// ImageReview.xaml에 대한 상호 작용 논리
     /// </summary>
-    public partial class Login : Window
+    public partial class ImageReview : Window
     {
-        public Login()
+        public ImageReview()
         {
             InitializeComponent();
-            var db = new DB_Manager();
-            db.InitDB();
-        }
-
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            Application.Current.Shutdown();
         }
     }
 }

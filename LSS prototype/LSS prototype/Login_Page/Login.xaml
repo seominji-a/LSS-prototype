@@ -258,7 +258,7 @@
                             CornerRadius="2"
                             HorizontalAlignment="Center"
                             Margin="0,18,0,0"/>
-                    <TextBlock Text="(주)에스원바이오 LS"
+                    <TextBlock Text="(주)에스원바이오 LSS"
                                FontSize="18"
                                FontFamily="Arial"
                                Foreground="#94A3B8"

@@ -240,7 +240,7 @@
                         <ColumnDefinition Width="440"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="User" FontSize="54" FontWeight="Bold"
+                    <TextBlock Text="Operator" FontSize="54" FontWeight="Bold"
                                Foreground="{StaticResource Primary}" VerticalAlignment="Center"/>
 
                     <Border Grid.Column="1" Background="{StaticResource Surface}"

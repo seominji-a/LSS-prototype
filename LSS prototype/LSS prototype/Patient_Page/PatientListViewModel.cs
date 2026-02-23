@@ -16,6 +16,18 @@ namespace LSS_prototype.Patient_Page
     /// </summary>
     internal class PatientListViewModel : INotifyPropertyChanged
     {
+        private string _searchText;
+        public string SearchText
+        {
+            get { return _searchText; }
+            set
+            {
+                if (_searchText == value) return;
+                _searchText = value;
+                //OnPropertyChanged(); 검색로직 추가 시 해당 부분 주석 해제 0223 박한용
+            }
+        }
+
         private readonly IDialogService _dialogService;
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -89,13 +101,21 @@ namespace LSS_prototype.Patient_Page
 
                     if (confirm == CustomMessageWindow.MessageBoxResult.Yes)
                     {
+                        var model = new PatientModel
+                        {
+                            PatientCode = vm.PatientCode.Value,
+                            PatientName = vm.PatientName,
+                            BirthDate = vm.BirthDate.Value,
+                            Sex = vm.Sex
+                        };
+
                         var repo = new DB_Manager();
-                        bool result = repo.AddPatient(vm);
+                        bool result = repo.AddPatient(model);
 
                         if (result)
                         {
                             CustomMessageWindow.Show("환자가 정상적으로 등록되었습니다.");
-                            LoadPatients(); // ⭐ 새 환자 맨 앞(최신순)으로 바로 반영
+                            LoadPatients();
                         }
                         else
                         {
@@ -104,11 +124,10 @@ namespace LSS_prototype.Patient_Page
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "AddPatient Function Check");
+                Console.WriteLine(ex.Message + " AddPatient Function Check");
             }
-           
         }
 
         private void EditPatient()
@@ -139,7 +158,7 @@ namespace LSS_prototype.Patient_Page
                 }
 
                 if (CustomMessageWindow.Show(
-                        $"{SelectedPatient.Name} 환자 정보를 삭제하시겠습니까?",
+                        $"{SelectedPatient.PatientName} 환자 정보를 삭제하시겠습니까?",
                         CustomMessageWindow.MessageBoxType.YesNo
                     ) == CustomMessageWindow.MessageBoxResult.Yes)
                 {

@@ -41,8 +41,8 @@ namespace LSS_prototype.Patient_Page
         {
             Patient_id = selected.PatientId;
             PatientCode = selected.PatientCode;
-            PatientName = selected.Name;
-            BirthDate = selected.BRITH_DATE;
+            PatientName = selected.PatientName;
+            BirthDate = selected.BirthDate;
             Sex = selected.Sex;
 
             EditCommand = new RelayCommand(UpdatePatient);
@@ -54,16 +54,25 @@ namespace LSS_prototype.Patient_Page
             try
             {
                 var repo = new DB_Manager();
-                // DB_Manager의 업데이트 메서드 호출
-                if (repo.UpdatePatient(this))
+
+                var model = new PatientModel
+                {
+                    PatientId = this.Patient_id,    
+                    PatientCode = this.PatientCode.Value,
+                    PatientName = this.PatientName,
+                    BirthDate = this.BirthDate.Value,
+                    Sex = this.Sex
+                };
+
+                if (repo.UpdatePatient(model))
                 {
                     new CustomMessageWindow("수정되었습니다.").Show();
-                    CloseAction?.Invoke(true); // 성공 결과와 함께 창 닫기
+                    CloseAction?.Invoke(true);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "UpdatePatient Function Check");
+                Console.WriteLine(ex.Message + " UpdatePatient Function Check");
             }
         }
 

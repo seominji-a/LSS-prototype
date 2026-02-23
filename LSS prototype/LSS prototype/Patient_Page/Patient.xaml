@@ -164,10 +164,10 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel>
-                                    <TextBlock x:Name="TxtName" Text="{Binding Name}" FontSize="26" FontWeight="Bold" Foreground="{StaticResource TextDark}"/>
+                                    <TextBlock x:Name="TxtName" Text="{Binding PatientName}" FontSize="26" FontWeight="Bold" Foreground="{StaticResource TextDark}"/>
                                     <TextBlock x:Name="TxtCode" Text="{Binding PatientCode}" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource TextMid}" Margin="0,5,0,0"/>
                                     <TextBlock x:Name="TxtInfo" FontSize="14" Foreground="{StaticResource TextMuted}" Margin="0,8,0,0">
-                                        <Run Text="{Binding BRITH_DATE, StringFormat=yyyy-MM-dd}"/>
+                                        <Run Text="{Binding BirthDate, StringFormat=yyyy-MM-dd}"/>
                                         <Run Text="  ·  "/>
                                         <Run Text="{Binding Sex}"/>
                                     </TextBlock>

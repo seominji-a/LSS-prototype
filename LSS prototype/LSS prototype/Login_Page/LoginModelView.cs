@@ -54,11 +54,11 @@ namespace LSS_prototype.Login_Page
                     if (SessionStateManager.IsSessionSuspended)
                     {
                         // 이전 세션 복원
-                        var msg = new CustomMessageWindow(
-                            "이전 작업 화면을 복원합니다.",
-                            CustomMessageWindow.MessageBoxType.AutoClose,
-                            1);
-                        await msg.ShowAsync();
+                        await CustomMessageWindow.ShowAsync(
+                             "이전 작업 화면을 복원합니다.",
+                             CustomMessageWindow.MessageBoxType.AutoClose,
+                             1,
+                             CustomMessageWindow.MessageIconType.Info);
 
                         //  숨겨뒀던 창들 복원
                         SessionStateManager.RestoreSession();
@@ -72,11 +72,11 @@ namespace LSS_prototype.Login_Page
                     else
                     {
                         // 새로운 로그인 (기존 로직)
-                        var msg = new CustomMessageWindow(
-                            "로그인 성공",
-                            CustomMessageWindow.MessageBoxType.AutoClose,
-                            1);
-                        await msg.ShowAsync();
+                        await CustomMessageWindow.ShowAsync(
+                             "로그인 성공",
+                             CustomMessageWindow.MessageBoxType.AutoClose,
+                             1,
+                             CustomMessageWindow.MessageIconType.Info);
 
                         Patient patient = new Patient();
                         patient.Show();
@@ -87,13 +87,11 @@ namespace LSS_prototype.Login_Page
                 }
                 else
                 {
-
-                    var msg = new CustomMessageWindow(
+                    await CustomMessageWindow.ShowAsync(
                         "아이디 또는 비밀번호가 올바르지 않습니다.",
                         CustomMessageWindow.MessageBoxType.AutoClose,
-                        1); // 1초 자동 닫힘 추천 (OK로 하고 싶으면 Ok로 바꿔도 됨)
-
-                    await msg.ShowAsync();
+                        1,
+                        CustomMessageWindow.MessageIconType.Warning);
                 }
             }
             catch (Exception ex)

@@ -106,11 +106,11 @@ namespace LSS_prototype.Auth
 
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        SessionStateManager.SuspendSession(); //  현재 세션 일시정지 및 창숨기기
-                        var msg = new CustomMessageWindow(
-                         "세션이 만료되었습니다. 다시 로그인해주세요.",
-                         CustomMessageWindow.MessageBoxType.Ok);
-                        msg.ShowDialog();  // ← ShowDialog 사용 (로그인 화면 뜨기 전까지 대기)
+                        CustomMessageWindow.Show(
+                            "세션이 만료되었습니다. 다시 로그인해주세요.",
+                            CustomMessageWindow.MessageBoxType.Ok,
+                            0,
+                            CustomMessageWindow.MessageIconType.Danger);
 
                         AuthToken.SignOut();
                         NavigateToLoginPage();

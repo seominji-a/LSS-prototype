@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Threading;
 
@@ -27,17 +28,29 @@ namespace LSS_prototype
             Timeout
         }
 
+        public enum MessageIconType
+        {
+            None,       // 아이콘 없음
+            Info,       // 알림 - 파란 계열
+            Warning,    // 주의 - 노란색
+            Danger      // 위험 - 빨간색
+        }
+
         private List<Window> _blurredWindows = new List<Window>();
         public MessageBoxResult Result { get; private set; } = MessageBoxResult.None;
 
         private TaskCompletionSource<MessageBoxResult> _tcs;
         private DispatcherTimer _timeoutTimer;
 
-        public CustomMessageWindow(string message, MessageBoxType type = MessageBoxType.Ok, int autoCloseSeconds = 0)
+        public CustomMessageWindow(
+            string message,
+            MessageBoxType type = MessageBoxType.Ok,
+            int autoCloseSeconds = 0,
+            MessageIconType icon = MessageIconType.None)
         {
             InitializeComponent();
 
-            // Owner 설정 (DB 초기화 단계 고려)
+            // Owner 설정
             var owner = Application.Current?.Windows?
                 .OfType<Window>()
                 .FirstOrDefault(w => w.IsActive)
@@ -58,7 +71,10 @@ namespace LSS_prototype
             MessageText.Text = message;
             CountdownText.Visibility = Visibility.Collapsed;
 
-            //  블러 효과 적용
+            // 아이콘 설정
+            SetIcon(icon);
+
+            // 블러 효과 적용
             ApplyBlurToAllWindows();
 
             // 버튼 타입 설정
@@ -76,9 +92,7 @@ namespace LSS_prototype
                     NoButton.Visibility = Visibility.Visible;
 
                     if (autoCloseSeconds > 0)
-                    {
                         StartTimeout(autoCloseSeconds);
-                    }
                     break;
 
                 case MessageBoxType.AutoClose:
@@ -102,22 +116,47 @@ namespace LSS_prototype
                     break;
             }
 
-            //  창 닫힐 때 블러 제거
-            this.Closed += (s, e) =>
-            {
-                RemoveBlurFromAllWindows();
-            };
+            // 창 닫힐 때 블러 제거
+            this.Closed += (s, e) => RemoveBlurFromAllWindows();
         }
 
-        //  모든 창에 블러 효과 적용
+        private void SetIcon(MessageIconType icon)
+        {
+            if (icon == MessageIconType.None)
+            {
+                IconBorder.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            IconBorder.Visibility = Visibility.Visible;
+
+            switch (icon)
+            {
+                case MessageIconType.Info:
+                    IconText.Text = "ℹ";
+                    IconText.Foreground = new SolidColorBrush(Color.FromRgb(255, 255, 255));
+                    IconBorder.Background = new SolidColorBrush(Color.FromRgb(23, 55, 83)); // #173753
+                    break;
+
+                case MessageIconType.Warning:
+                    IconText.Text = "⚠";
+                    IconText.Foreground = new SolidColorBrush(Color.FromRgb(255, 255, 255));
+                    IconBorder.Background = new SolidColorBrush(Color.FromRgb(234, 179, 8)); // 노란색
+                    break;
+
+                case MessageIconType.Danger:
+                    IconText.Text = "✖";
+                    IconText.Foreground = new SolidColorBrush(Color.FromRgb(255, 255, 255));
+                    IconBorder.Background = new SolidColorBrush(Color.FromRgb(220, 38, 38)); // 빨간색
+                    break;
+            }
+        }
+
         private void ApplyBlurToAllWindows()
         {
             try
             {
-                var blurEffect = new BlurEffect
-                {
-                    Radius = 10  // 블러 강도
-                };
+                var blurEffect = new BlurEffect { Radius = 10 };
 
                 foreach (Window window in Application.Current.Windows)
                 {
@@ -130,12 +169,10 @@ namespace LSS_prototype
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "ApplyBlurToAllWindows Function Check");
+                Console.WriteLine(ex.Message + " ApplyBlurToAllWindows Function Check");
             }
-            
         }
 
-        //  모든 창에서 블러 효과 제거
         private void RemoveBlurFromAllWindows()
         {
             try
@@ -143,17 +180,14 @@ namespace LSS_prototype
                 foreach (var window in _blurredWindows)
                 {
                     if (window != null)
-                    {
                         window.Effect = null;
-                    }
                 }
                 _blurredWindows.Clear();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "RemoveBlurFromAllWindows Function Check");
+                Console.WriteLine(ex.Message + " RemoveBlurFromAllWindows Function Check");
             }
-            
         }
 
         private void StartTimeout(int seconds)
@@ -194,19 +228,13 @@ namespace LSS_prototype
         }
 
         private void OkButton_Click(object sender, RoutedEventArgs e)
-        {
-            CloseWithResult(MessageBoxResult.Ok);
-        }
+            => CloseWithResult(MessageBoxResult.Ok);
 
         private void YesButton_Click(object sender, RoutedEventArgs e)
-        {
-            CloseWithResult(MessageBoxResult.Yes);
-        }
+            => CloseWithResult(MessageBoxResult.Yes);
 
         private void NoButton_Click(object sender, RoutedEventArgs e)
-        {
-            CloseWithResult(MessageBoxResult.No);
-        }
+            => CloseWithResult(MessageBoxResult.No);
 
         private void CloseWithResult(MessageBoxResult result)
         {
@@ -220,15 +248,31 @@ namespace LSS_prototype
         {
             if (e.Source is Grid)
             {
-                System.Diagnostics.Debug.WriteLine("[CustomMessageWindow] 배경 클릭 - 세션 연장됨");
+                System.Diagnostics.Debug.WriteLine("[CustomMessageWindow] 배경 클릭");
             }
         }
 
-        public static MessageBoxResult Show(string message, MessageBoxType type = MessageBoxType.Ok, int autoCloseSeconds = 0)
+        // 정적 Show (동기)
+        public static MessageBoxResult Show(
+            string message,
+            MessageBoxType type = MessageBoxType.Ok,
+            int autoCloseSeconds = 0,
+            MessageIconType icon = MessageIconType.None)
         {
-            var win = new CustomMessageWindow(message, type, autoCloseSeconds);
+            var win = new CustomMessageWindow(message, type, autoCloseSeconds, icon);
             win.ShowDialog();
             return win.Result;
+        }
+
+        // 정적 ShowAsync (비동기)
+        public static async Task<MessageBoxResult> ShowAsync(
+            string message,
+            MessageBoxType type = MessageBoxType.Ok,
+            int autoCloseSeconds = 0,
+            MessageIconType icon = MessageIconType.None)
+        {
+            var win = new CustomMessageWindow(message, type, autoCloseSeconds, icon);
+            return await win.ShowAsync();
         }
     }
 }

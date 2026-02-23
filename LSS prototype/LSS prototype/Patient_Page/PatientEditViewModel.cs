@@ -66,7 +66,9 @@ namespace LSS_prototype.Patient_Page
 
                 if (repo.UpdatePatient(model))
                 {
-                    new CustomMessageWindow("수정되었습니다.").Show();
+                    CustomMessageWindow.Show("수정되었습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageIconType.Info);
                     CloseAction?.Invoke(true);
                 }
             }

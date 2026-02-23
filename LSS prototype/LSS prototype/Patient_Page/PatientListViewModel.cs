@@ -83,7 +83,9 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                new CustomMessageWindow($"데이터 로드 중 오류 발생: {ex.Message}").Show();
+                CustomMessageWindow.Show($"데이터 로드 중 오류 발생: {ex.Message}",
+                                CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                                CustomMessageWindow.MessageIconType.Danger);
             }
         }
 
@@ -96,8 +98,10 @@ namespace LSS_prototype.Patient_Page
                 if (_dialogService.ShowDialog(vm) == true)
                 {
                     var confirm = CustomMessageWindow.Show(
-                        $"{vm.PatientName} 환자 정보를 생성하시겠습니까?",
-                        CustomMessageWindow.MessageBoxType.YesNo);
+                            $"{vm.PatientName} 환자 정보를 생성하시겠습니까?",
+                            CustomMessageWindow.MessageBoxType.YesNo,
+                            0,
+                            CustomMessageWindow.MessageIconType.Info);
 
                     if (confirm == CustomMessageWindow.MessageBoxResult.Yes)
                     {
@@ -114,12 +118,16 @@ namespace LSS_prototype.Patient_Page
 
                         if (result)
                         {
-                            CustomMessageWindow.Show("환자가 정상적으로 등록되었습니다.");
+                            CustomMessageWindow.Show("환자가 정상적으로 등록되었습니다.",
+                                CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                                CustomMessageWindow.MessageIconType.Info);
                             LoadPatients();
                         }
                         else
                         {
-                            CustomMessageWindow.Show("등록 중 오류가 발생했습니다.");
+                            CustomMessageWindow.Show("등록 중 오류가 발생했습니다.",
+                                CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                                CustomMessageWindow.MessageIconType.Danger);
                         }
                     }
                 }
@@ -134,7 +142,9 @@ namespace LSS_prototype.Patient_Page
         {
             if (SelectedPatient == null)
             {
-                new CustomMessageWindow("수정할 환자를 선택해주세요.").Show();
+                CustomMessageWindow.Show("수정할 환자를 선택해주세요.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageIconType.Info);
                 return;
             }
 
@@ -153,20 +163,24 @@ namespace LSS_prototype.Patient_Page
             {
                 if (SelectedPatient == null)
                 {
-                    new CustomMessageWindow("삭제할 환자를 선택해주세요.").Show();
+                    CustomMessageWindow.Show("삭제할 환자를 선택해주세요.",
+                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageIconType.Info);
                     return;
                 }
 
                 if (CustomMessageWindow.Show(
                         $"{SelectedPatient.PatientName} 환자 정보를 삭제하시겠습니까?",
-                        CustomMessageWindow.MessageBoxType.YesNo
+                        CustomMessageWindow.MessageBoxType.YesNo,0,CustomMessageWindow.MessageIconType.Danger
                     ) == CustomMessageWindow.MessageBoxResult.Yes)
                 {
                     var repo = new DB_Manager();
 
                     if (repo.DeletePatient(SelectedPatient.PatientId))
                     {
-                        CustomMessageWindow.Show("삭제되었습니다.");
+                        CustomMessageWindow.Show("삭제되었습니다.",
+                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageIconType.Info);
                         LoadPatients();
                     }
                 }
@@ -179,11 +193,11 @@ namespace LSS_prototype.Patient_Page
 
         private async Task SyncButtonClicked()
         {
-            await new CustomMessageWindow(
-                "EMR 환자 정보가 최신 상태로 업데이트되었습니다.",
-                CustomMessageWindow.MessageBoxType.AutoClose,
-                3
-            ).ShowAsync();
+            await CustomMessageWindow.ShowAsync(
+                    "EMR 환자 정보가 최신 상태로 업데이트되었습니다.",
+                    CustomMessageWindow.MessageBoxType.AutoClose,
+                    3,
+                    CustomMessageWindow.MessageIconType.Info);
         }
     }
 }

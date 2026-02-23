@@ -59,7 +59,9 @@ namespace LSS_prototype.User_Page
             }
             catch (Exception ex)
             {
-                new CustomMessageWindow("데이터 로드 중 오류 발생: " + ex.Message).Show();
+                CustomMessageWindow.Show("데이터 로드 중 오류 발생: " + ex.Message,
+                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    CustomMessageWindow.MessageIconType.Danger);
             }
         }
 

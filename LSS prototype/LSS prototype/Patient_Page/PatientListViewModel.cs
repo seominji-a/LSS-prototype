@@ -56,6 +56,9 @@ namespace LSS_prototype.Patient_Page
         public ICommand PatientEditCommand { get; }
         public ICommand PatientDeleteCommand { get; }
         public ICommand SyncClickCommand { get; }
+        public ICommand NavScanCommand { get; }
+        public ICommand NavImageReviewCommand { get; }
+        public ICommand NavVideoReviewCommand { get; }
 
         public PatientListViewModel()
         {
@@ -65,6 +68,10 @@ namespace LSS_prototype.Patient_Page
             PatientEditCommand = new RelayCommand(_ => EditPatient());
             PatientDeleteCommand = new RelayCommand(_ => DeletePatient());
             SyncClickCommand = new AsyncRelayCommand(async _ => await SyncButtonClicked());
+
+            NavScanCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new Scan_Page.Scan()));
+            //NavImageReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new ImageReview_Page.ImageReview()));
+            //NavVideoReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new VideoReview_Page.VideoReview()));
 
             LoadPatients();
         }

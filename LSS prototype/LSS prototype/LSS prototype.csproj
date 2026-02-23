@@ -148,6 +148,9 @@
       <DependentUpon>ImageReview.xaml</DependentUpon>
     </Compile>
     <Compile Include="Login_Page\LoginModelView.cs" />
+    <Compile Include="MainPage.xaml.cs">
+      <DependentUpon>MainPage.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Patient_Page\Patient.xaml.cs">
       <DependentUpon>Patient.xaml</DependentUpon>
     </Compile>
@@ -184,8 +187,8 @@
       <DependentUpon>User.xaml</DependentUpon>
     </Compile>
     <Compile Include="User_Page\UserModel.cs">
-	 <DependentUpon>User.xaml</DependentUpon>
-	 </Compile>
+      <DependentUpon>User.xaml</DependentUpon>
+    </Compile>
     <Compile Include="User_Page\UserViewModel.cs" />
     <Compile Include="User_Page\User_Add.xaml.cs">
       <DependentUpon>User_Add.xaml</DependentUpon>
@@ -228,6 +231,10 @@
     <Compile Include="Login_Page\Login.xaml.cs">
       <DependentUpon>Login.xaml</DependentUpon>
     </Compile>
+    <Page Include="MainPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Patient_Page\Patient.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

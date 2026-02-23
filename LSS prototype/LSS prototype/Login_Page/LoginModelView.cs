@@ -78,8 +78,10 @@ namespace LSS_prototype.Login_Page
                              1,
                              CustomMessageWindow.MessageIconType.Info);
 
-                        Patient patient = new Patient();
-                        patient.Show();
+                        var shell = new MainPage();
+                        shell.Show();
+                        shell.NavigateTo(new Patient());
+                        Application.Current.Windows.OfType<Login>().FirstOrDefault()?.Close();
                         //App.ActivityMonitor.Start(patient);
 
                         Application.Current.Windows.OfType<Login>().FirstOrDefault()?.Close();

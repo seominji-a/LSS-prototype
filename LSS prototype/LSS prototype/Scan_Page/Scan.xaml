@@ -1,157 +1,693 @@
-﻿<Window x:Class="LSS_prototype.Scan_Page.Scan"
+﻿<UserControl x:Class="LSS_prototype.Scan_Page.Scan"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:LSS_prototype.Scan_Page"
-        mc:Ignorable="d"
-               Title="Scan" Height="1080" Width="1920"
-        WindowState="Maximized"
-        WindowStyle="None"
-        ResizeMode="NoResize"
-        Topmost="True"
-        >
+        mc:Ignorable="d" d:DesignWidth="1920" d:DesignHeight="1080">
+
+    <UserControl.Resources>
+        <!-- ══ 색상 리소스 ══ -->
+        <SolidColorBrush x:Key="Primary"  Color="#173753"/>
+        <SolidColorBrush x:Key="Panel"    Color="#1C2B3A"/>
+        <SolidColorBrush x:Key="Card"     Color="#243447"/>
+        <SolidColorBrush x:Key="ValueBg"  Color="#1A2D3E"/>
+        <SolidColorBrush x:Key="BtnDark"  Color="#2A3F55"/>
+        <SolidColorBrush x:Key="Muted"    Color="#64748B"/>
+        <SolidColorBrush x:Key="Inactive" Color="#94A3B8"/>
+        <SolidColorBrush x:Key="Accent"   Color="#3B82F6"/>
+
+        <!-- ══ BaseBtn: CornerRadius=12 고정 ══ -->
+        <Style x:Key="BaseBtn" TargetType="Button">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ══ +/- 버튼 ══ -->
+        <Style x:Key="PmBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
+            <Setter Property="Background" Value="{StaticResource BtnDark}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize"   Value="22"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Width"      Value="46"/>
+            <Setter Property="Height"     Value="46"/>
+        </Style>
+
+        <!-- ══ 일반 버튼 ══ -->
+        <Style x:Key="DarkBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
+            <Setter Property="Background" Value="#1E3A5F"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize"   Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+
+        <Style x:Key="IconBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
+            <Setter Property="Background" Value="{StaticResource BtnDark}"/>
+            <Setter Property="Width"      Value="52"/>
+            <Setter Property="Height"     Value="52"/>
+        </Style>
+
+        <Style x:Key="ExitBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
+            <Setter Property="Background" Value="#111827"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize"   Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Width"      Value="228"/>
+            <Setter Property="Height"     Value="52"/>
+        </Style>
+
+        <!-- ══ Nav 버튼 ══ -->
+        <Style x:Key="NavBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="{StaticResource Primary}"/>
+            <Setter Property="FontSize"   Value="20"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Height"     Value="72"/>
+            <Setter Property="Width"      Value="200"/>
+        </Style>
+
+        <Style x:Key="NavBtnActive" TargetType="Button" BasedOn="{StaticResource NavBtn}">
+            <Setter Property="Background" Value="{StaticResource Accent}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Border Background="Black" Opacity="0.2" CornerRadius="12" Margin="0,2,0,-2"/>
+                            <Border Background="{TemplateBinding Background}" CornerRadius="12">
+                                <StackPanel VerticalAlignment="Center">
+                                    <ContentPresenter HorizontalAlignment="Center"/>
+                                    <Border Width="40" Height="3" Background="White" Margin="0,4,0,0" CornerRadius="2"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ══ 토글 4종 (Left/Right × Active/Inactive) CornerRadius 직접 지정 ══ -->
+        <Style x:Key="TogLA" TargetType="Button">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Background"      Value="{StaticResource Accent}"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Height"          Value="36"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="10,0,0,10">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TogLI" TargetType="Button" BasedOn="{StaticResource TogLA}">
+            <Setter Property="Background" Value="{StaticResource BtnDark}"/>
+            <Setter Property="Foreground" Value="{StaticResource Inactive}"/>
+        </Style>
+
+        <Style x:Key="TogRA" TargetType="Button">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Background"      Value="{StaticResource Accent}"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Height"          Value="36"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="0,10,10,0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TogRI" TargetType="Button" BasedOn="{StaticResource TogRA}">
+            <Setter Property="Background" Value="{StaticResource BtnDark}"/>
+            <Setter Property="Foreground" Value="{StaticResource Inactive}"/>
+        </Style>
+
+        <!-- ══ Nav 애니메이션 ══ -->
+        <Storyboard x:Key="NavIn">
+            <DoubleAnimation Storyboard.TargetName="NavBar" Storyboard.TargetProperty="Height"
+                             From="0" To="90" Duration="0:0:0.01"/>
+            <DoubleAnimation Storyboard.TargetName="NavTT" Storyboard.TargetProperty="X"
+                             From="1200" To="0" Duration="0:0:0.28">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+        <Storyboard x:Key="NavOut">
+            <DoubleAnimation Storyboard.TargetName="NavTT" Storyboard.TargetProperty="X"
+                             From="0" To="1200" Duration="0:0:0.22">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetName="NavBar" Storyboard.TargetProperty="Height"
+                             From="90" To="0" Duration="0:0:0.01" BeginTime="0:0:0.21"/>
+        </Storyboard>
+    </UserControl.Resources>
+
     <Grid>
-        <Border BorderBrush="Black"
-                BorderThickness="2"
-                Width="1400"
-                Height="1050"
-                Margin="10,0,0,0"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Top"  Grid.RowSpan="3"
-                />
-        <Image Name="CameraPreviewImage" HorizontalAlignment="Left" VerticalAlignment="Top" Width="1400" Height="1050" Margin="10,0,0,0" Grid.RowSpan="3"/>
-        <Button Content="EXIT" HorizontalAlignment="Left" Margin="1415,1011,0,0" Width="501" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Button HorizontalAlignment="Left" Margin="1411,0,0,0" VerticalAlignment="Top" Height="111" Width="141" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-            <TextBlock
-        Text="SYSTEM&#10;SETTING"
-        TextAlignment="Center"/>
-        </Button>
-        <Button Content="700 LED ON" HorizontalAlignment="Left" Margin="1553,-1,0,0" VerticalAlignment="Top" Height="55" Width="180" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Button Content="700 LED OFF" HorizontalAlignment="Left" Margin="1554,55,0,0" VerticalAlignment="Top" Height="55" Width="179" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Button Content="800 LED ON" HorizontalAlignment="Left" Margin="1736,-1,0,0" VerticalAlignment="Top" Height="55" Width="180" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Button Content="800 LED OFF" HorizontalAlignment="Left" Margin="1736,55,0,0" VerticalAlignment="Top" Height="55" Width="179" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Button Content="SCAN SETTING" HorizontalAlignment="Left" Margin="1411,111,0,0" VerticalAlignment="Top" Height="55" Width="259" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Button Content="FILTER ON/OFF" Margin="1671,110,4,0" VerticalAlignment="Top" Height="55" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Slider HorizontalAlignment="Left" Margin="1428,191,0,0" VerticalAlignment="Top" Width="464" Height="18"/>
-        <Slider HorizontalAlignment="Left" Margin="1427,251,0,0" VerticalAlignment="Top" Width="464" Height="18"/>
-        <Slider HorizontalAlignment="Left" Margin="1427,313,0,0" VerticalAlignment="Top" Width="464" Height="18"/>
-        <Button Content="AUTO FOCUS" HorizontalAlignment="Left" Margin="1415,362,0,0" VerticalAlignment="Top" Height="70" Width="501" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Button Content="COLOR MAP" HorizontalAlignment="Left" Margin="1415,437,0,0" VerticalAlignment="Top" Height="68" Width="501" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Button HorizontalAlignment="Left" Margin="1701,510,0,0" VerticalAlignment="Top" Height="210" Width="215" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-            <TextBlock
-        Text="IMAGE&#10;SCAN"
-        TextAlignment="Center"/>
-        </Button>
-        <StackPanel HorizontalAlignment="Left" Height="210" Margin="1416,510,0,0" VerticalAlignment="Top" Width="280" Background="#FFD2C5C5">
-            <Image Height="210" Width="280"/>
-        </StackPanel>
-        <StackPanel HorizontalAlignment="Left" Height="210" Margin="1416,735,0,0" VerticalAlignment="Top" Width="280" Background="#FFD2C5C5">
-            <Image Height="210" Width="280"/>
-        </StackPanel>
-        <Button HorizontalAlignment="Left" Margin="1701,734,0,0" VerticalAlignment="Top" Height="105" Width="215" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-            <TextBlock
-                Text="NORMAL&#xA;VIDEO"
-                TextAlignment="Center"/>
-        </Button>
-        <Button HorizontalAlignment="Left" Margin="1701,842,0,0" VerticalAlignment="Top" Height="104" Width="215" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-            <TextBlock
-                Text="DICOM&#xA;VIDEO"
-                TextAlignment="Center"/>
-        </Button>
-        <Button HorizontalAlignment="Left" Margin="1415,952,0,0" VerticalAlignment="Top" Height="57" Width="249" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-            <TextBlock
-                Text="PATIENT"
-                TextAlignment="Center"/>
-        </Button>
-        <Button HorizontalAlignment="Left" Margin="1666,952,0,0" VerticalAlignment="Top" Height="57" Width="252" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-            <TextBlock
-                Text="REVIEW"
-                TextAlignment="Center"/>
-        </Button>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="390"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ══════════════ 카메라 영역 ══════════════ -->
+        <Grid Grid.Column="0">
+            <Border Background="Black">
+                <Image x:Name="CameraPreviewImage" Stretch="Uniform"/>
+            </Border>
+            <StackPanel Margin="16,12" VerticalAlignment="Top" HorizontalAlignment="Left">
+                <TextBlock Text="Jung Wooseok(10005)" Foreground="White" FontSize="18" FontWeight="Bold"/>
+                <TextBlock Text="1969-05-22 / F"      Foreground="White" FontSize="16"/>
+            </StackPanel>
+            <StackPanel Margin="0,12,16,0" VerticalAlignment="Top" HorizontalAlignment="Right">
+                <TextBlock Text="Gain"      Foreground="#AAA" FontSize="16" HorizontalAlignment="Right"/>
+                <TextBlock Text="30dB"      Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Right"/>
+                <TextBlock Text="Sharpness" Foreground="#AAA" FontSize="16" HorizontalAlignment="Right" Margin="0,6,0,0"/>
+                <TextBlock Text="218.56"    Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Right"/>
+            </StackPanel>
+            <Grid x:Name="NavBar" VerticalAlignment="Bottom" Height="0" ClipToBounds="True">
+                <Border Background="#E61C2B3A"/>
+                <Grid>
+                    <Grid.RenderTransform>
+                        <TranslateTransform x:Name="NavTT" X="1200"/>
+                    </Grid.RenderTransform>
+                    <StackPanel Orientation="Horizontal" Margin="16,0" VerticalAlignment="Center">
+                        <Button Content="Patient"      Style="{StaticResource NavBtn}" Margin="0,0,10,0"/>
+                        <Button Content="Scan"         Style="{StaticResource NavBtnActive}" Margin="0,0,10,0"/>
+                        <Button Content="Image Review" Style="{StaticResource NavBtn}" Margin="0,0,10,0"/>
+                        <Button Content="Video Review" Style="{StaticResource NavBtn}"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Grid>
+
+        <!-- ══════════════ 우측 패널 ══════════════
+             Row 0: 컨트롤 영역 (*)
+             Row 1: 하단 바    (90px)
+        ══════════════════════════════════════ -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="90"/>
+            </Grid.RowDefinitions>
+
+            <!-- ── 컨트롤 영역 ── -->
+            <Border Grid.Row="0" Background="{StaticResource Panel}">
+                <Grid Margin="10,8,10,8">
+                    <Grid.RowDefinitions>
+                        <!-- R0:  FILTER + COLOR MAP -->
+                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="6"/>
+                        <!-- R2:  700 LED 카드 -->
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="5"/>
+                        <!-- R4:  800 LED 카드 -->
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="5"/>
+                        <!-- R6:  ZOOM 카드 -->
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="5"/>
+                        <!-- R8:  FOCUS 카드 -->
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="5"/>
+                        <!-- R10: AUTO FOCUS -->
+                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="6"/>
+                        <!-- R12: 썸네일 + 액션버튼 (남은 공간 전부) -->
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- R0: FILTER 토글 + COLOR MAP -->
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid Grid.Column="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" x:Name="FilterOnBtn"
+                                    Content="FILTER ON"  Style="{StaticResource TogLA}"
+                                    Command="{Binding FilterOnCommand}"/>
+                            <Button Grid.Column="1" x:Name="FilterOffBtn"
+                                    Content="FILTER OFF" Style="{StaticResource TogRI}"
+                                    Command="{Binding FilterOffCommand}"/>
+                        </Grid>
+                        <Button Grid.Column="2" Content="COLOR MAP"
+                                Style="{StaticResource DarkBtn}"
+                                Background="{StaticResource Primary}"
+                                FontSize="11"
+                                Command="{Binding ColorMapCommand}"/>
+                    </Grid>
+
+                    <!-- ── LED 카드 공통 구조: 헤더(라벨+토글) / +값- / 범위 ── -->
+
+                    <!-- R2: 700 LED -->
+                    <Border Grid.Row="2" Background="{StaticResource Card}" CornerRadius="10" Padding="8,6">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="700 LED"
+                                           Foreground="White" FontSize="13" FontWeight="Bold"
+                                           VerticalAlignment="Center"/>
+                                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                    <Button x:Name="Led700OnBtn"  Content="LED ON"  Width="78"
+                                            Style="{StaticResource TogLA}" Command="{Binding Led700OnCommand}"/>
+                                    <Button x:Name="Led700OffBtn" Content="LED OFF" Width="78"
+                                            Style="{StaticResource TogRI}" Command="{Binding Led700OffCommand}"/>
+                                </StackPanel>
+                            </Grid>
+                            <Grid Height="46">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
+                                        Margin="0,0,5,0" Command="{Binding Led700DecCommand}"/>
+                                <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="10">
+                                    <TextBlock Text="5" Foreground="White" FontSize="18" FontWeight="Bold"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <Button Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
+                                        Margin="5,0,0,0" Command="{Binding Led700IncCommand}"/>
+                            </Grid>
+                            <Grid Margin="0,3,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="1"  Foreground="{StaticResource Muted}" FontSize="10" HorizontalAlignment="Left"/>
+                                <TextBlock Grid.Column="1" Text="5"  Foreground="{StaticResource Muted}" FontSize="10" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="10" Foreground="{StaticResource Muted}" FontSize="10" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- R4: 800 LED -->
+                    <Border Grid.Row="4" Background="{StaticResource Card}" CornerRadius="10" Padding="8,6">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="800 LED"
+                                           Foreground="White" FontSize="13" FontWeight="Bold"
+                                           VerticalAlignment="Center"/>
+                                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                    <Button x:Name="Led800OnBtn"  Content="LED ON"  Width="78"
+                                            Style="{StaticResource TogLA}" Command="{Binding Led800OnCommand}"/>
+                                    <Button x:Name="Led800OffBtn" Content="LED OFF" Width="78"
+                                            Style="{StaticResource TogRI}" Command="{Binding Led800OffCommand}"/>
+                                </StackPanel>
+                            </Grid>
+                            <Grid Height="46">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
+                                        Margin="0,0,5,0" Command="{Binding Led800DecCommand}"/>
+                                <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="10">
+                                    <TextBlock Text="3" Foreground="White" FontSize="18" FontWeight="Bold"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <Button Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
+                                        Margin="5,0,0,0" Command="{Binding Led800IncCommand}"/>
+                            </Grid>
+                            <Grid Margin="0,3,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="1"  Foreground="{StaticResource Muted}" FontSize="10" HorizontalAlignment="Left"/>
+                                <TextBlock Grid.Column="1" Text="3"  Foreground="{StaticResource Muted}" FontSize="10" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="10" Foreground="{StaticResource Muted}" FontSize="10" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- R6: ZOOM -->
+                    <Border Grid.Row="6" Background="{StaticResource Card}" CornerRadius="10" Padding="8,6">
+                        <StackPanel>
+                            <TextBlock Text="ZOOM" Foreground="White" FontSize="13" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <Grid Height="46">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
+                                        Margin="0,0,5,0" Command="{Binding ZoomDecCommand}"/>
+                                <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="10">
+                                    <TextBlock Text="1x" Foreground="White" FontSize="18" FontWeight="Bold"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <Button Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
+                                        Margin="5,0,0,0" Command="{Binding ZoomIncCommand}"/>
+                            </Grid>
+                            <Grid Margin="0,3,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="IN"      Foreground="{StaticResource Muted}" FontSize="10" HorizontalAlignment="Left"/>
+                                <TextBlock Grid.Column="1" Text="1x~100x" Foreground="{StaticResource Muted}" FontSize="10" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="OUT"     Foreground="{StaticResource Muted}" FontSize="10" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- R8: FOCUS -->
+                    <Border Grid.Row="8" Background="{StaticResource Card}" CornerRadius="10" Padding="8,6">
+                        <StackPanel>
+                            <TextBlock Text="FOCUS" Foreground="White" FontSize="13" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <Grid Height="46">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
+                                        Margin="0,0,5,0" Command="{Binding FocusDecCommand}"/>
+                                <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="10">
+                                    <TextBlock Text="16mm" Foreground="White" FontSize="18" FontWeight="Bold"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <Button Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
+                                        Margin="5,0,0,0" Command="{Binding FocusIncCommand}"/>
+                            </Grid>
+                            <Grid Margin="0,3,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="IN"        Foreground="{StaticResource Muted}" FontSize="10" HorizontalAlignment="Left"/>
+                                <TextBlock Grid.Column="1" Text="16mm~20mm" Foreground="{StaticResource Muted}" FontSize="10" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="OUT"       Foreground="{StaticResource Muted}" FontSize="10" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- R10: AUTO FOCUS -->
+                    <Button Grid.Row="10" Content="Auto Focus"
+                            Style="{StaticResource DarkBtn}"
+                            Background="{StaticResource Primary}"
+                            FontSize="15"
+                            Command="{Binding AutoFocusCommand}"/>
+
+                    <!-- ══════════════════════════════════════════════
+                         R12: 썸네일(4:3) + 액션 버튼
+                         Height="*" → 남은 공간 전부 사용
+                         SettingPanel이 이 Grid 전체를 오버레이
+                    ══════════════════════════════════════════════ -->
+                    <Grid Grid.Row="12" x:Name="ThumbArea">
+                        <!-- 썸네일 + 버튼 레이아웃 -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="6"/>
+                                <ColumnDefinition Width="110"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- 좌: 썸네일 2개 (4:3 비율 유지) -->
+                            <Grid Grid.Column="0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="6"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Border Grid.Row="0" Background="#0A1929" CornerRadius="10" ClipToBounds="True">
+                                    <Viewbox Stretch="Uniform">
+                                        <Border Width="400" Height="300">
+                                            <Image x:Name="ThumbImage1" Stretch="UniformToFill"/>
+                                        </Border>
+                                    </Viewbox>
+                                </Border>
+                                <Border Grid.Row="2" Background="#0A1929" CornerRadius="10" ClipToBounds="True">
+                                    <Viewbox Stretch="Uniform">
+                                        <Border Width="400" Height="300">
+                                            <Image x:Name="ThumbImage2" Stretch="UniformToFill"/>
+                                        </Border>
+                                    </Viewbox>
+                                </Border>
+                            </Grid>
+
+                            <!-- 우: 액션 버튼 3개 (110px 고정폭) -->
+                            <Grid Grid.Column="2">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="6"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="6"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Button Grid.Row="0" Style="{StaticResource DarkBtn}"
+                                        Command="{Binding ImageScanCommand}">
+                                    <TextBlock Text="Image&#10;Scan" Foreground="White" TextAlignment="Center" FontSize="12"/>
+                                </Button>
+                                <Button Grid.Row="2" Style="{StaticResource DarkBtn}"
+                                        Command="{Binding VideoRecordCommand}">
+                                    <TextBlock Text="Video&#10;Record" Foreground="White" TextAlignment="Center" FontSize="12"/>
+                                </Button>
+                                <Button Grid.Row="4" Style="{StaticResource DarkBtn}"
+                                        Command="{Binding DicomRecordCommand}">
+                                    <TextBlock Text="Dicom&#10;Record" Foreground="White" TextAlignment="Center" FontSize="12"/>
+                                </Button>
+                            </Grid>
+                        </Grid>
+
+                        <!-- ════════════════════════════════════════
+                             SettingPanel 오버레이
+                             ThumbArea 전체를 덮음
+                             = Auto Focus 아래 ~ EXIT 위 공간
+                             패널 높이는 ThumbArea(*) 에 의해 자동 결정
+                        ════════════════════════════════════════ -->
+                        <Grid x:Name="SettingPanel"
+                              Visibility="Collapsed"
+                              Panel.ZIndex="99"
+                              Background="{StaticResource Panel}">
+                            <Grid Margin="0,6,0,6">
+                                <Grid.RowDefinitions>
+                                    <!-- ★ 초기화 버튼 -->
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="6"/>
+                                    <!-- EXPOSURE TIME -->
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="5"/>
+                                    <!-- GAIN -->
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="5"/>
+                                    <!-- GAMMA -->
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="5"/>
+                                    <!-- IRIS -->
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- ★ 초기화 버튼 -->
+                                <Button Grid.Row="0" HorizontalAlignment="Right"
+                                        Width="44" Height="44"
+                                        Style="{StaticResource IconBtn}"
+                                        Command="{Binding ResetSettingCommand}">
+                                    <TextBlock Text="★" Foreground="White" FontSize="18"/>
+                                </Button>
+
+                                <!-- ── Setting 카드 공통: 라벨 / +값- / 범위 ── -->
+
+                                <!-- EXPOSURE TIME -->
+                                <Border Grid.Row="2" Background="{StaticResource Card}" CornerRadius="10" Padding="8,6">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Text="EXPOSURE TIME"
+                                                   Foreground="White" FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
+                                        <Grid Grid.Row="1">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
+                                                    Margin="0,0,5,0" Command="{Binding ExposureDecCommand}"/>
+                                            <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="10">
+                                                <TextBlock Text="0.2s" Foreground="White" FontSize="15" FontWeight="Bold"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <Button Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
+                                                    Margin="5,0,0,0" Command="{Binding ExposureIncCommand}"/>
+                                        </Grid>
+                                        <TextBlock Grid.Row="2" Text="0.2s~1s"
+                                                   Foreground="{StaticResource Muted}" FontSize="10"
+                                                   HorizontalAlignment="Center" Margin="0,3,0,0"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- GAIN -->
+                                <Border Grid.Row="4" Background="{StaticResource Card}" CornerRadius="10" Padding="8,6">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Text="GAIN"
+                                                   Foreground="White" FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
+                                        <Grid Grid.Row="1">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
+                                                    Margin="0,0,5,0" Command="{Binding GainDecCommand}"/>
+                                            <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="10">
+                                                <TextBlock Text="30dB" Foreground="White" FontSize="15" FontWeight="Bold"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <Button Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
+                                                    Margin="5,0,0,0" Command="{Binding GainIncCommand}"/>
+                                        </Grid>
+                                        <TextBlock Grid.Row="2" Text="3dB~45dB"
+                                                   Foreground="{StaticResource Muted}" FontSize="10"
+                                                   HorizontalAlignment="Center" Margin="0,3,0,0"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- GAMMA -->
+                                <Border Grid.Row="6" Background="{StaticResource Card}" CornerRadius="10" Padding="8,6">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Text="GAMMA"
+                                                   Foreground="White" FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
+                                        <Grid Grid.Row="1">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
+                                                    Margin="0,0,5,0" Command="{Binding GammaDecCommand}"/>
+                                            <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="10">
+                                                <TextBlock Text="1.0" Foreground="White" FontSize="15" FontWeight="Bold"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <Button Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
+                                                    Margin="5,0,0,0" Command="{Binding GammaIncCommand}"/>
+                                        </Grid>
+                                        <TextBlock Grid.Row="2" Text="0.3~1"
+                                                   Foreground="{StaticResource Muted}" FontSize="10"
+                                                   HorizontalAlignment="Center" Margin="0,3,0,0"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- IRIS -->
+                                <Border Grid.Row="8" Background="{StaticResource Card}" CornerRadius="10" Padding="8,6">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Text="IRIS"
+                                                   Foreground="White" FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
+                                        <Grid Grid.Row="1">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
+                                                    Margin="0,0,5,0" Command="{Binding IrisDecCommand}"/>
+                                            <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="10">
+                                                <TextBlock Text="2.8F" Foreground="White" FontSize="15" FontWeight="Bold"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <Button Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
+                                                    Margin="5,0,0,0" Command="{Binding IrisIncCommand}"/>
+                                        </Grid>
+                                        <TextBlock Grid.Row="2" Text="0.3F~13F"
+                                                   Foreground="{StaticResource Muted}" FontSize="10"
+                                                   HorizontalAlignment="Center" Margin="0,3,0,0"/>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </Grid>
+                        <!-- end SettingPanel -->
+
+                    </Grid>
+                    <!-- end ThumbArea -->
+
+                </Grid>
+            </Border>
+
+            <!-- ── 하단 바 ── -->
+            <Grid Grid.Row="1" Background="{StaticResource Panel}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal"
+                            VerticalAlignment="Center" Margin="12,0,0,0">
+                    <Button x:Name="ToggleBtn" Style="{StaticResource IconBtn}"
+                            Margin="0,0,10,0" Click="ToggleNav_Click">
+                        <TextBlock Text="&lt;" Foreground="White" FontSize="20" FontWeight="Bold"/>
+                    </Button>
+                    <Button x:Name="SettingToggleBtn" Style="{StaticResource IconBtn}"
+                            Click="ToggleSetting_Click">
+                        <TextBlock Text="🔧" FontSize="22"/>
+                    </Button>
+                </StackPanel>
+                <Button Grid.Column="1" Style="{StaticResource ExitBtn}"
+                        Content="EXIT" Margin="0,0,12,0"
+                        Command="{Binding ExitCommand}"/>
+            </Grid>
+
+        </Grid>
+        <!-- end 우측 패널 -->
+
     </Grid>
-</Window>
+</UserControl>

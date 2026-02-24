@@ -14,6 +14,7 @@ namespace LSS_prototype.User_Page
     {
         public ICommand AddUserCommand { get; }
         public ICommand SettingCommand { get; }
+        public ICommand DefaultCommand { get; }
         private readonly IDialogService _dialogService;
 
         private ObservableCollection<UserModel> _users = new ObservableCollection<UserModel>();
@@ -42,7 +43,8 @@ namespace LSS_prototype.User_Page
         {
             _dialogService = new Dialog();
             AddUserCommand = new RelayCommand(ExecuteAddUser);
-            SettingCommand = new RelayCommand(ExecuteOpenSetting); 
+            SettingCommand = new RelayCommand(ExecuteOpenSetting);
+            DefaultCommand = new RelayCommand(ExecuteOpenDefault);
 
             LoadUsers();
         }
@@ -77,6 +79,12 @@ namespace LSS_prototype.User_Page
         {
             _dialogService.ShowSetting();
         }
+
+        private void ExecuteOpenDefault(object parameter)
+        {
+            _dialogService.ShowDefault();
+        }
+
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)

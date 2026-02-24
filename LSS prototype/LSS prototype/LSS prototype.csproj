@@ -180,6 +180,13 @@
     <Compile Include="Scan_Page\Scan.xaml.cs">
       <DependentUpon>Scan.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Scan_Page\ScanModel.xaml.cs">
+      <DependentUpon>ScanModel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Scan_Page\ScanViewModel.cs" />
+    <Compile Include="User_Page\Default.xaml.cs">
+      <DependentUpon>Default.xaml</DependentUpon>
+    </Compile>
     <Compile Include="User_Page\setting.xaml.cs">
       <DependentUpon>setting.xaml</DependentUpon>
     </Compile>
@@ -248,6 +255,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Scan_Page\Scan.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Scan_Page\ScanModel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="User_Page\Default.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

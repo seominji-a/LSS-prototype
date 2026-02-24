@@ -194,7 +194,7 @@
                         <TranslateTransform x:Name="NavTT" X="1200"/>
                     </Grid.RenderTransform>
                     <StackPanel Orientation="Horizontal" Margin="16,0" VerticalAlignment="Center">
-                        <Button Content="Patient"      Style="{StaticResource NavBtn}" Margin="0,0,10,0"/>
+                        <Button Content="Patient"      Style="{StaticResource NavBtn}"  Command="{Binding NavigatePatientCommand}" Margin="0,0,10,0"/>
                         <Button Content="Scan"         Style="{StaticResource NavBtnActive}" Margin="0,0,10,0"/>
                         <Button Content="Image Review" Style="{StaticResource NavBtn}" Margin="0,0,10,0"/>
                         <Button Content="Video Review" Style="{StaticResource NavBtn}"/>
@@ -472,7 +472,7 @@
                             <!-- 우: 액션 버튼 3개 (110px 고정폭) -->
                             <Grid Grid.Column="2">
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="205"/>
                                     <RowDefinition Height="6"/>
                                     <RowDefinition Height="*"/>
                                     <RowDefinition Height="6"/>
@@ -500,160 +500,291 @@
                              패널 높이는 ThumbArea(*) 에 의해 자동 결정
                         ════════════════════════════════════════ -->
                         <Grid x:Name="SettingPanel"
-                              Visibility="Collapsed"
-                              Panel.ZIndex="99"
-                              Background="{StaticResource Panel}">
+      Visibility="Collapsed"
+      Panel.ZIndex="99"
+      Background="{StaticResource Panel}"
+      VerticalAlignment="Stretch"
+      HorizontalAlignment="Stretch">
+
                             <Grid Margin="0,6,0,6">
                                 <Grid.RowDefinitions>
-                                    <!-- ★ 초기화 버튼 -->
+                                    <!-- 상단: 되돌리기 버튼 -->
                                     <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="6"/>
-                                    <!-- EXPOSURE TIME -->
-                                    <RowDefinition Height="*"/>
-                                    <RowDefinition Height="5"/>
-                                    <!-- GAIN -->
-                                    <RowDefinition Height="*"/>
-                                    <RowDefinition Height="5"/>
-                                    <!-- GAMMA -->
-                                    <RowDefinition Height="*"/>
-                                    <RowDefinition Height="5"/>
-                                    <!-- IRIS -->
+                                    <RowDefinition Height="8"/>
+
+                                    <!-- 4개 카드: 15% 축소 -->
+                                    <RowDefinition Height="78"/>
+                                    <RowDefinition Height="8"/>
+                                    <RowDefinition Height="78"/>
+                                    <RowDefinition Height="8"/>
+                                    <RowDefinition Height="78"/>
+                                    <RowDefinition Height="8"/>
+                                    <RowDefinition Height="78"/>
+
+                                    <!-- 남는 공간 흡수 -->
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
 
-                                <!-- ★ 초기화 버튼 -->
-                                <Button Grid.Row="0" HorizontalAlignment="Right"
-                                        Width="44" Height="44"
-                                        Style="{StaticResource IconBtn}"
-                                        Command="{Binding ResetSettingCommand}">
-                                    <TextBlock Text="★" Foreground="White" FontSize="18"/>
+                                <!-- ⟲ Reset -->
+                                <Button Grid.Row="0"
+                HorizontalAlignment="Right"
+                Width="42" Height="42"
+                Style="{StaticResource IconBtn}"
+                Command="{Binding ResetSettingCommand}">
+                                    <TextBlock Text="⟲" Foreground="White" FontSize="16"/>
                                 </Button>
 
-                                <!-- ── Setting 카드 공통: 라벨 / +값- / 범위 ── -->
-
-                                <!-- EXPOSURE TIME -->
-                                <Border Grid.Row="2" Background="{StaticResource Card}" CornerRadius="10" Padding="8,6">
+                                <!-- ================= EXPOSURE TIME ================= -->
+                                <Border Grid.Row="2"
+                Background="{StaticResource Card}"
+                CornerRadius="12"
+                Padding="8,6">
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="*"/>
+                                            <!-- Title -->
+                                            <RowDefinition Height="46"/>
+                                            <!-- Value row -->
                                             <RowDefinition Height="Auto"/>
+                                            <!-- Range (must show) -->
                                         </Grid.RowDefinitions>
-                                        <TextBlock Grid.Row="0" Text="EXPOSURE TIME"
-                                                   Foreground="White" FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
+
+                                        <TextBlock Grid.Row="0"
+                           Text="EXPOSURE TIME"
+                           Foreground="White"
+                           FontSize="10"
+                           FontWeight="Bold"
+                           Margin="0,0,0,4"/>
+
                                         <Grid Grid.Row="1">
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="44"/>
+                                                <ColumnDefinition Width="8"/>
                                                 <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="8"/>
+                                                <ColumnDefinition Width="44"/>
                                             </Grid.ColumnDefinitions>
-                                            <Button Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
-                                                    Margin="0,0,5,0" Command="{Binding ExposureDecCommand}"/>
-                                            <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="10">
-                                                <TextBlock Text="0.2s" Foreground="White" FontSize="15" FontWeight="Bold"
-                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                            <Button Grid.Column="0"
+                            Content="-"
+                            Style="{StaticResource PmBtn}"
+                            Width="44" Height="46"
+                            Command="{Binding ExposureDecCommand}"/>
+
+                                            <Border Grid.Column="2"
+                            Background="{StaticResource ValueBg}"
+                            CornerRadius="12"
+                            Height="46">
+                                                <TextBlock Text="0.2s"
+                                   Foreground="White"
+                                   FontSize="15"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
                                             </Border>
-                                            <Button Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
-                                                    Margin="5,0,0,0" Command="{Binding ExposureIncCommand}"/>
+
+                                            <Button Grid.Column="4"
+                            Content="+"
+                            Style="{StaticResource PmBtn}"
+                            Width="44" Height="46"
+                            Command="{Binding ExposureIncCommand}"/>
                                         </Grid>
-                                        <TextBlock Grid.Row="2" Text="0.2s~1s"
-                                                   Foreground="{StaticResource Muted}" FontSize="10"
-                                                   HorizontalAlignment="Center" Margin="0,3,0,0"/>
+
+                                        <TextBlock Grid.Row="2"
+                           Text="0.2s~1s"
+                           Foreground="{StaticResource Muted}"
+                           FontSize="9"
+                           HorizontalAlignment="Center"
+                           Margin="0,4,0,0"/>
                                     </Grid>
                                 </Border>
 
-                                <!-- GAIN -->
-                                <Border Grid.Row="4" Background="{StaticResource Card}" CornerRadius="10" Padding="8,6">
+                                <!-- ================= GAIN ================= -->
+                                <Border Grid.Row="4"
+                Background="{StaticResource Card}"
+                CornerRadius="12"
+                Padding="8,6">
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="46"/>
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
-                                        <TextBlock Grid.Row="0" Text="GAIN"
-                                                   Foreground="White" FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
+
+                                        <TextBlock Grid.Row="0"
+                           Text="GAIN"
+                           Foreground="White"
+                           FontSize="10"
+                           FontWeight="Bold"
+                           Margin="0,0,0,4"/>
+
                                         <Grid Grid.Row="1">
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="44"/>
+                                                <ColumnDefinition Width="8"/>
                                                 <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="8"/>
+                                                <ColumnDefinition Width="44"/>
                                             </Grid.ColumnDefinitions>
-                                            <Button Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
-                                                    Margin="0,0,5,0" Command="{Binding GainDecCommand}"/>
-                                            <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="10">
-                                                <TextBlock Text="30dB" Foreground="White" FontSize="15" FontWeight="Bold"
-                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                            <Button Grid.Column="0"
+                            Content="-"
+                            Style="{StaticResource PmBtn}"
+                            Width="44" Height="46"
+                            Command="{Binding GainDecCommand}"/>
+
+                                            <Border Grid.Column="2"
+                            Background="{StaticResource ValueBg}"
+                            CornerRadius="12"
+                            Height="46">
+                                                <TextBlock Text="30dB"
+                                   Foreground="White"
+                                   FontSize="15"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
                                             </Border>
-                                            <Button Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
-                                                    Margin="5,0,0,0" Command="{Binding GainIncCommand}"/>
+
+                                            <Button Grid.Column="4"
+                            Content="+"
+                            Style="{StaticResource PmBtn}"
+                            Width="44" Height="46"
+                            Command="{Binding GainIncCommand}"/>
                                         </Grid>
-                                        <TextBlock Grid.Row="2" Text="3dB~45dB"
-                                                   Foreground="{StaticResource Muted}" FontSize="10"
-                                                   HorizontalAlignment="Center" Margin="0,3,0,0"/>
+
+                                        <TextBlock Grid.Row="2"
+                           Text="3dB~45dB"
+                           Foreground="{StaticResource Muted}"
+                           FontSize="9"
+                           HorizontalAlignment="Center"
+                           Margin="0,4,0,0"/>
                                     </Grid>
                                 </Border>
 
-                                <!-- GAMMA -->
-                                <Border Grid.Row="6" Background="{StaticResource Card}" CornerRadius="10" Padding="8,6">
+                                <!-- ================= GAMMA ================= -->
+                                <Border Grid.Row="6"
+                Background="{StaticResource Card}"
+                CornerRadius="12"
+                Padding="8,6">
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="46"/>
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
-                                        <TextBlock Grid.Row="0" Text="GAMMA"
-                                                   Foreground="White" FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
+
+                                        <TextBlock Grid.Row="0"
+                           Text="GAMMA"
+                           Foreground="White"
+                           FontSize="10"
+                           FontWeight="Bold"
+                           Margin="0,0,0,4"/>
+
                                         <Grid Grid.Row="1">
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="44"/>
+                                                <ColumnDefinition Width="8"/>
                                                 <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="8"/>
+                                                <ColumnDefinition Width="44"/>
                                             </Grid.ColumnDefinitions>
-                                            <Button Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
-                                                    Margin="0,0,5,0" Command="{Binding GammaDecCommand}"/>
-                                            <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="10">
-                                                <TextBlock Text="1.0" Foreground="White" FontSize="15" FontWeight="Bold"
-                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                            <Button Grid.Column="0"
+                            Content="-"
+                            Style="{StaticResource PmBtn}"
+                            Width="44" Height="46"
+                            Command="{Binding GammaDecCommand}"/>
+
+                                            <Border Grid.Column="2"
+                            Background="{StaticResource ValueBg}"
+                            CornerRadius="12"
+                            Height="46">
+                                                <TextBlock Text="1.0"
+                                   Foreground="White"
+                                   FontSize="15"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
                                             </Border>
-                                            <Button Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
-                                                    Margin="5,0,0,0" Command="{Binding GammaIncCommand}"/>
+
+                                            <Button Grid.Column="4"
+                            Content="+"
+                            Style="{StaticResource PmBtn}"
+                            Width="44" Height="46"
+                            Command="{Binding GammaIncCommand}"/>
                                         </Grid>
-                                        <TextBlock Grid.Row="2" Text="0.3~1"
-                                                   Foreground="{StaticResource Muted}" FontSize="10"
-                                                   HorizontalAlignment="Center" Margin="0,3,0,0"/>
+
+                                        <TextBlock Grid.Row="2"
+                           Text="0.3~1"
+                           Foreground="{StaticResource Muted}"
+                           FontSize="9"
+                           HorizontalAlignment="Center"
+                           Margin="0,4,0,0"/>
                                     </Grid>
                                 </Border>
 
-                                <!-- IRIS -->
-                                <Border Grid.Row="8" Background="{StaticResource Card}" CornerRadius="10" Padding="8,6">
+                                <!-- ================= IRIS ================= -->
+                                <Border Grid.Row="8"
+                Background="{StaticResource Card}"
+                CornerRadius="12"
+                Padding="8,6">
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="46"/>
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
-                                        <TextBlock Grid.Row="0" Text="IRIS"
-                                                   Foreground="White" FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
+
+                                        <TextBlock Grid.Row="0"
+                           Text="IRIS"
+                           Foreground="White"
+                           FontSize="10"
+                           FontWeight="Bold"
+                           Margin="0,0,0,4"/>
+
                                         <Grid Grid.Row="1">
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="44"/>
+                                                <ColumnDefinition Width="8"/>
                                                 <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="8"/>
+                                                <ColumnDefinition Width="44"/>
                                             </Grid.ColumnDefinitions>
-                                            <Button Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
-                                                    Margin="0,0,5,0" Command="{Binding IrisDecCommand}"/>
-                                            <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="10">
-                                                <TextBlock Text="2.8F" Foreground="White" FontSize="15" FontWeight="Bold"
-                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                            <Button Grid.Column="0"
+                            Content="-"
+                            Style="{StaticResource PmBtn}"
+                            Width="44" Height="46"
+                            Command="{Binding IrisDecCommand}"/>
+
+                                            <Border Grid.Column="2"
+                            Background="{StaticResource ValueBg}"
+                            CornerRadius="12"
+                            Height="46">
+                                                <TextBlock Text="2.8F"
+                                   Foreground="White"
+                                   FontSize="15"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
                                             </Border>
-                                            <Button Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
-                                                    Margin="5,0,0,0" Command="{Binding IrisIncCommand}"/>
+
+                                            <Button Grid.Column="4"
+                            Content="+"
+                            Style="{StaticResource PmBtn}"
+                            Width="44" Height="46"
+                            Command="{Binding IrisIncCommand}"/>
                                         </Grid>
-                                        <TextBlock Grid.Row="2" Text="0.3F~13F"
-                                                   Foreground="{StaticResource Muted}" FontSize="10"
-                                                   HorizontalAlignment="Center" Margin="0,3,0,0"/>
+
+                                        <TextBlock Grid.Row="2"
+                           Text="0.3F~13F"
+                           Foreground="{StaticResource Muted}"
+                           FontSize="9"
+                           HorizontalAlignment="Center"
+                           Margin="0,4,0,0"/>
                                     </Grid>
                                 </Border>
+
                             </Grid>
                         </Grid>
                         <!-- end SettingPanel -->

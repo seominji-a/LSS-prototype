@@ -23,7 +23,12 @@ namespace LSS_prototype.Scan_Page
         private bool _navOpen = false;
         private bool _settingOpen = false;
 
-        public Scan() => InitializeComponent();
+        public Scan()
+        {
+            InitializeComponent();
+            DataContext = new ScanViewModel();
+        }
+
 
         // 네비 토글
         private void ToggleNav_Click(object sender, RoutedEventArgs e)

@@ -1,0 +1,263 @@
+﻿<Window x:Class="LSS_prototype.User_Page.Default"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Default Settings"
+        Width="420" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent">
+
+    <Window.Resources>
+        <!-- ══ 색상 ══ -->
+        <SolidColorBrush x:Key="Panel"   Color="#1C2B3A"/>
+        <SolidColorBrush x:Key="Card"    Color="#243447"/>
+        <SolidColorBrush x:Key="ValueBg" Color="#1A2D3E"/>
+        <SolidColorBrush x:Key="BtnDark" Color="#2A3F55"/>
+        <SolidColorBrush x:Key="Muted"   Color="#64748B"/>
+        <SolidColorBrush x:Key="Accent"  Color="#3B82F6"/>
+
+        <!-- ══ BaseBtn: CornerRadius=12 고정 ══ -->
+        <Style x:Key="BaseBtn" TargetType="Button">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ══ +/- 버튼 ══ -->
+        <Style x:Key="PmBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
+            <Setter Property="Background" Value="{StaticResource BtnDark}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize"   Value="22"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Width"      Value="46"/>
+            <Setter Property="Height"     Value="46"/>
+        </Style>
+
+        <!-- ══ 액션 버튼 (RESET / SAVE) ══ -->
+        <Style x:Key="ActionBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize"   Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Height"     Value="46"/>
+        </Style>
+    </Window.Resources>
+
+    <!-- 팝업 외곽 그림자 + 라운딩 -->
+    <Border Background="{StaticResource Panel}"
+            CornerRadius="16"
+            Padding="20,18,20,20">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="24" ShadowDepth="4"
+                              Opacity="0.5" Color="Black"/>
+        </Border.Effect>
+
+        <StackPanel>
+            <!-- ── 타이틀 바 ── -->
+            <Grid Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="Default Settings"
+                               Foreground="White" FontSize="18" FontWeight="Bold"/>
+                    <TextBlock Text="Camera Default Setting"
+                               Foreground="{StaticResource Muted}" FontSize="12" Margin="0,2,0,0"/>
+                </StackPanel>
+
+                <!-- 닫기 버튼 -->
+                <Button Grid.Column="1"
+                        Width="36" Height="36"
+                        Background="#2A3F55"
+                        Style="{StaticResource BaseBtn}" Click="Button_Click"
+                        >
+                    <TextBlock Text="✕" Foreground="White" FontSize="16" FontWeight="Bold"/>
+                </Button>
+            </Grid>
+
+            <!-- ── 구분선 ── -->
+            <Border Height="1" Background="#2A3F55" Margin="0,0,0,14"/>
+
+            <!-- ══════════════════════════════
+                 설정 카드 4개
+                 Scan SettingPanel과 동일 구조
+            ══════════════════════════════ -->
+
+            <!-- EXPOSURE TIME -->
+            <Border Background="{StaticResource Card}" CornerRadius="10" Padding="12,10" Margin="0,0,0,8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="6"/>
+                        <RowDefinition Height="46"/>
+                        <RowDefinition Height="4"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="EXPOSURE TIME"
+                               Foreground="White" FontSize="12" FontWeight="Bold"/>
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
+                                Margin="0,0,8,0" Command="{Binding ExposureDecCommand}"/>
+                        <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="10">
+                            <TextBlock Text="{Binding ExposureValue}"
+                                       Foreground="White" FontSize="16" FontWeight="Bold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Button Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
+                                Margin="8,0,0,0" Command="{Binding ExposureIncCommand}"/>
+                    </Grid>
+                    <TextBlock Grid.Row="4" Text="0.2s ~ 1s"
+                               Foreground="{StaticResource Muted}" FontSize="10"
+                               HorizontalAlignment="Center"/>
+                </Grid>
+            </Border>
+
+            <!-- GAIN -->
+            <Border Background="{StaticResource Card}" CornerRadius="10" Padding="12,10" Margin="0,0,0,8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="6"/>
+                        <RowDefinition Height="46"/>
+                        <RowDefinition Height="4"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="GAIN"
+                               Foreground="White" FontSize="12" FontWeight="Bold"/>
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
+                                Margin="0,0,8,0" Command="{Binding GainDecCommand}"/>
+                        <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="10">
+                            <TextBlock Text="{Binding GainValue}"
+                                       Foreground="White" FontSize="16" FontWeight="Bold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Button Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
+                                Margin="8,0,0,0" Command="{Binding GainIncCommand}"/>
+                    </Grid>
+                    <TextBlock Grid.Row="4" Text="3dB ~ 45dB"
+                               Foreground="{StaticResource Muted}" FontSize="10"
+                               HorizontalAlignment="Center"/>
+                </Grid>
+            </Border>
+
+            <!-- GAMMA -->
+            <Border Background="{StaticResource Card}" CornerRadius="10" Padding="12,10" Margin="0,0,0,8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="6"/>
+                        <RowDefinition Height="46"/>
+                        <RowDefinition Height="4"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="GAMMA"
+                               Foreground="White" FontSize="12" FontWeight="Bold"/>
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
+                                Margin="0,0,8,0" Command="{Binding GammaDecCommand}"/>
+                        <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="10">
+                            <TextBlock Text="{Binding GammaValue}"
+                                       Foreground="White" FontSize="16" FontWeight="Bold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Button Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
+                                Margin="8,0,0,0" Command="{Binding GammaIncCommand}"/>
+                    </Grid>
+                    <TextBlock Grid.Row="4" Text="0.3 ~ 1"
+                               Foreground="{StaticResource Muted}" FontSize="10"
+                               HorizontalAlignment="Center"/>
+                </Grid>
+            </Border>
+
+            <!-- IRIS -->
+            <Border Background="{StaticResource Card}" CornerRadius="10" Padding="12,10" Margin="0,0,0,16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="6"/>
+                        <RowDefinition Height="46"/>
+                        <RowDefinition Height="4"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="IRIS"
+                               Foreground="White" FontSize="12" FontWeight="Bold"/>
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
+                                Margin="0,0,8,0" Command="{Binding IrisDecCommand}"/>
+                        <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="10">
+                            <TextBlock Text="{Binding IrisValue}"
+                                       Foreground="White" FontSize="16" FontWeight="Bold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Button Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
+                                Margin="8,0,0,0" Command="{Binding IrisIncCommand}"/>
+                    </Grid>
+                    <TextBlock Grid.Row="4" Text="0.3F ~ 13F"
+                               Foreground="{StaticResource Muted}" FontSize="10"
+                               HorizontalAlignment="Center"/>
+                </Grid>
+            </Border>
+
+            <!-- ── 구분선 ── -->
+            <Border Height="1" Background="#2A3F55" Margin="0,0,0,14"/>
+
+            <!-- ── 하단 버튼: RESET / SAVE ── -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- RESET: 값을 초기값으로 되돌림 -->
+                <Button Grid.Column="0"
+                        Content="RESET"
+                        Style="{StaticResource ActionBtn}"
+                        Background="{StaticResource BtnDark}"
+                        Command="{Binding ResetCommand}"/>
+
+                <!-- SAVE: DB 저장 후 팝업 닫기 -->
+                <Button Grid.Column="2"
+                        Content="SAVE"
+                        Style="{StaticResource ActionBtn}"
+                        Background="{StaticResource Accent}"
+                        Command="{Binding SaveCommand}"/>
+            </Grid>
+        </StackPanel>
+    </Border>
+</Window>

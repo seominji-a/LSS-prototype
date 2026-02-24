@@ -227,7 +227,7 @@
                         <ColumnDefinition Width="440"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="Operator" FontSize="54" FontWeight="Bold"
+                    <TextBlock Text="Healthcare Professional" FontSize="54" FontWeight="Bold"
                                Foreground="{StaticResource Primary}" VerticalAlignment="Center"/>
 
                     <Border Grid.Column="1" Background="{StaticResource Surface}"
@@ -297,7 +297,7 @@
 
                     <ListView.View>
                         <GridView AllowsColumnReorder="False">
-                            <GridViewColumn Header="USER NAME" Width="560"
+                            <GridViewColumn Header="NAME" Width="560"
                                             HeaderContainerStyle="{StaticResource ColumnHeaderFirst}"
                                             CellTemplate="{StaticResource NameCellTemplate}"/>
                             <GridViewColumn Header="LOGIN ID"  Width="320"
@@ -342,7 +342,7 @@
                         </StackPanel>
 
                         <!-- USER MANAGEMENT -->
-                        <TextBlock Text="USER MANAGEMENT" Style="{StaticResource SectionLabel}"/>
+                        <TextBlock Text="HCP MANAGEMENT" Style="{StaticResource SectionLabel}"/>
                         <Button Style="{StaticResource NavBtn}" Command="{Binding AddUserCommand}"
                                 Content="Add User"    Margin="0,0,0,12"/>
                         <Button Style="{StaticResource NavBtn}" Command="{Binding EditUserCommand}"
@@ -366,9 +366,9 @@
                         <!-- SYSTEM SETTINGS -->
                         <TextBlock Text="SYSTEM SETTINGS" Style="{StaticResource SectionLabel}"/>
                         <Button Style="{StaticResource NavBtn}" Command="{Binding SettingCommand}"
-                                Content="SETTINGS" Margin="0,0,0,12"/>
+                                Content="SYSTEM SETUP" Margin="0,0,0,12"/>
                         <Button Style="{StaticResource NavBtn}" Command="{Binding DefaultCommand}"
-                                Content="DEFAULT" Margin="0,0,0,0"/>
+                                Content="CAMERA_DEFAULT" Margin="0,0,0,0"/>
 
                     </StackPanel>
                 </ScrollViewer>

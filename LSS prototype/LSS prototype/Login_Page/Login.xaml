@@ -321,7 +321,7 @@
                 <Grid Grid.Row="6">
                     <CheckBox Content="유저 관리 모드"
                               HorizontalAlignment="Right"
-                              Style="{StaticResource SimpleCheckBoxStyle}" Visibility="Collapsed"/>
+                              Style="{StaticResource SimpleCheckBoxStyle}"/>
                 </Grid>
 
                 <!-- 로그인 버튼 -->

@@ -117,7 +117,7 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="440"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Patient" FontSize="54" FontWeight="Bold"
+                    <TextBlock Text="EMR Patient" FontSize="54" FontWeight="Bold"
                                Foreground="{StaticResource Primary}" VerticalAlignment="Center"/>
 
                     <Border Grid.Column="1" Background="{StaticResource Surface}"

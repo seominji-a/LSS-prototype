@@ -20,6 +20,9 @@
     </Window.DataContext>
 
     <Window.Resources>
+        <!-- ADMIN 체크박스 관련  -->
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        
         <!-- 고정 조건 -->
         <SolidColorBrush x:Key="Bg" Color="#F3F5F7"/>
         <SolidColorBrush x:Key="Primary" Color="#173753"/>
@@ -309,19 +312,44 @@
                                Margin="2,0,0,10"/>
                     <Border Style="{StaticResource InputBoxBorderStyle}">
                         <PasswordBox x:Name="txtPassword"
-                                     FontSize="24" FontFamily="Arial"
-                                     Background="Transparent" BorderThickness="0"
-                                     VerticalContentAlignment="Center"
-                                     Padding="18,0"
-                                     Foreground="{StaticResource TextDark}"/>
-                    </Border>
-                </StackPanel>
+                                    FontSize="24"
+                                    FontFamily="Arial"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    VerticalContentAlignment="Center"
+                                    Padding="18,0"
+                                    Foreground="{StaticResource TextDark}"
+                                    GotKeyboardFocus="PasswordBox_CheckCaps"
+                                    PreviewKeyDown="PasswordBox_CheckCaps"/>
+                                           </Border>
+                                       </StackPanel>
 
                 <!-- 체크박스 -->
+                <!-- Row 6: CapsLock 경고(좌) + Admin Mode(우) -->
                 <Grid Grid.Row="6">
-                    <CheckBox Content="유저 관리 모드"
-                              HorizontalAlignment="Right"
-                              Style="{StaticResource SimpleCheckBoxStyle}"/>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- ✅ CapsLock 경고 (왼쪽) -->
+                    <TextBlock x:Name="CapsLockWarning"
+                         Grid.Column="0"
+                         Text="Caps Lock is ON. Password is case-sensitive."
+                         FontSize="17"
+                         FontFamily="Arial"
+                         FontWeight="SemiBold"
+                         Foreground="#EF4444"
+                         VerticalAlignment="Center"
+                         Margin="6,0,0,0"
+                         Visibility="Collapsed"/>
+
+                    <!-- Admin Mode (오른쪽) -->
+                    <CheckBox Content="ADMIN MODE"
+                            IsChecked="{Binding IsAdminMode}"
+                            Visibility="{Binding ShowAdminMode, Converter={StaticResource BoolToVis}}"
+                            HorizontalAlignment="Right"
+                            Style="{StaticResource SimpleCheckBoxStyle}"/>
                 </Grid>
 
                 <!-- 로그인 버튼 -->
@@ -329,7 +357,7 @@
                     <Button Style="{StaticResource PrimaryButtonStyle}"
                             Command="{Binding LoginCommand}"
                             CommandParameter="{Binding ElementName=txtPassword}">
-                        <TextBlock Text="로그인"/>
+                        <TextBlock Text="LOGIN"/>
                     </Button>
                 </Grid>
 

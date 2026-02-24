@@ -18,50 +18,54 @@ namespace LSS_prototype.DB_CRUD
         /// 입력받은 ID/PW로 DB 조회 후 해시 비교를 수행
         /// </summary>
         /// <returns>로그인 성공 여부 (true: 성공, false: 실패)</returns>
-        public bool Login_check(string loginId, string password, out string roleCode)
+        public bool Login_check(string loginId, string password, out string roleCode, out DateTime? passwordChangedAt, out string user_id)
         {
-            roleCode = null;
-            // using 문을 사용하여 DB 연결 자동 해제 
+            roleCode = string.Empty;
+            passwordChangedAt = null;
+            user_id = string.Empty;
 
             using (SQLiteConnection conn = new SQLiteConnection("Data Source=" + Common.DB_PATH))
             {
                 conn.Open();
 
-                // DB에서 해당 LOGIN_ID의 해시값과 솔트값 조회
                 using (SQLiteCommand cmd = new SQLiteCommand(Query.LOGIN_HASH_CHECK, conn))
                 {
                     cmd.Parameters.AddWithValue("@loginId", loginId);
 
-                    // 쿼리 실행 및 결과 읽기
                     using (SQLiteDataReader reader = cmd.ExecuteReader())
                     {
-                        // 해당 ID를 가진 사용자가 존재하는지 확인
-                        if (reader.Read())
-                        {
-                            // 1. DB에 저장된 해시값과 솔트값 가져오기 + 로그인 성공 대비 권한값(ROLE) 도 가져오기
-                            string storedHash = reader["PASSWORD_HASH"].ToString();
-                            string storedSalt = reader["PASSWORD_SALT"].ToString();
-                            string dbRoleCode = reader["ROLE_CODE"].ToString();
-
-                            // 2. 입력받은 비밀번호 검증
-                            bool isPasswordCorrect = VerifyPassword(password, storedHash, storedSalt);
-
-                            if (isPasswordCorrect)
-                            {
-                                roleCode = dbRoleCode;
-                                return true;
-                            }
+                        if (!reader.Read())
                             return false;
-                        }
-                        else
-                        {
-                            // 해당 ID를 가진 사용자가 DB에 없음
+
+                        string storedHash = reader["PASSWORD_HASH"].ToString();
+                        string storedSalt = reader["PASSWORD_SALT"].ToString();
+                        string dbRoleCode = reader["ROLE_CODE"].ToString();
+
+                        bool isPasswordCorrect = VerifyPassword(password, storedHash, storedSalt);
+                        if (!isPasswordCorrect)
                             return false;
+
+                        roleCode = dbRoleCode;
+
+                        object v = reader["PASSWORD_CHANGED_AT"];
+                        object e = reader["USER_ID"];
+
+                        if (v != null && v != DBNull.Value)
+                        {
+                            DateTime parsed;
+                            if (DateTime.TryParse(v.ToString(), out parsed))
+                                passwordChangedAt = parsed;
                         }
+
+                        if (e != null && e != DBNull.Value)
+                        {
+                            user_id = e.ToString();   
+                        }
+
+                        return true;
                     }
                 }
             }
-
         }
         #endregion
 

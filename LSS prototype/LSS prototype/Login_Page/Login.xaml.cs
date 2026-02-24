@@ -32,5 +32,32 @@ namespace LSS_prototype.Login_Page
         {
             Application.Current.Shutdown();
         }
+
+        private void PasswordBox_CheckCaps(object sender, RoutedEventArgs e)
+        {
+            CapsLockWarning.Visibility =
+                (Console.CapsLock && txtPassword.IsKeyboardFocusWithin)? Visibility.Visible: Visibility.Collapsed;
+        }
+
+        /// <summary>
+        /// 패스워드 박스 클릭 시 ADMIN 권한을 가진 ID 리스트들과 현재 ID 박스에 있는 아이디와 비교하여
+        /// 리스트 내에 존재한다면 어드민 박스를 사용자에게 출력한다.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void PasswordBox_CheckCaps(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            try
+            {
+                var vm = DataContext as LoginViewModel;
+                if (vm != null)
+                    vm.UpdateAdminModeVisibilityByUserId();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message + "PasswordBox_CheckCaps function Check");
+            }
+           
+        }
     }
 }

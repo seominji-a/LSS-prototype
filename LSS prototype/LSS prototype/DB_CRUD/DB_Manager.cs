@@ -118,5 +118,27 @@ namespace LSS_prototype.DB_CRUD
             }
         }
         #endregion
+
+        #region [ ADMIN 권한 ID 조회 ]
+        public List<string> SelectAdminLoginIds()
+        {
+            var list = new List<string>();
+
+            using (var conn = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.ADMIN_ID_SEARCH, conn))
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        list.Add(reader["LOGIN_ID"].ToString());
+                    }
+                }
+            }
+
+            return list;
+        }
+        #endregion
     }
 }

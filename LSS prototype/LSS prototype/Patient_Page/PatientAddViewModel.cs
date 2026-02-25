@@ -22,6 +22,15 @@ namespace LSS_prototype.Patient_Page
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
 
+        public ICommand OpenKeypadCommand { get; }
+        private readonly IDialogService _dialogService;
+        public PatientAddViewModel(IDialogService dialogService)
+        {
+            _dialogService = dialogService;
+            OpenKeypadCommand = new RelayCommand(OpenKeypad);
+        }
+
+
         public Action<bool?> CloseAction { get; set; }
         public PatientAddViewModel()
         {
@@ -50,6 +59,16 @@ namespace LSS_prototype.Patient_Page
             CustomMessageWindow.Show(message,
                 CustomMessageWindow.MessageBoxType.AutoClose, 1,
                 CustomMessageWindow.MessageIconType.Warning);
+        }
+
+        private void OpenKeypad()
+        {
+            var keypadVm = new NumericKeypadViewModel();
+            bool? result = _dialogService.ShowDialog(keypadVm);
+            if (result == true && keypadVm.ResultDate != null)
+            {
+                BirthDate = keypadVm.ResultDate;
+            }
         }
     }
 }

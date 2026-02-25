@@ -68,12 +68,23 @@ namespace LSS_prototype.Patient_Page
         {
             try
             {
+
                 if (string.IsNullOrWhiteSpace(PatientName)) { ShowWarning("환자 이름을 입력해주세요."); return; }
                 if (PatientCode == null || PatientCode == 0) { ShowWarning("환자 코드를 입력해주세요."); return; }
                 if (BirthDate == null) { ShowWarning("생년월일을 선택해주세요."); return; }
                 if (string.IsNullOrWhiteSpace(Sex)) { ShowWarning("성별을 선택해주세요."); return; }
 
                 var repo = new DB_Manager();
+
+                // 1. 중복 체크 (자기 자신은 제외)
+                // Patient_id는 생성자에서 SelectedPatient로부터 받아온 고유 값입니다.
+                if (repo.ExistsPatientCodeExceptSelf(this.PatientCode.Value, this.Patient_id))
+                {
+                    CustomMessageWindow.Show("해당 환자 번호는 이미 다른 환자가 사용 중입니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Danger);
+                    return;
+                }
 
                 var model = new PatientModel
                 {

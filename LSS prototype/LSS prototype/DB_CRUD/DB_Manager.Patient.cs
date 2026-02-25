@@ -114,7 +114,24 @@ namespace LSS_prototype.DB_CRUD
         }
         #endregion
 
+        #region [ 자기 자신 환자 번호 존재 여부 판단 담당부 ]
+        public bool ExistsPatientCodeExceptSelf(int code, int id)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
 
+                using (var cmd = new SQLiteCommand(Query.PATIENT_CODE_SEARCHSELF, conn))
+                {
+                    cmd.Parameters.AddWithValue("@PatientCode", code);
+                    cmd.Parameters.AddWithValue("@Patient_id", id);
 
+                    // 기본 ExecuteScalar는 object를 반환하므로 형변환 필요
+                    var result = cmd.ExecuteScalar();
+                    return result != null && Convert.ToInt32(result) > 0;
+                }
+            }
+        }
+        #endregion
     }
 }

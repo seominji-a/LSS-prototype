@@ -32,8 +32,7 @@
                 <!-- 2. 환자 번호 -->
                 <TextBlock Text="Patient Code" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
                 <TextBox Text="{Binding PatientCode, UpdateSourceTrigger=PropertyChanged}" 
-                         Style="{StaticResource DefaultDIALOGTEXTStyle}" IsReadOnly="True"/>
-                <!--환자 번호 비활성화 처리 목적 IsReadOnly="True 추가-->
+                         Style="{StaticResource DefaultDIALOGTEXTStyle}"/>
 
                 <!-- 3. 생년 월일 -->
                 <TextBlock Text="Date of Birth" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>

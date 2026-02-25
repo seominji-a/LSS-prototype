@@ -18,7 +18,7 @@ namespace LSS_prototype
         public const string DB_INIT_PATH = "../../../DB/db_init.sql"; // 초기 DB 테이블 생성 파일 경로 
         public const string DB_SEED_PATH = "../../../DB/seed.sql"; // 초기 DB 테이블 데이터 생성 경로 
 
-        public const int DB_VERSION = 35; // DB Version 
+        public const int DB_VERSION = 38; // DB Version 
 
     }
 

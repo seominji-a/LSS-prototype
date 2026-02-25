@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LSS_prototype.DB_CRUD;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -54,7 +55,19 @@ namespace LSS_prototype.Patient_Page
             if (BirthDate == null) { ShowWarning("생년월일을 선택해주세요."); return; }
             if (string.IsNullOrWhiteSpace(Sex)) { ShowWarning("성별을 선택해주세요."); return; }
 
-            // ✅ 여기서는 저장하지 말고 그냥 닫기만
+            // 중복 체크 추가 (창이 닫히기 전에 수행)
+            var repo = new DB_Manager();
+            if (repo.ExistsPatientCode(PatientCode.Value))
+            {
+                CustomMessageWindow.Show("중복된 환자가 존재합니다.",
+                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    CustomMessageWindow.MessageIconType.Danger);
+
+                // 여기서 return을 하면 CloseAction이 실행되지 않아 창이 유지됩니다.
+                return;
+            }
+
+            //저장하지 말고 그냥 닫기만
             CloseAction?.Invoke(true);
         }
 

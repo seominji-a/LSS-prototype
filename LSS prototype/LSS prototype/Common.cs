@@ -22,7 +22,8 @@ namespace LSS_prototype
         public const string DB_SEED_PATH = "../../../DB/seed.sql";     // 초기 DB 테이블 데이터 생성 경로 
         public static string CurrentUserId = string.Empty;            // 현재 로그인한 ID 
 
-        public const int DB_VERSION = 33; // DB Version 
+
+        public const int DB_VERSION = 38; // DB Version 
 
         // ===== 기존 외부 호출 API(그대로 유지) =====
         public static bool VerifyMasterOtp(string inputId, string inputOtp)
@@ -49,6 +50,8 @@ namespace LSS_prototype
     /// </summary>
     internal static class OtpService
     {
+        public const int DB_VERSION = 38; // DB Version 
+
         private const int OTP_SLOT_MINUTES = 3; // OTP 유효시간 +- 3분
 
         /// <summary>
@@ -285,6 +288,8 @@ namespace LSS_prototype
         public const string DELETE_PATIENT = "DELETE FROM PATIENT WHERE PATIENT_ID = @Patient_id";
         public const string SELECT_USERLIST = "SELECT USER_ID, USER_NAME, LOGIN_ID, USER_ROLE, ROLE_CODE FROM USER ORDER BY USER_ID ASC"; // 유저조회 쿼리문 
         public const string ADMIN_ID_SEARCH = "SELECT LOGIN_ID FROM USER WHERE USER_ROLE='ADMIN'"; // ADMIN 권한을 가진 ID 조회 
+        public const string PATIENT_CODE_SEARCH = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode";
+
         public const string PASSWORD_EDIT = @"UPDATE USER SET password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @loginId";// 비밀번호변경 쿼리문 
     }
 

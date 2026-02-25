@@ -304,6 +304,7 @@
                 </StackPanel>
 
                 <!-- PASSWORD -->
+                <!-- KEY Bindign 처리: PasswordBox 안에서 엔터키를 눌렀을 때, 로그인 버튼에 연결된 LoginCommand를 직접 실행-->
                 <StackPanel Grid.Row="4">
                     <TextBlock Text="PASSWORD"
                                FontSize="18" FontFamily="Arial"
@@ -312,19 +313,25 @@
                                Margin="2,0,0,10"/>
                     <Border Style="{StaticResource InputBoxBorderStyle}">
                         <PasswordBox x:Name="txtPassword"
-                                FontSize="24"
-                                FontFamily="Arial"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                VerticalContentAlignment="Center"
-                                Padding="18,0"
-                                Foreground="{StaticResource TextDark}"
-                                GotKeyboardFocus="PasswordBox_GotFocus"
-                                LostKeyboardFocus="PasswordBox_HideCaps"
-                                PreviewKeyUp="PasswordBox_CheckCaps"/>
-                    </Border>
-                                       </StackPanel>
+                            FontSize="24"
+                            FontFamily="Arial"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            VerticalContentAlignment="Center"
+                            Padding="18,0"
+                            Foreground="{StaticResource TextDark}"
+                            GotKeyboardFocus="PasswordBox_CheckCaps"
+                            PreviewKeyDown="PasswordBox_CheckCaps">
 
+                            <PasswordBox.InputBindings>
+                                <KeyBinding Key="Enter" 
+                                    Command="{Binding LoginCommand}" 
+                                    CommandParameter="{Binding ElementName=txtPassword}"/>
+                            </PasswordBox.InputBindings>
+                        </PasswordBox>
+                    </Border>
+                </StackPanel>
+                             
                 <!-- 체크박스 -->
                 <!-- Row 6: CapsLock 경고(좌) + Admin Mode(우) -->
                 <Grid Grid.Row="6">
@@ -357,7 +364,7 @@
                 <Grid Grid.Row="8">
                     <Button Style="{StaticResource PrimaryButtonStyle}"
                             Command="{Binding LoginCommand}"
-                            CommandParameter="{Binding ElementName=txtPassword}">
+                            CommandParameter="{Binding ElementName=txtPassword}" Cursor="Hand">
                         <TextBlock Text="LOGIN"/>
                     </Button>
                 </Grid>

@@ -16,12 +16,11 @@ using System.Windows.Shapes;
 namespace LSS_prototype.Patient_Page
 {
     /// <summary>
-    /// Patient.xaml에 대한 상호 작용 논리
-    /// 2026-02-09 서민지
+    /// EmrPatient.xaml에 대한 상호 작용 논리
     /// </summary>
-    public partial class Patient : UserControl
+    public partial class EmrPatient : UserControl
     {
-        public Patient()
+        public EmrPatient()
         {
             InitializeComponent();
         }
@@ -34,11 +33,6 @@ namespace LSS_prototype.Patient_Page
         private void Exit_Click(object sender, RoutedEventArgs e)
         {
             Application.Current.Shutdown();
-        }
-
-        private void CheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            MainPage.Instance.NavigateTo(new EmrPatient());
         }
     }
 }

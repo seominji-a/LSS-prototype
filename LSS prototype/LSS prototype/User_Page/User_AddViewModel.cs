@@ -69,7 +69,8 @@ namespace LSS_prototype.User_Page
             // DB 작업
             try
             {
-                bool success = _dbManager.InsertUser(UserID.Trim(), UserName.Trim(), Role.Trim(), password);
+                var db = new DB_Manager();
+                bool success = db.InsertUser(UserID.Trim(), UserName.Trim(), Role.Trim(), password);
                 if (success)
                 {
                     CustomMessageWindow.Show("사용자 정보 추가 성공",
@@ -80,15 +81,11 @@ namespace LSS_prototype.User_Page
             }
             catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Constraint)
             {
-                CustomMessageWindow.Show("이미 존재하는 아이디입니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                    CustomMessageWindow.MessageIconType.Warning);
+                Common.WriteLog(ex);
             }
             catch (Exception ex)
             {
-                CustomMessageWindow.Show($"저장 중 오류가 발생했습니다.\n{ex.Message}",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                    CustomMessageWindow.MessageIconType.Danger);
+                Common.WriteLog(ex);
             }
         }
 

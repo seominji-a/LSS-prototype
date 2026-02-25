@@ -169,7 +169,7 @@ namespace LSS_prototype
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + " ApplyBlurToAllWindows Function Check");
+                Common.WriteLog(ex);
             }
         }
 
@@ -186,7 +186,7 @@ namespace LSS_prototype
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + " RemoveBlurFromAllWindows Function Check");
+                Common.WriteLog(ex);
             }
         }
 

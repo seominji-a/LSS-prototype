@@ -16,9 +16,6 @@ using LSS_prototype.DB_CRUD;
 
 namespace LSS_prototype.Login_Page
 {
-    /// <summary>
-    /// Login.xaml에 대한 상호 작용 논리
-    /// </summary>
     public partial class Login : Window
     {
         public Login()
@@ -28,36 +25,50 @@ namespace LSS_prototype.Login_Page
             db.InitDB();
         }
 
+        // ── EXIT 버튼 ──
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             Application.Current.Shutdown();
         }
 
+        // ── 캡스락 체크 (GotKeyboardFocus + PreviewKeyUp 공용) ──
         private void PasswordBox_CheckCaps(object sender, RoutedEventArgs e)
         {
             CapsLockWarning.Visibility =
-                (Console.CapsLock && txtPassword.IsKeyboardFocusWithin)? Visibility.Visible: Visibility.Collapsed;
+                (Console.CapsLock && txtPassword.IsKeyboardFocusWithin)
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
         }
 
-        /// <summary>
-        /// 패스워드 박스 클릭 시 ADMIN 권한을 가진 ID 리스트들과 현재 ID 박스에 있는 아이디와 비교하여
-        /// 리스트 내에 존재한다면 어드민 박스를 사용자에게 출력한다.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void PasswordBox_CheckCaps(object sender, KeyboardFocusChangedEventArgs e)
+        // ── 포커스 떠날 때 경고 숨김 ──
+        private void PasswordBox_HideCaps(object sender, RoutedEventArgs e)
+        {
+            CapsLockWarning.Visibility = Visibility.Collapsed;
+        }
+
+        // ── 패스워드 박스 포커스 진입 시:
+        //    Admin 권한 ID 리스트와 현재 입력된 ID를 비교하여
+        //    Admin Mode 체크박스 표시 여부 결정 ──
+        private void PasswordBox_GotFocus(object sender, KeyboardFocusChangedEventArgs e)
         {
             try
             {
                 var vm = DataContext as LoginViewModel;
                 if (vm != null)
                     vm.UpdateAdminModeVisibilityByUserId();
+
+                // 캡스락 체크 — 포커스 진입 즉시
+                CapsLockWarning.Visibility =
+                    (Console.CapsLock && txtPassword.IsKeyboardFocusWithin)
+                        ? Visibility.Visible
+                        : Visibility.Collapsed;
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "PasswordBox_CheckCaps function Check");
+                Common.WriteLog(ex);
             }
-           
+
+            
         }
 
         

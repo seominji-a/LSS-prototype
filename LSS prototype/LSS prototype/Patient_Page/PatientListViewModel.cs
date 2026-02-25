@@ -90,9 +90,7 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                CustomMessageWindow.Show($"데이터 로드 중 오류 발생: {ex.Message}",
-                                CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                                CustomMessageWindow.MessageIconType.Danger);
+                Common.WriteLog(ex);
             }
         }
 
@@ -143,7 +141,7 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + " AddPatient Function Check");
+                Common.WriteLog(ex);
             }
         }
 

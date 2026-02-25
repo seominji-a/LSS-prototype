@@ -3,8 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:LSS_prototype.User_Page"
         mc:Ignorable="d"
-        Title="SETTING" Height="816" Width="1032"
+        Title="SETTING" Height="680" Width="860"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         WindowStyle="None"
@@ -13,7 +14,6 @@
         FontFamily="Arial">
 
     <Window.Resources>
-        <!-- ══ 색상 리소스 (Scan 테마와 동일) ══ -->
         <SolidColorBrush x:Key="Primary"  Color="#173753"/>
         <SolidColorBrush x:Key="Panel"    Color="#1C2B3A"/>
         <SolidColorBrush x:Key="Card"     Color="#243447"/>
@@ -24,7 +24,6 @@
         <SolidColorBrush x:Key="Inactive" Color="#94A3B8"/>
         <SolidColorBrush x:Key="Divider"  Color="#2A3F55"/>
 
-        <!-- ══ TextBox ══ -->
         <Style x:Key="InputBox" TargetType="TextBox">
             <Setter Property="Background"               Value="{StaticResource CardDeep}"/>
             <Setter Property="Foreground"               Value="White"/>
@@ -48,27 +47,37 @@
             </Setter>
         </Style>
 
-        <!-- ══ MultiLine TextBox (MyAET) ══ -->
+        <Style x:Key="IpInputBox" TargetType="TextBox" BasedOn="{StaticResource InputBox}">
+            <Setter Property="FontFamily"                 Value="Consolas"/>
+            <Setter Property="FontSize"                   Value="16"/>
+            <Setter Property="MaxLength"                  Value="23"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="PortInputBox" TargetType="TextBox" BasedOn="{StaticResource InputBox}">
+            <Setter Property="FontSize"  Value="15"/>
+            <Setter Property="MaxLength" Value="5"/>
+        </Style>
+
         <Style x:Key="MultiInputBox" TargetType="TextBox" BasedOn="{StaticResource InputBox}">
-            <Setter Property="Height"        Value="72"/>
-            <Setter Property="AcceptsReturn" Value="True"/>
-            <Setter Property="TextWrapping"  Value="Wrap"/>
-            <Setter Property="VerticalContentAlignment" Value="Top"/>
+            <Setter Property="Height"                   Value="42"/>
+            <Setter Property="AcceptsReturn"            Value="False"/>
+            <Setter Property="TextWrapping"             Value="NoWrap"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
                         <Border Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="10" Padding="12,10">
-                            <ScrollViewer x:Name="PART_ContentHost"/>
+                                CornerRadius="10" Padding="12,0">
+                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <!-- ══ 필드 라벨 ══ -->
         <Style x:Key="FieldLabel" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{StaticResource Inactive}"/>
             <Setter Property="FontSize"   Value="12"/>
@@ -76,7 +85,6 @@
             <Setter Property="Margin"     Value="2,0,0,5"/>
         </Style>
 
-        <!-- ══ BaseBtn: CornerRadius=12 고정 ══ -->
         <Style x:Key="BaseBtn" TargetType="Button">
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor"          Value="Hand"/>
@@ -91,134 +99,109 @@
             </Setter>
         </Style>
 
-        <!-- ══ Accent 버튼 (Test Connection) ══ -->
         <Style x:Key="AccentBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
             <Setter Property="Background" Value="{StaticResource Accent}"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize"   Value="14"/>
+            <Setter Property="FontSize"   Value="13"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Height"     Value="44"/>
+            <Setter Property="Height"     Value="40"/>
         </Style>
 
-        <!-- ══ Secondary 버튼 (Apply) ══ -->
         <Style x:Key="ApplyBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
             <Setter Property="Background" Value="{StaticResource Primary}"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize"   Value="14"/>
+            <Setter Property="FontSize"   Value="13"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Height"     Value="44"/>
+            <Setter Property="Height"     Value="40"/>
         </Style>
 
-        <!-- ══ Cancel 버튼 ══ -->
         <Style x:Key="CancelBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
             <Setter Property="Background" Value="{StaticResource BtnDark}"/>
             <Setter Property="Foreground" Value="{StaticResource Inactive}"/>
-            <Setter Property="FontSize"   Value="14"/>
+            <Setter Property="FontSize"   Value="13"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Height"     Value="44"/>
+            <Setter Property="Height"     Value="40"/>
         </Style>
 
-        <!-- ══ Save 버튼 (Hospital Name 옆) ══ -->
         <Style x:Key="SaveBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
             <Setter Property="Background" Value="{StaticResource Accent}"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize"   Value="14"/>
+            <Setter Property="FontSize"   Value="13"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Height"     Value="42"/>
-            <Setter Property="Width"      Value="80"/>
+            <Setter Property="Width"      Value="72"/>
         </Style>
 
-        <!-- ══ EXIT 버튼 ══ -->
         <Style x:Key="ExitBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
             <Setter Property="Background" Value="#111827"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize"   Value="16"/>
+            <Setter Property="FontSize"   Value="14"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Width"      Value="120"/>
-            <Setter Property="Height"     Value="48"/>
+            <Setter Property="Width"      Value="100"/>
+            <Setter Property="Height"     Value="42"/>
         </Style>
     </Window.Resources>
 
-    <!-- ══ 최외곽: 그림자 + 라운딩 ══ -->
-    <Border Background="{StaticResource Panel}"
-            CornerRadius="18">
+    <Border Background="{StaticResource Panel}" CornerRadius="18">
         <Border.Effect>
-            <DropShadowEffect BlurRadius="32" ShadowDepth="6"
-                              Opacity="0.55" Color="Black"/>
+            <DropShadowEffect BlurRadius="32" ShadowDepth="6" Opacity="0.55" Color="Black"/>
         </Border.Effect>
 
-        <Grid Margin="36,28,36,28">
+        <Grid Margin="32,24,32,24">
             <Grid.RowDefinitions>
-                <!-- R0: 타이틀 바 (제목 + 닫기) -->
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="14"/>
-                <!-- R2: Hospital Name -->
+                <RowDefinition Height="12"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="14"/>
-                <!-- R4: 구분선 -->
+                <RowDefinition Height="12"/>
                 <RowDefinition Height="1"/>
-                <RowDefinition Height="16"/>
-                <!-- R6: C-STORE / MWL 영역 -->
-                <RowDefinition Height="*"/>
                 <RowDefinition Height="14"/>
-                <!-- R8: EXIT -->
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="12"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- ── R0: 타이틀 바 ── -->
+            <!-- ── 타이틀 ── -->
             <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                    <TextBlock Text="Setting"
-                               Foreground="White"
-                               FontSize="42" FontWeight="Bold"/>
-                    <TextBlock Text="DICOM 네트워크 설정"
-                               Foreground="{StaticResource Muted}"
-                               FontSize="13" Margin="2,2,0,0"/>
+                    <TextBlock Text="Setting" Foreground="White" FontSize="36" FontWeight="Bold"/>
+                    <TextBlock Text="DICOM 네트워크 설정" Foreground="{StaticResource Muted}" FontSize="12" Margin="2,2,0,0"/>
                 </StackPanel>
-
-                <!-- 닫기 버튼 -->
-                <Button Grid.Column="1"
-                        Width="40" Height="40"
+                <Button Grid.Column="1" Width="36" Height="36"
                         Style="{StaticResource BaseBtn}"
                         Background="{StaticResource BtnDark}"
                         VerticalAlignment="Top"
                         Click="Exit_Click">
-                    <TextBlock Text="✕" Foreground="White" FontSize="18" FontWeight="Bold"/>
+                    <TextBlock Text="✕" Foreground="White" FontSize="16" FontWeight="Bold"/>
                 </Button>
             </Grid>
 
-            <!-- ── R2: Hospital Name ── -->
+            <!-- ── Hospital Name ── -->
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="12"/>
-                    <ColumnDefinition Width="260"/>
+                    <ColumnDefinition Width="240"/>
                     <ColumnDefinition Width="10"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0"
-                           Text="Hospital Name"
+                <TextBlock Grid.Column="0" Text="Hospital Name"
                            Foreground="{StaticResource Inactive}"
-                           FontSize="15" FontWeight="SemiBold"
-                           VerticalAlignment="Center"/>
-                <TextBox Grid.Column="2"
-                         Style="{StaticResource InputBox}"
+                           FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <TextBox Grid.Column="2" Style="{StaticResource InputBox}"
                          Text="{Binding HospitalName, UpdateSourceTrigger=PropertyChanged}"/>
-                <Button Grid.Column="4"
-                        Content="Save"
+                <Button Grid.Column="4" Content="Save"
                         Style="{StaticResource SaveBtn}"
                         Command="{Binding SaveHospitalCommand}"/>
             </Grid>
 
-            <!-- ── R4: 구분선 ── -->
+            <!-- ── 구분선 ── -->
             <Border Grid.Row="4" Background="{StaticResource Divider}"/>
 
-            <!-- ── R6: C-STORE / MWL ── -->
+            <!-- ── C-STORE / MWL ── -->
             <Grid Grid.Row="6">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -227,92 +210,81 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- ════ C-STORE ════ -->
-                <Grid Grid.Column="0" Margin="0,0,20,0">
+                <Grid Grid.Column="0" Margin="0,0,18,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="10"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-
-                    <!-- C-STORE 섹션 타이틀 -->
                     <StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
-                        <!-- 좌측 강조 바 -->
-                        <Border Width="4" Height="26" Background="{StaticResource Accent}"
-                                CornerRadius="2" Margin="0,0,10,0"/>
-                        <TextBlock Text="C-STORE"
-                                   Foreground="White"
-                                   FontSize="22" FontWeight="Bold"/>
+                        <Border Width="4" Height="22" Background="{StaticResource Accent}" CornerRadius="2" Margin="0,0,8,0"/>
+                        <TextBlock Text="C-STORE" Foreground="White" FontSize="18" FontWeight="Bold"/>
                     </StackPanel>
-
-                    <!-- C-STORE 카드 -->
-                    <Border Grid.Row="2"
-                            Background="{StaticResource Card}"
-                            CornerRadius="14"
-                            Padding="20,16">
+                    <Border Grid.Row="2" Background="{StaticResource Card}" CornerRadius="14" Padding="18,14">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
-                                <!-- AET 라벨 -->
                                 <RowDefinition Height="Auto"/>
-                                <!-- AET 입력 -->
                                 <RowDefinition Height="10"/>
                                 <RowDefinition Height="Auto"/>
-                                <!-- IP 라벨 -->
                                 <RowDefinition Height="Auto"/>
-                                <!-- IP 입력 -->
                                 <RowDefinition Height="10"/>
                                 <RowDefinition Height="Auto"/>
-                                <!-- Port 라벨 -->
                                 <RowDefinition Height="Auto"/>
-                                <!-- Port 입력 -->
-                                <RowDefinition Height="10"/>
-                                <RowDefinition Height="Auto"/>
-                                <!-- MyAET 라벨 -->
-                                <RowDefinition Height="Auto"/>
-                                <!-- MyAET 입력 -->
                                 <RowDefinition Height="*"/>
-                                <!-- 스페이서 -->
                                 <RowDefinition Height="Auto"/>
-                                <!-- Test / Apply -->
                                 <RowDefinition Height="8"/>
                                 <RowDefinition Height="Auto"/>
-                                <!-- Cancel -->
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0"  Text="AET"   Style="{StaticResource FieldLabel}"/>
-                            <TextBox   Grid.Row="1"  Style="{StaticResource InputBox}"
+                            <TextBlock Grid.Row="0" Text="AET" Style="{StaticResource FieldLabel}"/>
+                            <TextBox   Grid.Row="1" Style="{StaticResource InputBox}"
                                        Text="{Binding CStoreAET, UpdateSourceTrigger=PropertyChanged}"/>
 
-                            <TextBlock Grid.Row="3"  Text="IP"    Style="{StaticResource FieldLabel}"/>
-                            <TextBox   Grid.Row="4"  Style="{StaticResource InputBox}"
-                                       Text="{Binding CStoreIP, UpdateSourceTrigger=PropertyChanged}"/>
+                            <Grid Grid.Row="3" Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="100"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="IP"   Style="{StaticResource FieldLabel}" Margin="2,0,0,0"/>
+                                <TextBlock Grid.Column="2" Text="PORT" Style="{StaticResource FieldLabel}" Margin="2,0,0,0"/>
+                            </Grid>
 
-                            <TextBlock Grid.Row="6"  Text="Port"  Style="{StaticResource FieldLabel}"/>
-                            <TextBox   Grid.Row="7"  Style="{StaticResource InputBox}"
-                                       Text="{Binding CStorePort, UpdateSourceTrigger=PropertyChanged}"/>
+                            <Grid Grid.Row="4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="100"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0"
+                                         x:Name="CStoreIPTextBox"
+                                         Style="{StaticResource IpInputBox}"
+                                         Text="     .     .     .     "
+                                         GotFocus="IPTextBox_GotFocus"
+                                         PreviewTextInput="IPTextBox_PreviewTextInput"
+                                         PreviewKeyDown="IPTextBox_PreviewKeyDown"
+                                         SelectionChanged="IPTextBox_SelectionChanged"/>
+                                <TextBox Grid.Column="2"
+                                         Style="{StaticResource PortInputBox}"
+                                         Text="{Binding CStorePort, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Grid>
 
-                            <TextBlock Grid.Row="9"  Text="MyAET" Style="{StaticResource FieldLabel}"/>
-                            <TextBox   Grid.Row="10" Style="{StaticResource MultiInputBox}"
-                                       Text="{Binding CStoreMyAET, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBlock Grid.Row="6" Text="MyAET" Style="{StaticResource FieldLabel}"/>
+                            <TextBox   Grid.Row="7" Style="{StaticResource MultiInputBox}"
+                                       Text="{Binding CStoreMyAET, UpdateSourceTrigger=PropertyChanged}"
+                                       Tag="RMICG"/>
 
-                            <!-- Test Connection / Apply -->
-                            <Grid Grid.Row="12">
+                            <Grid Grid.Row="9">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="8"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Button Grid.Column="0" Content="Test Connection"
-                                        Style="{StaticResource AccentBtn}"
-                                        Command="{Binding CStoreTestCommand}"/>
-                                <Button Grid.Column="2" Content="Apply"
-                                        Style="{StaticResource ApplyBtn}"
-                                        Command="{Binding CStoreApplyCommand}"/>
+                                <Button Grid.Column="0" Content="Test Connection" Style="{StaticResource AccentBtn}" Command="{Binding CStoreTestCommand}"/>
+                                <Button Grid.Column="2" Content="Apply"           Style="{StaticResource ApplyBtn}"  Command="{Binding CStoreApplyCommand}"/>
                             </Grid>
-
-                            <Button Grid.Row="14" Content="Cancel"
-                                    Style="{StaticResource CancelBtn}"
-                                    Command="{Binding CStoreCancelCommand}"/>
+                            <Button Grid.Row="11" Content="Cancel" Style="{StaticResource CancelBtn}" Command="{Binding CStoreCancelCommand}"/>
                         </Grid>
                     </Border>
                 </Grid>
@@ -321,32 +293,19 @@
                 <Border Grid.Column="1" Background="{StaticResource Divider}"/>
 
                 <!-- ════ MWL ════ -->
-                <Grid Grid.Column="2" Margin="20,0,0,0">
+                <Grid Grid.Column="2" Margin="18,0,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="10"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-
-                    <!-- MWL 섹션 타이틀 -->
                     <StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="4" Height="26" Background="{StaticResource Accent}"
-                                CornerRadius="2" Margin="0,0,10,0"/>
-                        <TextBlock Text="MWL"
-                                   Foreground="White"
-                                   FontSize="22" FontWeight="Bold"/>
+                        <Border Width="4" Height="22" Background="{StaticResource Accent}" CornerRadius="2" Margin="0,0,8,0"/>
+                        <TextBlock Text="MWL" Foreground="White" FontSize="18" FontWeight="Bold"/>
                     </StackPanel>
-
-                    <!-- MWL 카드 -->
-                    <Border Grid.Row="2"
-                            Background="{StaticResource Card}"
-                            CornerRadius="14"
-                            Padding="20,16">
+                    <Border Grid.Row="2" Background="{StaticResource Card}" CornerRadius="14" Padding="18,14">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="10"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="10"/>
@@ -361,47 +320,61 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0"  Text="AET"   Style="{StaticResource FieldLabel}"/>
-                            <TextBox   Grid.Row="1"  Style="{StaticResource InputBox}"
+                            <TextBlock Grid.Row="0" Text="AET" Style="{StaticResource FieldLabel}"/>
+                            <TextBox   Grid.Row="1" Style="{StaticResource InputBox}"
                                        Text="{Binding MwlAET, UpdateSourceTrigger=PropertyChanged}"/>
 
-                            <TextBlock Grid.Row="3"  Text="IP"    Style="{StaticResource FieldLabel}"/>
-                            <TextBox   Grid.Row="4"  Style="{StaticResource InputBox}"
-                                       Text="{Binding MwlIP, UpdateSourceTrigger=PropertyChanged}"/>
+                            <Grid Grid.Row="3" Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="100"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="IP"   Style="{StaticResource FieldLabel}" Margin="2,0,0,0"/>
+                                <TextBlock Grid.Column="2" Text="PORT" Style="{StaticResource FieldLabel}" Margin="2,0,0,0"/>
+                            </Grid>
 
-                            <TextBlock Grid.Row="6"  Text="Port"  Style="{StaticResource FieldLabel}"/>
-                            <TextBox   Grid.Row="7"  Style="{StaticResource InputBox}"
-                                       Text="{Binding MwlPort, UpdateSourceTrigger=PropertyChanged}"/>
+                            <Grid Grid.Row="4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="100"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0"
+                                         x:Name="MwlIPTextBox"
+                                         Style="{StaticResource IpInputBox}"
+                                         Text="     .     .     .     "
+                                         GotFocus="IPTextBox_GotFocus"
+                                         PreviewTextInput="IPTextBox_PreviewTextInput"
+                                         PreviewKeyDown="IPTextBox_PreviewKeyDown"
+                                         SelectionChanged="IPTextBox_SelectionChanged"/>
+                                <TextBox Grid.Column="2"
+                                         Style="{StaticResource PortInputBox}"
+                                         Text="{Binding MwlPort, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Grid>
 
-                            <TextBlock Grid.Row="9"  Text="MyAET" Style="{StaticResource FieldLabel}"/>
-                            <TextBox   Grid.Row="10" Style="{StaticResource MultiInputBox}"
-                                       Text="{Binding MwlMyAET, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBlock Grid.Row="6" Text="MyAET" Style="{StaticResource FieldLabel}"/>
+                            <TextBox   Grid.Row="7" Style="{StaticResource MultiInputBox}"
+                                       Text="{Binding MwlMyAET, UpdateSourceTrigger=PropertyChanged}"
+                                       Tag="RMICG"/>
 
-                            <Grid Grid.Row="12">
+                            <Grid Grid.Row="9">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="8"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Button Grid.Column="0" Content="Test Connection"
-                                        Style="{StaticResource AccentBtn}"
-                                        Command="{Binding MwlTestCommand}"/>
-                                <Button Grid.Column="2" Content="Apply"
-                                        Style="{StaticResource ApplyBtn}"
-                                        Command="{Binding MwlApplyCommand}"/>
+                                <Button Grid.Column="0" Content="Test Connection" Style="{StaticResource AccentBtn}" Command="{Binding MwlTestCommand}"/>
+                                <Button Grid.Column="2" Content="Apply"           Style="{StaticResource ApplyBtn}"  Command="{Binding MwlApplyCommand}"/>
                             </Grid>
-
-                            <Button Grid.Row="14" Content="Cancel"
-                                    Style="{StaticResource CancelBtn}"
-                                    Command="{Binding MwlCancelCommand}"/>
+                            <Button Grid.Row="11" Content="Cancel" Style="{StaticResource CancelBtn}" Command="{Binding MwlCancelCommand}"/>
                         </Grid>
                     </Border>
                 </Grid>
             </Grid>
 
-            <!-- ── R8: EXIT 버튼 (우측 하단) ── -->
-            <Button Grid.Row="8"
-                    Content="EXIT"
+            <!-- ── EXIT ── -->
+            <Button Grid.Row="8" Content="EXIT"
                     Style="{StaticResource ExitBtn}"
                     HorizontalAlignment="Right"
                     Click="Exit_Click"/>

@@ -331,7 +331,7 @@
                         </PasswordBox>
                     </Border>
                 </StackPanel>
-
+                             
                 <!-- 체크박스 -->
                 <!-- Row 6: CapsLock 경고(좌) + Admin Mode(우) -->
                 <Grid Grid.Row="6">

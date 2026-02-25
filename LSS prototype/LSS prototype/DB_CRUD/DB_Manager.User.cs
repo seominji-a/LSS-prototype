@@ -93,7 +93,7 @@ namespace LSS_prototype.DB_CRUD
         /// <param name="password">해싱할 비밀번호</param>
         /// <param name="salt">솔트값</param>
         /// <returns>생성된 해시값</returns>
-        private static string GenerateHash(string password, string salt)
+        public static string GenerateHash(string password, string salt)
         {
             using (var sha256 = SHA256.Create())
             {
@@ -108,7 +108,7 @@ namespace LSS_prototype.DB_CRUD
         /// </summary>
         /// <param name="size"></param>
         /// <returns></returns>
-        private static string GenerateSalt()
+        public static string GenerateSalt()
         {
             byte[] saltBytes = new byte[32];
 
@@ -162,6 +162,28 @@ namespace LSS_prototype.DB_CRUD
             }
         }
 
+        public bool UpdatePassword(string loginId, string newPassword)
+        {
+            string passwordSalt = GenerateSalt();
+            string passwordHash = GenerateHash(newPassword, passwordSalt);
+            
+            using (var conn = new SQLiteConnection("Data Source=" + Common.DB_PATH))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(conn))
+                {
+                    cmd.CommandText = Query.PASSWORD_EDIT;
+
+                    cmd.Parameters.AddWithValue("@hash", passwordHash);
+                    cmd.Parameters.AddWithValue("@salt", passwordSalt);
+                    cmd.Parameters.AddWithValue("@password_changedDate", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                    cmd.Parameters.AddWithValue("@loginId", loginId);
+
+                    int result = cmd.ExecuteNonQuery();
+                    return result == 1;
+                }
+            }
+        }
         public List<UserModel> GetAllUsers()
         {
             List<UserModel> list = new List<UserModel>();
@@ -189,6 +211,60 @@ namespace LSS_prototype.DB_CRUD
             return list;
         }
 
+        #endregion
+
+        #region [ 비밀번호 검증 ]
+        /// <summary>
+        /// 비밀번호 유효성 검사
+        /// </summary>
+        /// <returns>유효하면 null, 실패하면 사유 문자열 반환</returns>
+        public static string ValidatePassword(string password)
+        {
+            // 1. 최소 8자 이상
+            if (string.IsNullOrWhiteSpace(password) || password.Length < 8)
+                return "비밀번호는 8자리 이상으로 입력해주세요.";
+
+            // 2. 연속된 숫자 패턴 사용 불가 (예: 1234, 4321)
+            for (int i = 0; i < password.Length - 3; i++)
+            {
+                char c1 = password[i];
+                char c2 = password[i + 1];
+                char c3 = password[i + 2];
+                char c4 = password[i + 3];
+
+                bool ascending = (c2 == c1 + 1) && (c3 == c1 + 2) && (c4 == c1 + 3);
+                bool descending = (c2 == c1 - 1) && (c3 == c1 - 2) && (c4 == c1 - 3);
+
+                if (ascending || descending)
+                    return "연속된 문자/숫자 패턴은 사용할 수 없습니다. (예: 1234, abcd)";
+            }
+
+            // 3. 동일한 문자 4개 연속 사용 불가 (예: aaaa, 1111)
+            for (int i = 0; i < password.Length - 3; i++)
+            {
+                if (password[i] == password[i + 1] &&
+                    password[i] == password[i + 2] &&
+                    password[i] == password[i + 3])
+                    return "동일한 문자를 4개 이상 연속으로 사용할 수 없습니다. (예: aaaa, 1111)";
+            }
+
+            // 4. 대문자 / 소문자 / 숫자 / 특수문자 중 3가지 이상 포함
+            bool hasUpper = password.Any(char.IsUpper);
+            bool hasLower = password.Any(char.IsLower);
+            bool hasDigit = password.Any(char.IsDigit);
+            bool hasSpecial = password.Any(c => !char.IsLetterOrDigit(c));
+
+            int categoryCount = (hasUpper ? 1 : 0)
+                              + (hasLower ? 1 : 0)
+                              + (hasDigit ? 1 : 0)
+                              + (hasSpecial ? 1 : 0);
+
+            if (categoryCount < 3)
+                return "비밀번호는 대문자, 소문자, 숫자, 특수문자 중 3가지 이상을 포함해야 합니다.";
+
+            // 모든 조건 통과
+            return null;
+        }
         #endregion
     }
 }

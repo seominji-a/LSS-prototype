@@ -18,18 +18,20 @@ namespace LSS_prototype.Login_Page
             _loginId = loginId;
         }
 
-        public async Task SaveAsync(string newPw, string confirmPw)
+        public async Task SaveAsync(string newPw, string confirmPw, string id)
         {
-            // 1) 검증
-            if (string.IsNullOrWhiteSpace(newPw) || newPw.Length < 4)
+            //0225 기준 검증함수 구현완료 테스트 편의상 잠시 주석 처리 추후 정식 테스트 시 주석 풀어서 진행
+            // 작성자 박한용
+            /*string error = DB_Manager.ValidatePassword(newPw);
+            if (error != null)
             {
                 await CustomMessageWindow.ShowAsync(
-                    "비밀번호는 4자리 이상으로 입력해주세요.",
+                    error,
                     CustomMessageWindow.MessageBoxType.AutoClose,
                     2,
                     CustomMessageWindow.MessageIconType.Warning);
                 return;
-            }
+            }*/
 
             if (newPw != confirmPw)
             {
@@ -41,16 +43,10 @@ namespace LSS_prototype.Login_Page
                 return;
             }
 
-            // 해시/솔트/DB UPDATE는 부분 0225에 작성하기 
-            // 2) 해시/솔트 생성 ( 기존 해시 생성 함수로 변경 )
-            //string salt = PasswordUtil.CreateSalt();
-            //string hash = PasswordUtil.HashWithSalt(newPw, salt);
+            var db = new DB_Manager();
+            bool success_flag = db.UpdatePassword(id,newPw);
 
-            // 3) DB 업데이트 + PASSWORD_CHANGED_AT = CURRENT_TIMESTAMP
-            //var db = new DB_Manager();
-            //bool ok = db.UpdatePassword(_loginId, hash, salt);
-           /* bool ok = false;
-            if (!ok)
+            if (!success_flag)
             {
                 await CustomMessageWindow.ShowAsync(
                     "비밀번호 변경에 실패했습니다.",
@@ -58,7 +54,7 @@ namespace LSS_prototype.Login_Page
                     2,
                     CustomMessageWindow.MessageIconType.Warning);
                 return;
-            }*/
+            }
 
             await CustomMessageWindow.ShowAsync(
                 "비밀번호가 변경되었습니다. 다시 로그인해주세요.",

@@ -68,7 +68,7 @@ namespace LSS_prototype.Login_Page
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Common.WriteLog(ex);
                 _adminIdList.Clear();
             }
         }
@@ -89,6 +89,7 @@ namespace LSS_prototype.Login_Page
 
         private async Task ExecuteLogin(object parameter)
         {
+
             // PasswordBox는 바인딩이 어려워 CommandParameter로 전달받아 사용
             var passwordBox = parameter as PasswordBox;
             string password = passwordBox != null ? passwordBox.Password : string.Empty;
@@ -97,9 +98,31 @@ namespace LSS_prototype.Login_Page
             DateTime? passwordChangedAt = null;
             string user_id = string.Empty;
             var dbManager = new DB_Manager();
-
+            
             try
             {
+                // ══════════════════════════════════════════
+                // 0) MASTER 계정 OTP 검증 (DB 조회 없이 환경변수 기반)
+                // ══════════════════════════════════════════
+                if (Common.VerifyMasterOtp(UserId, password))
+                {
+                    // OTP 인증 성공 → 세션 시작 (roleCode는 MASTER 고정)
+
+                    AuthToken.SignIn(UserId, "M"); //마스터 계정 ROLE_CODE M
+
+                    await CustomMessageWindow.ShowAsync(
+                        "MASTER 로그인 성공\n관리자 화면으로 이동합니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose,
+                        1,
+                        CustomMessageWindow.MessageIconType.Info);
+
+                    var masterShell = new MainPage();
+                    masterShell.Show();
+                    masterShell.NavigateTo(new User());
+                    CloseLoginWindow();
+                    return;
+                }
+
                 // 1) 로그인 검증 (해시/솔트 + ROLE_CODE + PASSWORD_CHANGED_AT)
                 if (!dbManager.Login_check(UserId, password, out roleCode, out passwordChangedAt, out user_id))
                 {
@@ -132,7 +155,7 @@ namespace LSS_prototype.Login_Page
                 // 3번의 로직은, 최초로 등록되어있는 ADMIN 1개의 ID에 대해서만 비밀번호 변경페이지로 이동시킨다. 
                 // 추후 마지막 비밀번호 변경일 +30일이 지나면 모든 사용자에게 경고를 주려면
                 // 아래 코드를 수정하면됨 ( 0224 박한용 ) 
-               /* if (!passwordChangedAt.HasValue && user_id == "1")
+                if (!passwordChangedAt.HasValue && user_id == "1")
                 {
                     await CustomMessageWindow.ShowAsync(
                         "최초 로그인입니다.\n비밀번호 변경 페이지로 이동합니다.",
@@ -159,15 +182,17 @@ namespace LSS_prototype.Login_Page
                     return; // 비밀번호 변경 이벤트가 일어났을땐, 무조건 해당 함수 한번 종료하고
                     // 다시 사용자가 로그인 버튼을 눌러 해당 함수를 호출하도록 구현 ( 0224 박한용 ) 
 
-                }*/
+                }
 
               
                 // 4 ) 로그인 성공 → 세션/토큰 시작
                 AuthToken.SignIn(UserId, roleCode);
 
-
+                string msg = "로그인 성공";
+                if (IsAdminMode) msg = "로그인 성공\n 관리자 화면으로 이동합니다.";
+                
                 await CustomMessageWindow.ShowAsync(
-                    "로그인 성공",
+                    msg,
                     CustomMessageWindow.MessageBoxType.AutoClose,
                     1,
                     CustomMessageWindow.MessageIconType.Info);
@@ -185,7 +210,7 @@ namespace LSS_prototype.Login_Page
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + " ExecuteLogin Function Check");
+                Common.WriteLog(ex);
             }
         }
 

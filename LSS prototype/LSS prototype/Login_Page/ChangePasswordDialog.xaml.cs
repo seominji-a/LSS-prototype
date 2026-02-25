@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Input;
 
 namespace LSS_prototype.Login_Page
 {
@@ -9,7 +10,6 @@ namespace LSS_prototype.Login_Page
         {
             InitializeComponent();
             DataContext = vm;
-
             vm.CloseAction = ok =>
             {
                 DialogResult = ok;
@@ -23,14 +23,12 @@ namespace LSS_prototype.Login_Page
             {
                 var vm = DataContext as ChangePasswordModelView;
                 if (vm == null) return;
-
                 await vm.SaveAsync(NewPasswordBox.Password, ConfirmPasswordBox.Password);
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message + "Save_Click function Check ( ChangePasswordDialog )");
             }
-          
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
@@ -44,14 +42,33 @@ namespace LSS_prototype.Login_Page
                     Close();
                     return;
                 }
-
                 vm.Cancel();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "Cancel_Click function Check ( ChangePasswordDialog ) ");
+                Console.WriteLine(ex.Message + "Cancel_Click function Check ( ChangePasswordDialog )");
             }
-            
         }
+
+        private void NewPasswordBox_CheckCaps(object sender, RoutedEventArgs e)
+        {
+            CapsLockWarningNew.Visibility = Keyboard.IsKeyToggled(Key.CapsLock)? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void ConfirmPasswordBox_CheckCaps(object sender, RoutedEventArgs e)
+        {
+            CapsLockWarningConfirm.Visibility = Keyboard.IsKeyToggled(Key.CapsLock) ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void NewPasswordBox_HideCaps(object sender, RoutedEventArgs e)
+        {
+            CapsLockWarningNew.Visibility = Visibility.Collapsed;
+        }
+
+        private void ConfirmPasswordBox_HideCaps(object sender, RoutedEventArgs e)
+        {
+            CapsLockWarningConfirm.Visibility = Visibility.Collapsed;
+        }
+
     }
 }

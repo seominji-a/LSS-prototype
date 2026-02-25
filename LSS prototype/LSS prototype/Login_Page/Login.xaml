@@ -312,16 +312,17 @@
                                Margin="2,0,0,10"/>
                     <Border Style="{StaticResource InputBoxBorderStyle}">
                         <PasswordBox x:Name="txtPassword"
-                                    FontSize="24"
-                                    FontFamily="Arial"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    VerticalContentAlignment="Center"
-                                    Padding="18,0"
-                                    Foreground="{StaticResource TextDark}"
-                                    GotKeyboardFocus="PasswordBox_CheckCaps"
-                                    PreviewKeyDown="PasswordBox_CheckCaps"/>
-                                           </Border>
+                                FontSize="24"
+                                FontFamily="Arial"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                VerticalContentAlignment="Center"
+                                Padding="18,0"
+                                Foreground="{StaticResource TextDark}"
+                                GotKeyboardFocus="PasswordBox_GotFocus"
+                                LostKeyboardFocus="PasswordBox_HideCaps"
+                                PreviewKeyUp="PasswordBox_CheckCaps"/>
+                    </Border>
                                        </StackPanel>
 
                 <!-- 체크박스 -->

@@ -132,7 +132,7 @@ namespace LSS_prototype.Login_Page
                 // 3번의 로직은, 최초로 등록되어있는 ADMIN 1개의 ID에 대해서만 비밀번호 변경페이지로 이동시킨다. 
                 // 추후 마지막 비밀번호 변경일 +30일이 지나면 모든 사용자에게 경고를 주려면
                 // 아래 코드를 수정하면됨 ( 0224 박한용 ) 
-               /* if (!passwordChangedAt.HasValue && user_id == "1")
+                if (!passwordChangedAt.HasValue && user_id == "1")
                 {
                     await CustomMessageWindow.ShowAsync(
                         "최초 로그인입니다.\n비밀번호 변경 페이지로 이동합니다.",
@@ -159,7 +159,7 @@ namespace LSS_prototype.Login_Page
                     return; // 비밀번호 변경 이벤트가 일어났을땐, 무조건 해당 함수 한번 종료하고
                     // 다시 사용자가 로그인 버튼을 눌러 해당 함수를 호출하도록 구현 ( 0224 박한용 ) 
 
-                }*/
+                }
 
               
                 // 4 ) 로그인 성공 → 세션/토큰 시작

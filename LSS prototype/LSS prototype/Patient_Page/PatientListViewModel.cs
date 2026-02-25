@@ -98,7 +98,7 @@ namespace LSS_prototype.Patient_Page
         {
             try
             {
-                var vm = new PatientAddViewModel();
+                var vm = new PatientAddViewModel(_dialogService);
 
                 if (_dialogService.ShowDialog(vm) == true)
                 {
@@ -118,7 +118,9 @@ namespace LSS_prototype.Patient_Page
                             Sex = vm.Sex
                         };
 
+
                         var repo = new DB_Manager();
+
                         bool result = repo.AddPatient(model);
 
                         if (result)

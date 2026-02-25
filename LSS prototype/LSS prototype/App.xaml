@@ -25,6 +25,10 @@
                 <viewUser:User_Add />
             </DataTemplate>
 
+            <DataTemplate DataType="{x:Type vmPatient:KeypadViewModel}">
+                <viewPatient:Keypad />
+            </DataTemplate>
+
             <Style x:Key="DefaultRoundedButtonStyle" TargetType="Button">
                 <Setter Property="FontSize" Value="25"/>
                 <Setter Property="FontWeight" Value="Bold"/>

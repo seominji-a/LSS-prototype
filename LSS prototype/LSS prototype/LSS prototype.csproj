@@ -150,12 +150,12 @@
     <Compile Include="Login_Page\ChangePasswordDialog.xaml.cs">
       <DependentUpon>ChangePasswordDialog.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Login_Page\ChangePasswordModelView.cs" >
-	<DependentUpon>ChangePasswordDialog.xaml</DependentUpon>
-	</Compile>
+    <Compile Include="Login_Page\ChangePasswordModelView.cs">
+      <DependentUpon>ChangePasswordDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Login_Page\LoginModelView.cs">
-    <DependentUpon>Login.xaml</DependentUpon>
-	</Compile>
+      <DependentUpon>Login.xaml</DependentUpon>
+    </Compile>
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
@@ -198,6 +198,7 @@
     <Compile Include="User_Page\setting.xaml.cs">
       <DependentUpon>setting.xaml</DependentUpon>
     </Compile>
+    <Compile Include="User_Page\SettingViewModel.cs" />
     <Compile Include="User_Page\User.xaml.cs">
       <DependentUpon>User.xaml</DependentUpon>
     </Compile>

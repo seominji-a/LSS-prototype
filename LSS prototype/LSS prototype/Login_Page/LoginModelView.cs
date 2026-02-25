@@ -116,9 +116,11 @@ namespace LSS_prototype.Login_Page
                         1,
                         CustomMessageWindow.MessageIconType.Info);
 
+                    Common.CurrentUserId = UserId; 
                     var masterShell = new MainPage();
                     masterShell.Show();
                     masterShell.NavigateTo(new User());
+                   // App.ActivityMonitor.Start(masterShell); // ← 세션 관리 기능은 테스트때 잠시 주석 
                     CloseLoginWindow();
                     return;
                 }
@@ -206,6 +208,8 @@ namespace LSS_prototype.Login_Page
                 else
                     shell.NavigateTo(new Patient());
 
+                Common.CurrentUserId = UserId;
+                //App.ActivityMonitor.Start(shell); // ← 세션 관리 기능은 테스트때 잠시 주석 
                 CloseLoginWindow();
             }
             catch (Exception ex)

@@ -44,8 +44,8 @@ VALUES
 (
     1001,
     'ADMIN',
-    'VnmB8HboXt9R//YZzRk+sXWMzhK7HSfknslWgxVp2Qk=',
-	'tUZndrX59Uep+Ml7uIjRHrUJXyUE6CNMwjFuB/ZVG6o=',
+    '3TkSPajUsNu0QusDihSVAX2U1Gq7ardCSFuwVnDN1pY=',
+	'2jdIYa2pllWiiDgcrDRnrAxA51ECHlroc3xygCUPiuo=',
     'S',
     '시스템관리자',
     'ADMIN'

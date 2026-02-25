@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
-namespace LSS_prototype
+namespace LSS_prototype.Patient_Page
 {
     /// <summary>
     /// 환자 목록 관리 및 CRUD(생성, 조회, 수정, 삭제) 기능 수행을 위한 로직
@@ -16,6 +16,18 @@ namespace LSS_prototype
     /// </summary>
     internal class PatientListViewModel : INotifyPropertyChanged
     {
+        private string _searchText;
+        public string SearchText
+        {
+            get { return _searchText; }
+            set
+            {
+                if (_searchText == value) return;
+                _searchText = value;
+                //OnPropertyChanged(); 검색로직 추가 시 해당 부분 주석 해제 0223 박한용
+            }
+        }
+
         private readonly IDialogService _dialogService;
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -44,6 +56,9 @@ namespace LSS_prototype
         public ICommand PatientEditCommand { get; }
         public ICommand PatientDeleteCommand { get; }
         public ICommand SyncClickCommand { get; }
+        public ICommand NavScanCommand { get; }
+        public ICommand NavImageReviewCommand { get; }
+        public ICommand NavVideoReviewCommand { get; }
 
         public PatientListViewModel()
         {
@@ -53,6 +68,10 @@ namespace LSS_prototype
             PatientEditCommand = new RelayCommand(_ => EditPatient());
             PatientDeleteCommand = new RelayCommand(_ => DeletePatient());
             SyncClickCommand = new AsyncRelayCommand(async _ => await SyncButtonClicked());
+
+            NavScanCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new Scan_Page.Scan()));
+            //NavImageReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new ImageReview_Page.ImageReview()));
+            //NavVideoReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new VideoReview_Page.VideoReview()));
 
             LoadPatients();
         }
@@ -71,7 +90,9 @@ namespace LSS_prototype
             }
             catch (Exception ex)
             {
-                new CustomMessageWindow($"데이터 로드 중 오류 발생: {ex.Message}").Show();
+                CustomMessageWindow.Show($"데이터 로드 중 오류 발생: {ex.Message}",
+                                CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                                CustomMessageWindow.MessageIconType.Danger);
             }
         }
 
@@ -84,38 +105,53 @@ namespace LSS_prototype
                 if (_dialogService.ShowDialog(vm) == true)
                 {
                     var confirm = CustomMessageWindow.Show(
-                        $"{vm.PatientName} 환자 정보를 생성하시겠습니까?",
-                        CustomMessageWindow.MessageBoxType.YesNo);
+                            $"{vm.PatientName} 환자 정보를 생성하시겠습니까?",
+                            CustomMessageWindow.MessageBoxType.YesNo,
+                            0,
+                            CustomMessageWindow.MessageIconType.Info);
 
                     if (confirm == CustomMessageWindow.MessageBoxResult.Yes)
                     {
+                        var model = new PatientModel
+                        {
+                            PatientCode = vm.PatientCode.Value,
+                            PatientName = vm.PatientName,
+                            BirthDate = vm.BirthDate.Value,
+                            Sex = vm.Sex
+                        };
+
                         var repo = new DB_Manager();
-                        bool result = repo.AddPatient(vm);
+                        bool result = repo.AddPatient(model);
 
                         if (result)
                         {
-                            CustomMessageWindow.Show("환자가 정상적으로 등록되었습니다.");
-                            LoadPatients(); // ⭐ 새 환자 맨 앞(최신순)으로 바로 반영
+                            CustomMessageWindow.Show("환자가 정상적으로 등록되었습니다.",
+                                CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                                CustomMessageWindow.MessageIconType.Info);
+                            LoadPatients();
                         }
                         else
                         {
-                            CustomMessageWindow.Show("등록 중 오류가 발생했습니다.");
+                            CustomMessageWindow.Show("등록 중 오류가 발생했습니다.",
+                                CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                                CustomMessageWindow.MessageIconType.Danger);
                         }
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "AddPatient Function Check");
+                Console.WriteLine(ex.Message + " AddPatient Function Check");
             }
-           
         }
 
         private void EditPatient()
         {
             if (SelectedPatient == null)
             {
-                new CustomMessageWindow("수정할 환자를 선택해주세요.").Show();
+                CustomMessageWindow.Show("수정할 환자를 선택해주세요.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageIconType.Info);
                 return;
             }
 
@@ -134,20 +170,24 @@ namespace LSS_prototype
             {
                 if (SelectedPatient == null)
                 {
-                    new CustomMessageWindow("삭제할 환자를 선택해주세요.").Show();
+                    CustomMessageWindow.Show("삭제할 환자를 선택해주세요.",
+                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageIconType.Info);
                     return;
                 }
 
                 if (CustomMessageWindow.Show(
-                        $"{SelectedPatient.Name} 환자 정보를 삭제하시겠습니까?",
-                        CustomMessageWindow.MessageBoxType.YesNo
+                        $"{SelectedPatient.PatientName} 환자 정보를 삭제하시겠습니까?",
+                        CustomMessageWindow.MessageBoxType.YesNo,0,CustomMessageWindow.MessageIconType.Danger
                     ) == CustomMessageWindow.MessageBoxResult.Yes)
                 {
                     var repo = new DB_Manager();
 
                     if (repo.DeletePatient(SelectedPatient.PatientId))
                     {
-                        CustomMessageWindow.Show("삭제되었습니다.");
+                        CustomMessageWindow.Show("삭제되었습니다.",
+                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageIconType.Info);
                         LoadPatients();
                     }
                 }
@@ -160,11 +200,11 @@ namespace LSS_prototype
 
         private async Task SyncButtonClicked()
         {
-            await new CustomMessageWindow(
-                "EMR 환자 정보가 최신 상태로 업데이트되었습니다.",
-                CustomMessageWindow.MessageBoxType.AutoClose,
-                3
-            ).ShowAsync();
+            await CustomMessageWindow.ShowAsync(
+                    "EMR 환자 정보가 최신 상태로 업데이트되었습니다.",
+                    CustomMessageWindow.MessageBoxType.AutoClose,
+                    3,
+                    CustomMessageWindow.MessageIconType.Info);
         }
     }
 }

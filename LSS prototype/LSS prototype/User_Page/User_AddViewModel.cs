@@ -60,7 +60,9 @@ namespace LSS_prototype.User_Page
                 string.IsNullOrWhiteSpace(Role) ||
                 string.IsNullOrEmpty(password))
             {
-                new CustomMessageWindow("필수 입력값이 비어있습니다..").Show();
+                CustomMessageWindow.Show("필수 입력값이 비어있습니다.",
+                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageIconType.Warning);
                 return;
             }
 
@@ -70,18 +72,23 @@ namespace LSS_prototype.User_Page
                 bool success = _dbManager.InsertUser(UserID.Trim(), UserName.Trim(), Role.Trim(), password);
                 if (success)
                 {
-                    new CustomMessageWindow("사용자 정보 추가 성공").Show();
+                    CustomMessageWindow.Show("사용자 정보 추가 성공",
+                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageIconType.Info);
                     CloseAction?.Invoke(true);
                 }
             }
             catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Constraint)
             {
-
-                new CustomMessageWindow("이미 존재하는 아이디입니다.").Show();
+                CustomMessageWindow.Show("이미 존재하는 아이디입니다.",
+                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    CustomMessageWindow.MessageIconType.Warning);
             }
-            catch (Exception ex) // 유니크 제약조건을 제외한 모든 에러를 해당 catch에서 해결 
+            catch (Exception ex)
             {
-                new CustomMessageWindow($"저장 중 오류가 발생했습니다.\n{ex.Message}").Show();
+                CustomMessageWindow.Show($"저장 중 오류가 발생했습니다.\n{ex.Message}",
+                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    CustomMessageWindow.MessageIconType.Danger);
             }
         }
 

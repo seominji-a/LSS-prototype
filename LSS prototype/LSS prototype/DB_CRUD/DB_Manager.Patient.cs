@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LSS_prototype.Patient_Page;
+using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Linq;
@@ -9,10 +10,8 @@ namespace LSS_prototype.DB_CRUD
 {
     public partial class DB_Manager
     {
-
-
         #region [ 환자 생성 담당부 ]
-        public bool AddPatient(PatientAddViewModel patient)
+        public bool AddPatient(PatientModel patient)
         {
             using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
             {
@@ -49,8 +48,8 @@ namespace LSS_prototype.DB_CRUD
                             {
                                 PatientId = Convert.ToInt32(reader["PATIENT_ID"]),
                                 PatientCode = Convert.ToInt32(reader["PATIENT_CODE"]),
-                                Name = reader["PATIENT_NAME"].ToString(),
-                                BRITH_DATE = Convert.ToDateTime(reader["BIRTH_DATE"]),
+                                PatientName = reader["PATIENT_NAME"].ToString(),
+                                BirthDate = Convert.ToDateTime(reader["BIRTH_DATE"]),
                                 Sex = reader["SEX"].ToString()
                             });
                         }
@@ -62,7 +61,7 @@ namespace LSS_prototype.DB_CRUD
         #endregion
 
         #region [ 환자 수정 담당부 ]
-        public bool UpdatePatient(PatientEditViewModel vm)
+        public bool UpdatePatient(PatientModel vm)
         {
             using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
             {
@@ -70,10 +69,10 @@ namespace LSS_prototype.DB_CRUD
 
                 using (var cmd = new SQLiteCommand(Query.EDIT_PATIENT, conn))
                 {
-                    cmd.Parameters.AddWithValue("@Patient_id", vm.Patient_id);
+                    cmd.Parameters.AddWithValue("@Patient_id", vm.PatientId);
                     cmd.Parameters.AddWithValue("@PatientName", vm.PatientName);
                     cmd.Parameters.AddWithValue("@PatientCode", vm.PatientCode);
-                    cmd.Parameters.AddWithValue("@BirthDate", vm.BirthDate.Value.ToString("yyyy-MM-dd HH:mm:ss"));
+                    cmd.Parameters.AddWithValue("@BirthDate", vm.BirthDate);
                     cmd.Parameters.AddWithValue("@Sex", vm.Sex);
 
                     return cmd.ExecuteNonQuery() > 0;

@@ -12,7 +12,9 @@ namespace LSS_prototype
     public interface IDialogService
     {
         bool? ShowDialog(object viewModel);
-        void ShowSetting();  
+        void ShowSetting();
+        void ShowDefault();
+
     }
     internal class Dialog : IDialogService
     {
@@ -58,6 +60,13 @@ namespace LSS_prototype
         public void ShowSetting()  
         {
             var window = new setting();
+            window.Owner = Application.Current.MainWindow;
+            window.ShowDialog();
+        }
+
+        public void ShowDefault()
+        {
+            var window = new Default();
             window.Owner = Application.Current.MainWindow;
             window.ShowDialog();
         }

@@ -54,12 +54,13 @@ namespace LSS_prototype.DB_CRUD
 
                             if (dbVersion < this._db_version)
                             {
-                                var msg = new CustomMessageWindow(
-                                            "DB 버전이 다릅니다.\n 기존 로컬 DB가 삭제되고 신규 DB가 생성됩니다.\n진행하시겠습니까?",
-                                            CustomMessageWindow.MessageBoxType.YesNo,
-                                            autoCloseSeconds: 30);
-                                msg.ShowDialog();
-                                if (msg.Result == CustomMessageWindow.MessageBoxResult.Yes) // 진짜 삭제 후 db를 재설치 하시겠습니까? ( 이 때, 기존 테이블까지 다 delete 됨 주의 )  
+                                var result = CustomMessageWindow.Show(
+                                         "DB 버전이 다릅니다.\n 기존 로컬 DB가 삭제되고 신규 DB가 생성됩니다.\n진행하시겠습니까?",
+                                         CustomMessageWindow.MessageBoxType.YesNo,
+                                         autoCloseSeconds: 30,
+                                         icon: CustomMessageWindow.MessageIconType.Danger);
+
+                                if (result == CustomMessageWindow.MessageBoxResult.Yes)
                                     needRecreate = true;
                                 else
                                     return;
@@ -115,6 +116,28 @@ namespace LSS_prototype.DB_CRUD
 
                 throw;
             }
+        }
+        #endregion
+
+        #region [ ADMIN 권한 ID 조회 ]
+        public List<string> SelectAdminLoginIds()
+        {
+            var list = new List<string>();
+
+            using (var conn = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.ADMIN_ID_SEARCH, conn))
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        list.Add(reader["LOGIN_ID"].ToString());
+                    }
+                }
+            }
+
+            return list;
         }
         #endregion
     }

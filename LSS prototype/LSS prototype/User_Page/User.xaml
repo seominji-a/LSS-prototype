@@ -1,16 +1,18 @@
-﻿<Window x:Class="LSS_prototype.User_Page.User"
+﻿<UserControl x:Class="LSS_prototype.User_Page.User"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:LSS_prototype"
+        xmlns:local="clr-namespace:LSS_prototype.User_Page"
         mc:Ignorable="d"
-        Title="USER" Height="1080" Width="1920"
-        WindowState="Maximized" WindowStyle="None" ResizeMode="NoResize"
+        d:DesignWidth="1920" d:DesignHeight="1080"
         FontFamily="Arial" Background="#F3F5F7">
 
-    <Window.Resources>
-        <!-- 색상 팔레트 -->
+    <UserControl.DataContext>
+        <local:UserViewModel/>
+    </UserControl.DataContext>
+
+    <UserControl.Resources>
         <SolidColorBrush x:Key="Primary"     Color="#173753"/>
         <SolidColorBrush x:Key="PrimaryFade" Color="#3B82F6"/>
         <SolidColorBrush x:Key="Surface"     Color="#FFFFFF"/>
@@ -21,7 +23,6 @@
         <SolidColorBrush x:Key="TextMuted"   Color="#94A3B8"/>
         <SolidColorBrush x:Key="Panel"       Color="#0F2637"/>
 
-        <!-- 기본 버튼 -->
         <Style x:Key="NavBtn" TargetType="Button">
             <Setter Property="Background"      Value="{StaticResource Surface}"/>
             <Setter Property="Foreground"      Value="{StaticResource Primary}"/>
@@ -42,28 +43,24 @@
             </Setter>
         </Style>
 
-        <!-- 절반 너비 버튼 -->
         <Style x:Key="HalfBtn" TargetType="Button" BasedOn="{StaticResource NavBtn}">
             <Setter Property="Width"  Value="107"/>
             <Setter Property="Height" Value="62"/>
         </Style>
 
-        <!-- EXIT 버튼 -->
         <Style x:Key="ExitBtn" TargetType="Button" BasedOn="{StaticResource NavBtn}">
             <Setter Property="Background" Value="#111827"/>
             <Setter Property="Foreground" Value="White"/>
         </Style>
 
-        <!-- 사이드 섹션 라벨 : 흰색, 중앙정렬, 폰트 업 -->
         <Style x:Key="SectionLabel" TargetType="TextBlock">
-            <Setter Property="Foreground"        Value="White"/>
-            <Setter Property="FontSize"          Value="13"/>
-            <Setter Property="FontWeight"        Value="Bold"/>
+            <Setter Property="Foreground"          Value="White"/>
+            <Setter Property="FontSize"            Value="13"/>
+            <Setter Property="FontWeight"          Value="Bold"/>
             <Setter Property="HorizontalAlignment" Value="Center"/>
-            <Setter Property="Margin"            Value="0,0,0,14"/>
+            <Setter Property="Margin"              Value="0,0,0,14"/>
         </Style>
 
-        <!-- 컬럼 헤더 기본 (중간 컬럼 - 라운딩 없음) -->
         <Style x:Key="ColumnHeader" TargetType="GridViewColumnHeader">
             <Setter Property="Background"      Value="{StaticResource Primary}"/>
             <Setter Property="Foreground"      Value="#E2E8F0"/>
@@ -98,7 +95,6 @@
             </Style.Triggers>
         </Style>
 
-        <!-- 첫 번째 컬럼 헤더 : 왼쪽 위만 라운딩 -->
         <Style x:Key="ColumnHeaderFirst" TargetType="GridViewColumnHeader" BasedOn="{StaticResource ColumnHeader}">
             <Setter Property="Template">
                 <Setter.Value>
@@ -117,7 +113,6 @@
             </Setter>
         </Style>
 
-        <!-- 마지막 컬럼 헤더 : 오른쪽 위만 라운딩 -->
         <Style x:Key="ColumnHeaderLast" TargetType="GridViewColumnHeader" BasedOn="{StaticResource ColumnHeader}">
             <Setter Property="Template">
                 <Setter.Value>
@@ -136,7 +131,6 @@
             </Setter>
         </Style>
 
-        <!-- 리스트 행 스타일 -->
         <Style x:Key="RowItem" TargetType="ListViewItem">
             <Setter Property="Margin"           Value="0,0,0,8"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -170,7 +164,6 @@
             </Setter>
         </Style>
 
-        <!-- USER NAME 셀 -->
         <DataTemplate x:Key="NameCellTemplate">
             <TextBlock Text="{Binding Name}"
                        FontSize="22" FontWeight="Bold" Margin="14,0"
@@ -178,7 +171,6 @@
                        VerticalAlignment="Center"/>
         </DataTemplate>
 
-        <!-- LOGIN ID 셀 -->
         <DataTemplate x:Key="UserCodeCellTemplate">
             <TextBlock Text="{Binding UserCode}"
                        FontSize="18" Margin="14,0"
@@ -186,7 +178,6 @@
                        VerticalAlignment="Center"/>
         </DataTemplate>
 
-        <!-- ROLE CODE 셀 -->
         <DataTemplate x:Key="DeptCellTemplate">
             <TextBlock Text="{Binding Department}"
                        FontSize="18" Margin="14,0"
@@ -194,7 +185,6 @@
                        VerticalAlignment="Center"/>
         </DataTemplate>
 
-        <!-- ROLE 배지 셀 : ADMIN=빨강, 나머지=파랑 -->
         <DataTemplate x:Key="RoleCellTemplate">
             <Border x:Name="RoleBadge"
                     Background="#EFF6FF" BorderBrush="#BFDBFE"
@@ -214,8 +204,7 @@
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
-
-    </Window.Resources>
+    </UserControl.Resources>
 
     <Grid>
         <Grid.ColumnDefinitions>
@@ -223,9 +212,7 @@
             <ColumnDefinition Width="256"/>
         </Grid.ColumnDefinitions>
 
-        <!-- ══════════════════════════════════════
-             메인 콘텐츠 영역
-             ══════════════════════════════════════ -->
+        <!-- 메인 콘텐츠 영역 -->
         <Border Grid.Column="0" Background="#F3F5F7">
             <Grid Margin="32,24,24,24">
                 <Grid.RowDefinitions>
@@ -240,7 +227,7 @@
                         <ColumnDefinition Width="440"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="Operator" FontSize="54" FontWeight="Bold"
+                    <TextBlock Text="Healthcare Professional" FontSize="54" FontWeight="Bold"
                                Foreground="{StaticResource Primary}" VerticalAlignment="Center"/>
 
                     <Border Grid.Column="1" Background="{StaticResource Surface}"
@@ -289,14 +276,11 @@
                           SelectedItem="{Binding SelectedUser}"
                           ItemContainerStyle="{StaticResource RowItem}"
                           BorderThickness="0"
-                          HorizontalContentAlignment="Stretch"
-                          >
-
+                          HorizontalContentAlignment="Stretch">
                     <ListView.Template>
                         <ControlTemplate TargetType="ListView">
                             <Border Background="{StaticResource CardOuter}"
-                                    CornerRadius="10"
-                                    ClipToBounds="True">
+                                    CornerRadius="10" ClipToBounds="True">
                                 <DockPanel>
                                     <GridViewHeaderRowPresenter
                                         DockPanel.Dock="Top"
@@ -313,7 +297,7 @@
 
                     <ListView.View>
                         <GridView AllowsColumnReorder="False">
-                            <GridViewColumn Header="USER NAME" Width="560"
+                            <GridViewColumn Header="NAME" Width="560"
                                             HeaderContainerStyle="{StaticResource ColumnHeaderFirst}"
                                             CellTemplate="{StaticResource NameCellTemplate}"/>
                             <GridViewColumn Header="LOGIN ID"  Width="320"
@@ -331,21 +315,22 @@
             </Grid>
         </Border>
 
-        <!-- ══════════════════════════════════════
-             오른쪽 사이드 패널
-             ══════════════════════════════════════ -->
+        <!-- 오른쪽 사이드 패널 -->
         <Border Grid.Column="1" Background="{StaticResource Panel}">
             <DockPanel Margin="14,28,14,14">
 
                 <!-- 하단 고정 : Home + EXIT -->
                 <StackPanel DockPanel.Dock="Bottom">
                     <Border Height="1" Background="#244A66" Margin="0,0,0,16"/>
-                    <Button Style="{StaticResource NavBtn}" Content="Home" Margin="0,0,0,10" Click="Home_Click"/>
-                    <Button Style="{StaticResource ExitBtn}" Content="EXIT" Click="Exit_Click"/>
+                    <Button Style="{StaticResource NavBtn}" Content="HOME"
+                            Margin="0,0,0,10" Click="Home_Click"/>
+                    <Button Style="{StaticResource ExitBtn}" Content="EXIT"
+                            Click="Exit_Click"/>
                 </StackPanel>
 
                 <!-- 스크롤 영역 -->
-                <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
+                <ScrollViewer VerticalScrollBarVisibility="Hidden"
+                              HorizontalScrollBarVisibility="Disabled">
                     <StackPanel>
 
                         <!-- 로고 -->
@@ -356,8 +341,8 @@
                                     Margin="0,8,0,0" HorizontalAlignment="Center"/>
                         </StackPanel>
 
-                        <!-- ① USER MANAGEMENT -->
-                        <TextBlock Text="USER MANAGEMENT" Style="{StaticResource SectionLabel}"/>
+                        <!-- USER MANAGEMENT -->
+                        <TextBlock Text="HCP MANAGEMENT" Style="{StaticResource SectionLabel}"/>
                         <Button Style="{StaticResource NavBtn}" Command="{Binding AddUserCommand}"
                                 Content="Add User"    Margin="0,0,0,12"/>
                         <Button Style="{StaticResource NavBtn}" Command="{Binding EditUserCommand}"
@@ -367,7 +352,7 @@
 
                         <Border Height="1" Background="#1E3F58" Margin="0,28,0,28"/>
 
-                        <!-- ② ADMIN PRIVILEGES -->
+                        <!-- ADMIN PRIVILEGES -->
                         <TextBlock Text="ADMIN PRIVILEGES" Style="{StaticResource SectionLabel}"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,12">
                             <Button Style="{StaticResource HalfBtn}" Command="{Binding DelegateCommand}"
@@ -378,14 +363,16 @@
 
                         <Border Height="1" Background="#1E3F58" Margin="0,28,0,28"/>
 
-                        <!-- ③ SYSTEM SETTINGS -->
+                        <!-- SYSTEM SETTINGS -->
                         <TextBlock Text="SYSTEM SETTINGS" Style="{StaticResource SectionLabel}"/>
                         <Button Style="{StaticResource NavBtn}" Command="{Binding SettingCommand}"
-                                Content="SETTINGS" Margin="0,0,0,0"/>
+                                Content="SYSTEM SETUP" Margin="0,0,0,12"/>
+                        <Button Style="{StaticResource NavBtn}" Command="{Binding DefaultCommand}"
+                                Content="CAMERA_DEFAULT" Margin="0,0,0,0"/>
 
                     </StackPanel>
                 </ScrollViewer>
             </DockPanel>
         </Border>
     </Grid>
-</Window>
+</UserControl>

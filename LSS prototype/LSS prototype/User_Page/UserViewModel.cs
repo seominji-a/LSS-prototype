@@ -8,19 +8,13 @@ using System.Windows.Input;
 
 namespace LSS_prototype.User_Page
 {
-    public class UserModel
-    {
-        public int UserId { get; set; }
-        public string Name { get; set; }
-        public string UserCode { get; set; }
-        public string Role { get; set; }
-        public string Department { get; set; }
-    }
+   
 
     public class UserViewModel : INotifyPropertyChanged
     {
         public ICommand AddUserCommand { get; }
         public ICommand SettingCommand { get; }
+        public ICommand DefaultCommand { get; }
         private readonly IDialogService _dialogService;
 
         private ObservableCollection<UserModel> _users = new ObservableCollection<UserModel>();
@@ -49,7 +43,8 @@ namespace LSS_prototype.User_Page
         {
             _dialogService = new Dialog();
             AddUserCommand = new RelayCommand(ExecuteAddUser);
-            SettingCommand = new RelayCommand(ExecuteOpenSetting); 
+            SettingCommand = new RelayCommand(ExecuteOpenSetting);
+            DefaultCommand = new RelayCommand(ExecuteOpenDefault);
 
             LoadUsers();
         }
@@ -66,7 +61,9 @@ namespace LSS_prototype.User_Page
             }
             catch (Exception ex)
             {
-                new CustomMessageWindow("데이터 로드 중 오류 발생: " + ex.Message).Show();
+                CustomMessageWindow.Show("데이터 로드 중 오류 발생: " + ex.Message,
+                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    CustomMessageWindow.MessageIconType.Danger);
             }
         }
 
@@ -82,6 +79,12 @@ namespace LSS_prototype.User_Page
         {
             _dialogService.ShowSetting();
         }
+
+        private void ExecuteOpenDefault(object parameter)
+        {
+            _dialogService.ShowDefault();
+        }
+
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)

@@ -14,67 +14,99 @@
               MouseDown="Overlay_MouseDown"
               x:Name="OverlayGrid">
 
-            <Border Background="White"
-                    BorderBrush="#C8DCE8"
+            <Border Background="#F3F5F7"
+                    BorderBrush="#D6DEE8"
                     BorderThickness="2"
                     CornerRadius="20"
-                    Width="450"
-                    Height="240"
+                    Width="560"
+                    Height="290"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center">
 
                 <Border.Effect>
-                    <DropShadowEffect Color="#7BA8C7"
+                    <DropShadowEffect Color="#173753"
                                       Direction="270"
                                       ShadowDepth="0"
-                                      BlurRadius="20"
-                                      Opacity="0.4"/>
+                                      BlurRadius="30"
+                                      Opacity="0.25"/>
                 </Border.Effect>
 
-                <Grid Margin="30,20">
+                <Grid Margin="20,20,20,20">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                    <!-- 상단: 카운트다운 -->
+                    <Grid Grid.Row="0" Margin="0,0,0,6">
                         <TextBlock x:Name="CountdownText"
                                    Text=""
-                                   FontSize="14"
+                                   FontSize="13"
                                    FontFamily="Arial"
-                                   Foreground="#7BA8C7" 
+                                   Foreground="#64748B"
                                    FontWeight="SemiBold"
                                    HorizontalAlignment="Right"
                                    VerticalAlignment="Top"/>
                     </Grid>
 
-                    <TextBlock x:Name="MessageText"
-                               Grid.Row="1"
-                               Text="메시지 내용"
-                               FontSize="20"
-                               FontFamily="Arial"
-                               TextWrapping="Wrap"
-                               VerticalAlignment="Center"
-                               HorizontalAlignment="Center"
-                               TextAlignment="Center"
-                               Foreground="Black"
-                               FontWeight="Normal"
-                               LineHeight="24"/>
+                    <!-- 중앙: 아이콘(왼쪽 고정) + 메시지(우측 넓게) -->
+                    <Grid Grid.Row="1" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="140"/>
+                            <!-- 아이콘 고정 -->
+                            <ColumnDefinition Width="*"/>
+                            <!-- 메시지 최대 활용 -->
+                            <ColumnDefinition Width="10"/>
+                            <!-- 우측 최소 여백 -->
+                        </Grid.ColumnDefinitions>
 
+                        <!-- 아이콘 - 맨 왼쪽 고정 -->
+                        <Border x:Name="IconBorder"
+                                Grid.Column="0"
+                                Width="110"
+                                Height="110"
+                                CornerRadius="55"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center"
+                                Visibility="Collapsed">
+                            <TextBlock x:Name="IconText"
+                                       FontSize="64"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       FontFamily="Segoe UI Symbol"/>
+                        </Border>
+
+                        <!-- 메시지 - 우측 넓게 -->
+                        <TextBlock x:Name="MessageText"
+                                   Grid.Column="1"
+                                   Text="메시지 내용"
+                                   FontSize="20"
+                                   FontFamily="Arial"
+                                   TextWrapping="Wrap"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center"
+                                   TextAlignment="Center"
+                                   Foreground="#1E293B"
+                                   FontWeight="Normal"
+                                   LineHeight="28"/>
+                    </Grid>
+
+                    <!-- 하단: 버튼 -->
                     <StackPanel Grid.Row="2"
                                 Orientation="Horizontal"
                                 HorizontalAlignment="Center"
-                                Margin="0,20,0,10">
+                                Margin="0,14,0,4">
 
+                        <!-- 확인 버튼 -->
                         <Button x:Name="OkButton"
-                                Content="확인"
-                                Width="120"
-                                Height="45"
+                                Content="YES"
+                                Width="130"
+                                Height="48"
                                 Click="OkButton_Click">
                             <Button.Style>
                                 <Style TargetType="Button">
-                                    <Setter Property="Background" Value="#9BC4DD"/>
+                                    <Setter Property="Background" Value="#173753"/>
                                     <Setter Property="Foreground" Value="White"/>
                                     <Setter Property="FontSize" Value="16"/>
                                     <Setter Property="FontFamily" Value="Arial"/>
@@ -85,7 +117,7 @@
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="{TemplateBinding Background}" CornerRadius="12">
                                                     <Border.Effect>
-                                                        <DropShadowEffect Color="#7BA8C7" Direction="270" ShadowDepth="0" BlurRadius="8" Opacity="0.4"/>
+                                                        <DropShadowEffect Color="#173753" Direction="270" ShadowDepth="0" BlurRadius="8" Opacity="0.3"/>
                                                     </Border.Effect>
                                                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                 </Border>
@@ -94,26 +126,27 @@
                                     </Setter>
                                     <Style.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#88B5D1"/>
+                                            <Setter Property="Background" Value="#1F4767"/>
                                         </Trigger>
                                         <Trigger Property="IsPressed" Value="True">
-                                            <Setter Property="Background" Value="#7BA8C7"/>
+                                            <Setter Property="Background" Value="#102A3F"/>
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
                         </Button>
 
+                        <!-- 예 버튼 -->
                         <Button x:Name="YesButton"
-                                Content="예"
-                                Width="120"
-                                Height="45"
-                                Margin="0,0,10,0"
+                                Content="YES"
+                                Width="130"
+                                Height="48"
+                                Margin="0,0,12,0"
                                 Visibility="Collapsed"
                                 Click="YesButton_Click">
                             <Button.Style>
                                 <Style TargetType="Button">
-                                    <Setter Property="Background" Value="#9BC4DD"/>
+                                    <Setter Property="Background" Value="#173753"/>
                                     <Setter Property="Foreground" Value="White"/>
                                     <Setter Property="FontSize" Value="16"/>
                                     <Setter Property="FontFamily" Value="Arial"/>
@@ -124,7 +157,7 @@
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="{TemplateBinding Background}" CornerRadius="12">
                                                     <Border.Effect>
-                                                        <DropShadowEffect Color="#7BA8C7" Direction="270" ShadowDepth="0" BlurRadius="8" Opacity="0.4"/>
+                                                        <DropShadowEffect Color="#173753" Direction="270" ShadowDepth="0" BlurRadius="8" Opacity="0.3"/>
                                                     </Border.Effect>
                                                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                 </Border>
@@ -133,26 +166,27 @@
                                     </Setter>
                                     <Style.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#88B5D1"/>
+                                            <Setter Property="Background" Value="#1F4767"/>
                                         </Trigger>
                                         <Trigger Property="IsPressed" Value="True">
-                                            <Setter Property="Background" Value="#7BA8C7"/>
+                                            <Setter Property="Background" Value="#102A3F"/>
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
                         </Button>
 
+                        <!-- 아니오 버튼 -->
                         <Button x:Name="NoButton"
-                                Content="아니오"
-                                Width="120"
-                                Height="45"
+                                Content="NO"
+                                Width="130"
+                                Height="48"
                                 Visibility="Collapsed"
                                 Click="NoButton_Click">
                             <Button.Style>
                                 <Style TargetType="Button">
-                                    <Setter Property="Background" Value="#C8DCE8"/>
-                                    <Setter Property="Foreground" Value="#6B8CAE"/>
+                                    <Setter Property="Background" Value="#D6DEE8"/>
+                                    <Setter Property="Foreground" Value="#5F6E82"/>
                                     <Setter Property="FontSize" Value="16"/>
                                     <Setter Property="FontFamily" Value="Arial"/>
                                     <Setter Property="FontWeight" Value="SemiBold"/>
@@ -162,7 +196,7 @@
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="{TemplateBinding Background}" CornerRadius="12">
                                                     <Border.Effect>
-                                                        <DropShadowEffect Color="#B8D4E8" Direction="270" ShadowDepth="0" BlurRadius="8" Opacity="0.3"/>
+                                                        <DropShadowEffect Color="#94A3B8" Direction="270" ShadowDepth="0" BlurRadius="8" Opacity="0.25"/>
                                                     </Border.Effect>
                                                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                 </Border>
@@ -171,10 +205,10 @@
                                     </Setter>
                                     <Style.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#B8D4E8"/>
+                                            <Setter Property="Background" Value="#C8D4E0"/>
                                         </Trigger>
                                         <Trigger Property="IsPressed" Value="True">
-                                            <Setter Property="Background" Value="#A8C8DC"/>
+                                            <Setter Property="Background" Value="#B8C8D8"/>
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>

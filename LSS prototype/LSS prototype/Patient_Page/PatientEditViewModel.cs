@@ -1,4 +1,5 @@
 ﻿using LSS_prototype.DB_CRUD;
+using LSS_prototype.Patient_Page;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -11,7 +12,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
-namespace LSS_prototype
+namespace LSS_prototype.Patient_Page
 {
     public class PatientEditViewModel : INotifyPropertyChanged
     {
@@ -40,8 +41,8 @@ namespace LSS_prototype
         {
             Patient_id = selected.PatientId;
             PatientCode = selected.PatientCode;
-            PatientName = selected.Name;
-            BirthDate = selected.BRITH_DATE;
+            PatientName = selected.PatientName;
+            BirthDate = selected.BirthDate;
             Sex = selected.Sex;
 
             EditCommand = new RelayCommand(UpdatePatient);
@@ -53,16 +54,27 @@ namespace LSS_prototype
             try
             {
                 var repo = new DB_Manager();
-                // DB_Manager의 업데이트 메서드 호출
-                if (repo.UpdatePatient(this))
+
+                var model = new PatientModel
                 {
-                    new CustomMessageWindow("수정되었습니다.").Show();
-                    CloseAction?.Invoke(true); // 성공 결과와 함께 창 닫기
+                    PatientId = this.Patient_id,    
+                    PatientCode = this.PatientCode.Value,
+                    PatientName = this.PatientName,
+                    BirthDate = this.BirthDate.Value,
+                    Sex = this.Sex
+                };
+
+                if (repo.UpdatePatient(model))
+                {
+                    CustomMessageWindow.Show("수정되었습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageIconType.Info);
+                    CloseAction?.Invoke(true);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "UpdatePatient Function Check");
+                Console.WriteLine(ex.Message + " UpdatePatient Function Check");
             }
         }
 

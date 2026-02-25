@@ -163,6 +163,7 @@
     <Compile Include="Patient_Page\Keypad.xaml.cs">
       <DependentUpon>Keypad.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Patient_Page\KeypadViewModel.cs" />
     <Compile Include="Patient_Page\Patient.xaml.cs">
       <DependentUpon>Patient.xaml</DependentUpon>
     </Compile>

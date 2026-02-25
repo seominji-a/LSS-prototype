@@ -1,4 +1,5 @@
 ﻿<UserControl x:Class="LSS_prototype.Patient_Page.PatientAddDialog"
+             xmlns:local="clr-namespace:LSS_prototype.Patient_Page"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -31,24 +32,25 @@
                          Style="{StaticResource DefaultDIALOGTEXTStyle}"/>
 
                 <TextBlock Text="Date of Birth" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
-                <DatePicker x:Name="DpBirthDate" SelectedDate="{Binding BirthDate, UpdateSourceTrigger=PropertyChanged}"  Style="{StaticResource DefaultDIALOGDateStyle}" PreviewMouseUp="DpBirthDate_PreviewMouseUp" >
-                    <DatePicker.Resources>
-                        <Style TargetType="{x:Type DatePickerTextBox}">
-                            <Setter Property="Control.Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="{x:Type DatePickerTextBox}">
-                                        <TextBox x:Name="PART_TextBox"
-                                 Text="{Binding Path=Text, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                                 FontSize="{TemplateBinding FontSize}"
-                                 VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                                 BorderThickness="0"
-                                 Background="Transparent" BorderBrush="#FFF9F9F9" Focusable="False" Cursor="Hand" IsReadOnly="True"/>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </DatePicker.Resources>
-                </DatePicker>
+                <Button Command="{Binding OpenKeypadCommand}"
+            Height="60" Width="465"
+            HorizontalAlignment="Left">
+                    <TextBlock Text="{Binding BirthDate, StringFormat=yyyy-MM-dd}"
+                   FontSize="20"/>
+                </Button>
+
+                <!-- 🔥 키패드 Popup -->
+                <Popup IsOpen="{Binding IsKeypadOpen}" Placement="Bottom" VerticalOffset="-80"   HorizontalOffset="500"  AllowsTransparency="True" StaysOpen="False">
+
+                    <Border Background="White"
+            BorderBrush="Gray"
+            BorderThickness="1"
+            CornerRadius="10"
+            Padding="10">
+                        <local:Keypad DataContext="{Binding KeypadVm}" />
+                    </Border>
+                </Popup>
+
 
                 <TextBlock Text="Sex" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
                 <ComboBox SelectedValue="{Binding Sex, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Content" Style="{StaticResource DefaultDIALOGSexStyle}">

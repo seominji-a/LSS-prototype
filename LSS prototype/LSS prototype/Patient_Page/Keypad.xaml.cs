@@ -17,7 +17,7 @@ namespace LSS_prototype.Patient_Page
     /// <summary>
     /// Keypad.xaml에 대한 상호 작용 논리
     /// </summary>
-    public partial class Keypad : Window
+    public partial class Keypad : UserControl
     {
         public Keypad()
         {

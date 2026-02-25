@@ -100,7 +100,7 @@ namespace LSS_prototype.Patient_Page
         {
             try
             {
-                var vm = new PatientAddViewModel();
+                var vm = new PatientAddViewModel(_dialogService);
 
                 if (_dialogService.ShowDialog(vm) == true)
                 {

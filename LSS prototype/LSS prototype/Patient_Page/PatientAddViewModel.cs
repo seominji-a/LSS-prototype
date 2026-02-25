@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -9,8 +11,17 @@ using System.Windows.Input;
 
 namespace LSS_prototype.Patient_Page
 {
-    public class PatientAddViewModel
+    
+
+    public class PatientAddViewModel : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
         public string PatientName { get; set; }
         public int? PatientCode { get; set; }
 
@@ -23,20 +34,18 @@ namespace LSS_prototype.Patient_Page
         public ICommand CancelCommand { get; }
 
         public ICommand OpenKeypadCommand { get; }
+
         private readonly IDialogService _dialogService;
         public PatientAddViewModel(IDialogService dialogService)
         {
             _dialogService = dialogService;
+            SaveCommand = new RelayCommand(Save);
+            CancelCommand = new RelayCommand(Cancel);
             OpenKeypadCommand = new RelayCommand(OpenKeypad);
         }
 
 
         public Action<bool?> CloseAction { get; set; }
-        public PatientAddViewModel()
-        {
-            SaveCommand = new RelayCommand(Save);
-            CancelCommand = new RelayCommand(Cancel);
-        }
 
         private void Save()//환자 정보 추가에 관한 입력, 검증만 담당
         {
@@ -61,14 +70,44 @@ namespace LSS_prototype.Patient_Page
                 CustomMessageWindow.MessageIconType.Warning);
         }
 
-        private void OpenKeypad()
+        private KeypadViewModel _keypadVm;
+        public KeypadViewModel KeypadVm
         {
-            var keypadVm = new NumericKeypadViewModel();
-            bool? result = _dialogService.ShowDialog(keypadVm);
-            if (result == true && keypadVm.ResultDate != null)
+            get => _keypadVm;
+            private set // set 추가
             {
-                BirthDate = keypadVm.ResultDate;
+                _keypadVm = value;
+                OnPropertyChanged(); // UI에 객체가 생성되었음을 알림
             }
         }
+
+        private void OpenKeypad()
+        {
+            this.KeypadVm = new KeypadViewModel();
+            this.KeypadVm.CloseRequested += OnKeypadClosed;
+            IsKeypadOpen = true;
+        }
+
+        private bool _isKeypadOpen;
+        public bool IsKeypadOpen
+        {
+            get => _isKeypadOpen;
+            set
+            {
+                _isKeypadOpen = value;
+                OnPropertyChanged();
+            }
+        }
+        private void OnKeypadClosed(bool? result)
+        {
+            IsKeypadOpen = false;
+
+            if (result == true && _keypadVm.ResultDate != null)
+            {
+                BirthDate = _keypadVm.ResultDate;
+                OnPropertyChanged(nameof(BirthDate));
+            }
+        }
+
     }
 }

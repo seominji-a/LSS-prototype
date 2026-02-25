@@ -97,9 +97,31 @@ namespace LSS_prototype.Login_Page
             DateTime? passwordChangedAt = null;
             string user_id = string.Empty;
             var dbManager = new DB_Manager();
-
+            
             try
             {
+                // ══════════════════════════════════════════
+                // 0) MASTER 계정 OTP 검증 (DB 조회 없이 환경변수 기반)
+                // ══════════════════════════════════════════
+                if (Common.VerifyMasterOtp(UserId, password))
+                {
+                    // OTP 인증 성공 → 세션 시작 (roleCode는 MASTER 고정)
+
+                    AuthToken.SignIn(UserId, "M"); //마스터 계정 ROLE_CODE M
+
+                    await CustomMessageWindow.ShowAsync(
+                        "MASTER 로그인 성공\n관리자 화면으로 이동합니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose,
+                        1,
+                        CustomMessageWindow.MessageIconType.Info);
+
+                    var masterShell = new MainPage();
+                    masterShell.Show();
+                    masterShell.NavigateTo(new User());
+                    CloseLoginWindow();
+                    return;
+                }
+
                 // 1) 로그인 검증 (해시/솔트 + ROLE_CODE + PASSWORD_CHANGED_AT)
                 if (!dbManager.Login_check(UserId, password, out roleCode, out passwordChangedAt, out user_id))
                 {

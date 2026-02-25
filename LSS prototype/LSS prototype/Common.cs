@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 
 namespace LSS_prototype
@@ -21,6 +24,13 @@ namespace LSS_prototype
 
         public const int DB_VERSION = 33; // DB Version 
         private const int OTP_SLOT_MINUTES = 3; // OTP 유효시간 +- 3분
+        private static readonly string LOG_DIR = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs");
+
+        // ── 로그 보관 일수 ──
+        private const int LOG_RETENTION_DAYS = 30;
+
+        // ── 파일 쓰기 잠금 ──
+        private static readonly object _logLock = new object();
 
         /// <summary>
         /// 입력된 ID + OTP 6자리가 MASTER 계정 기준으로 유효한지 검증
@@ -71,7 +81,7 @@ namespace LSS_prototype
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + " VerifyMasterOtp Function Check");
+                Common.WriteLog(ex);
                 return false;
             }
         }
@@ -111,9 +121,138 @@ namespace LSS_prototype
 
             return sb.ToString();
         }
+
+        public static void CleanupOldLogs()
+        {
+            try
+            {
+                if (!Directory.Exists(LOG_DIR)) return;
+
+                var files = Directory.GetFiles(LOG_DIR, "*.log");
+                foreach (var file in files)
+                {
+                    string fileName = Path.GetFileNameWithoutExtension(file); // "2026-01-25"
+                    if (DateTime.TryParse(fileName, out DateTime fileDate))
+                    {
+                        if ((DateTime.Now.Date - fileDate.Date).TotalDays >= LOG_RETENTION_DAYS)
+                        {
+                            File.Delete(file);
+                            Console.WriteLine($"[로그 정리] 삭제: {file}");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("로그 정리 실패: " + ex.Message);
+                throw; // 0225 박한용 : 로그 정리 및 생성은 절대 실패가 일어나면안돼서 테스트 차 throw 해놨음. 추후 충분한 테스트 후 삭제예정
+            }
+        }
+
+        // ══════════════════════════════════════════
+        // 예외 로그 기록
+        // catch 블록에서 Common.WriteLog(ex) 로 호출
+        // CallerMemberName / CallerFilePath / CallerLineNumber
+        // → 호출한 메서드명, 파일경로, 라인번호 자동 수집
+        // ══════════════════════════════════════════
+        public static void WriteLog(
+            Exception ex,
+            [CallerMemberName] string method = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int line = 0)
+        {
+            try
+            {
+                if (!Directory.Exists(LOG_DIR))
+                    Directory.CreateDirectory(LOG_DIR);
+
+                string className = Path.GetFileNameWithoutExtension(filePath);
+                string logFile = Path.Combine(LOG_DIR,
+                    $"{DateTime.Now:yyyy-MM-dd}.log");
+
+                var sb = new StringBuilder();
+                sb.AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [ERROR]");
+                sb.AppendLine($"  클래스  : {className}");
+                sb.AppendLine($"  메서드  : {method}");
+                sb.AppendLine($"  라인    : {line}");
+                sb.AppendLine($"  메시지  : {ex.Message}");
+
+                // InnerException 있으면 추가 기록
+                if (ex.InnerException != null)
+                    sb.AppendLine($"  내부오류 : {ex.InnerException.Message}");
+
+                sb.AppendLine($"  StackTrace :");
+                sb.AppendLine($"  {ex.StackTrace}");
+                sb.AppendLine(new string('─', 60));
+                sb.AppendLine();
+
+                lock (_logLock)
+                {
+                    File.AppendAllText(logFile, sb.ToString(), Encoding.UTF8);
+                }
+
+                // 사용자에게 알려주기 위한 팝업 표시 
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    CustomMessageWindow.Show(
+                        ex.Message,
+                        CustomMessageWindow.MessageBoxType.Ok,
+                        0,
+                        CustomMessageWindow.MessageIconType.Warning);
+                });
+            }
+            catch (Exception logEx)
+            {
+                // 로그 기록 자체가 실패해도 앱이 죽으면 안 됨
+                Console.WriteLine("로그 기록 실패: " + logEx.Message);
+            }
+        }
+
+        // ══════════════════════════════════════════
+        // 일반 정보 로그 ( 세션별(ID)별 관리 사용 함수
+        // Common.WriteLog("로그인 성공", LogLevel.Info)
+        // ══════════════════════════════════════════
+        public enum LogLevel { Info, Warning, Error }
+
+        public static void WriteLog(
+            string message,
+            LogLevel level = LogLevel.Info,
+            [CallerMemberName] string method = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int line = 0)
+        {
+            try
+            {
+                if (!Directory.Exists(LOG_DIR))
+                    Directory.CreateDirectory(LOG_DIR);
+
+                string className = Path.GetFileNameWithoutExtension(filePath);
+                string logFile = Path.Combine(LOG_DIR,
+                    $"{DateTime.Now:yyyy-MM-dd}.log");
+
+                var sb = new StringBuilder();
+                sb.AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{level.ToString().ToUpper()}]");
+                sb.AppendLine($"  클래스  : {className}");
+                sb.AppendLine($"  메서드  : {method}");
+                sb.AppendLine($"  라인    : {line}");
+                sb.AppendLine($"  메시지  : {message}");
+                sb.AppendLine(new string('─', 60));
+                sb.AppendLine();
+
+                lock (_logLock)
+                {
+                    File.AppendAllText(logFile, sb.ToString(), Encoding.UTF8);
+                }
+
+                Console.WriteLine(sb.ToString());
+            }
+            catch (Exception logEx)
+            {
+                Console.WriteLine("로그 기록 실패: " + logEx.Message);
+                throw; //테스트 시 로그 실패는 절대 일어나면 안돼서, throw 처리 테스트 후 삭제 예정 0225 박한용
+            }
+        }
     }
-
-
 
     /// <summary>
     /// 모든 쿼리는 해당 클래스 내에서 관리 ( 코드상 직접 기입 지양 )
@@ -173,6 +312,8 @@ namespace LSS_prototype
             remove { }
         }
     }
+
+
 
 
 

@@ -81,15 +81,11 @@ namespace LSS_prototype.User_Page
             }
             catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Constraint)
             {
-                CustomMessageWindow.Show("이미 존재하는 아이디입니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                    CustomMessageWindow.MessageIconType.Warning);
+                Common.WriteLog(ex);
             }
             catch (Exception ex)
             {
-                CustomMessageWindow.Show($"저장 중 오류가 발생했습니다.\n{ex.Message}",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                    CustomMessageWindow.MessageIconType.Danger);
+                Common.WriteLog(ex);
             }
         }
 

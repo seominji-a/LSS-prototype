@@ -61,9 +61,7 @@ namespace LSS_prototype.User_Page
             }
             catch (Exception ex)
             {
-                CustomMessageWindow.Show("데이터 로드 중 오류 발생: " + ex.Message,
-                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                    CustomMessageWindow.MessageIconType.Danger);
+                Common.WriteLog(ex);
             }
         }
 

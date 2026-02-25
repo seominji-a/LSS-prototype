@@ -68,7 +68,7 @@ namespace LSS_prototype.Login_Page
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Common.WriteLog(ex);
                 _adminIdList.Clear();
             }
         }
@@ -89,6 +89,7 @@ namespace LSS_prototype.Login_Page
 
         private async Task ExecuteLogin(object parameter)
         {
+
             // PasswordBox는 바인딩이 어려워 CommandParameter로 전달받아 사용
             var passwordBox = parameter as PasswordBox;
             string password = passwordBox != null ? passwordBox.Password : string.Empty;
@@ -209,7 +210,7 @@ namespace LSS_prototype.Login_Page
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + " ExecuteLogin Function Check");
+                Common.WriteLog(ex);
             }
         }
 

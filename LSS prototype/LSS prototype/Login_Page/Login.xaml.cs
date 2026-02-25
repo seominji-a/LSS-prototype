@@ -65,7 +65,7 @@ namespace LSS_prototype.Login_Page
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + " PasswordBox_GotFocus function Check");
+                Common.WriteLog(ex);
             }
 
             

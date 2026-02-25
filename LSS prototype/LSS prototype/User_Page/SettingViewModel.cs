@@ -154,7 +154,7 @@ namespace LSS_prototype.User_Page
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + " SaveHospitalAsync Check");
+                Common.WriteLog(ex);
             }
         }
 
@@ -175,7 +175,7 @@ namespace LSS_prototype.User_Page
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + " CStoreTestAsync Check");
+                Common.WriteLog(ex);
             }
         }
 
@@ -194,7 +194,7 @@ namespace LSS_prototype.User_Page
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + " CStoreApplyAsync Check");
+                Common.WriteLog(ex);
             }
         }
 
@@ -207,7 +207,7 @@ namespace LSS_prototype.User_Page
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + " CStoreCancel Check");
+                Common.WriteLog(ex);
             }
         }
 
@@ -227,7 +227,7 @@ namespace LSS_prototype.User_Page
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + " MwlTestAsync Check");
+                Common.WriteLog(ex);
             }
         }
 
@@ -244,7 +244,7 @@ namespace LSS_prototype.User_Page
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + " MwlApplyAsync Check");
+                Common.WriteLog(ex);
             }
         }
 
@@ -256,7 +256,7 @@ namespace LSS_prototype.User_Page
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + " MwlCancel Check");
+                Common.WriteLog(ex);
             }
         }
     }

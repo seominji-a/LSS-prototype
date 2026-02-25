@@ -160,9 +160,9 @@
                     </Border>
                     <CheckBox Content="Integrated Patient"
                                 HorizontalAlignment="Left"
-                                Margin="809,10,0,0"
+                                Margin="812,13,0,0"
                                 VerticalAlignment="Top"
-                                FontSize="18">
+                                FontSize="16" Checked="CheckBox_Checked">
 
                         <CheckBox.LayoutTransform>
                             <ScaleTransform ScaleX="2" ScaleY="2"/>

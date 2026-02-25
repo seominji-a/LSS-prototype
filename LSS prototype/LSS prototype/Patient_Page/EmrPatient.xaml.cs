@@ -34,5 +34,10 @@ namespace LSS_prototype.Patient_Page
         {
             Application.Current.Shutdown();
         }
+
+        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            MainPage.Instance.NavigateTo(new Patient());
+        }
     }
 }

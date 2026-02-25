@@ -162,7 +162,7 @@
                             HorizontalAlignment="Left"
                             Margin="868,11,0,0"
                             VerticalAlignment="Top"
-                            FontSize="18" Checked="CheckBox_Checked">
+                            FontSize="16" Checked="CheckBox_Checked">
 
                         <CheckBox.LayoutTransform>
                             <ScaleTransform ScaleX="2" ScaleY="2"/>

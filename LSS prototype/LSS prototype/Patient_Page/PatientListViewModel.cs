@@ -155,7 +155,9 @@ namespace LSS_prototype.Patient_Page
                 return;
             }
 
-            var vm = new PatientEditViewModel(SelectedPatient);
+            // ✅ 생성자에 _dialogService를 첫 번째 인자로 추가하여 전달합니다.
+            var vm = new PatientEditViewModel(_dialogService, SelectedPatient);
+
             var result = _dialogService.ShowDialog(vm);
 
             if (result == true)

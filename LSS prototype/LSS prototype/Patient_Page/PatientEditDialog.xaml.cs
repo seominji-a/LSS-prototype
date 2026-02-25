@@ -23,7 +23,7 @@ namespace LSS_prototype.Patient_Page
         public PatientEditDialog()
         {
             InitializeComponent();
-            DpBirthDate.BlackoutDates.Add(new CalendarDateRange(DateTime.Today.AddDays(1), DateTime.MaxValue));
+            //DpBirthDate.BlackoutDates.Add(new CalendarDateRange(DateTime.Today.AddDays(1), DateTime.MaxValue));
         }
 
           private void DpBirthDate_PreviewMouseUp(object sender, MouseButtonEventArgs e)

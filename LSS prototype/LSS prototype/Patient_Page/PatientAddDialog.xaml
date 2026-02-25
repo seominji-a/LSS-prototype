@@ -40,7 +40,7 @@
                 </Button>
 
                 <!-- 🔥 키패드 Popup -->
-                <Popup IsOpen="{Binding IsKeypadOpen}" Placement="Bottom" VerticalOffset="-200"   HorizontalOffset="500"  AllowsTransparency="True" StaysOpen="False">
+                <Popup IsOpen="{Binding IsKeypadOpen}" Placement="Bottom" VerticalOffset="-200"   HorizontalOffset="500"  AllowsTransparency="True" StaysOpen="True">
 
                     <Border Background="White"
                         BorderBrush="Gray"

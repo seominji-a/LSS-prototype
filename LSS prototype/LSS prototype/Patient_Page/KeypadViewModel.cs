@@ -59,28 +59,29 @@ namespace LSS_prototype.Patient_Page
                 InputText = InputText.Substring(0, InputText.Length - 1);
         }
 
+        //Keypad ENTER 클릭
         private void Confirm()
         {
-            // 1. 8자리 체크
+            // 8자리 체크
             if (string.IsNullOrEmpty(InputText) || InputText.Length != 8)
             {
                 CustomMessageWindow.Show("숫자 8자리를 입력하지 않았습니다. 다시 입력해주십시오.",
                     CustomMessageWindow.MessageBoxType.AutoClose, 2,
                     CustomMessageWindow.MessageIconType.Warning);
 
-                // 여기서 아무런 값도 수정하지 않고 return만 합니다.
-                // 그러면 InputText는 입력된 8자리 미만의 숫자를 그대로 유지합니다.
+                // 입력 값 수정하지 않고 return만 수행
+                // InputText는 입력된 8자리 미만의 숫자를 그대로 유지 가능
                 return;
             }
 
-            // 2. 날짜 유효성 체크
+            // 날짜 유효성 체크
             if (DateTime.TryParseExact(InputText, "yyyyMMdd",
                 null,
                 System.Globalization.DateTimeStyles.None,
                 out DateTime date))
             {
                 ResultDate = date;
-                CloseRequested?.Invoke(true); // 오직 날짜가 완벽할 때만 팝업을 닫습니다.
+                CloseRequested?.Invoke(true); // 날짜가 완벽할 때만 팝업 종료.
             }
             else
             {
@@ -88,11 +89,12 @@ namespace LSS_prototype.Patient_Page
                     CustomMessageWindow.MessageBoxType.AutoClose, 2,
                     CustomMessageWindow.MessageIconType.Danger);
 
-                // 날짜가 틀렸을 때도 return만 하여 입력된 8자리를 유지합니다.
+                // 날짜가 틀렸을 때도 return만 하여 입력된 8자리 유지 가능.
                 return;
             }
         }
 
+        //Keypad <- 버튼 클릭
         private void Cancel()
         {
             CloseRequested?.Invoke(false);

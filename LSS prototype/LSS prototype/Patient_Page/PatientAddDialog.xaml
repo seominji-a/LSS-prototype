@@ -23,23 +23,24 @@
                        Margin="0,0,0,40" HorizontalAlignment="Left" Foreground="#222222"/>
 
             <StackPanel Grid.Row="1">
+                <!-- 1. 환자 이름 -->
                 <TextBlock Text="Patient Name" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
                 <TextBox Text="{Binding PatientName, UpdateSourceTrigger=PropertyChanged}" 
                         Style="{StaticResource DefaultDIALOGTEXTStyle}"/>
 
+                <!-- 2. 환자 번호 -->
                 <TextBlock Text="Patient Code" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
                 <TextBox Text="{Binding PatientCode, UpdateSourceTrigger=PropertyChanged}" 
                          Style="{StaticResource DefaultDIALOGTEXTStyle}"/>
 
+                <!-- 3. 생년월일 -->
                 <TextBlock Text="Date of Birth" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
-                <Button Command="{Binding OpenKeypadCommand}"
-            Height="60" Width="465"
-            HorizontalAlignment="Left">
+                <Button Command="{Binding OpenKeypadCommand}" Height="60" Width="465" HorizontalAlignment="Left">
                     <TextBlock Text="{Binding BirthDate, StringFormat=yyyy-MM-dd}"
                    FontSize="20"/>
                 </Button>
 
-                <!-- 🔥 키패드 Popup -->
+                <!-- 키패드 Popup -->
                 <Popup IsOpen="{Binding IsKeypadOpen}" Placement="Bottom" VerticalOffset="-200"   HorizontalOffset="500"  AllowsTransparency="True" StaysOpen="True">
 
                     <Border Background="White"
@@ -51,7 +52,7 @@
                     </Border>
                 </Popup>
 
-
+                <!-- 4. 성별 -->
                 <TextBlock Text="Sex" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#666666"/>
                 <ComboBox SelectedValue="{Binding Sex, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Content" Style="{StaticResource DefaultDIALOGSexStyle}">
                     <ComboBoxItem Content="M"/>
@@ -59,11 +60,15 @@
                 </ComboBox>
             </StackPanel>
 
+            
             <UniformGrid Grid.Row="2" Columns="2" Margin="0,10,0,0">
+                <!-- 저장 버튼 -->
                 <Button Content="SAVE" Command="{Binding SaveCommand}" 
                       Style="{StaticResource DefaultDIALOGbuttonblueStyle}" >
                 </Button>
 
+
+                <!-- 취소 버튼 -->
                 <Button Content="CANCEL" Command="{Binding CancelCommand}" 
                        Style="{StaticResource DefaultDIALOGbuttonwhiteStyle}" >
                 </Button>

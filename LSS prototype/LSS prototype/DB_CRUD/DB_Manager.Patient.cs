@@ -97,5 +97,24 @@ namespace LSS_prototype.DB_CRUD
             }
         }
         #endregion
+
+        #region [ 환자 번호 존재 여부 판단 담당부 ]
+        public bool ExistsPatientCode(int patientCode)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.PATIENT_CODE_SEARCH, conn))
+                {
+                    cmd.Parameters.AddWithValue("@PatientCode", patientCode);
+                    long count = (long)cmd.ExecuteScalar();
+                    return count > 0;
+                }
+            }
+        }
+        #endregion
+
+
+
     }
 }

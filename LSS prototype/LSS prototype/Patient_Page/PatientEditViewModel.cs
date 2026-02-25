@@ -64,6 +64,15 @@ namespace LSS_prototype.Patient_Page
                     Sex = this.Sex
                 };
 
+                if (repo.ExistsPatientCode(PatientCode.Value))
+                {
+                    CustomMessageWindow.Show("중복된 환자가 존재합니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Danger);
+                    return;
+                }
+
+
                 if (repo.UpdatePatient(model))
                 {
                     CustomMessageWindow.Show("수정되었습니다.",

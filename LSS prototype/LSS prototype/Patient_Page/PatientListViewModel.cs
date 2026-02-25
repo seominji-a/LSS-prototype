@@ -120,7 +120,17 @@ namespace LSS_prototype.Patient_Page
                             Sex = vm.Sex
                         };
 
+
                         var repo = new DB_Manager();
+
+                        if (repo.ExistsPatientCode(vm.PatientCode.Value))
+                        {
+                            CustomMessageWindow.Show("중복된 환자가 존재합니다.",
+                                CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                                CustomMessageWindow.MessageIconType.Danger);
+                            return;
+                        }
+
                         bool result = repo.AddPatient(model);
 
                         if (result)

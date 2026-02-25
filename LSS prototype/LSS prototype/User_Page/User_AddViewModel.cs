@@ -69,7 +69,8 @@ namespace LSS_prototype.User_Page
             // DB 작업
             try
             {
-                bool success = _dbManager.InsertUser(UserID.Trim(), UserName.Trim(), Role.Trim(), password);
+                var db = new DB_Manager();
+                bool success = db.InsertUser(UserID.Trim(), UserName.Trim(), Role.Trim(), password);
                 if (success)
                 {
                     CustomMessageWindow.Show("사용자 정보 추가 성공",

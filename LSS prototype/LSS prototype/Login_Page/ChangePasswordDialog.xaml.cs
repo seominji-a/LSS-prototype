@@ -23,7 +23,7 @@ namespace LSS_prototype.Login_Page
             {
                 var vm = DataContext as ChangePasswordModelView;
                 if (vm == null) return;
-                await vm.SaveAsync(NewPasswordBox.Password, ConfirmPasswordBox.Password);
+                await vm.SaveAsync(NewPasswordBox.Password, ConfirmPasswordBox.Password, LoginIdBox.Text);
             }
             catch (Exception ex)
             {

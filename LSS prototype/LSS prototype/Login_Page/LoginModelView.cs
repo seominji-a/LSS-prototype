@@ -165,9 +165,11 @@ namespace LSS_prototype.Login_Page
                 // 4 ) 로그인 성공 → 세션/토큰 시작
                 AuthToken.SignIn(UserId, roleCode);
 
-
+                string msg = "로그인 성공";
+                if (IsAdminMode) msg = "로그인 성공\n 관리자 화면으로 이동합니다.";
+                
                 await CustomMessageWindow.ShowAsync(
-                    "로그인 성공",
+                    msg,
                     CustomMessageWindow.MessageBoxType.AutoClose,
                     1,
                     CustomMessageWindow.MessageIconType.Info);

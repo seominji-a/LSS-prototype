@@ -23,6 +23,7 @@ namespace LSS_prototype.Login_Page
             InitializeComponent();
             var db = new DB_Manager();
             db.InitDB();
+            (DataContext as LoginViewModel)?.LoadAdminIds(); // 2. 그 다음 호출
         }
 
         // ── EXIT 버튼 ──

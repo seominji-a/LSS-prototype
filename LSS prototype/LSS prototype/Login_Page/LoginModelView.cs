@@ -56,10 +56,9 @@ namespace LSS_prototype.Login_Page
         public LoginViewModel()
         {
            LoginCommand = new AsyncRelayCommand(async (param) => await ExecuteLogin(param));
-           LoadAdminIds();
         }
 
-        private void LoadAdminIds()
+        public void LoadAdminIds()
         {
             try
             {

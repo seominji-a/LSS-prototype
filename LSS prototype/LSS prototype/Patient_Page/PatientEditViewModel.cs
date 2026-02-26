@@ -80,7 +80,7 @@ namespace LSS_prototype.Patient_Page
                 // Patient_id는 생성자에서 SelectedPatient로부터 받아온 고유 값입니다.
                 if (repo.ExistsPatientCodeExceptSelf(this.PatientCode.Value, this.Patient_id))
                 {
-                    CustomMessageWindow.Show("해당 환자 번호는 이미 다른 환자가 사용 중입니다.",
+                    CustomMessageWindow.Show("이미 사용 중인 환자 번호입니다.",
                         CustomMessageWindow.MessageBoxType.AutoClose, 2,
                         CustomMessageWindow.MessageIconType.Danger);
                     return;

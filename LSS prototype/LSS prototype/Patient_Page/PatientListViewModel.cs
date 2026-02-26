@@ -203,7 +203,7 @@ namespace LSS_prototype.Patient_Page
         private async Task SyncButtonClicked()
         {
             await CustomMessageWindow.ShowAsync(
-                    "EMR 환자 정보가 최신 상태로 업데이트되었습니다.",
+                    "EMR 환자 정보가 최신 상태로 \n 업데이트되었습니다.",
                     CustomMessageWindow.MessageBoxType.AutoClose,
                     3,
                     CustomMessageWindow.MessageIconType.Info);

@@ -109,7 +109,7 @@ namespace LSS_prototype.DB_CRUD
             }
             catch (Exception ex)
             {
-                Console.WriteLine("DB Init Error : " + ex.Message);
+                Common.WriteLog(ex);
 
                 if (first_create && File.Exists(_dbPath))
                     File.Delete(_dbPath);

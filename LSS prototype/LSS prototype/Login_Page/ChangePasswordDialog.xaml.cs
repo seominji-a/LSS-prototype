@@ -27,7 +27,7 @@ namespace LSS_prototype.Login_Page
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "Save_Click function Check ( ChangePasswordDialog )");
+                Common.WriteLog(ex);
             }
         }
 
@@ -46,7 +46,7 @@ namespace LSS_prototype.Login_Page
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + "Cancel_Click function Check ( ChangePasswordDialog )");
+                Common.WriteLog(ex);
             }
         }
 

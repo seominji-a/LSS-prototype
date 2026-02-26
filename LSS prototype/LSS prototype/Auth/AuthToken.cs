@@ -17,8 +17,8 @@ namespace LSS_prototype.Auth
         public static string LoginId { get; private set; }
         public static string RoleCode { get; private set; }
         public static DateTime LastActivity { get; private set; }
-        //public static readonly TimeSpan SessionTimeout = TimeSpan.FromMinutes(10); 추후 세션타임은 정해지면 수정 
-        public static readonly TimeSpan SessionTimeout = TimeSpan.FromSeconds(1);  // 10초로 테스트용 
+        public static readonly TimeSpan SessionTimeout = TimeSpan.FromMinutes(10);// 추후 세션타임은 정해지면 수정 
+       // public static readonly TimeSpan SessionTimeout = TimeSpan.FromSeconds(1);  // 10초로 테스트용 
 
         // ===== 로그인 =====
         public static void SignIn(string loginId, string roleCode)

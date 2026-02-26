@@ -4,9 +4,221 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:LSS_prototype.User_Page"
-             mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
-    <Grid>
-            
-    </Grid>
+             mc:Ignorable="d"
+             Width="550" Height="720">
+
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="Bg"           Color="#F3F5F7"/>
+        <SolidColorBrush x:Key="Primary"      Color="#173753"/>
+        <SolidColorBrush x:Key="PrimaryHover" Color="#1F4767"/>
+        <SolidColorBrush x:Key="PrimaryDown"  Color="#102A3F"/>
+        <SolidColorBrush x:Key="Secondary"      Color="#5F6E82"/>
+        <SolidColorBrush x:Key="SecondaryHover" Color="#516175"/>
+        <SolidColorBrush x:Key="SecondaryDown"  Color="#465669"/>
+        <SolidColorBrush x:Key="TextDark"    Color="#1E293B"/>
+        <SolidColorBrush x:Key="TextMuted"   Color="#64748B"/>
+        <SolidColorBrush x:Key="TextDisabled" Color="#94A3B8"/>
+        <SolidColorBrush x:Key="InputBg"     Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="InputBgDisabled" Color="#EDF0F4"/>
+        <SolidColorBrush x:Key="InputBorder" Color="#D6DEE8"/>
+
+        <Style x:Key="InputBoxBorderStyle" TargetType="Border">
+            <Setter Property="Background"      Value="{StaticResource InputBg}"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource InputBorder}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="CornerRadius"    Value="12"/>
+            <Setter Property="Height"          Value="64"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
+
+        <!-- 읽기전용 Border -->
+        <Style x:Key="InputBoxBorderDisabledStyle" TargetType="Border"
+               BasedOn="{StaticResource InputBoxBorderStyle}">
+            <Setter Property="Background" Value="{StaticResource InputBgDisabled}"/>
+            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+        </Style>
+
+        <!-- 캡스락 경고 스타일 -->
+        <Style x:Key="CapsLockStyle" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Arial"/>
+            <Setter Property="FontSize"   Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#EF4444"/>
+            <Setter Property="Margin"     Value="14,0,0,0"/>
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Background"      Value="{StaticResource Primary}"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="FontSize"        Value="24"/>
+            <Setter Property="FontFamily"      Value="Arial"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Height"          Value="64"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="12" Padding="18,10">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource PrimaryHover}"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="{StaticResource PrimaryDown}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button"
+               BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource Secondary}"/>
+            <Setter Property="FontSize"   Value="20"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource SecondaryHover}"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="{StaticResource SecondaryDown}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Border Background="{StaticResource Bg}"
+            CornerRadius="20"
+            BorderBrush="#EEEEEE"
+            BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="25" Direction="-90"
+                              RenderingBias="Quality"
+                              ShadowDepth="5" Opacity="0.15"/>
+        </Border.Effect>
+
+        <Grid Margin="40">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- 타이틀 -->
+            <TextBlock Grid.Row="0"
+                       Text="EDIT USER"
+                       FontSize="32" FontWeight="ExtraBold" FontFamily="Arial"
+                       Foreground="{StaticResource Primary}"
+                       Margin="0,0,0,40"/>
+
+            <!-- 입력 섹션 -->
+            <StackPanel Grid.Row="1">
+
+                <!-- USER NAME (읽기전용) -->
+                <TextBlock Text="USER NAME"
+                           FontSize="18" FontWeight="SemiBold" FontFamily="Arial"
+                           Foreground="{StaticResource TextMuted}"
+                           Margin="0,0,0,10"/>
+                <Border Style="{StaticResource InputBoxBorderDisabledStyle}">
+                    <TextBox Text="{Binding UserName, Mode=OneWay}"
+                             FontSize="24" FontFamily="Arial"
+                             Background="Transparent" BorderThickness="0"
+                             Padding="18,0" Foreground="{StaticResource TextDisabled}"
+                             VerticalContentAlignment="Center"
+                             IsReadOnly="True"/>
+                </Border>
+
+                <!-- Login ID (읽기전용) -->
+                <TextBlock Text="LOGIN ID"
+                           FontSize="18" FontWeight="SemiBold" FontFamily="Arial"
+                           Foreground="{StaticResource TextMuted}"
+                           Margin="0,24,0,10"/>
+                <Border Style="{StaticResource InputBoxBorderDisabledStyle}">
+                    <TextBox Text="{Binding LoginId, Mode=OneWay}"
+                             FontSize="24" FontFamily="Arial"
+                             Background="Transparent" BorderThickness="0"
+                             Padding="18,0" Foreground="{StaticResource TextDisabled}"
+                             VerticalContentAlignment="Center"
+                             IsReadOnly="True"/>
+                </Border>
+
+                <!-- NEW PASSWORD 레이블 + 캡스락 경고 -->
+                <Grid Margin="0,24,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               Text="NEW PASSWORD"
+                               FontSize="18" FontWeight="SemiBold" FontFamily="Arial"
+                               Foreground="{StaticResource TextMuted}"
+                               VerticalAlignment="Center"/>
+                    <TextBlock x:Name="CapsLockWarningNew"
+                               Grid.Column="1"
+                               Text="Caps Lock is ON"
+                               Style="{StaticResource CapsLockStyle}"/>
+                </Grid>
+                <Border Style="{StaticResource InputBoxBorderStyle}">
+                    <PasswordBox x:Name="txtNewPassword"
+                                 FontSize="24" FontFamily="Arial"
+                                 Background="Transparent" BorderThickness="0"
+                                 Padding="18,14"
+                                 Foreground="{StaticResource TextDark}"
+                                 GotKeyboardFocus="NewPasswordBox_CheckCaps"
+                                 PreviewKeyUp="NewPasswordBox_CheckCaps"
+                                 LostKeyboardFocus="NewPasswordBox_HideCaps"/>
+                </Border>
+
+                <!-- CONFIRM PASSWORD 레이블 + 캡스락 경고 -->
+                <Grid Margin="0,24,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               Text="CONFIRM PASSWORD"
+                               FontSize="18" FontWeight="SemiBold" FontFamily="Arial"
+                               Foreground="{StaticResource TextMuted}"
+                               VerticalAlignment="Center"/>
+                    <TextBlock x:Name="CapsLockWarningConfirm"
+                               Grid.Column="1"
+                               Text="Caps Lock is ON"
+                               Style="{StaticResource CapsLockStyle}"/>
+                </Grid>
+                <Border Style="{StaticResource InputBoxBorderStyle}">
+                    <PasswordBox x:Name="txtConfirmPassword"
+                                 FontSize="24" FontFamily="Arial"
+                                 Background="Transparent" BorderThickness="0"
+                                 Padding="18,14"
+                                 Foreground="{StaticResource TextDark}"
+                                 GotKeyboardFocus="ConfirmPasswordBox_CheckCaps"
+                                 PreviewKeyUp="ConfirmPasswordBox_CheckCaps"
+                                 LostKeyboardFocus="ConfirmPasswordBox_HideCaps"/>
+                </Border>
+
+            </StackPanel>
+
+            <!-- 버튼 -->
+            <Grid Grid.Row="2" Margin="0,30,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" Content="SUBMIT"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Click="Submit_Click"/>
+                <Button Grid.Column="2" Content="CANCEL"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Command="{Binding CancelCommand}"/>
+            </Grid>
+        </Grid>
+    </Border>
 </UserControl>

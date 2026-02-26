@@ -25,6 +25,10 @@
                 <viewUser:User_Add />
             </DataTemplate>
 
+            <DataTemplate DataType="{x:Type vmUser:User_EditViewModel}">
+                <viewUser:User_Edit />
+            </DataTemplate>
+
             <DataTemplate DataType="{x:Type vmPatient:KeypadViewModel}">
                 <viewPatient:Keypad />
             </DataTemplate>

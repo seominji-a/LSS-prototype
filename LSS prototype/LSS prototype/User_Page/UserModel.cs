@@ -8,10 +8,10 @@ namespace LSS_prototype.User_Page
 {
     public class UserModel
     {
-        public int UserId { get; set; }
-        public string Name { get; set; }
-        public string UserCode { get; set; }
-        public string Role { get; set; }
-        public string Department { get; set; }
+        public int UserId { get; set; }       // USER_ID ( 사용자마다 자동으로 부여되는 고유한 ID ) 
+        public string LoginId { get; set; }   // LOGIN_ID ( 실제로쓰는 사용자의 ID ) 
+        public string UserName { get; set; }  // USER_NAME
+        public string UserRole { get; set; }  // USER_ROLE ( ex : ADMIN )
+        public string RoleCode { get; set; }  // ROLE_CODE ( ex : N,S .. )
     }
 }

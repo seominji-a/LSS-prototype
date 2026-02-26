@@ -196,7 +196,7 @@ namespace LSS_prototype.Patient_Page
             }
             catch(Exception ex)
             {
-                Console.WriteLine(ex.Message + "DeletePatient Function Check");
+                Common.WriteLog(ex);
             }
         }
 

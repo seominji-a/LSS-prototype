@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 
 namespace LSS_prototype.Auth
@@ -21,12 +22,11 @@ namespace LSS_prototype.Auth
             _isSessionSuspended = true;
             _suspendedWindows.Clear();
 
-            // 로그인 창 제외한 모든 창 숨기기
-            foreach (Window window in Application.Current.Windows)
+            foreach (Window window in Application.Current.Windows.Cast<Window>().ToList()) 
             {
                 if (window.GetType().Name != "Login")
                 {
-                    window.Hide();  // 닫지 않고 숨기기만
+                    window.Hide();
                     _suspendedWindows.Add(window);
                 }
             }

@@ -3,9 +3,11 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace LSS_prototype
 {
@@ -295,6 +297,7 @@ namespace LSS_prototype
         public const string PATIENT_CODE_SEARCH = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode";
 
         public const string PASSWORD_EDIT = @"UPDATE USER SET password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @loginId";// 비밀번호변경 쿼리문 
+        public const string SEARCH_USERID_NAME = @" SELECT USER_ID, USER_NAME, LOGIN_ID, USER_ROLE, ROLE_CODE FROM USER WHERE  USER_NAME LIKE @keyword OR  LOGIN_ID  LIKE @keyword ORDER BY USER_ID ASC";
     }
 
     /// <summary>
@@ -334,4 +337,61 @@ namespace LSS_prototype
             remove { }
         }
     }
+
+
+    /// <summary>
+    /// 검색 입력에 디바운싱을 적용하는 공용 함수 
+    /// 마지막 입력으로부터 지정된 딜레이(기본 500ms)가 지난 후에만 콜백을 실행
+    /// 작성자 : 박한용
+    /// </summary>
+    public class SearchDebouncer : IDisposable
+    {
+        private readonly Action<string> _callback;  // 디바운싱 후 실행할 검색 콜백
+        private readonly int _delayMs;              // 딜레이 (밀리초)
+        private Timer _timer;
+        private bool _disposed = false;
+
+        /// <param name="callback">딜레이 후 실행할 검색 함수 (검색어를 인자로 받음)</param>
+        /// <param name="delayMs">디바운싱 딜레이 (기본값 500ms)</param>
+        public SearchDebouncer(Action<string> callback, int delayMs = 500)
+        {
+            _callback = callback ?? throw new ArgumentNullException(nameof(callback));
+            _delayMs = delayMs;
+        }
+
+        /// <summary>
+        /// 검색어가 변경될 때마다 호출. 타이머를 리셋하여 마지막 호출 기준으로 딜레이를 적용
+        /// </summary>
+        /// <param name="searchText">변경된 검색어</param>
+        public void OnTextChanged(string searchText)
+        {
+            if (_disposed) return;
+
+            // 기존 타이머 취소 후 재시작 (딜레이 리셋)
+            _timer?.Dispose();
+            _timer = new Timer(
+                _ => _callback(searchText),
+                null,
+                _delayMs,
+                Timeout.Infinite    // 단발성 실행 (반복 없음)
+            );
+        }
+
+        /// <summary>
+        /// 진행 중인 디바운싱을 즉시 취소 (예: 창 닫힐 때)
+        /// </summary>
+        public void Cancel()
+        {
+            _timer?.Dispose();
+            _timer = null;
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            Cancel();
+        }
+    }
+
 }

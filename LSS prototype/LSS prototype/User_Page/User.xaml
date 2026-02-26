@@ -67,7 +67,7 @@
             <Setter Property="FontSize"        Value="15"/>
             <Setter Property="FontWeight"      Value="Bold"/>
             <Setter Property="Height"          Value="50"/>
-            <Setter Property="Padding"         Value="14,0"/>
+            <Setter Property="Padding"         Value="32,0"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor"          Value="Hand"/>
             <Setter Property="Template">
@@ -151,7 +151,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="RowBorder" Property="Background"  Value="#1E3A5F"/>
+                                <Setter TargetName="RowBorder" Property="Background"  Value="#CC1E3A5F"/>
                                 <Setter TargetName="RowBorder" Property="BorderBrush" Value="{StaticResource Primary}"/>
                                 <Setter Property="Foreground" Value="White"/>
                             </Trigger>
@@ -263,7 +263,8 @@
                                          FontSize="17" BorderThickness="0" Background="Transparent"
                                          Padding="14,0,0,0" VerticalContentAlignment="Center"
                                          Foreground="{StaticResource TextDark}"
-                                         CaretBrush="{StaticResource Primary}"/>
+                                         CaretBrush="{StaticResource Primary}"
+                                         xml:lang="ko-KR"/>
                             </Grid>
                         </Grid>
                     </Border>

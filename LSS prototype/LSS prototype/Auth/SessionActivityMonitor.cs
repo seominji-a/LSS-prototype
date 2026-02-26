@@ -61,7 +61,7 @@ namespace LSS_prototype.Auth
             // _timeoutCheckTimer : N초마다 세션 만료 여부 체크 (AuthToken.IsExpired())
             // _windowCheckTimer  : 1초마다 새로 열린 창 감지 → 이벤트 핸들러 자동 부착
             // ══════════════════════════════════════════
-            _timeoutCheckTimer.Change(TimeSpan.FromSeconds(3), TimeSpan.FromMinutes(15));  // 세션 잠심 시간 15분 
+            _timeoutCheckTimer.Change(TimeSpan.FromSeconds(3), TimeSpan.FromMinutes(1));  // 1분마다 세션 만료 확인 
             _windowCheckTimer.Change(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
         }
 

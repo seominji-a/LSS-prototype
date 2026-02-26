@@ -266,5 +266,38 @@ namespace LSS_prototype.DB_CRUD
             return null;
         }
         #endregion
+
+        #region [ 유저이름 및 아이디 검색 ]
+        public List<UserModel> SearchUsers(string keyword)
+        {
+            var list = new List<UserModel>();
+            string pattern = "%" + keyword.Trim() + "%";
+
+            using (var conn = new SQLiteConnection("Data Source=" + Common.DB_PATH))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.SEARCH_USERID_NAME, conn))
+                {
+                    cmd.Parameters.AddWithValue("@keyword", pattern);
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            list.Add(new UserModel
+                            {
+                                UserId = Convert.ToInt32(reader["USER_ID"]),
+                                Name = reader["USER_NAME"].ToString(),
+                                UserCode = reader["LOGIN_ID"].ToString(),
+                                Role = reader["USER_ROLE"].ToString(),
+                                Department = reader["ROLE_CODE"].ToString()
+                            });
+                        }
+                    }
+                }
+            }
+            return list;
+        }
+        #endregion
     }
 }

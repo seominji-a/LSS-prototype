@@ -12,5 +12,11 @@ namespace LSS_prototype.User_Page
         {
             InitializeComponent();
         }
+
+        private void Button_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if (DataContext is User_AddViewModel vm)
+                vm.ExecuteSubmit(txtPassword.Password, txtConfirmPassword.Password); 
+        }
     }
 }

@@ -162,7 +162,7 @@ namespace LSS_prototype.DB_CRUD
             }
         }
 
-        public bool DeleteUser(string user_id)
+        public bool DeleteUser(int user_id)
         {
             using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
             {
@@ -213,10 +213,10 @@ namespace LSS_prototype.DB_CRUD
                             list.Add(new UserModel
                             {
                                 UserId = Convert.ToInt32(reader["USER_ID"]),
-                                Name = reader["USER_NAME"].ToString(),
-                                UserCode = reader["LOGIN_ID"].ToString(),
-                                Role = reader["USER_ROLE"].ToString(),
-                                Department = reader["ROLE_CODE"].ToString()
+                                UserName = reader["USER_NAME"].ToString(),
+                                LoginId = reader["LOGIN_ID"].ToString(),
+                                UserRole = reader["USER_ROLE"].ToString(),
+                                RoleCode = reader["ROLE_CODE"].ToString()
                             });
                         }
                     }
@@ -301,10 +301,10 @@ namespace LSS_prototype.DB_CRUD
                             list.Add(new UserModel
                             {
                                 UserId = Convert.ToInt32(reader["USER_ID"]),
-                                Name = reader["USER_NAME"].ToString(),
-                                UserCode = reader["LOGIN_ID"].ToString(),
-                                Role = reader["USER_ROLE"].ToString(),
-                                Department = reader["ROLE_CODE"].ToString()
+                                UserName = reader["USER_NAME"].ToString(),
+                                LoginId = reader["LOGIN_ID"].ToString(),
+                                UserRole = reader["USER_ROLE"].ToString(),
+                                RoleCode = reader["ROLE_CODE"].ToString()
                             });
                         }
                     }

@@ -22,7 +22,11 @@ namespace LSS_prototype.User_Page
         public ICommand DeleteUserCommand { get; }
         public ICommand SettingCommand { get; }
         public ICommand DefaultCommand { get; }
+
+        public ICommand DelegateCommand { get; }
+        public ICommand DismissCommand { get; }
         
+
 
         private readonly SearchDebouncer _searchDebouncer;
         private readonly IDialogService _dialogService;
@@ -69,13 +73,30 @@ namespace LSS_prototype.User_Page
             _dialogService = new Dialog();
             AddUserCommand = new RelayCommand(ExecuteAddUser);
             EditUserCommand = new RelayCommand(ExecuteEditUser);  
+
             SettingCommand = new RelayCommand(ExecuteOpenSetting);
             DefaultCommand = new RelayCommand(ExecuteOpenDefault);
             DeleteUserCommand = new RelayCommand(ExecuteDeleteUser);
+
+            DelegateCommand = new RelayCommand(ExecuteOpenDefault);
+            DismissCommand = new RelayCommand(ExecuteDismiss);
+
             _searchDebouncer = new SearchDebouncer(ExecuteSearch, delayMs: 500);
 
             LoadUsers();
         }
+
+        private void ExecuteDelegate()
+        {
+            MessageBox.Show("권한 위임 버튼 클릭");
+        }
+
+        private void ExecuteDismiss()
+        {
+            MessageBox.Show("권한 해임 버튼 클릭");
+        }
+
+
         private void ExecuteEditUser(object parameter)
         {
             if (SelectedUser == null)
@@ -181,7 +202,7 @@ namespace LSS_prototype.User_Page
                 }
 
                 var result = CustomMessageWindow.Show(
-                    $"{SelectedUser.Name} 사용자를 정말 삭제하시겠습니까?",
+                    $"{SelectedUser.UserName} 사용자를 정말 삭제하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo,
                     0,
                     CustomMessageWindow.MessageIconType.Danger);
@@ -189,7 +210,7 @@ namespace LSS_prototype.User_Page
                 if (result == CustomMessageWindow.MessageBoxResult.Yes)
                 {
                     var db = new DB_Manager();
-                    bool success = db.DeleteUser(Convert.ToString(SelectedUser.UserId));
+                    bool success = db.DeleteUser(SelectedUser.UserId);
 
                     if (success)
                     {

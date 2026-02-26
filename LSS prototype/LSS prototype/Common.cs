@@ -25,7 +25,7 @@ namespace LSS_prototype
         public static string CurrentUserId = string.Empty;            // 현재 로그인한 ID 
 
 
-        public const int DB_VERSION = 38; // DB Version 
+        public const int DB_VERSION = 41; // DB Version 
 
         // ===== OTP 기능  =====
         public static bool VerifyMasterOtp(string inputId, string inputOtp)

@@ -135,13 +135,13 @@
                              IsReadOnly="True"/>
                 </Border>
 
-                <!-- USER ID (읽기전용) -->
-                <TextBlock Text="USER ID"
+                <!-- Login ID (읽기전용) -->
+                <TextBlock Text="LOGIN ID"
                            FontSize="18" FontWeight="SemiBold" FontFamily="Arial"
                            Foreground="{StaticResource TextMuted}"
                            Margin="0,24,0,10"/>
                 <Border Style="{StaticResource InputBoxBorderDisabledStyle}">
-                    <TextBox Text="{Binding UserID, Mode=OneWay}"
+                    <TextBox Text="{Binding LoginId, Mode=OneWay}"
                              FontSize="24" FontFamily="Arial"
                              Background="Transparent" BorderThickness="0"
                              Padding="18,0" Foreground="{StaticResource TextDisabled}"

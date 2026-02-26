@@ -165,39 +165,39 @@
         </Style>
 
         <DataTemplate x:Key="NameCellTemplate">
-            <TextBlock Text="{Binding Name}"
+            <TextBlock Text="{Binding UserName}"
                        FontSize="22" FontWeight="Bold" Margin="14,0"
                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListViewItem}}"
                        VerticalAlignment="Center"/>
         </DataTemplate>
 
-        <DataTemplate x:Key="UserCodeCellTemplate">
-            <TextBlock Text="{Binding UserCode}"
+        <DataTemplate x:Key="LoginIdCellTemplate">
+            <TextBlock Text="{Binding LoginId}"
                        FontSize="18" Margin="14,0"
                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListViewItem}}"
                        VerticalAlignment="Center"/>
         </DataTemplate>
 
-        <DataTemplate x:Key="DeptCellTemplate">
-            <TextBlock Text="{Binding Department}"
+        <DataTemplate x:Key="RoleCodeCellTemplate">
+            <TextBlock Text="{Binding RoleCode}"
                        FontSize="18" Margin="14,0"
                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListViewItem}}"
                        VerticalAlignment="Center"/>
         </DataTemplate>
 
-        <DataTemplate x:Key="RoleCellTemplate">
+        <DataTemplate x:Key="UserRoleCellTemplate">
             <Border x:Name="RoleBadge"
                     Background="#EFF6FF" BorderBrush="#BFDBFE"
                     BorderThickness="1" CornerRadius="6"
                     Padding="12,5" Margin="14,0"
                     HorizontalAlignment="Left" VerticalAlignment="Center">
                 <TextBlock x:Name="TxtRole"
-                           Text="{Binding Role}"
+                           Text="{Binding UserRole}"
                            FontSize="15" FontWeight="SemiBold"
                            Foreground="#1D4ED8"/>
             </Border>
             <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding Role}" Value="ADMIN">
+                <DataTrigger Binding="{Binding RoleCode}" Value="ADMIN">
                     <Setter TargetName="RoleBadge" Property="Background"  Value="#FEE2E2"/>
                     <Setter TargetName="RoleBadge" Property="BorderBrush" Value="#FCA5A5"/>
                     <Setter TargetName="TxtRole"   Property="Foreground"  Value="#B91C1C"/>
@@ -303,13 +303,13 @@
                                             CellTemplate="{StaticResource NameCellTemplate}"/>
                             <GridViewColumn Header="LOGIN ID"  Width="320"
                                             HeaderContainerStyle="{StaticResource ColumnHeader}"
-                                            CellTemplate="{StaticResource UserCodeCellTemplate}"/>
+                                            CellTemplate="{StaticResource LoginIdCellTemplate}"/>
                             <GridViewColumn Header="ROLE CODE" Width="240"
                                             HeaderContainerStyle="{StaticResource ColumnHeader}"
-                                            CellTemplate="{StaticResource DeptCellTemplate}"/>
+                                            CellTemplate="{StaticResource RoleCodeCellTemplate}"/>
                             <GridViewColumn Header="ROLE"      Width="468"
                                             HeaderContainerStyle="{StaticResource ColumnHeaderLast}"
-                                            CellTemplate="{StaticResource RoleCellTemplate}"/>
+                                            CellTemplate="{StaticResource UserRoleCellTemplate}"/>
                         </GridView>
                     </ListView.View>
                 </ListView>
@@ -345,11 +345,11 @@
                         <!-- USER MANAGEMENT -->
                         <TextBlock Text="HCP MANAGEMENT" Style="{StaticResource SectionLabel}"/>
                         <Button Style="{StaticResource NavBtn}" Command="{Binding AddUserCommand}"
-                                Content="Add User"    Margin="0,0,0,12"/>
+                                Content="ADD USER"    Margin="0,0,0,12"/>
                         <Button Style="{StaticResource NavBtn}" Command="{Binding EditUserCommand}"
-                                Content="Edit User"   Margin="0,0,0,12"/>
+                                Content="EDIT USER"   Margin="0,0,0,12"/>
                         <Button Style="{StaticResource NavBtn}" Command="{Binding DeleteUserCommand}"
-                                Content="Delete User" Margin="0,0,0,0"/>
+                                Content="DELETE USER" Margin="0,0,0,0"/>
 
                         <Border Height="1" Background="#1E3F58" Margin="0,28,0,28"/>
 
@@ -357,9 +357,9 @@
                         <TextBlock Text="ADMIN PRIVILEGES" Style="{StaticResource SectionLabel}"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,12">
                             <Button Style="{StaticResource HalfBtn}" Command="{Binding DelegateCommand}"
-                                    Content="Delegate" Margin="0,0,7,0"/>
+                                    Content="DELEGATE" Margin="0,0,7,0"/>
                             <Button Style="{StaticResource HalfBtn}" Command="{Binding DismissCommand}"
-                                    Content="Dismiss"/>
+                                    Content="DISMISS"/>
                         </StackPanel>
 
                         <Border Height="1" Background="#1E3F58" Margin="0,28,0,28"/>

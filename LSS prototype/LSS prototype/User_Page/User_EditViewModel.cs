@@ -13,7 +13,7 @@ namespace LSS_prototype.User_Page
     public class User_EditViewModel : INotifyPropertyChanged
     {
         public string UserName { get; }
-        public string UserID { get; }
+        public string LoginId { get; }
         public Action<bool?> CloseAction { get; set; }
         public ICommand CancelCommand { get; }
 
@@ -25,8 +25,8 @@ namespace LSS_prototype.User_Page
 
         public User_EditViewModel(UserModel user)
         {
-            UserName = user.Name;
-            UserID = user.UserCode;
+            UserName = user.UserName;
+            LoginId = user.LoginId;
             CancelCommand = new RelayCommand(_ => CloseAction?.Invoke(false));
         }
 
@@ -64,7 +64,7 @@ namespace LSS_prototype.User_Page
             try
             {
                 var db = new DB_Manager();
-                bool success = db.UpdatePassword(UserID, newPassword);
+                bool success = db.UpdatePassword(LoginId, newPassword);
                 if (success)
                 {
                     CustomMessageWindow.Show("비밀번호가 변경되었습니다.",

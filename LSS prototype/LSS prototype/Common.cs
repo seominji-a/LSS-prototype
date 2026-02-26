@@ -17,7 +17,10 @@ namespace LSS_prototype
     public static class Common
     {
         // ===== 외부 접근 멤버 =====
-        public const string DB_PATH = "./LSS_TEST.db";                 // .db 경로 
+        //public const string DB_PATH = "./LSS_TEST.db";                 // .db 경로 
+        public static readonly string executablePath = AppDomain.CurrentDomain.BaseDirectory;
+        public static readonly string DB_PATH = System.IO.Path.Combine(executablePath, "LSS_TEST.db");
+
         public const string DB_INIT_PATH = "../../../DB/db_init.sql";  // 초기 DB 테이블 생성 파일 경로 
         public const string DB_SEED_PATH = "../../../DB/seed.sql";     // 초기 DB 테이블 데이터 생성 경로 
         public static string CurrentUserId = string.Empty;            // 현재 로그인한 ID 
@@ -293,7 +296,7 @@ namespace LSS_prototype
         public const string SELECT_USERLIST = "SELECT USER_ID, USER_NAME, LOGIN_ID, USER_ROLE, ROLE_CODE FROM USER ORDER BY USER_ID ASC"; // 유저조회 쿼리문 
         public const string ADMIN_ID_SEARCH = "SELECT LOGIN_ID FROM USER WHERE USER_ROLE='ADMIN'"; // ADMIN 권한을 가진 ID 조회 
         public const string PATIENT_CODE_SEARCH = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode";
-
+        public const string PATIENT_CODE_SEARCHSELF = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND PATIENT_ID <> @Patient_id";
         public const string PASSWORD_EDIT = @"UPDATE USER SET password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @loginId";// 비밀번호변경 쿼리문 
     }
 

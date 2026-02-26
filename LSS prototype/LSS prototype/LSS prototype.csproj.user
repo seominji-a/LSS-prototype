@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProjectView>ProjectFiles</ProjectView>
-    <PublishUrlHistory>게시\</PublishUrlHistory>
-    <InstallUrlHistory />
+    <ProjectView>ShowAllFiles</ProjectView>
+    <PublishUrlHistory>C:\Users\User\Desktop\개발자료\배포테스트\|게시\</PublishUrlHistory>
+    <InstallUrlHistory>http://192.168.1.35:8080/</InstallUrlHistory>
     <SupportUrlHistory />
     <UpdateUrlHistory />
     <BootstrapperUrlHistory />

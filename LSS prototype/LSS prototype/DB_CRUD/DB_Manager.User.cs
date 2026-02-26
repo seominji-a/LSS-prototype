@@ -162,6 +162,20 @@ namespace LSS_prototype.DB_CRUD
             }
         }
 
+        public bool DeleteUser(string user_id)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.DELETE_USER, conn))
+                {
+                    cmd.Parameters.AddWithValue("@user_id", user_id);
+
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+
         public bool UpdatePassword(string loginId, string newPassword)
         {
             string passwordSalt = GenerateSalt();

@@ -217,10 +217,6 @@
       <DependentUpon>User_Add.xaml</DependentUpon>
     </Compile>
     <Compile Include="User_Page\User_AddViewModel.cs" />
-    <Compile Include="User_Page\User_Delete.xaml.cs">
-      <DependentUpon>User_Delete.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="User_Page\User_DeleteViewModel.cs" />
     <Compile Include="User_Page\User_Edit.xaml.cs">
       <DependentUpon>User_Edit.xaml</DependentUpon>
     </Compile>
@@ -303,10 +299,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="User_Page\User_Add.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="User_Page\User_Delete.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

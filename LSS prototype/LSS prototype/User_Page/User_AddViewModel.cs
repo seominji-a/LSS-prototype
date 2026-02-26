@@ -4,7 +4,6 @@ using System.ComponentModel;
 using System.Data.SQLite;
 using System.Runtime.CompilerServices;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace LSS_prototype.User_Page
@@ -12,7 +11,6 @@ namespace LSS_prototype.User_Page
     public class User_AddViewModel : INotifyPropertyChanged
     {
         public Action<bool?> CloseAction { get; set; }
-        public ICommand SubmitCommand { get; }
         public ICommand CancelCommand { get; }
         private DB_Manager _dbManager;
 
@@ -39,14 +37,11 @@ namespace LSS_prototype.User_Page
 
         public User_AddViewModel()
         {
-            CancelCommand = new RelayCommand(ExecuteCancel);
             _dbManager = new DB_Manager();
+            CancelCommand = new RelayCommand(_ => CloseAction?.Invoke(false));
         }
 
-        private void ExecuteCancel()  
-        {
-            CloseAction?.Invoke(false);
-        }
+ 
 
         public void ExecuteSubmit(string password, string confirmPassword)
         {
@@ -74,7 +69,7 @@ namespace LSS_prototype.User_Page
             }
 
             //3. 검증 함수 ( 테스트 기간동안은 잠시 주석 ) 
-            string error = DB_Manager.ValidatePassword(password);
+            /*string error = DB_Manager.ValidatePassword(password);
             if (error != null)
             {
                 CustomMessageWindow.Show(
@@ -83,7 +78,7 @@ namespace LSS_prototype.User_Page
                     2,
                     CustomMessageWindow.MessageIconType.Warning);
                 return;
-            }
+            }*/
 
             // DB 작업
             try

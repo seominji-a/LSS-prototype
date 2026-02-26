@@ -18,8 +18,11 @@ namespace LSS_prototype.User_Page
     public class UserViewModel : INotifyPropertyChanged, IDisposable
     {
         public ICommand AddUserCommand { get; }
+        public ICommand EditUserCommand { get; }
+        public ICommand DeleteUserCommand { get; }
         public ICommand SettingCommand { get; }
         public ICommand DefaultCommand { get; }
+        
 
         private readonly SearchDebouncer _searchDebouncer;
         private readonly IDialogService _dialogService;
@@ -65,11 +68,29 @@ namespace LSS_prototype.User_Page
         {
             _dialogService = new Dialog();
             AddUserCommand = new RelayCommand(ExecuteAddUser);
+            EditUserCommand = new RelayCommand(ExecuteEditUser);  
             SettingCommand = new RelayCommand(ExecuteOpenSetting);
             DefaultCommand = new RelayCommand(ExecuteOpenDefault);
+            DeleteUserCommand = new RelayCommand(ExecuteDeleteUser);
             _searchDebouncer = new SearchDebouncer(ExecuteSearch, delayMs: 500);
 
             LoadUsers();
+        }
+        private void ExecuteEditUser(object parameter)
+        {
+            if (SelectedUser == null)
+            {
+                CustomMessageWindow.Show("수정할 사용자를 선택해주세요.",
+                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    CustomMessageWindow.MessageIconType.Warning);
+                return;
+            }
+
+            var vm = new User_EditViewModel(SelectedUser);
+            var result = _dialogService.ShowDialog(vm);
+
+            if (result == true)
+                LoadUsers();
         }
 
         public void OnSearchTextChanged(string text)
@@ -146,6 +167,45 @@ namespace LSS_prototype.User_Page
             _dialogService.ShowDefault();
         }
 
+
+        private void ExecuteDeleteUser(object parameter)
+        {
+            try
+            {
+                if (SelectedUser == null)
+                {
+                    CustomMessageWindow.Show("삭제할 사용자를 선택해주세요.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                var result = CustomMessageWindow.Show(
+                    $"{SelectedUser.Name} 사용자를 정말 삭제하시겠습니까?",
+                    CustomMessageWindow.MessageBoxType.YesNo,
+                    0,
+                    CustomMessageWindow.MessageIconType.Danger);
+
+                if (result == CustomMessageWindow.MessageBoxResult.Yes)
+                {
+                    var db = new DB_Manager();
+                    bool success = db.DeleteUser(Convert.ToString(SelectedUser.UserId));
+
+                    if (success)
+                    {
+                        CustomMessageWindow.Show("삭제되었습니다.",
+                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageIconType.Info);
+                        LoadUsers();
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+
+        }
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)

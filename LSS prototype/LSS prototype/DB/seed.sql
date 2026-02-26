@@ -46,7 +46,7 @@ VALUES
     'ADMIN',
     '3TkSPajUsNu0QusDihSVAX2U1Gq7ardCSFuwVnDN1pY=',
 	'2jdIYa2pllWiiDgcrDRnrAxA51ECHlroc3xygCUPiuo=',
-    'S',
+    'A',
     '시스템관리자',
     'ADMIN'
 );

@@ -121,6 +121,8 @@ namespace LSS_prototype.DB_CRUD
         #endregion
 
         #region [ User_Page DB CRUD ]
+
+
         /// <summary>
         /// 사용자 추가 쿼리문 및 비밀번호 솔트 및 해싱 이용 암호화 저장 
         /// </summary>
@@ -131,7 +133,7 @@ namespace LSS_prototype.DB_CRUD
         /// <param name="device_id">테스트 위해 기본값 1001 </param>
         /// <param name="device_id">테스트 위해 기본값 N </param>
         /// <returns></returns>
-        public bool InsertUser(string loginId, string userName, string userRole, string password, string device_id = "1001", string role_code = "N")
+        public bool InsertUser(string loginId, string userName, string userRole, string password, string device_id = "1001", string role_code = "U")
         {
 
             string passwordSalt = GenerateSalt();
@@ -198,6 +200,39 @@ namespace LSS_prototype.DB_CRUD
                 }
             }
         }
+
+        public bool DelegateUser(int user_id)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.DELEGATE_USER, conn))
+                {
+                    cmd.Parameters.AddWithValue("@user_id", user_id);
+
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+            
+        }
+
+        public bool DismissUser(int user_id)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.DISMISS_USER, conn))
+                {
+                    cmd.Parameters.AddWithValue("@user_id", user_id);
+
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+
+        }
+
+
+
         public List<UserModel> GetAllUsers()
         {
             List<UserModel> list = new List<UserModel>();

@@ -124,7 +124,7 @@ namespace LSS_prototype.DB_CRUD
         {
             var list = new List<string>();
 
-            using (var conn = new SQLiteConnection($"Data Source={_dbPath};Version=3;"))
+            using (var conn = new SQLiteConnection($"Data Source={_dbPath};"))
             {
                 conn.Open();
                 using (var cmd = new SQLiteCommand(Query.ADMIN_ID_SEARCH, conn))

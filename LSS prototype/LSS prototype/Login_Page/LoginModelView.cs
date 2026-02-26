@@ -56,10 +56,9 @@ namespace LSS_prototype.Login_Page
         public LoginViewModel()
         {
            LoginCommand = new AsyncRelayCommand(async (param) => await ExecuteLogin(param));
-           LoadAdminIds();
         }
 
-        private void LoadAdminIds()
+        public void LoadAdminIds()
         {
             try
             {
@@ -117,9 +116,11 @@ namespace LSS_prototype.Login_Page
                         1,
                         CustomMessageWindow.MessageIconType.Info);
 
+                    Common.CurrentUserId = UserId; 
                     var masterShell = new MainPage();
                     masterShell.Show();
                     masterShell.NavigateTo(new User());
+                   App.ActivityMonitor.Start(masterShell); // ← 세션 관리 기능은 테스트때 잠시 주석 
                     CloseLoginWindow();
                     return;
                 }
@@ -140,13 +141,15 @@ namespace LSS_prototype.Login_Page
                 // 이 때, 세션만료 로그인 창인지를 알려주는 부분이 필요함. 
                 if (SessionStateManager.IsSessionSuspended)
                 {
-                    await CustomMessageWindow.ShowAsync(
-                        "이전 작업 화면을 복원합니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose,
-                        1,
-                        CustomMessageWindow.MessageIconType.Info);
-
+                    await CustomMessageWindow.ShowAsync("이전 작업 화면을 복원합니다.");
+                    AuthToken.SignIn(UserId, roleCode);
                     SessionStateManager.RestoreSession();
+
+                    // 복원된 MainPage에 세션 모니터 재시작
+                    var restoredShell = Application.Current.Windows.OfType<MainPage>().FirstOrDefault();
+                    if (restoredShell != null)
+                        App.ActivityMonitor.Start(restoredShell);
+
                     CloseLoginWindow();
                     return;
                 }
@@ -207,6 +210,8 @@ namespace LSS_prototype.Login_Page
                 else
                     shell.NavigateTo(new Patient());
 
+                Common.CurrentUserId = UserId;
+                App.ActivityMonitor.Start(shell); // ← 세션 관리 기능은 테스트때 잠시 주석 
                 CloseLoginWindow();
             }
             catch (Exception ex)

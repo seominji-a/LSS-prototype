@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -12,32 +10,53 @@ using System.Windows.Input;
 namespace LSS_prototype
 {
     /// <summary>
-    //  작성자 : 박한용
+    /// 작성자 : 박한용
     /// 목적 : 경로, 파일명, 공통 사용 클래스 선언하기 위함
     /// 주의 : Const 사용 ( 변경 절대 불가 )
     /// </summary>
     public static class Common
     {
-        public const string DB_PATH = "./LSS_TEST.db"; // .db 경로 
-        public const string DB_INIT_PATH = "../../../DB/db_init.sql"; // 초기 DB 테이블 생성 파일 경로 
-        public const string DB_SEED_PATH = "../../../DB/seed.sql"; // 초기 DB 테이블 데이터 생성 경로 
+        // ===== 외부 접근 멤버 =====
+        public const string DB_PATH = "./LSS_TEST.db";                 // .db 경로 
+        public const string DB_INIT_PATH = "../../../DB/db_init.sql";  // 초기 DB 테이블 생성 파일 경로 
+        public const string DB_SEED_PATH = "../../../DB/seed.sql";     // 초기 DB 테이블 데이터 생성 경로 
+        public static string CurrentUserId = string.Empty;            // 현재 로그인한 ID 
+
 
         public const int DB_VERSION = 38; // DB Version 
+
+        // ===== OTP 기능  =====
+        public static bool VerifyMasterOtp(string inputId, string inputOtp)
+            => OtpService.VerifyMasterOtp(inputId, inputOtp);
+
+        public static void CleanupOldLogs()
+            => LogService.CleanupOldLogs();
+
+        public static void WriteLog(
+            Exception ex,
+            [CallerMemberName] string method = "",
+            [CallerFilePath] string filePath = "",
+            [CallerLineNumber] int line = 0)
+            => LogService.WriteLog(ex, method, filePath, line);
+
+        public enum LogLevel { Info, Warning, Error } // (기존 위치/이름 유지)
+
+        public static void WriteSessionLog(string message)
+            => LogService.WriteSessionLog(message);
+    }
+
+    /// <summary>
+    /// OTP 관련 로직 (Common에서 호출 래핑)
+    /// </summary>
+    internal static class OtpService
+    {
+        public const int DB_VERSION = 33; // DB Version 
+
         private const int OTP_SLOT_MINUTES = 3; // OTP 유효시간 +- 3분
-        private static readonly string LOG_DIR = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs");
-
-        // ── 로그 보관 일수 ──
-        private const int LOG_RETENTION_DAYS = 30;
-
-        // ── 파일 쓰기 잠금 ──
-        private static readonly object _logLock = new object();
 
         /// <summary>
         /// 입력된 ID + OTP 6자리가 MASTER 계정 기준으로 유효한지 검증
         /// </summary>
-        /// <param name="inputId">사용자가 입력한 ID</param>
-        /// <param name="inputOtp">사용자가 입력한 OTP 6자리</param>
-        /// <returns>MASTER ID 일치 + OTP 유효 → true / 그 외 → false</returns>
         public static bool VerifyMasterOtp(string inputId, string inputOtp)
         {
             try
@@ -52,7 +71,11 @@ namespace LSS_prototype
                 if (string.IsNullOrWhiteSpace(masterId) ||
                     string.IsNullOrWhiteSpace(masterKey))
                 {
-                    Console.WriteLine("LSS_MASTER_ID 또는 LSS_MASTER_KEY 환경변수가 설정되지 않았습니다.");
+                    CustomMessageWindow.Show(
+                       "MASTER_ID 또는 MASTER_KEY 환경변수가 설정되지 않았습니다.",
+                       CustomMessageWindow.MessageBoxType.Ok,
+                       0,
+                       CustomMessageWindow.MessageIconType.Warning);
                     return false;
                 }
 
@@ -121,6 +144,21 @@ namespace LSS_prototype
 
             return sb.ToString();
         }
+    }
+
+    /// <summary>
+    /// 로그 관련 로직 (Common에서 호출 래핑)
+    /// </summary>
+    internal static class LogService
+    {
+        private static readonly string LOG_DIR = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs");
+        private static readonly string LOG_DIR_SESSION = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SESSION_LOG");
+
+        // ── 로그 보관 일수 ──
+        private const int LOG_RETENTION_DAYS = 30;
+
+        // ── 파일 쓰기 잠금 ──
+        private static readonly object _logLock = new object();
 
         public static void CleanupOldLogs()
         {
@@ -157,9 +195,9 @@ namespace LSS_prototype
         // ══════════════════════════════════════════
         public static void WriteLog(
             Exception ex,
-            [CallerMemberName] string method = "",
-            [CallerFilePath] string filePath = "",
-            [CallerLineNumber] int line = 0)
+            string method,
+            string filePath,
+            int line)
         {
             try
             {
@@ -208,33 +246,19 @@ namespace LSS_prototype
             }
         }
 
-        // ══════════════════════════════════════════
-        // 일반 정보 로그 ( 세션별(ID)별 관리 사용 함수
-        // Common.WriteLog("로그인 성공", LogLevel.Info)
-        // ══════════════════════════════════════════
-        public enum LogLevel { Info, Warning, Error }
-
-        public static void WriteLog(
-            string message,
-            LogLevel level = LogLevel.Info,
-            [CallerMemberName] string method = "",
-            [CallerFilePath] string filePath = "",
-            [CallerLineNumber] int line = 0)
+        // 세션 로그 전용 함수
+        public static void WriteSessionLog(string message)
         {
             try
             {
-                if (!Directory.Exists(LOG_DIR))
-                    Directory.CreateDirectory(LOG_DIR);
+                if (!Directory.Exists(LOG_DIR_SESSION))
+                    Directory.CreateDirectory(LOG_DIR_SESSION);
 
-                string className = Path.GetFileNameWithoutExtension(filePath);
-                string logFile = Path.Combine(LOG_DIR,
-                    $"{DateTime.Now:yyyy-MM-dd}.log");
+                string logFile = Path.Combine(LOG_DIR_SESSION,
+                    $"{Common.CurrentUserId}({DateTime.Now:yyyyMMdd}).log");
 
                 var sb = new StringBuilder();
-                sb.AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{level.ToString().ToUpper()}]");
-                sb.AppendLine($"  클래스  : {className}");
-                sb.AppendLine($"  메서드  : {method}");
-                sb.AppendLine($"  라인    : {line}");
+                sb.AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [ACTION]");
                 sb.AppendLine($"  메시지  : {message}");
                 sb.AppendLine(new string('─', 60));
                 sb.AppendLine();
@@ -243,13 +267,10 @@ namespace LSS_prototype
                 {
                     File.AppendAllText(logFile, sb.ToString(), Encoding.UTF8);
                 }
-
-                Console.WriteLine(sb.ToString());
             }
-            catch (Exception logEx)
+            catch (Exception ex)
             {
-                Console.WriteLine("로그 기록 실패: " + logEx.Message);
-                throw; //테스트 시 로그 실패는 절대 일어나면 안돼서, throw 처리 테스트 후 삭제 예정 0225 박한용
+                Console.WriteLine("세션 로그 기록 실패: " + ex.Message);
             }
         }
     }
@@ -274,7 +295,6 @@ namespace LSS_prototype
         public const string PATIENT_CODE_SEARCH = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode";
         public const string PATIENT_CODE_SEARCHSELF = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND PATIENT_ID <> @Patient_id";
         public const string PASSWORD_EDIT = @"UPDATE USER SET password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @loginId";// 비밀번호변경 쿼리문 
-
     }
 
     /// <summary>
@@ -314,9 +334,4 @@ namespace LSS_prototype
             remove { }
         }
     }
-
-
-
-
-
 }

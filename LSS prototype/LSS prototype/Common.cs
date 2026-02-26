@@ -17,7 +17,10 @@ namespace LSS_prototype
     public static class Common
     {
         // ===== 외부 접근 멤버 =====
-        public const string DB_PATH = "./LSS_TEST.db";                 // .db 경로 
+        //public const string DB_PATH = "./LSS_TEST.db";                 // .db 경로 
+        public static readonly string executablePath = AppDomain.CurrentDomain.BaseDirectory;
+        public static readonly string DB_PATH = System.IO.Path.Combine(executablePath, "LSS_TEST.db");
+
         public const string DB_INIT_PATH = "../../../DB/db_init.sql";  // 초기 DB 테이블 생성 파일 경로 
         public const string DB_SEED_PATH = "../../../DB/seed.sql";     // 초기 DB 테이블 데이터 생성 경로 
         public static string CurrentUserId = string.Empty;            // 현재 로그인한 ID 

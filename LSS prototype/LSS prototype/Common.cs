@@ -16,7 +16,7 @@ namespace LSS_prototype
     /// </summary>
     public static class Common
     {
-        // ===== 기존 외부 접근 멤버(그대로 유지) =====
+        // ===== 외부 접근 멤버 =====
         public const string DB_PATH = "./LSS_TEST.db";                 // .db 경로 
         public const string DB_INIT_PATH = "../../../DB/db_init.sql";  // 초기 DB 테이블 생성 파일 경로 
         public const string DB_SEED_PATH = "../../../DB/seed.sql";     // 초기 DB 테이블 데이터 생성 경로 
@@ -25,7 +25,7 @@ namespace LSS_prototype
 
         public const int DB_VERSION = 38; // DB Version 
 
-        // ===== 기존 외부 호출 API(그대로 유지) =====
+        // ===== OTP 기능  =====
         public static bool VerifyMasterOtp(string inputId, string inputOtp)
             => OtpService.VerifyMasterOtp(inputId, inputOtp);
 
@@ -50,7 +50,7 @@ namespace LSS_prototype
     /// </summary>
     internal static class OtpService
     {
-        public const int DB_VERSION = 38; // DB Version 
+        public const int DB_VERSION = 33; // DB Version 
 
         private const int OTP_SLOT_MINUTES = 3; // OTP 유효시간 +- 3분
 
@@ -71,7 +71,11 @@ namespace LSS_prototype
                 if (string.IsNullOrWhiteSpace(masterId) ||
                     string.IsNullOrWhiteSpace(masterKey))
                 {
-                    Console.WriteLine("LSS_MASTER_ID 또는 LSS_MASTER_KEY 환경변수가 설정되지 않았습니다.");
+                    CustomMessageWindow.Show(
+                       "MASTER_ID 또는 MASTER_KEY 환경변수가 설정되지 않았습니다.",
+                       CustomMessageWindow.MessageBoxType.Ok,
+                       0,
+                       CustomMessageWindow.MessageIconType.Warning);
                     return false;
                 }
 

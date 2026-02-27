@@ -36,9 +36,15 @@ namespace LSS_prototype.Patient_Page
             Application.Current.Shutdown();
         }
 
-        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+        private void CheckBox_Click(object sender, RoutedEventArgs e)
         {
-            MainPage.Instance.NavigateTo(new EmrPatient());
+           CheckBox cb = sender as CheckBox;
+
+            // 사용자가 클릭해서 체크가 된 상태일 때만 화면 전환
+            if (cb.IsChecked == false)
+            {
+                MainPage.Instance.NavigateTo(new EmrPatient());
+            }
         }
     }
 }

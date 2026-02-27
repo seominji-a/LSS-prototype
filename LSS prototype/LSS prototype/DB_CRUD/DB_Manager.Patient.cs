@@ -1,4 +1,5 @@
 ﻿using LSS_prototype.Patient_Page;
+using LSS_prototype.User_Page;
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
@@ -131,6 +132,41 @@ namespace LSS_prototype.DB_CRUD
                     return result != null && Convert.ToInt32(result) > 0;
                 }
             }
+        }
+        #endregion
+
+        #region [ 환자 이름 및 코드 검색 ]
+        public List<PatientModel> SearchPatients(string keyword)
+        {
+            var list = new List<PatientModel>();
+            string pattern = "%" + keyword.Trim() + "%";
+
+            using (var conn = new SQLiteConnection("Data Source=" + Common.DB_PATH))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.SEARCH_PATIENT, conn))
+                {
+                    cmd.Parameters.AddWithValue("@keyword", pattern);
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            list.Add(new PatientModel
+                            {
+                                // 쿼리에서 SELECT 한 컬럼명과 정확히 일치해야 합니다.
+                                PatientId = reader["PATIENT_ID"] != DBNull.Value ? Convert.ToInt32(reader["PATIENT_ID"]) : 0,
+                                PatientCode = reader["PATIENT_CODE"] != DBNull.Value ? Convert.ToInt32(reader["PATIENT_CODE"]) : 0,
+                                PatientName = reader["PATIENT_NAME"]?.ToString() ?? "",
+                                BirthDate = reader["BIRTH_DATE"] != DBNull.Value ? Convert.ToDateTime(reader["BIRTH_DATE"]) : DateTime.MinValue,
+                                Sex = reader["SEX"]?.ToString() ?? "",
+                                Reg_Date = reader["REG_DATE"] != DBNull.Value ? Convert.ToDateTime(reader["REG_DATE"]) : DateTime.Now
+                            });
+                        }
+                    }
+                }
+            }
+            return list;
         }
         #endregion
     }

@@ -1,4 +1,5 @@
 ﻿using LSS_prototype.DB_CRUD;
+using LSS_prototype.User_Page;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -7,9 +8,12 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
+
 using FellowOakDicom;
 using FellowOakDicom.Network;
 using FellowOakDicom.Network.Client;
+using System.Windows;
+
 
 namespace LSS_prototype.Patient_Page
 {
@@ -19,19 +23,48 @@ namespace LSS_prototype.Patient_Page
     /// </summary>
     internal class PatientListViewModel : INotifyPropertyChanged
     {
+        private readonly SearchDebouncer _searchDebouncer;
+        private readonly IDialogService _dialogService;
+
         private string _searchText;
+
+        private ObservableCollection<PatientModel> _Patients = new ObservableCollection<PatientModel>();
+        public ObservableCollection<PatientModel> Users
+        {
+            get { return _Patients; }
+            set
+            {
+                _Patients = value;
+                OnPropertyChanged();
+            }
+        }
         public string SearchText
         {
-            get { return _searchText; }
+            get => _searchText;
             set
             {
                 if (_searchText == value) return;
                 _searchText = value;
-                //OnPropertyChanged(); 검색로직 추가 시 해당 부분 주석 해제 0223 박한용
+                OnPropertyChanged();
+
+                // 입력 바뀔 때마다 디바운서에 전달 → 0.5초 후 DB 검색
+                _searchDebouncer.OnTextChanged(value);
             }
         }
 
-        private readonly IDialogService _dialogService;
+        private UserModel _selectedUser;
+        public UserModel SelectedUser
+        {
+            get { return _selectedUser; }
+            set
+            {
+                _selectedUser = value;
+                OnPropertyChanged();
+            }
+        }
+
+
+       
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
@@ -76,7 +109,7 @@ namespace LSS_prototype.Patient_Page
             // 0227 박한용 아래코드는 데이터 관련 처리 완료 후 주석 풀고 연동 예정 
             //NavImageReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new ImageReview_Page.ImageReview()));
             //NavVideoReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new VideoReview_Page.VideoReview()));
-
+            _searchDebouncer = new SearchDebouncer(ExecuteSearch, delayMs: 500);
             LoadPatients();
 
         }
@@ -250,6 +283,7 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
+<<<<<<< HEAD
          /// <summary>
          /// DICOM C-FIND 요청으로 MWL(Modality Worklist) 환자 목록을 조회합니다.
          /// </summary>
@@ -321,5 +355,40 @@ namespace LSS_prototype.Patient_Page
                 Sex = ds.GetSingleValueOrDefault(DicomTag.PatientSex, ""),
             };
          }
+=======
+        public void OnSearchTextChanged(string text)
+        {
+            _searchDebouncer.OnTextChanged(text);
+        }
+
+        private void ExecuteSearch(string keyword)
+        {
+            try
+            {
+                var repo = new DB_Manager();
+                List<PatientModel> data = string.IsNullOrWhiteSpace(keyword)
+                    ? repo.GetAllPatients()
+                    : repo.SearchPatients(keyword);
+
+                Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    // 현재 선택된 유저 ID 기억
+                    int? selectedId = SelectedPatient?.PatientId;
+
+                    Patients.Clear();
+                    foreach (var patient in data)
+                        Users.Add(patient);
+
+                    // 같은 ID 가진 항목 다시 선택
+                    if (selectedId.HasValue)
+                        SelectedPatient = Patients.FirstOrDefault(u => u.PatientId == selectedId.Value);
+                });
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
+>>>>>>> seominji-a-patch
     }
 }

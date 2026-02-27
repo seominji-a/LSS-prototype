@@ -181,8 +181,7 @@ namespace LSS_prototype.User_Page
         private async Task CStoreTestAsync()
         {
             try
-            {
-
+            { 
                 if (string.IsNullOrWhiteSpace(CStoreIP))
                 {
                     await CustomMessageWindow.ShowAsync(
@@ -205,17 +204,11 @@ namespace LSS_prototype.User_Page
 
                 string testDcmPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestDicom.dcm");
 
-                if (!System.IO.File.Exists(testDcmPath))
-                {
-                    await CustomMessageWindow.ShowAsync(
-                        "테스트용 DICOM 파일(TestDicom.dcm)이 없습니다.",
-                        CustomMessageWindow.MessageBoxType.Ok,
-                        0,
-                        CustomMessageWindow.MessageIconType.Warning);
-                    return;
-                }
+                LoadingWindow.Begin("PACS 연결 중...");
 
                 await SendToPacsAsync(testDcmPath, CStoreMyAET, CStoreIP, Convert.ToInt32(CStorePort), CStoreAET);
+                
+                LoadingWindow.End();
 
                 await CustomMessageWindow.ShowAsync(
                     "PACS 전송 테스트 성공",
@@ -231,6 +224,10 @@ namespace LSS_prototype.User_Page
                     CustomMessageWindow.MessageBoxType.Ok,
                     0,
                     CustomMessageWindow.MessageIconType.Warning);
+            }
+            finally
+            {
+                LoadingWindow.End();
             }
         }
 

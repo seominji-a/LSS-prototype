@@ -1,0 +1,57 @@
+﻿<Window x:Class="LSS_prototype.LoadingWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="420" Height="220"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+
+    <Border Background="#E61C2B3A" CornerRadius="16">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.5" Color="Black"/>
+        </Border.Effect>
+
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+
+            <!-- 스피너 -->
+            <Border Width="52" Height="52" HorizontalAlignment="Center">
+                <Border.RenderTransform>
+                    <RotateTransform x:Name="SpinnerRotate" CenterX="26" CenterY="26"/>
+                </Border.RenderTransform>
+                <Border.Triggers>
+                    <EventTrigger RoutedEvent="Border.Loaded">
+                        <BeginStoryboard>
+                            <Storyboard RepeatBehavior="Forever">
+                                <DoubleAnimation
+                                    Storyboard.TargetName="SpinnerRotate"
+                                    Storyboard.TargetProperty="Angle"
+                                    From="0" To="360"
+                                    Duration="0:0:0.9"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </Border.Triggers>
+                <Ellipse Width="52" Height="52" StrokeThickness="5">
+                    <Ellipse.Stroke>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#3B82F6" Offset="0"/>
+                            <GradientStop Color="Transparent" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Ellipse.Stroke>
+                </Ellipse>
+            </Border>
+
+            <!-- 메시지 -->
+            <TextBlock x:Name="MessageText"
+                       Text="처리 중..."
+                       Foreground="White"
+                       FontSize="14"
+                       FontWeight="SemiBold"
+                       HorizontalAlignment="Center"
+                       Margin="0,14,0,0"/>
+        </StackPanel>
+    </Border>
+</Window>

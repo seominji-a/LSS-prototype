@@ -1,4 +1,7 @@
-﻿using LSS_prototype.DB_CRUD;
+﻿using FellowOakDicom;
+using FellowOakDicom.Network;
+using FellowOakDicom.Network.Client;
+using LSS_prototype.DB_CRUD;
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -179,17 +182,78 @@ namespace LSS_prototype.User_Page
         {
             try
             {
-                // TODO: C-STORE 연결 테스트 로직
+
+                if (string.IsNullOrWhiteSpace(CStoreIP))
+                {
+                    await CustomMessageWindow.ShowAsync(
+                        "IP 주소를 입력해주세요.",
+                        CustomMessageWindow.MessageBoxType.Ok,
+                        0,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+
+                }
+                if (string.IsNullOrWhiteSpace(CStorePort))
+                {
+                    await CustomMessageWindow.ShowAsync(
+                        "포트 번호가 올바르지 않습니다.",
+                        CustomMessageWindow.MessageBoxType.Ok,
+                        0,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                string testDcmPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestDicom.dcm");
+
+                if (!System.IO.File.Exists(testDcmPath))
+                {
+                    await CustomMessageWindow.ShowAsync(
+                        "테스트용 DICOM 파일(TestDicom.dcm)이 없습니다.",
+                        CustomMessageWindow.MessageBoxType.Ok,
+                        0,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                await SendToPacsAsync(testDcmPath, CStoreMyAET, CStoreIP, Convert.ToInt32(CStorePort), CStoreAET);
+
                 await CustomMessageWindow.ShowAsync(
-                    "C-STORE 연결 테스트 - TODO",
-                    CustomMessageWindow.MessageBoxType.Ok,
-                    0,
+                    "PACS 전송 테스트 성공",
+                    CustomMessageWindow.MessageBoxType.AutoClose,
+                    1,
                     CustomMessageWindow.MessageIconType.Info);
             }
             catch (Exception ex)
             {
                 Common.WriteLog(ex);
+                await CustomMessageWindow.ShowAsync(
+                    $"PACS 전송 실패:\n{ex.Message}",
+                    CustomMessageWindow.MessageBoxType.Ok,
+                    0,
+                    CustomMessageWindow.MessageIconType.Warning);
             }
+        }
+
+        private async Task SendToPacsAsync(string dcmPath, string sourceAET, string targetIP, int targetPort, string targetAET)
+        {
+            var dicomFile = DicomFile.Open(dcmPath);
+            var client = DicomClientFactory.Create(targetIP, targetPort, false, sourceAET, targetAET);
+
+            bool success = false;
+            string statusMessage = string.Empty;
+
+            var request = new DicomCStoreRequest(dicomFile);
+            request.OnResponseReceived += (req, response) =>
+            {
+                success = response.Status == DicomStatus.Success;
+                statusMessage = response.Status.ToString();
+            };
+
+            await client.AddRequestAsync(request);
+            await client.SendAsync();
+
+            if (!success)
+                throw new Exception($"PACS 응답 오류: {statusMessage}");
         }
 
         private async Task CStoreApplyAsync()

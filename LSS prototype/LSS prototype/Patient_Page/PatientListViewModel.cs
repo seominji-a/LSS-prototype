@@ -283,7 +283,6 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
-<<<<<<< HEAD
          /// <summary>
          /// DICOM C-FIND 요청으로 MWL(Modality Worklist) 환자 목록을 조회합니다.
          /// </summary>
@@ -355,7 +354,6 @@ namespace LSS_prototype.Patient_Page
                 Sex = ds.GetSingleValueOrDefault(DicomTag.PatientSex, ""),
             };
          }
-=======
         public void OnSearchTextChanged(string text)
         {
             _searchDebouncer.OnTextChanged(text);
@@ -389,6 +387,5 @@ namespace LSS_prototype.Patient_Page
                 Common.WriteLog(ex);
             }
         }
->>>>>>> seominji-a-patch
     }
 }

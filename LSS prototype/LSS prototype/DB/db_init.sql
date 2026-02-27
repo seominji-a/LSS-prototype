@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS PATIENT (
 -- DEFAULT_SET TABLE ( 2026.02.27 생성자 : 박한용 )
 -- 관리자 페이지 -> 카메라 기본 셋팅값 변경 관련 테이블
 -- ================================================
-CREATE TABLE DEFAULT_SET (
+CREATE TABLE CAMERA_DEFAULT_SET (
     EXPOSURE_TIME   DOUBLE  NOT NULL,
     GAIN            DOUBLE  NOT NULL,
     GAMMA           DOUBLE  NOT NULL,

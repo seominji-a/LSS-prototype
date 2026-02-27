@@ -57,7 +57,7 @@ VALUES
 -- DEFAULT_SET TABLE ( 2026.02.27 생성자 : 박한용 )
 -- 프로그램 실제 납부 시 적정값으로 VALUES 수정해야함 
 -- ================================================
-INSERT INTO DEFAULT_SET
+INSERT INTO CAMERA_DEFAULT_SET
 (
     EXPOSURE_TIME,
     GAIN,

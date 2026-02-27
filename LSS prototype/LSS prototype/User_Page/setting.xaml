@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LSS_prototype.User_Page"
         mc:Ignorable="d"
-        Title="SETTING" Height="680" Width="860"
+        Title="SETTING" Height="748" Width="946"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         WindowStyle="None"
@@ -373,11 +373,6 @@
                 </Grid>
             </Grid>
 
-            <!-- ── EXIT ── -->
-            <Button Grid.Row="8" Content="EXIT"
-                    Style="{StaticResource ExitBtn}"
-                    HorizontalAlignment="Right"
-                    Click="Exit_Click"/>
         </Grid>
     </Border>
 </Window>

@@ -39,36 +39,34 @@ namespace LSS_prototype.User_Page
         public ICommand ResetCommand { get; }
         public ICommand SaveCommand { get; }
 
-        // ════════════════════════════════════════
+
         // 생성자
-        // ════════════════════════════════════════
         public DefaultViewModel()
         {
-            ExposureIncCommand = new RelayCommand(o => ChangeExposure(+ExposureStep));
-            ExposureDecCommand = new RelayCommand(o => ChangeExposure(-ExposureStep));
-            GainIncCommand = new RelayCommand(o => ChangeGain(+GainStep));
-            GainDecCommand = new RelayCommand(o => ChangeGain(-GainStep));
-            GammaIncCommand = new RelayCommand(o => ChangeGamma(+GammaStep));
-            GammaDecCommand = new RelayCommand(o => ChangeGamma(-GammaStep));
-            FocusIncCommand = new RelayCommand(o => ChangeFocus(+FocusStep));
-            FocusDecCommand = new RelayCommand(o => ChangeFocus(-FocusStep));
-            IrisIncCommand = new RelayCommand(o => ChangeIris(+IrisStep));
-            IrisDecCommand = new RelayCommand(o => ChangeIris(-IrisStep));
-            ZoomIncCommand = new RelayCommand(o => ChangeZoom(+ZoomStep));
-            ZoomDecCommand = new RelayCommand(o => ChangeZoom(-ZoomStep));
-
-            FilterOnCommand = new RelayCommand(o => FilterValue = 1);
-            FilterOffCommand = new RelayCommand(o => FilterValue = 0);
-
-            ResetCommand = new RelayCommand(o => LoadDefaultSet(showMessage: true));
-            SaveCommand = new RelayCommand(o => ExecuteSave());
+            // '_' 는 "이 파라미터는 사용하지 않는다"는 의미의 관용적 표현 (discard)
+            // RelayCommand는 Action<object>를 요구하므로 형식상 파라미터 자리를 채워줘야 하지만
+            // +/- 커맨드는 전달받을 값이 없으므로 _ 로 명시적으로 표현하였음 ( 0227 박한용 ) 
+            ExposureIncCommand = new RelayCommand(_ => ChangeExposure(+ExposureStep));
+            ExposureDecCommand = new RelayCommand(_ => ChangeExposure(-ExposureStep));
+            GainIncCommand = new RelayCommand(_ => ChangeGain(+GainStep));
+            GainDecCommand = new RelayCommand(_ => ChangeGain(-GainStep));
+            GammaIncCommand = new RelayCommand(_ => ChangeGamma(+GammaStep));
+            GammaDecCommand = new RelayCommand(_ => ChangeGamma(-GammaStep));
+            FocusIncCommand = new RelayCommand(_ => ChangeFocus(+FocusStep));
+            FocusDecCommand = new RelayCommand(_ => ChangeFocus(-FocusStep));
+            IrisIncCommand = new RelayCommand(_ => ChangeIris(+IrisStep));
+            IrisDecCommand = new RelayCommand(_ => ChangeIris(-IrisStep));
+            ZoomIncCommand = new RelayCommand(_ => ChangeZoom(+ZoomStep));
+            ZoomDecCommand = new RelayCommand(_ => ChangeZoom(-ZoomStep));
+            FilterOnCommand = new RelayCommand(_ => FilterValue = 1);
+            FilterOffCommand = new RelayCommand(_ => FilterValue = 0);
+            ResetCommand = new RelayCommand(_ => LoadDefaultSet(showMessage: true));
+            SaveCommand = new RelayCommand(_ => ExecuteSave());
 
             LoadDefaultSet();
         }
 
-        // ════════════════════════════════════════
         // DB 로드
-        // ════════════════════════════════════════
         private void LoadDefaultSet(bool showMessage = false)
         {
             try
@@ -97,9 +95,7 @@ namespace LSS_prototype.User_Page
             }
         }
 
-        // ════════════════════════════════════════
         // DB 저장
-        // ════════════════════════════════════════
         private void ExecuteSave()
         {
             try
@@ -139,9 +135,7 @@ namespace LSS_prototype.User_Page
             }
         }
 
-        // ════════════════════════════════════════
         // 값 변경 헬퍼 
-        // ════════════════════════════════════════
         private static double Clamp(double val, double min, double max) =>
             val < min ? min : val > max ? max : val;
         private static int Clamp(int val, int min, int max) =>
@@ -160,9 +154,8 @@ namespace LSS_prototype.User_Page
         private void ChangeZoom(int delta) =>
             ZoomValue = Clamp(ZoomValue + delta, ZoomMin, ZoomMax);
 
-        // ════════════════════════════════════════
+
         // 바인딩 프로퍼티
-        // ════════════════════════════════════════
         private double _exposureValue;
         public double ExposureValue
         {
@@ -229,9 +222,7 @@ namespace LSS_prototype.User_Page
                 ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3B82F6"))
                 : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3F55"));
 
-        // ════════════════════════════════════════
-        // INotifyPropertyChanged
-        // ════════════════════════════════════════
+   
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {

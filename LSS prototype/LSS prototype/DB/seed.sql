@@ -52,3 +52,28 @@ VALUES
 );
 
 
+
+-- ================================================
+-- DEFAULT_SET TABLE ( 2026.02.27 생성자 : 박한용 )
+-- 프로그램 실제 납부 시 적정값으로 VALUES 수정해야함 
+-- ================================================
+INSERT INTO DEFAULT_SET
+(
+    EXPOSURE_TIME,
+    GAIN,
+    GAMMA,
+    FOCUS,
+    IRIS,
+    ZOOM,
+    FILTER
+)
+VALUES
+(
+    0.6,   -- EXPOSURE_TIME  (0.2s ~ 1s) 샘플값
+    10.0,   -- GAIN           (3dB ~ 45dB) 샘플값
+    0.8,    -- GAMMA          (0.3 ~ 1) 샘플값 
+    5927,   -- FOCUS          (3545 ~ 8310, Step 100) → 중간값
+    328,    -- IRIS           (0 ~ 656,    Step 50)  → 중간값
+    2903,   -- ZOOM           (1138 ~ 4669, Step 100) → 중간값
+    1       -- FILTER         (0=OFF, 1=ON)
+);

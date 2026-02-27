@@ -23,6 +23,7 @@ namespace LSS_prototype.User_Page
         public Default()
         {
             InitializeComponent();
+            DataContext = new DefaultViewModel();
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)

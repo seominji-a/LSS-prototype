@@ -52,3 +52,18 @@ CREATE TABLE IF NOT EXISTS PATIENT (
     SEX CHAR(1) NOT NULL,
     REG_DATE TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+
+-- ================================================
+-- DEFAULT_SET TABLE ( 2026.02.27 생성자 : 박한용 )
+-- 관리자 페이지 -> 카메라 기본 셋팅값 변경 관련 테이블
+-- ================================================
+CREATE TABLE DEFAULT_SET (
+    EXPOSURE_TIME   DOUBLE  NOT NULL,
+    GAIN            DOUBLE  NOT NULL,
+    GAMMA           DOUBLE  NOT NULL,
+	FOCUS		    DOUBLE  NOT NULL,
+    IRIS            DOUBLE  NOT NULL,
+	ZOOM		    INTEGER NOT NULL,
+	FILTER		    INTEGER NOT NULL
+);

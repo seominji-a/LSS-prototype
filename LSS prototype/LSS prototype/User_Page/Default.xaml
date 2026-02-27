@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="Default Settings"
-        Width="420" SizeToContent="Height"
+        Width="624" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         WindowStyle="None"
@@ -20,15 +20,17 @@
         <SolidColorBrush x:Key="BtnDark" Color="#2A3F55"/>
         <SolidColorBrush x:Key="Muted"   Color="#64748B"/>
         <SolidColorBrush x:Key="Accent"  Color="#3B82F6"/>
+        <SolidColorBrush x:Key="ToggleOn"  Color="#3B82F6"/>
+        <SolidColorBrush x:Key="ToggleOff" Color="#2A3F55"/>
 
-        <!-- ══ BaseBtn: CornerRadius=12 고정 ══ -->
+        <!-- ══ BaseBtn: 일반 Button 공통 ══ -->
         <Style x:Key="BaseBtn" TargetType="Button">
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor"          Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="14.4">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                     </ControlTemplate>
@@ -36,37 +38,57 @@
             </Setter>
         </Style>
 
-        <!-- ══ +/- 버튼 ══ -->
-        <Style x:Key="PmBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
+        <!-- ══ +/- 버튼 (RepeatButton 독립 스타일) ══ -->
+        <Style x:Key="PmBtn" TargetType="RepeatButton">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RepeatButton">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="14.4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
             <Setter Property="Background" Value="{StaticResource BtnDark}"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize"   Value="22"/>
+            <Setter Property="FontSize" Value="31.2"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Width"      Value="46"/>
-            <Setter Property="Height"     Value="46"/>
+            <Setter Property="Width" Value="76.8"/>
+            <Setter Property="Height" Value="76.8"/>
         </Style>
 
         <!-- ══ 액션 버튼 (RESET / SAVE) ══ -->
         <Style x:Key="ActionBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize"   Value="14"/>
+            <Setter Property="FontSize" Value="16.8"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Height"     Value="46"/>
+            <Setter Property="Height" Value="52.8"/>
+        </Style>
+
+        <!-- ══ 토글 버튼 (FILTER ON/OFF) ══ -->
+        <Style x:Key="ToggleBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
+            <Setter Property="Foreground"  Value="White"/>
+            <Setter Property="FontSize" Value="15.6"/>
+            <Setter Property="FontWeight"  Value="Bold"/>
+            <Setter Property="Width" Value="91.2"/>
+            <Setter Property="Height" Value="52.8"/>
         </Style>
     </Window.Resources>
 
     <!-- 팝업 외곽 그림자 + 라운딩 -->
     <Border Background="{StaticResource Panel}"
-            CornerRadius="16"
-            Padding="20,18,20,20">
+            CornerRadius="19.2"
+            Padding="24,19.2,24,21.6">
         <Border.Effect>
-            <DropShadowEffect BlurRadius="24" ShadowDepth="4"
+            <DropShadowEffect BlurRadius="28.8" ShadowDepth="4.8"
                               Opacity="0.5" Color="Black"/>
         </Border.Effect>
 
         <StackPanel>
             <!-- ── 타이틀 바 ── -->
-            <Grid Margin="0,0,0,16">
+            <Grid Margin="0,0,0,14.4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
@@ -74,184 +96,311 @@
 
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                     <TextBlock Text="Default Settings"
-                               Foreground="White" FontSize="18" FontWeight="Bold"/>
+                               Foreground="White" FontSize="21.6" FontWeight="Bold"/>
                     <TextBlock Text="Camera Default Setting"
-                               Foreground="{StaticResource Muted}" FontSize="12" Margin="0,2,0,0"/>
+                               Foreground="{StaticResource Muted}" FontSize="14.4" Margin="0,2.4,0,0"/>
                 </StackPanel>
 
                 <!-- 닫기 버튼 -->
                 <Button Grid.Column="1"
-                        Width="36" Height="36"
+                        Width="43.2" Height="43.2"
                         Background="#2A3F55"
-                        Style="{StaticResource BaseBtn}" Click="Button_Click"
-                        >
-                    <TextBlock Text="✕" Foreground="White" FontSize="16" FontWeight="Bold"/>
+                        Style="{StaticResource BaseBtn}" Click="Button_Click">
+                    <TextBlock Text="✕" Foreground="White" FontSize="19.2" FontWeight="Bold"/>
                 </Button>
             </Grid>
 
             <!-- ── 구분선 ── -->
-            <Border Height="1" Background="#2A3F55" Margin="0,0,0,14"/>
+            <Border Height="1.2" Background="#2A3F55" Margin="0,0,0,14.4"/>
 
             <!-- ══════════════════════════════
-                 설정 카드 4개
-                 Scan SettingPanel과 동일 구조
+                 2열 그리드 레이아웃으로 7개 카드 배치
+                 좌: EXPOSURE TIME, GAMMA, IRIS, ZOOM
+                 우: GAIN, FOCUS, FILTER
             ══════════════════════════════ -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="9.6"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="11.5"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="11.5"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="11.5"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-            <!-- EXPOSURE TIME -->
-            <Border Background="{StaticResource Card}" CornerRadius="10" Padding="12,10" Margin="0,0,0,8">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="6"/>
-                        <RowDefinition Height="46"/>
-                        <RowDefinition Height="4"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="EXPOSURE TIME"
-                               Foreground="White" FontSize="12" FontWeight="Bold"/>
-                    <Grid Grid.Row="2">
+                <!-- ── EXPOSURE TIME (좌, Row 0) ── -->
+                <Border Grid.Column="0" Grid.Row="0"
+                        Background="{StaticResource Card}" CornerRadius="12" Padding="12,9.6">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="7.2"/>
+                            <RowDefinition Height="92.2"/>
+                            <RowDefinition Height="4.3"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="EXPOSURE TIME"
+                                   Foreground="White" FontSize="13.2" FontWeight="Bold"/>
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="1.1*"/>
+                                <ColumnDefinition Width="1*"/>
+                            </Grid.ColumnDefinitions>
+                            <RepeatButton Delay="500" Interval="80" Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
+                                    Margin="0,0,7.2,0" Command="{Binding ExposureDecCommand}"/>
+                            <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="9.6">
+                                <TextBlock Text="{Binding ExposureValue}"
+                                           Foreground="White" FontSize="33.6" FontWeight="Bold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <RepeatButton Delay="500" Interval="80" Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
+                                    Margin="7.2,0,0,0" Command="{Binding ExposureIncCommand}"/>
+                        </Grid>
+                        <TextBlock Grid.Row="4" Text="0.2s ~ 1s"
+                                   Foreground="{StaticResource Muted}" FontSize="12"
+                                   HorizontalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- ── GAIN (우, Row 0) ── -->
+                <Border Grid.Column="2" Grid.Row="0"
+                        Background="{StaticResource Card}" CornerRadius="12" Padding="12,9.6">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="7.2"/>
+                            <RowDefinition Height="92.2"/>
+                            <RowDefinition Height="4.3"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="GAIN"
+                                   Foreground="White" FontSize="13.2" FontWeight="Bold"/>
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="1.1*"/>
+                                <ColumnDefinition Width="1*"/>
+                            </Grid.ColumnDefinitions>
+                            <RepeatButton Delay="500" Interval="80" Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
+                                    Margin="0,0,7.2,0" Command="{Binding GainDecCommand}"/>
+                            <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="9.6">
+                                <TextBlock Text="{Binding GainValue}"
+                                           Foreground="White" FontSize="33.6" FontWeight="Bold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <RepeatButton Delay="500" Interval="80" Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
+                                    Margin="7.2,0,0,0" Command="{Binding GainIncCommand}"/>
+                        </Grid>
+                        <TextBlock Grid.Row="4" Text="3dB ~ 45dB"
+                                   Foreground="{StaticResource Muted}" FontSize="12"
+                                   HorizontalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- ── GAMMA (좌, Row 2) ── -->
+                <Border Grid.Column="0" Grid.Row="2"
+                        Background="{StaticResource Card}" CornerRadius="12" Padding="12,9.6">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="7.2"/>
+                            <RowDefinition Height="92.2"/>
+                            <RowDefinition Height="4.3"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="GAMMA"
+                                   Foreground="White" FontSize="13.2" FontWeight="Bold"/>
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="1.1*"/>
+                                <ColumnDefinition Width="1*"/>
+                            </Grid.ColumnDefinitions>
+                            <RepeatButton Delay="500" Interval="80" Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
+                                    Margin="0,0,7.2,0" Command="{Binding GammaDecCommand}"/>
+                            <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="9.6">
+                                <TextBlock Text="{Binding GammaValue}"
+                                           Foreground="White" FontSize="33.6" FontWeight="Bold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <RepeatButton Delay="500" Interval="80" Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
+                                    Margin="7.2,0,0,0" Command="{Binding GammaIncCommand}"/>
+                        </Grid>
+                        <TextBlock Grid.Row="4" Text="0.3 ~ 1"
+                                   Foreground="{StaticResource Muted}" FontSize="12"
+                                   HorizontalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- ── FOCUS (우, Row 2) ── -->
+                <Border Grid.Column="2" Grid.Row="2"
+                        Background="{StaticResource Card}" CornerRadius="12" Padding="12,9.6">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="7.2"/>
+                            <RowDefinition Height="92.2"/>
+                            <RowDefinition Height="4.3"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="FOCUS"
+                                   Foreground="White" FontSize="13.2" FontWeight="Bold"/>
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="1.1*"/>
+                                <ColumnDefinition Width="1*"/>
+                            </Grid.ColumnDefinitions>
+                            <RepeatButton Delay="500" Interval="80" Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
+                                    Margin="0,0,7.2,0" Command="{Binding FocusDecCommand}"/>
+                            <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="9.6">
+                                <TextBlock Text="{Binding FocusValue}"
+                                           Foreground="White" FontSize="33.6" FontWeight="Bold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <RepeatButton Delay="500" Interval="80" Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
+                                    Margin="7.2,0,0,0" Command="{Binding FocusIncCommand}"/>
+                        </Grid>
+                        <TextBlock Grid.Row="4" Text="3545 ~ 8310  |  Step 100"
+                                   Foreground="{StaticResource Muted}" FontSize="12"
+                                   HorizontalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- ── IRIS (좌, Row 4) ── -->
+                <Border Grid.Column="0" Grid.Row="4"
+                        Background="{StaticResource Card}" CornerRadius="12" Padding="12,9.6">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="7.2"/>
+                            <RowDefinition Height="92.2"/>
+                            <RowDefinition Height="4.3"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="IRIS"
+                                   Foreground="White" FontSize="13.2" FontWeight="Bold"/>
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="1.1*"/>
+                                <ColumnDefinition Width="1*"/>
+                            </Grid.ColumnDefinitions>
+                            <RepeatButton Delay="500" Interval="80" Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
+                                    Margin="0,0,7.2,0" Command="{Binding IrisDecCommand}"/>
+                            <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="9.6">
+                                <TextBlock Text="{Binding IrisValue}"
+                                           Foreground="White" FontSize="33.6" FontWeight="Bold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <RepeatButton Delay="500" Interval="80" Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
+                                    Margin="7.2,0,0,0" Command="{Binding IrisIncCommand}"/>
+                        </Grid>
+                        <TextBlock Grid.Row="4" Text="0 ~ 656  |  Step 50"
+                                   Foreground="{StaticResource Muted}" FontSize="12"
+                                   HorizontalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- ── ZOOM (우, Row 4) ── -->
+                <Border Grid.Column="2" Grid.Row="4"
+                        Background="{StaticResource Card}" CornerRadius="12" Padding="12,9.6">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="7.2"/>
+                            <RowDefinition Height="92.2"/>
+                            <RowDefinition Height="4.3"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="ZOOM"
+                                   Foreground="White" FontSize="13.2" FontWeight="Bold"/>
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="1.1*"/>
+                                <ColumnDefinition Width="1*"/>
+                            </Grid.ColumnDefinitions>
+                            <RepeatButton Delay="500" Interval="80" Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
+                                    Margin="0,0,7.2,0" Command="{Binding ZoomDecCommand}"/>
+                            <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="9.6">
+                                <TextBlock Text="{Binding ZoomValue}"
+                                           Foreground="White" FontSize="33.6" FontWeight="Bold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <RepeatButton Delay="500" Interval="80" Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
+                                    Margin="7.2,0,0,0" Command="{Binding ZoomIncCommand}"/>
+                        </Grid>
+                        <TextBlock Grid.Row="4" Text="1138 ~ 4669  |  Step 100"
+                                   Foreground="{StaticResource Muted}" FontSize="12"
+                                   HorizontalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- ── FILTER (전체 Row 6, 1열 full-width) ── -->
+                <Border Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="6"
+                        Background="{StaticResource Card}" CornerRadius="12" Padding="14.4,12">
+                    <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <Button Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
-                                Margin="0,0,8,0" Command="{Binding ExposureDecCommand}"/>
-                        <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="10">
-                            <TextBlock Text="{Binding ExposureValue}"
-                                       Foreground="White" FontSize="16" FontWeight="Bold"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <Button Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
-                                Margin="8,0,0,0" Command="{Binding ExposureIncCommand}"/>
-                    </Grid>
-                    <TextBlock Grid.Row="4" Text="0.2s ~ 1s"
-                               Foreground="{StaticResource Muted}" FontSize="10"
-                               HorizontalAlignment="Center"/>
-                </Grid>
-            </Border>
 
-            <!-- GAIN -->
-            <Border Background="{StaticResource Card}" CornerRadius="10" Padding="12,10" Margin="0,0,0,8">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="6"/>
-                        <RowDefinition Height="46"/>
-                        <RowDefinition Height="4"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="GAIN"
-                               Foreground="White" FontSize="12" FontWeight="Bold"/>
-                    <Grid Grid.Row="2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Button Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
-                                Margin="0,0,8,0" Command="{Binding GainDecCommand}"/>
-                        <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="10">
-                            <TextBlock Text="{Binding GainValue}"
-                                       Foreground="White" FontSize="16" FontWeight="Bold"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <Button Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
-                                Margin="8,0,0,0" Command="{Binding GainIncCommand}"/>
-                    </Grid>
-                    <TextBlock Grid.Row="4" Text="3dB ~ 45dB"
-                               Foreground="{StaticResource Muted}" FontSize="10"
-                               HorizontalAlignment="Center"/>
-                </Grid>
-            </Border>
+                        <!-- 좌: 라벨 + 설명 -->
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="FILTER"
+                                       Foreground="White" FontSize="13.2" FontWeight="Bold"/>
+                            <TextBlock Text="IR 필터 ON / OFF 전환"
+                                       Foreground="{StaticResource Muted}" FontSize="12" Margin="0,3.6,0,0"/>
+                        </StackPanel>
 
-            <!-- GAMMA -->
-            <Border Background="{StaticResource Card}" CornerRadius="10" Padding="12,10" Margin="0,0,0,8">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="6"/>
-                        <RowDefinition Height="46"/>
-                        <RowDefinition Height="4"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="GAMMA"
-                               Foreground="White" FontSize="12" FontWeight="Bold"/>
-                    <Grid Grid.Row="2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Button Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
-                                Margin="0,0,8,0" Command="{Binding GammaDecCommand}"/>
-                        <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="10">
-                            <TextBlock Text="{Binding GammaValue}"
-                                       Foreground="White" FontSize="16" FontWeight="Bold"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <!-- 우: 토글 그룹 — 어두운 트랙 배경 위에 버튼 2개 -->
+                        <Border Grid.Column="1"
+                                Background="#131F2B"
+                                CornerRadius="16.8"
+                                Padding="4.8"
+                                VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="OFF"
+                                        Style="{StaticResource ToggleBtn}"
+                                        Background="{Binding FilterOffBackground}"
+                                        Margin="0,0,3.6,0"
+                                        Command="{Binding FilterOffCommand}"/>
+                                <Button Content="ON"
+                                        Style="{StaticResource ToggleBtn}"
+                                        Background="{Binding FilterOnBackground}"
+                                        Command="{Binding FilterOnCommand}"/>
+                            </StackPanel>
                         </Border>
-                        <Button Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
-                                Margin="8,0,0,0" Command="{Binding GammaIncCommand}"/>
                     </Grid>
-                    <TextBlock Grid.Row="4" Text="0.3 ~ 1"
-                               Foreground="{StaticResource Muted}" FontSize="10"
-                               HorizontalAlignment="Center"/>
-                </Grid>
-            </Border>
+                </Border>
 
-            <!-- IRIS -->
-            <Border Background="{StaticResource Card}" CornerRadius="10" Padding="12,10" Margin="0,0,0,16">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="6"/>
-                        <RowDefinition Height="46"/>
-                        <RowDefinition Height="4"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="IRIS"
-                               Foreground="White" FontSize="12" FontWeight="Bold"/>
-                    <Grid Grid.Row="2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Button Grid.Column="0" Content="-" Style="{StaticResource PmBtn}"
-                                Margin="0,0,8,0" Command="{Binding IrisDecCommand}"/>
-                        <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="10">
-                            <TextBlock Text="{Binding IrisValue}"
-                                       Foreground="White" FontSize="16" FontWeight="Bold"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <Button Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
-                                Margin="8,0,0,0" Command="{Binding IrisIncCommand}"/>
-                    </Grid>
-                    <TextBlock Grid.Row="4" Text="0.3F ~ 13F"
-                               Foreground="{StaticResource Muted}" FontSize="10"
-                               HorizontalAlignment="Center"/>
-                </Grid>
-            </Border>
+            </Grid>
 
             <!-- ── 구분선 ── -->
-            <Border Height="1" Background="#2A3F55" Margin="0,0,0,14"/>
+            <Border Height="1.2" Background="#2A3F55" Margin="0,16.8,0,14.4"/>
 
             <!-- ── 하단 버튼: RESET / SAVE ── -->
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="12"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- RESET: 값을 초기값으로 되돌림 -->
                 <Button Grid.Column="0"
                         Content="RESET"
                         Style="{StaticResource ActionBtn}"
                         Background="{StaticResource BtnDark}"
                         Command="{Binding ResetCommand}"/>
 
-                <!-- SAVE: DB 저장 후 팝업 닫기 -->
                 <Button Grid.Column="2"
                         Content="SAVE"
                         Style="{StaticResource ActionBtn}"

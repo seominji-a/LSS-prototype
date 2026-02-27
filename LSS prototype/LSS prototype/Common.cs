@@ -27,7 +27,7 @@ namespace LSS_prototype
         public static string CurrentUserId = string.Empty;            // 현재 로그인한 ID 
 
 
-        public const int DB_VERSION = 41; // DB Version 
+        public const int DB_VERSION = 43; // DB Version 
 
         // ===== OTP 기능  =====
         public static bool VerifyMasterOtp(string inputId, string inputOtp)
@@ -305,6 +305,10 @@ namespace LSS_prototype
         public const string DELETE_USER = @"DELETE FROM USER WHERE USER_ID = @user_id";
         public const string DELEGATE_USER = @"UPDATE USER SET ROLE_CODE ='A' WHERE USER_ID = @user_id";
         public const string DISMISS_USER = "UPDATE USER SET ROLE_CODE = 'U' WHERE USER_ID = @user_id AND (SELECT COUNT(*) FROM USER WHERE ROLE_CODE = 'A') >= 2";
+
+        public const string SELECT_DEFAULT = "SELECT EXPOSURE_TIME, GAIN, GAMMA, FOCUS, IRIS, ZOOM, FILTER FROM DEFAULT_SET"; // 기본값 로드 
+        public const string UPDATE_DEFAULT ="UPDATE DEFAULT_SET SET EXPOSURE_TIME=@ExposureTime, GAIN=@Gain, GAMMA=@Gamma," + //기본값 변경 
+            " FOCUS=@Focus, IRIS=@Iris, ZOOM=@Zoom, FILTER=@Filter";
     }
 
     /// <summary>

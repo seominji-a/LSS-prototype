@@ -60,7 +60,7 @@ namespace LSS_prototype.User_Page
             ZoomDecCommand = new RelayCommand(_ => ChangeZoom(-ZoomStep));
             FilterOnCommand = new RelayCommand(_ => FilterValue = 1);
             FilterOffCommand = new RelayCommand(_ => FilterValue = 0);
-            ResetCommand = new RelayCommand(_ => LoadDefaultSet(showMessage: true));
+            ResetCommand = new RelayCommand(_ => LoadDefaultSet(true));
             SaveCommand = new RelayCommand(_ => ExecuteSave());
 
             LoadDefaultSet();
@@ -101,7 +101,7 @@ namespace LSS_prototype.User_Page
             try
             {
                 var confirm = CustomMessageWindow.Show(
-                    "기본값을 정말 변경하시겠습니까?",
+                    "기본값을 변경하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo,
                     0,
                     CustomMessageWindow.MessageIconType.Warning);

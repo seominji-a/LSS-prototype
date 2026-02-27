@@ -217,15 +217,16 @@
     <Compile Include="User_Page\Default.xaml.cs">
       <DependentUpon>Default.xaml</DependentUpon>
     </Compile>
-    <Compile Include="User_Page\DefaultModel.cs" >
-	 <DependentUpon>Default.xaml</DependentUpon>
-	</Compile>
-    <Compile Include="User_Page\DefaultViewModel.cs" >
-	 <DependentUpon>Default.xaml</DependentUpon>
-	</Compile>
+    <Compile Include="User_Page\DefaultModel.cs">
+      <DependentUpon>Default.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="User_Page\DefaultViewModel.cs">
+      <DependentUpon>Default.xaml</DependentUpon>
+    </Compile>
     <Compile Include="User_Page\setting.xaml.cs">
       <DependentUpon>setting.xaml</DependentUpon>
     </Compile>
+    <Compile Include="User_Page\SettingModel.cs" />
     <Compile Include="User_Page\SettingViewModel.cs">
       <DependentUpon>setting.xaml</DependentUpon>
     </Compile>

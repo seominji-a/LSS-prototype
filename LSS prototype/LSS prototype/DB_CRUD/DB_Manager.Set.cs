@@ -61,5 +61,89 @@ namespace LSS_prototype.DB_CRUD
             }
         }
         #endregion
+
+        #region [ PACS 설정 로드 담당부 ]
+        public SettingModel GetPacsSet()
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.SELECT_PACS, conn))
+                {
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            return new SettingModel
+                            {
+                                HospitalName = reader["HOSPITAL_NAME"].ToString(),
+                                CStoreAET = reader["CSTORE_AET"].ToString(),
+                                CStoreIP = reader["CSTORE_IP"].ToString(),
+                                CStorePort = Convert.ToInt32(reader["CSTORE_PORT"]),
+                                CStoreMyAET = reader["CSTORE_MY_AET"].ToString(),
+                                MwlAET = reader["MWL_AET"].ToString(),
+                                MwlIP = reader["MWL_IP"].ToString(),
+                                MwlPort = Convert.ToInt32(reader["MWL_PORT"]),
+                                MwlMyAET = reader["MWL_MY_AET"].ToString()
+                            };
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+        #endregion
+
+        #region [ 병원 이름 수정 담당부 ] 
+        public bool UpdateHospitalName(string hospitalName)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.UPDATE_HOSPITAL, conn))
+                {
+                    cmd.Parameters.AddWithValue("@HospitalName", hospitalName);
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+        #endregion
+
+        #region [ C-STORE 설정 수정 담당부 ]
+        public bool UpdateCStore(SettingModel data)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.UPDATE_CSTORE, conn))
+                {
+                    cmd.Parameters.AddWithValue("@CStoreAET", data.CStoreAET);
+                    cmd.Parameters.AddWithValue("@CStoreIP", data.CStoreIP);
+                    cmd.Parameters.AddWithValue("@CStorePort", data.CStorePort);
+                    cmd.Parameters.AddWithValue("@CStoreMyAET", data.CStoreMyAET);
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+
+        #endregion
+
+        #region [ MWL 설정 수정 담당부 ]
+        public bool UpdateMwl(SettingModel data)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.UPDATE_MWL, conn))
+                {
+                    cmd.Parameters.AddWithValue("@MwlAET", data.MwlAET);
+                    cmd.Parameters.AddWithValue("@MwlIP", data.MwlIP);
+                    cmd.Parameters.AddWithValue("@MwlPort", data.MwlPort);
+                    cmd.Parameters.AddWithValue("@MwlMyAET", data.MwlMyAET);
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+        #endregion
     }
 }

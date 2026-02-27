@@ -115,7 +115,7 @@
             <Setter Property="Height"     Value="40"/>
         </Style>
 
-        <Style x:Key="CancelBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
+        <Style x:Key="ResetBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
             <Setter Property="Background" Value="{StaticResource BtnDark}"/>
             <Setter Property="Foreground" Value="{StaticResource Inactive}"/>
             <Setter Property="FontSize"   Value="13"/>
@@ -281,10 +281,10 @@
                                     <ColumnDefinition Width="8"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Button Grid.Column="0" Content="Test Connection" Style="{StaticResource AccentBtn}" Command="{Binding CStoreTestCommand}"/>
-                                <Button Grid.Column="2" Content="Apply"           Style="{StaticResource ApplyBtn}"  Command="{Binding CStoreApplyCommand}"/>
+                                <Button Grid.Column="0" Content="TEST SEND" Style="{StaticResource AccentBtn}" Command="{Binding CStoreTestCommand}"/>
+                                <Button Grid.Column="2" Content="SAVE"           Style="{StaticResource ApplyBtn}"  Command="{Binding CStoreApplyCommand}"/>
                             </Grid>
-                            <Button Grid.Row="11" Content="Cancel" Style="{StaticResource CancelBtn}" Command="{Binding CStoreCancelCommand}"/>
+                            <Button Grid.Row="11" Content="RESET" Style="{StaticResource ResetBtn}" Command="{Binding CStoreResetCommand}"/>
                         </Grid>
                     </Border>
                 </Grid>
@@ -364,10 +364,10 @@
                                     <ColumnDefinition Width="8"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Button Grid.Column="0" Content="Test Connection" Style="{StaticResource AccentBtn}" Command="{Binding MwlTestCommand}"/>
-                                <Button Grid.Column="2" Content="Apply"           Style="{StaticResource ApplyBtn}"  Command="{Binding MwlApplyCommand}"/>
+                                <Button Grid.Column="0" Content="TEST SEND" Style="{StaticResource AccentBtn}" Command="{Binding MwlTestCommand}"/>
+                                <Button Grid.Column="2" Content="SAVE"           Style="{StaticResource ApplyBtn}"  Command="{Binding MwlApplyCommand}"/>
                             </Grid>
-                            <Button Grid.Row="11" Content="Cancel" Style="{StaticResource CancelBtn}" Command="{Binding MwlCancelCommand}"/>
+                            <Button Grid.Row="11" Content="RESET" Style="{StaticResource ResetBtn}" Command="{Binding MwlResetCommand}"/>
                         </Grid>
                     </Border>
                 </Grid>

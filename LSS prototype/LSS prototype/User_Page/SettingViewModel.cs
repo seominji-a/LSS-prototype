@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LSS_prototype.DB_CRUD;
+using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -8,18 +9,11 @@ namespace LSS_prototype.User_Page
 {
     public class SettingViewModel : INotifyPropertyChanged
     {
-        // ══════════════════════════════════════════
-        // INotifyPropertyChanged
-        // ══════════════════════════════════════════
+
         public event PropertyChangedEventHandler PropertyChanged;
         private void OnPropertyChanged([CallerMemberName] string name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
-
-
-        // ══════════════════════════════════════════
-        // Properties - Hospital
-        // ══════════════════════════════════════════
         private string _hospitalName;
         public string HospitalName
         {
@@ -27,9 +21,6 @@ namespace LSS_prototype.User_Page
             set { _hospitalName = value; OnPropertyChanged(); }
         }
 
-        // ══════════════════════════════════════════
-        // Properties - C-STORE
-        // ══════════════════════════════════════════
         private string _cStoreAET;
         public string CStoreAET
         {
@@ -51,21 +42,13 @@ namespace LSS_prototype.User_Page
             set { _cStorePort = value; OnPropertyChanged(); }
         }
 
-        private string _cStoreMyAET = "RMICG";
+        private string _cStoreMyAET;
         public string CStoreMyAET
         {
             get => _cStoreMyAET;
-            set
-            {
-                _cStoreMyAET = value;
-                OnPropertyChanged();
-            }
-
+            set { _cStoreMyAET = value; OnPropertyChanged(); }
         }
 
-        // ══════════════════════════════════════════
-        // Properties - MWL
-        // ══════════════════════════════════════════
         private string _mwlAET;
         public string MwlAET
         {
@@ -87,70 +70,72 @@ namespace LSS_prototype.User_Page
             set { _mwlPort = value; OnPropertyChanged(); }
         }
 
-        private string _mwlMyAET = "RMICG";
+        private string _mwlMyAET;
         public string MwlMyAET
         {
             get => _mwlMyAET;
             set { _mwlMyAET = value; OnPropertyChanged(); }
         }
 
-        // ══════════════════════════════════════════
+
         // Commands - Hospital
-        // ══════════════════════════════════════════
         public ICommand SaveHospitalCommand { get; }
 
-        // ══════════════════════════════════════════
         // Commands - C-STORE
-        // ══════════════════════════════════════════
         public ICommand CStoreTestCommand { get; }
         public ICommand CStoreApplyCommand { get; }
-        public ICommand CStoreCancelCommand { get; }
+        public ICommand CStoreResetCommand { get; }
 
-        // ══════════════════════════════════════════
         // Commands - MWL
-        // ══════════════════════════════════════════
         public ICommand MwlTestCommand { get; }
         public ICommand MwlApplyCommand { get; }
-        public ICommand MwlCancelCommand { get; }
+        public ICommand MwlResetCommand { get; }
 
-        // ══════════════════════════════════════════
+
         // Constructor
-        // ══════════════════════════════════════════
         public SettingViewModel()
         {
             SaveHospitalCommand = new RelayCommand(async _ => await SaveHospitalAsync());
 
             CStoreTestCommand = new RelayCommand(async _ => await CStoreTestAsync());
             CStoreApplyCommand = new RelayCommand(async _ => await CStoreApplyAsync());
-            CStoreCancelCommand = new RelayCommand(_ => CStoreCancel());
+            CStoreResetCommand = new RelayCommand(_ => LoadSettings(true));
 
             MwlTestCommand = new RelayCommand(async _ => await MwlTestAsync());
             MwlApplyCommand = new RelayCommand(async _ => await MwlApplyAsync());
-            MwlCancelCommand = new RelayCommand(_ => MwlCancel());
+            MwlResetCommand = new RelayCommand(_ => LoadSettings(true));
 
-            // MyAET 기본값
-            CStoreMyAET = "RMICG";
-            MwlMyAET = "RMICG";
-
-            // TODO: 초기값 DB에서 로드 (DB값이 있으면 위 기본값을 덮어씀)
-            // LoadSettings();
+            // DB에서 초기값 로드
+            LoadSettings();
         }
 
-        // ══════════════════════════════════════════
-        // Methods - Hospital
-        // ══════════════════════════════════════════
-        private async Task SaveHospitalAsync()
+
+        // DB 로드
+        private void LoadSettings(bool showMessage = false)
         {
             try
             {
-                // TODO: DB 저장
-                // var db = new DB_Manager();
-                // db.SaveHospitalName(HospitalName);
-                await CustomMessageWindow.ShowAsync(
-                    "병원명이 저장되었습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose,
-                    1,
-                    CustomMessageWindow.MessageIconType.Info);
+                var db = new DB_Manager();
+                var data = db.GetPacsSet();
+
+                HospitalName = data.HospitalName;
+                CStoreAET = data.CStoreAET;
+                CStoreIP = data.CStoreIP;
+                CStorePort = data.CStorePort.ToString();
+                CStoreMyAET = data.CStoreMyAET;
+                MwlAET = data.MwlAET;
+                MwlIP = data.MwlIP;
+                MwlPort = data.MwlPort.ToString();
+                MwlMyAET = data.MwlMyAET;
+
+
+                if (showMessage)
+                {
+                    CustomMessageWindow.Show("리셋되었습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageIconType.Info);
+                }
+
             }
             catch (Exception ex)
             {
@@ -158,15 +143,43 @@ namespace LSS_prototype.User_Page
             }
         }
 
-        // ══════════════════════════════════════════
-        // Methods - C-STORE
-        // ══════════════════════════════════════════
+
+        private async Task SaveHospitalAsync()
+        {
+            try
+            {
+                var confirm = CustomMessageWindow.Show(
+                  "병원명을 변경하시겠습니까?",
+                  CustomMessageWindow.MessageBoxType.YesNo,
+                  0,
+                  CustomMessageWindow.MessageIconType.Warning);
+
+                if (confirm != CustomMessageWindow.MessageBoxResult.Yes) return;
+
+                var db = new DB_Manager();
+                bool success = db.UpdateHospitalName(HospitalName);
+
+                if (success)
+                {
+                    await CustomMessageWindow.ShowAsync(
+                        "병원명이 저장되었습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose,
+                        1,
+                        CustomMessageWindow.MessageIconType.Info);
+                }
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
+
+
         private async Task CStoreTestAsync()
         {
             try
             {
                 // TODO: C-STORE 연결 테스트 로직
-                // bool result = await DicomService.TestConnection(CStoreIP, CStorePort, CStoreAET);
                 await CustomMessageWindow.ShowAsync(
                     "C-STORE 연결 테스트 - TODO",
                     CustomMessageWindow.MessageBoxType.Ok,
@@ -183,14 +196,34 @@ namespace LSS_prototype.User_Page
         {
             try
             {
-                // TODO: C-STORE 설정 DB 저장
-                // var db = new DB_Manager();
-                // db.SaveCStoreSetting(CStoreAET, CStoreIP, CStorePort, CStoreMyAET);
-                await CustomMessageWindow.ShowAsync(
-                    "C-STORE 설정이 적용되었습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose,
-                    1,
-                    CustomMessageWindow.MessageIconType.Info);
+
+                var confirm = CustomMessageWindow.Show(
+                  "C-STROE의 설정값을 \n변경하시겠습니까?",
+                  CustomMessageWindow.MessageBoxType.YesNo,
+                  0,
+                  CustomMessageWindow.MessageIconType.Warning);
+
+                if (confirm != CustomMessageWindow.MessageBoxResult.Yes) return;
+
+                var db = new DB_Manager();
+                var data = new SettingModel
+                {
+                    CStoreAET = CStoreAET,
+                    CStoreIP = CStoreIP,
+                    CStorePort = int.TryParse(CStorePort, out int cp) ? cp : 0,
+                    CStoreMyAET = CStoreMyAET
+                };
+
+                bool success = db.UpdateCStore(data);
+
+                if (success)
+                {
+                    await CustomMessageWindow.ShowAsync(
+                        "C-STORE 설정이 적용되었습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose,
+                        1,
+                        CustomMessageWindow.MessageIconType.Info);
+                }
             }
             catch (Exception ex)
             {
@@ -198,22 +231,7 @@ namespace LSS_prototype.User_Page
             }
         }
 
-        private void CStoreCancel()
-        {
-            try
-            {
-                // TODO: 기존 저장값으로 되돌리기
-                // LoadCStoreSettings();
-            }
-            catch (Exception ex)
-            {
-                Common.WriteLog(ex);
-            }
-        }
 
-        // ══════════════════════════════════════════
-        // Methods - MWL
-        // ══════════════════════════════════════════
         private async Task MwlTestAsync()
         {
             try
@@ -235,24 +253,33 @@ namespace LSS_prototype.User_Page
         {
             try
             {
-                // TODO: MWL 설정 DB 저장
-                await CustomMessageWindow.ShowAsync(
-                    "MWL 설정이 적용되었습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose,
-                    1,
-                    CustomMessageWindow.MessageIconType.Info);
-            }
-            catch (Exception ex)
-            {
-                Common.WriteLog(ex);
-            }
-        }
+                var confirm = CustomMessageWindow.Show(
+                  "MWD의을 설정값을 \n변경하시겠습니까?",
+                  CustomMessageWindow.MessageBoxType.YesNo,
+                  0,
+                  CustomMessageWindow.MessageIconType.Warning);
 
-        private void MwlCancel()
-        {
-            try
-            {
-                // TODO: 기존 저장값으로 되돌리기
+                if (confirm != CustomMessageWindow.MessageBoxResult.Yes) return;
+
+                var db = new DB_Manager();
+                var data = new SettingModel
+                {
+                    MwlAET = MwlAET,
+                    MwlIP = MwlIP,
+                    MwlPort = int.TryParse(MwlPort, out int mp) ? mp : 0,
+                    MwlMyAET = MwlMyAET
+                };
+
+                bool success = db.UpdateMwl(data);
+
+                if (success)
+                {
+                    await CustomMessageWindow.ShowAsync(
+                        "MWL 설정이 적용되었습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose,
+                        1,
+                        CustomMessageWindow.MessageIconType.Info);
+                }
             }
             catch (Exception ex)
             {
@@ -260,6 +287,4 @@ namespace LSS_prototype.User_Page
             }
         }
     }
-
-    
 }

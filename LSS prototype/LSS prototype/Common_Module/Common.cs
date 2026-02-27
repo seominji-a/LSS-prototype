@@ -21,14 +21,13 @@ namespace LSS_prototype
         // ===== 외부 접근 멤버 =====
         //public const string DB_PATH = "./LSS_TEST.db";                 // .db 경로 
         public static readonly string executablePath = AppDomain.CurrentDomain.BaseDirectory;
-        public static readonly string DB_PATH = System.IO.Path.Combine(executablePath, "LSS_TEST.db");
-
-        public const string DB_INIT_PATH = "../../../DB/db_init.sql";  // 초기 DB 테이블 생성 파일 경로 
-        public const string DB_SEED_PATH = "../../../DB/seed.sql";     // 초기 DB 테이블 데이터 생성 경로 
+        public static readonly string DB_PATH = Path.Combine(executablePath, "LSS_TEST.db");
+        public static readonly string DB_INIT_PATH = Path.Combine(executablePath, "DB", "db_init.sql");
+        public static readonly string DB_SEED_PATH = Path.Combine(executablePath, "DB", "seed.sql");
         public static string CurrentUserId = string.Empty;            // 현재 로그인한 ID 
 
 
-        public const int DB_VERSION = 41; // DB Version 
+        public const int DB_VERSION = 45; // DB Version 
 
         // ===== OTP 기능  =====
         public static bool VerifyMasterOtp(string inputId, string inputOtp)
@@ -55,7 +54,6 @@ namespace LSS_prototype
     /// </summary>
     internal static class OtpService
     {
-        public const int DB_VERSION = 33; // DB Version 
 
         private const int OTP_SLOT_MINUTES = 3; // OTP 유효시간 +- 3분
 
@@ -97,7 +95,7 @@ namespace LSS_prototype
                 if (currentOtp == inputOtp.Trim())
                     return true;
 
-                // 4) 이전 슬롯(-3분)으로 재비교 (경계값 보호)
+                // 4) 이전 슬롯(-3분)으로 재비교 
                 DateTime prevSlot = currentSlot.AddMinutes(-OTP_SLOT_MINUTES);
                 string prevOtp = GenerateOtp(prevSlot, masterKey);
 
@@ -304,8 +302,21 @@ namespace LSS_prototype
         public const string SEARCH_USERID_NAME = @" SELECT USER_ID, USER_NAME, LOGIN_ID, USER_ROLE, ROLE_CODE FROM USER WHERE  USER_NAME LIKE @keyword OR  LOGIN_ID  LIKE @keyword ORDER BY USER_ID ASC";
         public const string SEARCH_PATIENT = @" SELECT PATIENT_ID, PATIENT_CODE, PATIENT_NAME, BIRTH_DATE, SEX, REG_DATE FROM PATIENT WHERE PATIENT_NAME LIKE @keyword OR PATIENT_CODE LIKE @keyword ORDER BY PATIENT_ID ASC";
         public const string DELETE_USER = @"DELETE FROM USER WHERE USER_ID = @user_id";
+
+        //사용자 관리자 권한 위임, 해임 QEURY
         public const string DELEGATE_USER = @"UPDATE USER SET ROLE_CODE ='A' WHERE USER_ID = @user_id";
         public const string DISMISS_USER = "UPDATE USER SET ROLE_CODE = 'U' WHERE USER_ID = @user_id AND (SELECT COUNT(*) FROM USER WHERE ROLE_CODE = 'A') >= 2";
+
+        // 카메라 기본값 QEURY
+        public const string SELECT_DEFAULT = "SELECT EXPOSURE_TIME, GAIN, GAMMA, FOCUS, IRIS, ZOOM, FILTER FROM CAMERA_DEFAULT_SET"; // 기본값 로드 
+        public const string UPDATE_DEFAULT ="UPDATE CAMERA_DEFAULT_SET SET EXPOSURE_TIME=@ExposureTime, GAIN=@Gain, GAMMA=@Gamma," + //기본값 변경 
+            " FOCUS=@Focus, IRIS=@Iris, ZOOM=@Zoom, FILTER=@Filter";
+
+        //PACS 셋팅  QEURY 
+        public const string SELECT_PACS ="SELECT * FROM PACS_SET LIMIT 1";
+        public const string UPDATE_HOSPITAL ="UPDATE PACS_SET SET HOSPITAL_NAME=@HospitalName";
+        public const string UPDATE_CSTORE ="UPDATE PACS_SET SET CSTORE_AET=@CStoreAET, CSTORE_IP=@CStoreIP, CSTORE_PORT=@CStorePort, CSTORE_MY_AET=@CStoreMyAET";
+        public const string UPDATE_MWL ="UPDATE PACS_SET SET MWL_AET=@MwlAET, MWL_IP=@MwlIP, MWL_PORT=@MwlPort, MWL_MY_AET=@MwlMyAET";
     }
 
     /// <summary>

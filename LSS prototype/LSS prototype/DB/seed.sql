@@ -52,3 +52,56 @@ VALUES
 );
 
 
+
+-- ================================================
+-- DEFAULT_SET TABLE ( 2026.02.27 생성자 : 박한용 )
+-- 프로그램 실제 납부 시 적정값으로 VALUES 수정해야함 
+-- ================================================
+INSERT INTO CAMERA_DEFAULT_SET
+(
+    EXPOSURE_TIME,
+    GAIN,
+    GAMMA,
+    FOCUS,
+    IRIS,
+    ZOOM,
+    FILTER
+)
+VALUES
+(
+    0.6,   -- EXPOSURE_TIME  (0.2s ~ 1s) 샘플값
+    10.0,   -- GAIN           (3dB ~ 45dB) 샘플값
+    0.8,    -- GAMMA          (0.3 ~ 1) 샘플값 
+    5927,   -- FOCUS          (3545 ~ 8310, Step 100) → 중간값
+    328,    -- IRIS           (0 ~ 656,    Step 50)  → 중간값
+    2903,   -- ZOOM           (1138 ~ 4669, Step 100) → 중간값
+    1       -- FILTER         (0=OFF, 1=ON)
+);
+
+-- ================================================
+-- PACS 관련 저장 TABLE ( 2026.02.27 생성자 : 박한용 )
+-- ================================================
+INSERT INTO PACS_SET
+(
+    HOSPITAL_NAME,
+    CSTORE_AET,
+    CSTORE_IP,
+    CSTORE_PORT,
+    CSTORE_MY_AET,
+    MWL_AET,
+    MWL_IP,
+    MWL_PORT,
+    MWL_MY_AET
+)
+VALUES
+(
+    'BUSAN HOSPITAL',     -- HOSPITAL_NAME
+    'ORTHANC',      -- CSTORE_AET
+    '192.168.1.6',  -- CSTORE_IP
+    4242,           -- CSTORE_PORT
+    'RMICG',        -- CSTORE_MY_AET
+    'ANY-SCP',      -- MWL_AET
+    '192.168.1.6',  -- MWL_IP
+    2000,           -- MWL_PORT
+    'RMICG'         -- MWL_MY_AET
+);

@@ -8,7 +8,12 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
+
+using FellowOakDicom;
+using FellowOakDicom.Network;
+using FellowOakDicom.Network.Client;
 using System.Windows;
+
 
 namespace LSS_prototype.Patient_Page
 {
@@ -86,7 +91,7 @@ namespace LSS_prototype.Patient_Page
         public ICommand PatientAddCommand { get; }
         public ICommand PatientEditCommand { get; }
         public ICommand PatientDeleteCommand { get; }
-        public ICommand SyncClickCommand { get; }
+        public ICommand EmrSyncCommand { get; }
         public ICommand NavScanCommand { get; }
         public ICommand NavImageReviewCommand { get; }
         public ICommand NavVideoReviewCommand { get; }
@@ -98,13 +103,15 @@ namespace LSS_prototype.Patient_Page
             PatientAddCommand = new RelayCommand(_ => AddPatient());
             PatientEditCommand = new RelayCommand(_ => EditPatient());
             PatientDeleteCommand = new RelayCommand(_ => DeletePatient());
-            SyncClickCommand = new AsyncRelayCommand(async _ => await SyncButtonClicked());
+            EmrSyncCommand = new AsyncRelayCommand(async _ => await EmrSync());
 
             NavScanCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new Scan_Page.Scan()));
+            // 0227 박한용 아래코드는 데이터 관련 처리 완료 후 주석 풀고 연동 예정 
             //NavImageReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new ImageReview_Page.ImageReview()));
             //NavVideoReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new VideoReview_Page.VideoReview()));
             _searchDebouncer = new SearchDebouncer(ExecuteSearch, delayMs: 500);
             LoadPatients();
+
         }
 
         /// <summary>
@@ -231,15 +238,124 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
-        private async Task SyncButtonClicked()
+        private async Task EmrSync()
         {
-            await CustomMessageWindow.ShowAsync(
-                    "EMR 환자 정보가 최신 상태로 \n 업데이트되었습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose,
-                    3,
-                    CustomMessageWindow.MessageIconType.Info);
+            try
+            {
+                var pacsSet = new DB_Manager().GetPacsSet();
+
+                LoadingWindow.Begin("MWL 조회 중...");
+                var worklistItems = await GetWorklistPatientsAsync(
+                    pacsSet.MwlMyAET, pacsSet.MwlIP, pacsSet.MwlPort, pacsSet.MwlAET);
+                await Task.Delay(2000);
+
+                // TODO: LS / LSS 간 표시 데이터 차이 확인 후 바인딩 필드 정리 필요 0227 박한용
+                Patients = new ObservableCollection<PatientModel>(
+                    worklistItems.Select(w => new PatientModel
+                    {
+                        PatientId = w.PatientId,
+                        PatientCode = w.PatientId,
+                        PatientName = w.PatientName,
+                        BirthDate = w.BirthDate,
+                        Sex = w.Sex,
+                        Reg_Date = DateTime.Now
+                    }));
+            }
+            catch (TimeoutException ex)
+            {
+                Common.WriteLog(ex);
+                await CustomMessageWindow.ShowAsync(
+                    "DICOM 서버가 응답하지 않습니다.\n네트워크 또는 서버 상태를 확인해주세요.",
+                    CustomMessageWindow.MessageBoxType.Ok, 0,
+                    CustomMessageWindow.MessageIconType.Warning);
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                await CustomMessageWindow.ShowAsync(
+                    $"MWL 조회 실패:\n{ex.Message}",
+                    CustomMessageWindow.MessageBoxType.Ok, 0,
+                    CustomMessageWindow.MessageIconType.Warning);
+            }
+            finally
+            {
+                LoadingWindow.End();
+            }
         }
 
+<<<<<<< HEAD
+         /// <summary>
+         /// DICOM C-FIND 요청으로 MWL(Modality Worklist) 환자 목록을 조회합니다.
+         /// </summary>
+         /// <param name="sourceAET">로컬 AE Title</param>
+         /// <param name="targetIP">MWL 서버 IP</param>
+         /// <param name="targetPort">MWL 서버 Port</param>
+         /// <param name="targetAET">MWL 서버 AE Title</param>
+         private async Task<List<PatientModel>> GetWorklistPatientsAsync( string sourceAET, string targetIP, int targetPort, string targetAET)
+        {
+            var result = new List<PatientModel>();
+
+         var request = BuildWorklistRequest();
+         request.OnResponseReceived += (_, res) =>
+         {
+             if (res.Status == DicomStatus.Pending && res.Dataset != null)
+                 result.Add(ParsePatientModel(res.Dataset));
+         };
+
+         var client = DicomClientFactory.Create(targetIP, targetPort, false, sourceAET, targetAET);
+         client.NegotiateAsyncOps();
+         await client.AddRequestAsync(request);
+
+         // 5초 내 응답 없으면 TimeoutException
+         var sendTask = client.SendAsync();
+         if (await Task.WhenAny(sendTask, Task.Delay(5000)) == sendTask)
+             await sendTask; // 전송 중 발생한 예외 전파
+         else
+             throw new TimeoutException("DICOM 서버가 응답하지 않습니다.");
+
+         return result;
+         }
+
+         /// <summary>
+         /// 전체 환자 대상 MWL C-FIND 요청 Dataset을 생성합니다.
+         /// </summary>
+         private static DicomCFindRequest BuildWorklistRequest()
+        {
+            return new DicomCFindRequest(DicomQueryRetrieveLevel.NotApplicable)
+            {
+                Dataset = new DicomDataset
+                {
+                    { DicomTag.PatientName,                    "*" },
+                    { DicomTag.PatientID,                      "*" },
+                    { DicomTag.StudyInstanceUID,               ""  },
+                    { DicomTag.StudyDate,                      ""  },
+                    { DicomTag.PatientBirthDate,               ""  },
+                    { DicomTag.PatientSex,                     ""  },
+                    { DicomTag.AccessionNumber,                ""  },
+                    { DicomTag.RequestedProcedureDescription,  ""  },
+                }
+            };
+        }
+
+         /// <summary>
+         /// C-FIND 응답 Dataset을 PatientModel로 변환합니다.
+         /// </summary>
+         private static PatientModel ParsePatientModel(DicomDataset ds)
+        {
+            string rawId = ds.GetSingleValueOrDefault(DicomTag.PatientID, "");
+            string rawBirth = ds.GetSingleValueOrDefault(DicomTag.PatientBirthDate, "");
+
+            return new PatientModel
+            {
+                PatientCode = int.TryParse(rawId, out int code) ? code : 0,
+                PatientName = ds.GetSingleValueOrDefault(DicomTag.PatientName, "").Replace("^", " "),
+                BirthDate = DateTime.TryParseExact(rawBirth, "yyyyMMdd", null,
+                                  System.Globalization.DateTimeStyles.None, out DateTime birth)
+                                  ? birth : DateTime.MinValue,
+                Sex = ds.GetSingleValueOrDefault(DicomTag.PatientSex, ""),
+            };
+         }
+=======
         public void OnSearchTextChanged(string text)
         {
             _searchDebouncer.OnTextChanged(text);
@@ -273,5 +389,6 @@ namespace LSS_prototype.Patient_Page
                 Common.WriteLog(ex);
             }
         }
+>>>>>>> seominji-a-patch
     }
 }

@@ -8,42 +8,31 @@ namespace LSS_prototype.User_Page
 {
     public partial class setting : Window
     {
-        // ══════════════════════════════════════════
         // IP 마스크 상수 (공백 5개 기준)
         // 마스크: "     .     .     .     " (23자)
         // 인덱스: 0~4=옥텟1, 5='.', 6~10=옥텟2, 11='.', 12~16=옥텟3, 17='.', 18~22=옥텟4
-        // ══════════════════════════════════════════
         private const int OCTET_SIZE = 5;
-        private const int OCTET_CENTER = 2;
         private readonly int[] _octetStarts = { 0, 6, 12, 18 };
 
         public setting()
         {
             InitializeComponent();
-
-            // ViewModel 연결
             DataContext = new SettingViewModel();
-
             Loaded += Window_Loaded;
         }
 
-        // ══════════════════════════════════════════
-        // Loaded
-        // ══════════════════════════════════════════
+
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             ResetIpBox(CStoreIPTextBox);
             ResetIpBox(MwlIPTextBox);
 
-            // TODO: DB에서 기존 IP 불러올 경우
-            // var vm = DataContext as SettingViewModel;
-            // SetIpToBox(CStoreIPTextBox, vm.CStoreIP);
-            // SetIpToBox(MwlIPTextBox,    vm.MwlIP);
+            // DB에서 기존 IP 불러올 경우 양식에 맞춰 바인딩
+            var vm = DataContext as SettingViewModel;
+            SetIpToBox(CStoreIPTextBox, vm.CStoreIP);
+            SetIpToBox(MwlIPTextBox, vm.MwlIP);
         }
 
-        // ══════════════════════════════════════════
-        // IP 마스크 헬퍼
-        // ══════════════════════════════════════════
 
         private void ResetIpBox(TextBox tb)
         {
@@ -77,9 +66,7 @@ namespace LSS_prototype.User_Page
         private int GetOctetStart(int caretIndex)
             => _octetStarts.LastOrDefault(s => s <= caretIndex);
 
-        // ══════════════════════════════════════════
-        // IP TextBox 이벤트
-        // ══════════════════════════════════════════
+
 
         // 포커스 진입 시 커서 맨 좌측
         private void IPTextBox_GotFocus(object sender, RoutedEventArgs e)
@@ -223,9 +210,6 @@ namespace LSS_prototype.User_Page
                 vm.MwlIP = ip;
         }
 
-        // ══════════════════════════════════════════
-        // EXIT
-        // ══════════════════════════════════════════
         private void Exit_Click(object sender, RoutedEventArgs e)
         {
             this.Close();

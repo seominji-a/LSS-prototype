@@ -206,15 +206,15 @@
     </ApplicationDefinition>
     <Compile Include="Auth\SessionActivityMonitor.cs" />
     <Compile Include="Auth\SessionStateManager.cs" />
-    <Compile Include="Common.cs" />
-    <Compile Include="CustomMessageWindow.xaml.cs">
+    <Compile Include="Common_Module\Common.cs" />
+    <Compile Include="Common_Module\CustomMessageWindow.xaml.cs">
       <DependentUpon>CustomMessageWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="DB_CRUD\DB_Manager.cs" />
     <Compile Include="DB_CRUD\DB_Manager.Patient.cs" />
     <Compile Include="DB_CRUD\DB_Manager.Set.cs" />
     <Compile Include="DB_CRUD\DB_Manager.User.cs" />
-    <Compile Include="Dialog.cs" />
+    <Compile Include="Common_Module\Dialog.cs" />
     <Compile Include="Auth\AuthToken.cs" />
     <Compile Include="ImageComment_Page\ImageComment.xaml.cs">
       <DependentUpon>ImageComment.xaml</DependentUpon>
@@ -222,7 +222,7 @@
     <Compile Include="ImageReview_Page\ImageReview.xaml.cs">
       <DependentUpon>ImageReview.xaml</DependentUpon>
     </Compile>
-    <Compile Include="LoadingWindow.xaml.cs">
+    <Compile Include="Common_Module\LoadingWindow.xaml.cs">
       <DependentUpon>LoadingWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Login_Page\ChangePasswordDialog.xaml.cs">
@@ -314,7 +314,7 @@
     <Compile Include="VideoReview_Page\VideoReview.xaml.cs">
       <DependentUpon>VideoReview.xaml</DependentUpon>
     </Compile>
-    <Page Include="CustomMessageWindow.xaml">
+    <Page Include="Common_Module\CustomMessageWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -326,7 +326,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="LoadingWindow.xaml">
+    <Page Include="Common_Module\LoadingWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

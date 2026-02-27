@@ -244,7 +244,7 @@
                         Content="Edit Patient" Width="228" Margin="0,0,0,18"/>
                 <Button Style="{StaticResource NavBtn}" Command="{Binding PatientDeleteCommand}"
                         Content="Delete Patient" Width="228" Margin="0,0,0,18"/>
-                <Button Style="{StaticResource NavBtn}" Command="{Binding SyncClickCommand}"
+                <Button Style="{StaticResource NavBtn}" Command="{Binding EmrSyncCommand}"
                         Content="Sync" Width="228" Margin="0,0,0,18"/>
                 <Button Style="{StaticResource NavBtn}" Click="HomeButton_Click"
                         Content="Home" Width="228"/>

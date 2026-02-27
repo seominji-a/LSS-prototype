@@ -286,51 +286,6 @@ namespace LSS_prototype.User_Page
             }
         }
 
-
-        private async Task MwlTestAsync()
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(MwlIP))
-                {
-                    await CustomMessageWindow.ShowAsync(
-                        "IP 주소를 입력해주세요.",
-                        CustomMessageWindow.MessageBoxType.Ok,
-                        0,
-                        CustomMessageWindow.MessageIconType.Warning);
-                    return;
-                }
-                if (string.IsNullOrWhiteSpace(MwlPort))
-                {
-                    await CustomMessageWindow.ShowAsync(
-                        "포트 번호를 입력해주세요.",
-                        CustomMessageWindow.MessageBoxType.Ok,
-                        0,
-                        CustomMessageWindow.MessageIconType.Warning);
-                    return;
-                }
-
-                LoadingWindow.Begin("MWL 연결 중...");
-                await QueryWorklistAsync(MwlMyAET, MwlIP, Convert.ToInt32(MwlPort), MwlAET);
-                await Task.Delay(3000); // ← 테스트용 3초 딜레이 (나중에 제거)
-                LoadingWindow.End();
-
-                await CustomMessageWindow.ShowAsync(
-                    "MWL 연결 테스트 성공",
-                    CustomMessageWindow.MessageBoxType.AutoClose,
-                    1,
-                    CustomMessageWindow.MessageIconType.Info);
-            }
-            catch (Exception ex)
-            {
-                Common.WriteLog(ex);
-            }
-            finally
-            {
-                LoadingWindow.End();
-            }
-        }
-
         // MWL C-FIND 요청 — 응답 성공 여부만 확인
         private async Task MwlTestAsync()
         {
@@ -399,13 +354,13 @@ namespace LSS_prototype.User_Page
             var request = new DicomCFindRequest(DicomQueryRetrieveLevel.NotApplicable)
             {
                 Dataset = new DicomDataset
-        {
-            { DicomTag.PatientName,      "*" },
-            { DicomTag.PatientID,        "*" },
-            { DicomTag.StudyInstanceUID, ""  },
-            { DicomTag.StudyDate,        ""  }
-        }
-            };
+                {
+                    { DicomTag.PatientName,      "*" },
+                    { DicomTag.PatientID,        "*" },
+                    { DicomTag.StudyInstanceUID, ""  },
+                    { DicomTag.StudyDate,        ""  }
+                }
+                    };
 
             request.OnResponseReceived += (req, response) =>
             {

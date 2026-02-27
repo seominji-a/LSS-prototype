@@ -150,11 +150,12 @@
                                     </TextBlock.Style>
                                 </TextBlock>
                                 <TextBox x:Name="txtSearch"
-                                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                         FontSize="17" BorderThickness="0" Background="Transparent"
-                                         Padding="14,0,0,0" VerticalContentAlignment="Center"
-                                         Foreground="{StaticResource TextDark}"
-                                         CaretBrush="{StaticResource Primary}"/>
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 FontSize="17" BorderThickness="0" Background="Transparent"
+                                 Padding="14,0,0,0" VerticalContentAlignment="Center"
+                                 Foreground="{StaticResource TextDark}"
+                                 CaretBrush="{StaticResource Primary}"
+                                 xml:lang="ko-KR"/>
                             </Grid>
                         </Grid>
                     </Border>

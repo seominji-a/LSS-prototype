@@ -332,6 +332,64 @@ namespace LSS_prototype.User_Page
         }
 
         // MWL C-FIND 요청 — 응답 성공 여부만 확인
+        private async Task MwlTestAsync()
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(MwlIP))
+                {
+                    await CustomMessageWindow.ShowAsync(
+                        "IP 주소를 입력해주세요.",
+                        CustomMessageWindow.MessageBoxType.Ok,
+                        0,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+                if (string.IsNullOrWhiteSpace(MwlPort))
+                {
+                    await CustomMessageWindow.ShowAsync(
+                        "포트 번호를 입력해주세요.",
+                        CustomMessageWindow.MessageBoxType.Ok,
+                        0,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                LoadingWindow.Begin("MWL 연결 중...");
+                await QueryWorklistAsync(MwlMyAET, MwlIP, Convert.ToInt32(MwlPort), MwlAET);
+                await Task.Delay(3000); // TODO: 테스트용 딜레이 — 실사용 전 제거
+                LoadingWindow.End();
+
+                await CustomMessageWindow.ShowAsync(
+                    "MWL 연결 테스트 성공",
+                    CustomMessageWindow.MessageBoxType.AutoClose,
+                    1,
+                    CustomMessageWindow.MessageIconType.Info);
+            }
+            catch (TimeoutException ex)
+            {
+                Common.WriteLog(ex);
+                await CustomMessageWindow.ShowAsync(
+                    "DICOM 서버가 응답하지 않습니다.\n네트워크 또는 서버 상태를 확인해주세요.",
+                    CustomMessageWindow.MessageBoxType.Ok,
+                    0,
+                    CustomMessageWindow.MessageIconType.Warning);
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                await CustomMessageWindow.ShowAsync(
+                    $"MWL 연결 실패:\n{ex.Message}",
+                    CustomMessageWindow.MessageBoxType.Ok,
+                    0,
+                    CustomMessageWindow.MessageIconType.Warning);
+            }
+            finally
+            {
+                LoadingWindow.End();
+            }
+        }
+
         private async Task QueryWorklistAsync(string sourceAET, string targetIP, int targetPort, string targetAET)
         {
             var client = DicomClientFactory.Create(targetIP, targetPort, false, sourceAET, targetAET);
@@ -341,13 +399,13 @@ namespace LSS_prototype.User_Page
             var request = new DicomCFindRequest(DicomQueryRetrieveLevel.NotApplicable)
             {
                 Dataset = new DicomDataset
-                {
-                    { DicomTag.PatientName,      "*" },
-                    { DicomTag.PatientID,        "*" },
-                    { DicomTag.StudyInstanceUID, ""  },
-                    { DicomTag.StudyDate,        ""  }
-                }
-                    };
+        {
+            { DicomTag.PatientName,      "*" },
+            { DicomTag.PatientID,        "*" },
+            { DicomTag.StudyInstanceUID, ""  },
+            { DicomTag.StudyDate,        ""  }
+        }
+            };
 
             request.OnResponseReceived += (req, response) =>
             {
@@ -357,11 +415,18 @@ namespace LSS_prototype.User_Page
             };
 
             await client.AddRequestAsync(request);
-            await client.SendAsync();
 
-            // 응답 자체가 없으면 연결 실패로 처리
+            // 5초 안에 응답 없으면 타임아웃
+            // why ? 연결이 됐어도 서버측에서 데이터가 없으면 무한대기상태로 빠지니
+            // 방어코드로 5초동안 1건의 데이터도 안들어오면, thorw처리 
+            var sendTask = client.SendAsync();
+            var timeout = Task.Delay(5000);
+            if (await Task.WhenAny(sendTask, timeout) == timeout)
+                throw new TimeoutException("DICOM 서버가 응답하지 않습니다.");
+            await sendTask;
+
             if (!hasResponse)
-                throw new Exception("서버 응답이 없습니다.");
+                throw new Exception("5초동안 서버 응답이 없습니다.");
         }
 
         private async Task MwlApplyAsync()

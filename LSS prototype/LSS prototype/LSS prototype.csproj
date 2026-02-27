@@ -210,6 +210,7 @@
     <Compile Include="Common_Module\CustomMessageWindow.xaml.cs">
       <DependentUpon>CustomMessageWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Common_Module\RelayCommand.cs" />
     <Compile Include="DB_CRUD\DB_Manager.cs" />
     <Compile Include="DB_CRUD\DB_Manager.Patient.cs" />
     <Compile Include="DB_CRUD\DB_Manager.Set.cs" />
@@ -269,7 +270,6 @@
     <Compile Update="Patient_Page\PatientModel.cs">
       <DependentUpon>Patient.xaml</DependentUpon>
     </Compile>
-    <Compile Include="RelayCommand.cs" />
     <Compile Include="Scan_Page\Scan.xaml.cs">
       <DependentUpon>Scan.xaml</DependentUpon>
     </Compile>

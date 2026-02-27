@@ -4,7 +4,6 @@ using System.ComponentModel;
 using System.Data.SQLite;
 using System.Runtime.CompilerServices;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace LSS_prototype.User_Page
@@ -12,7 +11,6 @@ namespace LSS_prototype.User_Page
     public class User_AddViewModel : INotifyPropertyChanged
     {
         public Action<bool?> CloseAction { get; set; }
-        public ICommand SubmitCommand { get; }
         public ICommand CancelCommand { get; }
         private DB_Manager _dbManager;
 
@@ -39,22 +37,15 @@ namespace LSS_prototype.User_Page
 
         public User_AddViewModel()
         {
-            SubmitCommand = new RelayCommand(ExecuteSubmit);
-            CancelCommand = new RelayCommand(ExecuteCancel);
             _dbManager = new DB_Manager();
+            CancelCommand = new RelayCommand(_ => CloseAction?.Invoke(false));
         }
 
-        private void ExecuteCancel()  
-        {
-            CloseAction?.Invoke(false);
-        }
+ 
 
-        private void ExecuteSubmit(object parameter)
+        public void ExecuteSubmit(string password, string confirmPassword)
         {
-            var pwBox = parameter as PasswordBox;
-            string password = pwBox?.Password;
-
-            // 유효성 검사
+            // 1. 유효성 검사
             if (string.IsNullOrWhiteSpace(UserID) ||
                 string.IsNullOrWhiteSpace(UserName) ||
                 string.IsNullOrWhiteSpace(Role) ||
@@ -65,6 +56,29 @@ namespace LSS_prototype.User_Page
                             CustomMessageWindow.MessageIconType.Warning);
                 return;
             }
+            // 2.사용자가 입력한 2가지 비밀번호 검사
+
+            if(password != confirmPassword)
+            {
+                CustomMessageWindow.Show(
+                    "비밀번호가 일치하지 않습니다",
+                    CustomMessageWindow.MessageBoxType.AutoClose,
+                    2,
+                    CustomMessageWindow.MessageIconType.Warning);
+                return;
+            }
+
+            //3. 검증 함수 ( 테스트 기간동안은 잠시 주석 ) 
+            /*string error = DB_Manager.ValidatePassword(password);
+            if (error != null)
+            {
+                CustomMessageWindow.Show(
+                    error,
+                    CustomMessageWindow.MessageBoxType.AutoClose,
+                    2,
+                    CustomMessageWindow.MessageIconType.Warning);
+                return;
+            }*/
 
             // DB 작업
             try

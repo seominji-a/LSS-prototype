@@ -1,28 +1,42 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace LSS_prototype.User_Page
 {
-    /// <summary>
-    /// User_Edit.xaml에 대한 상호 작용 논리
-    /// </summary>
     public partial class User_Edit : UserControl
     {
         public User_Edit()
         {
             InitializeComponent();
+        }
+
+        private void Submit_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is User_EditViewModel vm)
+                vm.ExecuteSubmit(txtNewPassword.Password, txtConfirmPassword.Password);
+        }
+
+        private void NewPasswordBox_CheckCaps(object sender, RoutedEventArgs e)
+        {
+            CapsLockWarningNew.Visibility = Keyboard.IsKeyToggled(Key.CapsLock)
+                ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void NewPasswordBox_HideCaps(object sender, RoutedEventArgs e)
+        {
+            CapsLockWarningNew.Visibility = Visibility.Collapsed;
+        }
+
+        private void ConfirmPasswordBox_CheckCaps(object sender, RoutedEventArgs e)
+        {
+            CapsLockWarningConfirm.Visibility = Keyboard.IsKeyToggled(Key.CapsLock)
+                ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void ConfirmPasswordBox_HideCaps(object sender, RoutedEventArgs e)
+        {
+            CapsLockWarningConfirm.Visibility = Visibility.Collapsed;
         }
     }
 }

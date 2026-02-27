@@ -23,9 +23,8 @@ namespace LSS_prototype
             var window = new Window
             {
                 Content = viewModel,
-                Width = 550,
-                Height = 700,
                 WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                SizeToContent = SizeToContent.WidthAndHeight,
                 Topmost = true,
                 WindowStyle = WindowStyle.None,
                 AllowsTransparency = true,

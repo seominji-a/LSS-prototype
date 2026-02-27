@@ -158,17 +158,22 @@
                             </Grid>
                         </Grid>
                     </Border>
-                    <CheckBox Content="EMR Patient"
-                            HorizontalAlignment="Left"
-                            Margin="868,11,0,0"
-                            VerticalAlignment="Top"
-                            FontSize="16" Checked="CheckBox_Checked">
+                    <StackPanel Orientation="Horizontal" Margin="930,0,0,0" VerticalAlignment="Center">
+                        <CheckBox x:Name="AllPatientCheckBox" 
+                            VerticalAlignment="Center"
+                            Click="CheckBox_Click" 
+                            IsChecked="True">
+                            <CheckBox.LayoutTransform>
+                                <ScaleTransform ScaleX="2" ScaleY="2.5"/>
+                            </CheckBox.LayoutTransform>
+                        </CheckBox>
 
-                        <CheckBox.LayoutTransform>
-                            <ScaleTransform ScaleX="2" ScaleY="2"/>
-                        </CheckBox.LayoutTransform>
-
-                    </CheckBox>
+                        <TextBlock Text="ALL Patient" 
+                            Foreground="#FF022020" 
+                            FontSize="34" 
+                            VerticalAlignment="Center" 
+                            Margin="10,0,0,0"/>
+                    </StackPanel>
                 </Grid>
 
                 <Border Grid.Row="1" Background="{StaticResource CardOuter}"

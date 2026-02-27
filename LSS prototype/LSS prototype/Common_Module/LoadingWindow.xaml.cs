@@ -1,7 +1,9 @@
-﻿using System.Threading;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Linq;
+using System.Windows.Media.Effects;
 
 namespace LSS_prototype
 {
@@ -9,11 +11,12 @@ namespace LSS_prototype
     {
         private static LoadingWindow _instance;
         private static CancellationTokenSource _cts;
+        private static readonly List<Window> _blurredWindows = new List<Window>();
 
         public LoadingWindow(string message = "처리 중...")
         {
             InitializeComponent();
-            MessageText.Text = message;
+            //MessageText.Text = message;
 
             var owner = Application.Current?.Windows?
                 .OfType<Window>()
@@ -29,10 +32,6 @@ namespace LSS_prototype
             }
         }
 
-        /// <summary>
-        /// 작업 시작 후 0.5초 이상 작업이 경과되어야지만, 로딩바 호출 ( 무분별한 로딩바 UI 출력 방지 )  
-        /// </summary>
-        /// <param name="message"></param>
         public static void Begin(string message = "처리 중...")
         {
             _cts = new CancellationTokenSource();
@@ -45,6 +44,7 @@ namespace LSS_prototype
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     if (_instance != null) return;
+                    ApplyBlur();
                     _instance = new LoadingWindow(message);
                     _instance.Show();
                 });
@@ -58,9 +58,30 @@ namespace LSS_prototype
 
             Application.Current.Dispatcher.Invoke(() =>
             {
+                RemoveBlur();
                 _instance?.Close();
                 _instance = null;
             });
+        }
+
+        private static void ApplyBlur()
+        {
+            var blurEffect = new BlurEffect { Radius = 3 }; // 아주 살짝만
+            foreach (Window w in Application.Current.Windows)
+            {
+                if (w is LoadingWindow || !w.IsVisible) continue;
+                w.Effect = blurEffect;
+                _blurredWindows.Add(w);
+            }
+        }
+
+        private static void RemoveBlur()
+        {
+            foreach (var w in _blurredWindows)
+            {
+                if (w != null) w.Effect = null;
+            }
+            _blurredWindows.Clear();
         }
     }
 }

@@ -98,15 +98,15 @@ namespace LSS_prototype.User_Page
         // Constructor
         public SettingViewModel()
         {
-            SaveHospitalCommand = new RelayCommand(async _ => await SaveHospitalAsync());
+            SaveHospitalCommand = new AsyncRelayCommand(async _ => await SaveHospitalAsync());
 
-            CStoreTestCommand = new RelayCommand(async _ => await CStoreTestAsync());
-            CStoreApplyCommand = new RelayCommand(async _ => await CStoreApplyAsync());
-            CStoreResetCommand = new RelayCommand(_ => LoadSettings(true));
+            CStoreTestCommand = new AsyncRelayCommand(async _ => await CStoreTestAsync());
+            CStoreApplyCommand = new AsyncRelayCommand(async _ => await CStoreApplyAsync());
+            CStoreResetCommand = new AsyncRelayCommand(_ => { LoadSettings(true); return Task.CompletedTask; });
 
-            MwlTestCommand = new RelayCommand(async _ => await MwlTestAsync());
-            MwlApplyCommand = new RelayCommand(async _ => await MwlApplyAsync());
-            MwlResetCommand = new RelayCommand(_ => LoadSettings(true));
+            MwlTestCommand = new AsyncRelayCommand(async _ => await MwlTestAsync());
+            MwlApplyCommand = new AsyncRelayCommand(async _ => await MwlApplyAsync());
+            MwlResetCommand = new AsyncRelayCommand(_ => { LoadSettings(true); return Task.CompletedTask; });
 
             // DB에서 초기값 로드
             LoadSettings();
@@ -205,9 +205,8 @@ namespace LSS_prototype.User_Page
                 string testDcmPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestDicom.dcm");
 
                 LoadingWindow.Begin("PACS 연결 중...");
-
                 await SendToPacsAsync(testDcmPath, CStoreMyAET, CStoreIP, Convert.ToInt32(CStorePort), CStoreAET);
-                
+                await Task.Delay(3000); // ← 테스트용 3초 딜레이 (나중에 제거)
                 LoadingWindow.End();
 
                 await CustomMessageWindow.ShowAsync(
@@ -219,11 +218,6 @@ namespace LSS_prototype.User_Page
             catch (Exception ex)
             {
                 Common.WriteLog(ex);
-                await CustomMessageWindow.ShowAsync(
-                    $"PACS 전송 실패:\n{ex.Message}",
-                    CustomMessageWindow.MessageBoxType.Ok,
-                    0,
-                    CustomMessageWindow.MessageIconType.Warning);
             }
             finally
             {
@@ -297,17 +291,77 @@ namespace LSS_prototype.User_Page
         {
             try
             {
-                // TODO: MWL 연결 테스트 로직
+                if (string.IsNullOrWhiteSpace(MwlIP))
+                {
+                    await CustomMessageWindow.ShowAsync(
+                        "IP 주소를 입력해주세요.",
+                        CustomMessageWindow.MessageBoxType.Ok,
+                        0,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+                if (string.IsNullOrWhiteSpace(MwlPort))
+                {
+                    await CustomMessageWindow.ShowAsync(
+                        "포트 번호를 입력해주세요.",
+                        CustomMessageWindow.MessageBoxType.Ok,
+                        0,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                LoadingWindow.Begin("MWL 연결 중...");
+                await QueryWorklistAsync(MwlMyAET, MwlIP, Convert.ToInt32(MwlPort), MwlAET);
+                await Task.Delay(3000); // ← 테스트용 3초 딜레이 (나중에 제거)
+                LoadingWindow.End();
+
                 await CustomMessageWindow.ShowAsync(
-                    "MWL 연결 테스트 - TODO",
-                    CustomMessageWindow.MessageBoxType.Ok,
-                    0,
+                    "MWL 연결 테스트 성공",
+                    CustomMessageWindow.MessageBoxType.AutoClose,
+                    1,
                     CustomMessageWindow.MessageIconType.Info);
             }
             catch (Exception ex)
             {
                 Common.WriteLog(ex);
             }
+            finally
+            {
+                LoadingWindow.End();
+            }
+        }
+
+        // MWL C-FIND 요청 — 응답 성공 여부만 확인
+        private async Task QueryWorklistAsync(string sourceAET, string targetIP, int targetPort, string targetAET)
+        {
+            var client = DicomClientFactory.Create(targetIP, targetPort, false, sourceAET, targetAET);
+
+            bool hasResponse = false;
+
+            var request = new DicomCFindRequest(DicomQueryRetrieveLevel.NotApplicable)
+            {
+                Dataset = new DicomDataset
+                {
+                    { DicomTag.PatientName,      "*" },
+                    { DicomTag.PatientID,        "*" },
+                    { DicomTag.StudyInstanceUID, ""  },
+                    { DicomTag.StudyDate,        ""  }
+                }
+                    };
+
+            request.OnResponseReceived += (req, response) =>
+            {
+                if (response.Status == DicomStatus.Pending ||
+                    response.Status == DicomStatus.Success)
+                    hasResponse = true;
+            };
+
+            await client.AddRequestAsync(request);
+            await client.SendAsync();
+
+            // 응답 자체가 없으면 연결 실패로 처리
+            if (!hasResponse)
+                throw new Exception("서버 응답이 없습니다.");
         }
 
         private async Task MwlApplyAsync()

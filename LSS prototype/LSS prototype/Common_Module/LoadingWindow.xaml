@@ -1,57 +1,185 @@
 ﻿<Window x:Class="LSS_prototype.LoadingWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Width="420" Height="220"
+        WindowState="Maximized"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
         ResizeMode="NoResize"
-        WindowStartupLocation="CenterOwner"
+        Topmost="True"
         ShowInTaskbar="False">
 
-    <Border Background="#E61C2B3A" CornerRadius="16">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.5" Color="Black"/>
-        </Border.Effect>
+    <Window.Resources>
 
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+        <!-- ===== Theme ===== -->
+        <SolidColorBrush x:Key="Overlay"   Color="#01000000"/>
+        <SolidColorBrush x:Key="CardBg"    Color="#F3F5F7"/>
+        <SolidColorBrush x:Key="Primary"   Color="#173753"/>
+        <!-- ✅ 전체 톤 -->
+        <SolidColorBrush x:Key="TextColor" Color="#0F172A"/>
+        <SolidColorBrush x:Key="Muted"     Color="#64748B"/>
 
-            <!-- 스피너 -->
-            <Border Width="52" Height="52" HorizontalAlignment="Center">
-                <Border.RenderTransform>
-                    <RotateTransform x:Name="SpinnerRotate" CenterX="26" CenterY="26"/>
-                </Border.RenderTransform>
-                <Border.Triggers>
-                    <EventTrigger RoutedEvent="Border.Loaded">
-                        <BeginStoryboard>
-                            <Storyboard RepeatBehavior="Forever">
-                                <DoubleAnimation
-                                    Storyboard.TargetName="SpinnerRotate"
-                                    Storyboard.TargetProperty="Angle"
-                                    From="0" To="360"
-                                    Duration="0:0:0.9"/>
-                            </Storyboard>
-                        </BeginStoryboard>
-                    </EventTrigger>
-                </Border.Triggers>
-                <Ellipse Width="52" Height="52" StrokeThickness="5">
-                    <Ellipse.Stroke>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                            <GradientStop Color="#3B82F6" Offset="0"/>
-                            <GradientStop Color="Transparent" Offset="1"/>
-                        </LinearGradientBrush>
-                    </Ellipse.Stroke>
-                </Ellipse>
-            </Border>
+        <!-- ===== Pulse ring (soft) ===== -->
+        <Storyboard x:Key="PulseRingStoryboard" RepeatBehavior="Forever">
+            <DoubleAnimation Storyboard.TargetName="Ring"
+                             Storyboard.TargetProperty="Opacity"
+                             From="0.35" To="0.04"
+                             Duration="0:0:1.35"
+                             AutoReverse="True">
+                <DoubleAnimation.EasingFunction>
+                    <SineEase EasingMode="EaseInOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
 
-            <!-- 메시지 -->
-            <TextBlock x:Name="MessageText"
-                       Text="처리 중..."
-                       Foreground="White"
-                       FontSize="14"
-                       FontWeight="SemiBold"
-                       HorizontalAlignment="Center"
-                       Margin="0,14,0,0"/>
-        </StackPanel>
-    </Border>
+            <DoubleAnimation Storyboard.TargetName="RingScale"
+                             Storyboard.TargetProperty="ScaleX"
+                             From="0.80" To="1.12"
+                             Duration="0:0:1.35"
+                             AutoReverse="True">
+                <DoubleAnimation.EasingFunction>
+                    <SineEase EasingMode="EaseInOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+
+            <DoubleAnimation Storyboard.TargetName="RingScale"
+                             Storyboard.TargetProperty="ScaleY"
+                             From="0.80" To="1.12"
+                             Duration="0:0:1.35"
+                             AutoReverse="True">
+                <DoubleAnimation.EasingFunction>
+                    <SineEase EasingMode="EaseInOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+
+        <!-- ===== Dot rotate (softer: slower + easing) ===== -->
+        <Storyboard x:Key="DotRotateStoryboard" RepeatBehavior="Forever">
+            <DoubleAnimation Storyboard.TargetName="DotRotate"
+                             Storyboard.TargetProperty="Angle"
+                             From="0" To="360"
+                             Duration="0:0:2.8">
+                <DoubleAnimation.EasingFunction>
+                    <!-- 회전 자체는 사실 linear가 가장 자연스럽지만,
+                         너가 "부드럽게"를 원해서 살짝 EaseInOut 걸어둠 -->
+                    <SineEase EasingMode="EaseInOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+
+    </Window.Resources>
+
+    <Grid Background="{StaticResource Overlay}">
+
+        <!-- Card -->
+        <Border Width="440" Height="280"
+                CornerRadius="18"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{StaticResource CardBg}">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="40"
+                                  ShadowDepth="8"
+                                  Opacity="0.55"
+                                  Color="Black"/>
+            </Border.Effect>
+
+            <Grid Margin="30">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- ===== Center animation ===== -->
+                <Grid Grid.Row="0" VerticalAlignment="Center">
+
+                    <!-- Soft pulse ring -->
+                    <Ellipse x:Name="Ring"
+                             Width="112"
+                             Height="112"
+                             Stroke="{StaticResource Primary}"
+                             StrokeThickness="6"
+                             Opacity="0.25"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center">
+                        <Ellipse.RenderTransform>
+                            <ScaleTransform x:Name="RingScale"
+                                            CenterX="56"
+                                            CenterY="56"
+                                            ScaleX="0.80"
+                                            ScaleY="0.80"/>
+                        </Ellipse.RenderTransform>
+                    </Ellipse>
+
+                    <!-- Rotating dots -->
+                    <Grid Width="140" Height="140"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center">
+                        <Grid.RenderTransform>
+                            <RotateTransform x:Name="DotRotate"
+                                             CenterX="70"
+                                             CenterY="70"/>
+                        </Grid.RenderTransform>
+
+                        <!-- TOP (가장 가까운 느낌: 조금 큼, 진함) -->
+                        <Ellipse Width="11" Height="11"
+                                 Fill="{StaticResource Primary}"
+                                 Opacity="0.95"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Top"/>
+
+                        <!-- RIGHT (중간) -->
+                        <Ellipse Width="9" Height="9"
+                                 Fill="{StaticResource Primary}"
+                                 Opacity="0.70"
+                                 HorizontalAlignment="Right"
+                                 VerticalAlignment="Center"/>
+
+                        <!-- BOTTOM (가장 먼 느낌: 작고 연함) -->
+                        <Ellipse Width="7" Height="7"
+                                 Fill="{StaticResource Primary}"
+                                 Opacity="0.45"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Bottom"/>
+
+                        <!-- LEFT (중간) -->
+                        <Ellipse Width="9" Height="9"
+                                 Fill="{StaticResource Primary}"
+                                 Opacity="0.65"
+                                 HorizontalAlignment="Left"
+                                 VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <!-- Start animations -->
+                    <Grid.Triggers>
+                        <EventTrigger RoutedEvent="Grid.Loaded">
+                            <BeginStoryboard Storyboard="{StaticResource PulseRingStoryboard}"/>
+                        </EventTrigger>
+                        <EventTrigger RoutedEvent="Grid.Loaded">
+                            <BeginStoryboard Storyboard="{StaticResource DotRotateStoryboard}"/>
+                        </EventTrigger>
+                    </Grid.Triggers>
+
+                </Grid>
+
+                <!-- ===== Message ===== -->
+                <StackPanel Grid.Row="1" Margin="0,18,0,0">
+                    <TextBlock x:Name="MessageText"
+                               Text="처리 중..."
+                               Foreground="{StaticResource TextColor}"
+                               FontSize="15"
+                               FontWeight="SemiBold"
+                               FontFamily="Arial"
+                               HorizontalAlignment="Center"/>
+
+                    <TextBlock Text="잠시만 기다려주세요"
+                               Foreground="{StaticResource Muted}"
+                               FontSize="11"
+                               FontFamily="Arial"
+                               HorizontalAlignment="Center"
+                               Margin="0,6,0,0"/>
+                </StackPanel>
+
+            </Grid>
+        </Border>
+    </Grid>
 </Window>

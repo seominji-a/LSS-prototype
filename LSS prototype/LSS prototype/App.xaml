@@ -8,8 +8,7 @@
              xmlns:viewPatient="clr-namespace:LSS_prototype.Patient_Page"
              xmlns:viewUser="clr-namespace:LSS_prototype.User_Page"
             
-             StartupUri="Patient_Page/Patient.xaml">
-    <!--StartupUri="Login_Page/Login.xaml"-->
+             StartupUri="Login_Page/Login.xaml">
     <Application.Resources>
         <ResourceDictionary>
 

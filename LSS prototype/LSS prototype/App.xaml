@@ -7,8 +7,9 @@
 
              xmlns:viewPatient="clr-namespace:LSS_prototype.Patient_Page"
              xmlns:viewUser="clr-namespace:LSS_prototype.User_Page"
-
-             StartupUri="Login_Page/Login.xaml">
+            
+             StartupUri="Patient_Page/Patient.xaml">
+    <!--StartupUri="Login_Page/Login.xaml"-->
     <Application.Resources>
         <ResourceDictionary>
 
@@ -27,10 +28,6 @@
 
             <DataTemplate DataType="{x:Type vmUser:User_EditViewModel}">
                 <viewUser:User_Edit />
-            </DataTemplate>
-
-            <DataTemplate DataType="{x:Type vmPatient:KeypadViewModel}">
-                <viewPatient:Keypad />
             </DataTemplate>
 
             <Style x:Key="DefaultRoundedButtonStyle" TargetType="Button">

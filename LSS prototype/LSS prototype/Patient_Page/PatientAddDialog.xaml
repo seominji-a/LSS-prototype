@@ -77,7 +77,7 @@
                                 </Border>
                             </ControlTemplate>
                         </Button.Template>
-                        <TextBlock Text="{Binding BirthDate, StringFormat=yyyy-MM-dd}" FontSize="18" Foreground="#222222"/>
+                        <TextBlock Text="{Binding BirthDatePreview}" FontSize="18" Foreground="#222222"/>
                     </Button>
 
                     <Popup IsOpen="{Binding IsKeypadOpen}" PlacementTarget="{Binding ElementName=BirthDateButton}" 

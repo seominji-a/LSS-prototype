@@ -17,6 +17,9 @@ namespace LSS_prototype.Patient_Page
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
+        public event Action<string> InputChanged;
+
         private string _inputText = "";
         public string InputText
         {
@@ -25,6 +28,9 @@ namespace LSS_prototype.Patient_Page
             {
                 _inputText = value;
                 OnPropertyChanged();
+
+                
+                InputChanged?.Invoke(_inputText);
             }
         }
 

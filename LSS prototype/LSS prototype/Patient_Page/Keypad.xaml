@@ -9,14 +9,9 @@
 
         <Grid Margin="20">
             <Grid.RowDefinitions>
-                <RowDefinition Height="60"/>
+                <RowDefinition Height="10"/>
                 <RowDefinition/>
             </Grid.RowDefinitions>
-
-            <TextBox Text="{Binding InputText}" 
-                 FontSize="28"
-                 IsReadOnly="True"
-                 HorizontalContentAlignment="Center"/>
 
             <UniformGrid Grid.Row="1" Rows="4" Columns="3" Margin="0,20,0,0">
 

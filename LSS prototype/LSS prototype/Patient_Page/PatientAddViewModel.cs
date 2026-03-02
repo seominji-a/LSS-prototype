@@ -26,7 +26,28 @@ namespace LSS_prototype.Patient_Page
         public string PatientName { get; set; }
         public int? PatientCode { get; set; }
 
-        public DateTime? BirthDate { get; set; }
+        //public DateTime? BirthDate { get; set; }
+        private DateTime? _birthDate;
+        public DateTime? BirthDate
+        {
+            get => _birthDate;
+            set
+            {
+                _birthDate = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private string _birthDatePreview;
+        public string BirthDatePreview
+        {
+            get => _birthDatePreview;
+            set
+            {
+                _birthDatePreview = value;
+                OnPropertyChanged();
+            }
+        }
 
         public string Sex { get; set; }
 
@@ -97,10 +118,33 @@ namespace LSS_prototype.Patient_Page
         private void OpenKeypad()
         {
             this.KeypadVm = new KeypadViewModel();
+
             this.KeypadVm.CloseRequested += OnKeypadClosed;
+
+            
+            this.KeypadVm.InputChanged += OnKeypadInputChanged;
+
             IsKeypadOpen = true;
         }
 
+        private void OnKeypadInputChanged(string input)
+        {
+            BirthDatePreview = FormatDatePreview(input);
+        }
+
+        private string FormatDatePreview(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return "";
+
+            if (input.Length <= 4)
+                return input;
+
+            if (input.Length <= 6)
+                return input.Insert(4, "-");
+
+            return input.Insert(4, "-").Insert(7, "-");
+        }
         private bool _isKeypadOpen;
         public bool IsKeypadOpen
         {
@@ -115,10 +159,16 @@ namespace LSS_prototype.Patient_Page
         {
             IsKeypadOpen = false;
 
+            if (_keypadVm != null)
+            {
+                _keypadVm.CloseRequested -= OnKeypadClosed;
+                _keypadVm.InputChanged -= OnKeypadInputChanged;
+            }
+
             if (result == true && _keypadVm.ResultDate != null)
             {
                 BirthDate = _keypadVm.ResultDate;
-                OnPropertyChanged(nameof(BirthDate));
+                BirthDatePreview = BirthDate?.ToString("yyyy-MM-dd");
             }
         }
 

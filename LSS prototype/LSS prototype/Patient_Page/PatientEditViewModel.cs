@@ -36,7 +36,22 @@ namespace LSS_prototype.Patient_Page
         public DateTime? BirthDate
         {
             get => _birthDate;
-            set { _birthDate = value; OnPropertyChanged(); }
+            set
+            {
+                _birthDate = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private string _birthDatePreview;
+        public string BirthDatePreview
+        {
+            get => _birthDatePreview;
+            set
+            {
+                _birthDatePreview = value;
+                OnPropertyChanged();
+            }
         }
 
         public string Sex { get; set; }
@@ -121,32 +136,63 @@ namespace LSS_prototype.Patient_Page
         public KeypadViewModel KeypadVm
         {
             get => _keypadVm;
-            set { _keypadVm = value; OnPropertyChanged(); }
+            private set // set 추가
+            {
+                _keypadVm = value;
+                OnPropertyChanged(); // UI에 객체가 생성되었음을 알림
+            }
         }
 
         private bool _isKeypadOpen;
         public bool IsKeypadOpen
         {
             get => _isKeypadOpen;
-            set { _isKeypadOpen = value; OnPropertyChanged(); }
+            set
+            {
+                _isKeypadOpen = value;
+                OnPropertyChanged();
+            }
         }
 
         private void OpenKeypad()
         {
-            KeypadVm = new KeypadViewModel();
-            KeypadVm.CloseRequested += OnKeypadClosed;
+            this.KeypadVm = new KeypadViewModel();
+            this.KeypadVm.CloseRequested += OnKeypadClosed;
+
+            this.KeypadVm.InputChanged += OnKeypadInputChanged;
             IsKeypadOpen = true;
+        }
+
+        private void OnKeypadInputChanged(string input)
+        {
+            BirthDatePreview = FormatDatePreview(input);
+        }
+
+        private string FormatDatePreview(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return "";
+            if (input.Length <= 4)
+                return input;
+            if (input.Length <= 6)
+                return input.Insert(4, "-");
+            return input.Insert(4, "-").Insert(7, "-");
         }
 
         private void OnKeypadClosed(bool? result)
         {
             IsKeypadOpen = false;
-            if (result == true && KeypadVm.ResultDate != null)
+            if (_keypadVm != null)
             {
-                BirthDate = KeypadVm.ResultDate;
+                _keypadVm.CloseRequested -= OnKeypadClosed;
+                _keypadVm.InputChanged -= OnKeypadInputChanged;
+            }
+            if (result == true && _keypadVm.ResultDate != null)
+            {
+                BirthDate = _keypadVm.ResultDate;
+                BirthDatePreview = BirthDate?.ToString("yyyy-MM-dd");
             }
         }
-
         private void Cancel()
         {
             CloseAction?.Invoke(false);

@@ -60,31 +60,92 @@
                              Style="{StaticResource InputTextBoxStyle}"/>
 
                     <TextBlock Text="PATIENT CODE" Style="{StaticResource InputLabelStyle}"/>
-                    <TextBox Text="{Binding PatientCode, UpdateSourceTrigger=PropertyChanged}" 
-                             Style="{StaticResource InputTextBoxStyle}"/>
-
-                    <TextBlock Text="DATE OF BIRTH" Style="{StaticResource InputLabelStyle}"/>
-                    <Button x:Name="BirthDateButton" 
-                        Command="{Binding OpenKeypadCommand}"
-                        Height="60" Margin="0,0,0,25" Background="White" BorderBrush="#DDE2E8" BorderThickness="1.5">
+                    <Button x:Name="PatientCodeButton" 
+                            Command="{Binding OpenPatientCodeKeypadCommand}"
+                            Height="60" 
+                            Margin="0,0,0,25" 
+                            Background="White" 
+                            BorderBrush="#DDE2E8" 
+                            BorderThickness="1.5">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border Background="{TemplateBinding Background}" 
-                    BorderBrush="{TemplateBinding BorderBrush}" 
-                    BorderThickness="{TemplateBinding BorderThickness}" 
-                    CornerRadius="10">
-                                    <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" Margin="15,0"/>
+                                        BorderBrush="{TemplateBinding BorderBrush}" 
+                                        BorderThickness="{TemplateBinding BorderThickness}" 
+                                        CornerRadius="10">
+                                    <ContentPresenter HorizontalAlignment="Left" 
+                                  VerticalAlignment="Center" 
+                                  Margin="15,0,0,0"/>
                                 </Border>
                             </ControlTemplate>
                         </Button.Template>
-                        <TextBlock Text="{Binding BirthDatePreview}" FontSize="18" Foreground="#222222"/>
+
+                        <TextBlock Text="{Binding PatientCode}" 
+                            FontSize="18" 
+                            Foreground="#222222"/>
+                    </Button>
+
+                    <Popup IsOpen="{Binding IsCodeKeypadOpen}" 
+                            PlacementTarget="{Binding ElementName=PatientCodeButton}" 
+                            Placement="Right" HorizontalOffset="20" StaysOpen="False" AllowsTransparency="True">
+                        <Border Background="White" CornerRadius="10" Padding="10" Width="400" Height="400" BorderBrush="Gray" BorderThickness="1">
+                            <local:Keypad DataContext="{Binding KeypadVm}" />
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="15" Opacity="0.2"/>
+                            </Border.Effect>
+                        </Border>
+                    </Popup>
+
+                    <TextBlock Text="DATE OF BIRTH" Style="{StaticResource InputLabelStyle}"/>
+                    <Button x:Name="BirthDateButton"
+                            Command="{Binding OpenKeypadCommand}"
+                            Height="60"
+                            Margin="0,0,0,25"
+                            Background="White"
+                            BorderBrush="#DDE2E8"
+                            BorderThickness="1.5">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="10">
+                                    <Grid Margin="15,0">
+                                        <!-- 실제 날짜 표시 -->
+                                        <TextBlock Text="{Binding BirthDatePreview}"
+                                            FontSize="18"
+                                            Foreground="#222222"
+                                            VerticalAlignment="Center"/>
+                                        <!--  Placeholder -->
+                                        <TextBlock Text="YYYY-MM-DD"
+                                            FontSize="18"
+                                            Foreground="#999999"
+                                            VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding BirthDatePreview}" Value="">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding BirthDatePreview}" Value="{x:Null}">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
                     </Button>
 
                     <Popup IsOpen="{Binding IsKeypadOpen}" PlacementTarget="{Binding ElementName=BirthDateButton}" 
                            Placement="Right" HorizontalOffset="20" 
                            VerticalOffset="0"
                            AllowsTransparency="True" 
-                           StaysOpen="True">
+                           StaysOpen="False">
 
                         <Border Background="White"
                                 BorderBrush="Gray"

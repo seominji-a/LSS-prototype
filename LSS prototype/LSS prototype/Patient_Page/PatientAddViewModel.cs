@@ -57,6 +57,9 @@ namespace LSS_prototype.Patient_Page
 
         public ICommand OpenKeypadCommand { get; }
 
+        public ICommand OpenPatientCodeKeypadCommand { get; }
+
+
         private readonly IDialogService _dialogService;
         public PatientAddViewModel(IDialogService dialogService)
         {
@@ -64,6 +67,7 @@ namespace LSS_prototype.Patient_Page
             SaveCommand = new RelayCommand(Save);
             CancelCommand = new RelayCommand(Cancel);
             OpenKeypadCommand = new RelayCommand(OpenKeypad);
+            OpenPatientCodeKeypadCommand = new RelayCommand(OpenPatientCodeKeypad);
         }
 
 
@@ -119,12 +123,24 @@ namespace LSS_prototype.Patient_Page
         {
             this.KeypadVm = new KeypadViewModel();
 
-            this.KeypadVm.CloseRequested += OnKeypadClosed;
+            // 기존 날짜가 있다면 키패드에 미리 채워넣기
+            if (this.BirthDate.HasValue)
+            {
+                string existingDate = this.BirthDate.Value.ToString("yyyyMMdd");
 
-            
+                // KeypadViewModel의 실제 속성인 InputText에 값을 대입
+                this.KeypadVm.InputText = existingDate;
+
+                // 메인 화면의 프리뷰도 업데이트
+                BirthDatePreview = FormatDatePreview(existingDate);
+            }
+
+            this.KeypadVm.CloseRequested += OnKeypadClosed;
             this.KeypadVm.InputChanged += OnKeypadInputChanged;
 
+            // 팝업 열기
             IsKeypadOpen = true;
+            IsCodeKeypadOpen = false;
         }
 
         private void OnKeypadInputChanged(string input)
@@ -172,5 +188,39 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
+        private bool _isCodeKeypadOpen;
+        public bool IsCodeKeypadOpen
+        {
+            get => _isCodeKeypadOpen;
+            set { _isCodeKeypadOpen = value; OnPropertyChanged(); }
+        }
+
+        private void OpenPatientCodeKeypad()
+        {
+            this.KeypadVm = new KeypadViewModel();
+
+            // --- 중요: 날짜 체크를 하지 않도록 설정 ---
+            this.KeypadVm.IsDateMode = false;
+            this.KeypadVm.MaxLength = 10; // 환자 코드가 8자리보다 길 수 있다면 조정 가능
+
+            if (this.PatientCode.HasValue)
+            {
+                this.KeypadVm.InputText = this.PatientCode.Value.ToString();
+            }
+
+            this.KeypadVm.InputChanged += (input) => {
+                if (int.TryParse(input, out int code))
+                {
+                    this.PatientCode = code;
+                    OnPropertyChanged(nameof(PatientCode));
+                }
+            };
+
+            this.KeypadVm.CloseRequested += (result) => {
+                IsCodeKeypadOpen = false; // 방법 A 사용 시
+            };
+
+            IsCodeKeypadOpen = true;
+        }
     }
 }

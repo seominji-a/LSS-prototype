@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Media3D;
 
 namespace LSS_prototype.Auth
 {
@@ -159,18 +160,39 @@ namespace LSS_prototype.Auth
             }
         }
 
-        // ══════════════════════════════════════════
-        // 비주얼 트리를 상위로 탐색하며 T 타입 찾기
-        // 예) FindAncestorOrSelf<Button>(클릭된요소)
-        // ══════════════════════════════════════════
         private static T FindAncestorOrSelf<T>(DependencyObject obj) where T : DependencyObject
         {
             while (obj != null)
             {
                 if (obj is T target)
                     return target;
-                obj = VisualTreeHelper.GetParent(obj);
+
+                obj = GetParentSmart(obj);
             }
+
+            return null;
+        }
+
+        private static DependencyObject GetParentSmart(DependencyObject child)
+        {
+            if (child == null)
+                return null;
+
+
+            if (child is Visual || child is Visual3D)
+            {
+                var parent = VisualTreeHelper.GetParent(child);
+                if (parent != null)
+                    return parent;
+            }
+
+          
+            if (child is FrameworkElement fe)
+                return fe.Parent;
+
+            if (child is FrameworkContentElement fce)
+                return fce.Parent;
+
             return null;
         }
 

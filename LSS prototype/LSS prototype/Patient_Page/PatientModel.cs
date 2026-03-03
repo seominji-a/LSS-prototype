@@ -17,5 +17,6 @@ namespace LSS_prototype.Patient_Page
         public string Sex { get; set; }
 
         public DateTime Reg_Date { get; set; }
+        public string AccessionNumber { get; set; }//★ 중요 EMR과 LOCAL 데이터를 나누는 기준 컬럼 
     }
 }

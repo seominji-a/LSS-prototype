@@ -76,6 +76,7 @@ namespace LSS_prototype.DB_CRUD
                                   System.Globalization.DateTimeStyles.None, out DateTime birth)
                                   ? birth : DateTime.MinValue,
                 Sex = ds.GetSingleValueOrDefault(DicomTag.PatientSex, ""),
+                AccessionNumber = ds.GetSingleValueOrDefault(DicomTag.AccessionNumber, ""), 
             };
         }
     

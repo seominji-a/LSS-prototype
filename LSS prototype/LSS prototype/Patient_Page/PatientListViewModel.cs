@@ -89,7 +89,7 @@ namespace LSS_prototype.Patient_Page
             get => _selectedPatient;
             set { _selectedPatient = value; OnPropertyChanged(); }
         }
-        public string PageTitle => _showAll ? "EMR Patient" : "Integrated Patient";
+        public string PageTitle => _showAll ? "Integrated Patient" : "EMR Patient";
 
         // 체크박스 바인딩용 - FALSE: EMR만 / TRUE: EMR + LOCAL
         private bool _showAll = false;
@@ -144,6 +144,7 @@ namespace LSS_prototype.Patient_Page
                 var repo = new DB_Manager();
                 List<PatientModel> data = repo.GetAllPatients();
                 _localPatients = data;
+                RefreshPatients(); 
             }
             catch (Exception ex)
             {
@@ -322,21 +323,31 @@ namespace LSS_prototype.Patient_Page
         {
             try
             {
-                var repo = new DB_Manager();
-                List<PatientModel> data = string.IsNullOrWhiteSpace(keyword)
-                    ? repo.GetAllPatients()
-                    : repo.SearchPatients(keyword);
-
                 Application.Current?.Dispatcher.Invoke(() =>
                 {
-                    // 현재 선택된 유저 ID 기억
                     int? selectedId = SelectedPatient?.PatientId;
 
-                    Patients.Clear();
-                    foreach (var Patient in data)
-                        Patients.Add(Patient);
+                    if (string.IsNullOrWhiteSpace(keyword))
+                    {
+                        // 검색어 없으면 원래 상태로 복원
+                        RefreshPatients();
+                    }
+                    else
+                    {
+                        // LIKE %keyword% 필터링
+                        var filtered = _showAll
+                            ? _emrPatients.Concat(_localPatients)  // 전체에서 검색
+                            : _emrPatients;                         // EMR만 검색
 
-                    // 같은 ID 가진 항목 다시 선택
+                        Patients = new ObservableCollection<PatientModel>(
+                            filtered.Where(p =>
+                                (p.PatientName ?? "").Contains(keyword) ||
+                                (p.PatientCode.ToString()).Contains(keyword) ||
+                                (p.AccessionNumber ?? "").Contains(keyword)
+                            ));
+                    }
+
+                    // 선택 항목 유지
                     if (selectedId.HasValue)
                         SelectedPatient = Patients.FirstOrDefault(u => u.PatientId == selectedId.Value);
                 });

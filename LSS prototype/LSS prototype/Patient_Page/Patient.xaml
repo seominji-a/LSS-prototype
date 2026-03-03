@@ -10,7 +10,7 @@
         mc:Ignorable="d">
 
     <UserControl.DataContext>
-        <local:PatientListViewModel/>
+        <local:PatientViewModel/>
     </UserControl.DataContext>
 
     <UserControl.Resources>

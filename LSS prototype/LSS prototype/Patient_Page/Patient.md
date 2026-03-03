@@ -30,7 +30,7 @@ LOCAL 환자
 
 앱 시작 시
 
-PatientListViewModel 생성자 실행
+PatientViewModel 생성자 실행
 
 ① LoadPatients()
 → SQLite에서 당일 접수 환자 조회

@@ -25,7 +25,7 @@ namespace LSS_prototype.Patient_Page
         public Patient()
         {
             InitializeComponent();
-            Unloaded += (s, e) => (DataContext as PatientListViewModel)?.Dispose(); // 사용자 입력 감지 타이머 종료 ( 자원 관리 차 ) 
+            Unloaded += (s, e) => (DataContext as PatientViewModel)?.Dispose(); // 사용자 입력 감지 타이머 종료 ( 자원 관리 차 ) 
             txtSearch.TextChanged += OnSearchTextChanged;
         }
 
@@ -53,7 +53,7 @@ namespace LSS_prototype.Patient_Page
             if (current == _lastSearchText) return;
 
             _lastSearchText = current;
-            if (DataContext is PatientListViewModel vm)
+            if (DataContext is PatientViewModel vm)
                 vm.OnSearchTextChanged(current);
         }
 
@@ -64,7 +64,7 @@ namespace LSS_prototype.Patient_Page
         /// <param name="e"></param>
         private void SelectedPatientBorder_Click(object sender, MouseButtonEventArgs e)
         {
-            var vm = DataContext as PatientListViewModel;
+            var vm = DataContext as PatientViewModel;
             if (vm?.SelectedPatient == null) return;
             PatientListBox.ScrollIntoView(vm.SelectedPatient);
         }

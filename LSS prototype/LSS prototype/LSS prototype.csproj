@@ -260,7 +260,6 @@
     <Compile Update="Patient_Page\PatientEditViewModel.cs">
       <DependentUpon>PatientEditDialog.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Patient_Page\PatientListViewModel.cs" />
     <Compile Update="Patient_Page\PatientListViewModel.cs">
       <DependentUpon>Patient.xaml</DependentUpon>
     </Compile>
@@ -268,6 +267,9 @@
     <Compile Update="Patient_Page\PatientModel.cs">
       <DependentUpon>Patient.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Patient_Page\PatientViewModel.cs">
+	  <DependentUpon>Patient.xaml</DependentUpon>
+	</Compile>
     <Compile Include="Scan_Page\Scan.xaml.cs">
       <DependentUpon>Scan.xaml</DependentUpon>
     </Compile>

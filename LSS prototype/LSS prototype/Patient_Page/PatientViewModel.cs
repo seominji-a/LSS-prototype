@@ -20,7 +20,7 @@ namespace LSS_prototype.Patient_Page
     /// 환자 목록 관리 및 CRUD(생성, 조회, 수정, 삭제) 기능 수행을 위한 로직
     /// 2026-02-09 서민지
     /// </summary>
-    internal class PatientListViewModel : INotifyPropertyChanged
+    internal class PatientViewModel : INotifyPropertyChanged
     {
         private readonly SearchDebouncer _searchDebouncer;
         private readonly IDialogService _dialogService;
@@ -115,7 +115,7 @@ namespace LSS_prototype.Patient_Page
         public ICommand NavImageReviewCommand { get; }
         public ICommand NavVideoReviewCommand { get; }
 
-        public PatientListViewModel()
+        public PatientViewModel()
         {
             _dialogService = new Dialog();
 
@@ -144,7 +144,7 @@ namespace LSS_prototype.Patient_Page
                 var repo = new DB_Manager();
                 List<PatientModel> data = repo.GetAllPatients();
                 _localPatients = data;
-                RefreshPatients(); 
+                RefreshPatients();
             }
             catch (Exception ex)
             {
@@ -249,7 +249,7 @@ namespace LSS_prototype.Patient_Page
 
                 if (CustomMessageWindow.Show(
                         $"{SelectedPatient.PatientName} 환자 정보를 삭제하시겠습니까?",
-                        CustomMessageWindow.MessageBoxType.YesNo,0,CustomMessageWindow.MessageIconType.Danger
+                        CustomMessageWindow.MessageBoxType.YesNo, 0, CustomMessageWindow.MessageIconType.Danger
                     ) == CustomMessageWindow.MessageBoxResult.Yes)
                 {
                     var repo = new DB_Manager();
@@ -263,7 +263,7 @@ namespace LSS_prototype.Patient_Page
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Common.WriteLog(ex);
             }

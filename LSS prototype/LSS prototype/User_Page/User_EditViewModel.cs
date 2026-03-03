@@ -50,7 +50,7 @@ namespace LSS_prototype.User_Page
                 return;
             }
 
-            /*// 3. 유효성 검사 ( 테스트 기간동안 잠시 주석 ) 
+            // 3. 유효성 검사 ( 테스트 기간동안 잠시 주석 ) 
             string error = DB_Manager.ValidatePassword(newPassword);
             if (error != null)
             {
@@ -58,7 +58,7 @@ namespace LSS_prototype.User_Page
                     CustomMessageWindow.MessageBoxType.AutoClose, 2,
                     CustomMessageWindow.MessageIconType.Warning);
                 return;
-            }*/
+            }
 
             // 4. DB 업데이트
             try

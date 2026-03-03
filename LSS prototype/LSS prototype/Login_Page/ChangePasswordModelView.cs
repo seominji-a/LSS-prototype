@@ -8,21 +8,49 @@ namespace LSS_prototype.Login_Page
 {
     public class ChangePasswordModelView : INotifyPropertyChanged
     {
-        private readonly string _loginId;
-        public string LoginId => _loginId;
+        private string _loginId;
+        private readonly string _firstId;  // 최초 로그인 ID 보관 (변경 불가)
+
+        public string LoginId
+        {
+            get => _loginId;
+            set { _loginId = value; OnPropertyChanged(); }
+        }
 
         public Action<bool> CloseAction { get; set; }
 
         public ChangePasswordModelView(string loginId)
         {
-            _loginId = loginId;
+            _firstId = loginId;  // 원본 저장
+            _loginId = loginId;  // 화면 바인딩 초기값
         }
 
         public async Task SaveAsync(string newPw, string confirmPw, string id)
         {
+
+            // 1. ID 입력 검증
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                await CustomMessageWindow.ShowAsync(
+                    "ID를 입력해주세요.",
+                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    CustomMessageWindow.MessageIconType.Warning);
+                return;
+            }
+
+            if (id == _firstId)
+            {
+                await CustomMessageWindow.ShowAsync(
+                    "기존 ID와 동일한 ID로는 변경할 수 없습니다.",
+                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    CustomMessageWindow.MessageIconType.Warning);
+                return;
+            }
+
+
             //0225 기준 검증함수 구현완료 테스트 편의상 잠시 주석 처리 추후 정식 테스트 시 주석 풀어서 진행
             // 작성자 박한용
-            /*string error = DB_Manager.ValidatePassword(newPw);
+            string error = DB_Manager.ValidatePassword(newPw);
             if (error != null)
             {
                 await CustomMessageWindow.ShowAsync(
@@ -31,7 +59,7 @@ namespace LSS_prototype.Login_Page
                     2,
                     CustomMessageWindow.MessageIconType.Warning);
                 return;
-            }*/
+            }
 
             if (newPw != confirmPw)
             {
@@ -44,7 +72,7 @@ namespace LSS_prototype.Login_Page
             }
 
             var db = new DB_Manager();
-            bool success_flag = db.UpdatePassword(id,newPw);
+            bool success_flag = db.UpdateCredential(_firstId, id, newPw);
 
             if (!success_flag)
             {

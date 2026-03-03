@@ -193,6 +193,7 @@
                 <!-- ROLE -->
                 <TextBlock Text="ROLE"
                             FontSize="18"
+                           Foreground="{StaticResource TextMuted}"
                             FontWeight="SemiBold"
                             Margin="0,24,0,10"/>
 

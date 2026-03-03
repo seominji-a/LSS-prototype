@@ -272,23 +272,16 @@ namespace LSS_prototype.Patient_Page
         {
             try
             {
-                var pacsSet = new DB_Manager().GetPacsSet();
+                var db = new DB_Manager();
+                var pacsSet = db.GetPacsSet();
 
                 LoadingWindow.Begin("MWL 조회 중...");
-                var worklistItems = await GetWorklistPatientsAsync(
+                var worklistItems = await db.GetWorklistPatientsAsync(
                     pacsSet.MwlMyAET, pacsSet.MwlIP, pacsSet.MwlPort, pacsSet.MwlAET);
                 await Task.Delay(2000);
 
                 // TODO: LS / LSS 간 표시 데이터 차이 확인 후 바인딩 필드 정리 필요 0227 박한용
-                _emrPatients = worklistItems.Select(w => new PatientModel
-                {
-                    PatientId = w.PatientId,
-                    PatientCode = w.PatientId,
-                    PatientName = w.PatientName,
-                    BirthDate = w.BirthDate,
-                    Sex = w.Sex,
-                    Reg_Date = DateTime.Now
-                }).ToList();
+                _emrPatients = worklistItems;
 
                 RefreshPatients();
             }
@@ -314,78 +307,6 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
-
-         /// <summary>
-         /// DICOM C-FIND 요청으로 MWL(Modality Worklist) 환자 목록을 조회합니다.
-         /// </summary>
-         /// <param name="sourceAET">로컬 AE Title</param>
-         /// <param name="targetIP">MWL 서버 IP</param>
-         /// <param name="targetPort">MWL 서버 Port</param>
-         /// <param name="targetAET">MWL 서버 AE Title</param>
-         private async Task<List<PatientModel>> GetWorklistPatientsAsync( string sourceAET, string targetIP, int targetPort, string targetAET)
-        {
-            var result = new List<PatientModel>();
-
-         var request = BuildWorklistRequest();
-         request.OnResponseReceived += (_, res) =>
-         {
-             if (res.Status == DicomStatus.Pending && res.Dataset != null)
-                 result.Add(ParsePatientModel(res.Dataset));
-         };
-
-         var client = DicomClientFactory.Create(targetIP, targetPort, false, sourceAET, targetAET);
-         client.NegotiateAsyncOps();
-         await client.AddRequestAsync(request);
-
-         // 5초 내 응답 없으면 TimeoutException
-         var sendTask = client.SendAsync();
-         if (await Task.WhenAny(sendTask, Task.Delay(5000)) == sendTask)
-             await sendTask; // 전송 중 발생한 예외 전파
-         else
-             throw new TimeoutException("DICOM 서버가 응답하지 않습니다.");
-
-         return result;
-         }
-
-         /// <summary>
-         /// 전체 환자 대상 MWL C-FIND 요청 Dataset을 생성합니다.
-         /// </summary>
-         private static DicomCFindRequest BuildWorklistRequest()
-        {
-            return new DicomCFindRequest(DicomQueryRetrieveLevel.NotApplicable)
-            {
-                Dataset = new DicomDataset
-                {
-                    { DicomTag.PatientName,                    "*" },
-                    { DicomTag.PatientID,                      "*" },
-                    { DicomTag.StudyInstanceUID,               ""  },
-                    { DicomTag.StudyDate,                      ""  },
-                    { DicomTag.PatientBirthDate,               ""  },
-                    { DicomTag.PatientSex,                     ""  },
-                    { DicomTag.AccessionNumber,                ""  },
-                    { DicomTag.RequestedProcedureDescription,  ""  },
-                }
-            };
-        }
-
-         /// <summary>
-         /// C-FIND 응답 Dataset을 PatientModel로 변환합니다.
-         /// </summary>
-         private static PatientModel ParsePatientModel(DicomDataset ds)
-        {
-            string rawId = ds.GetSingleValueOrDefault(DicomTag.PatientID, "");
-            string rawBirth = ds.GetSingleValueOrDefault(DicomTag.PatientBirthDate, "");
-
-            return new PatientModel
-            {
-                PatientCode = int.TryParse(rawId, out int code) ? code : 0,
-                PatientName = ds.GetSingleValueOrDefault(DicomTag.PatientName, "").Replace("^", " "),
-                BirthDate = DateTime.TryParseExact(rawBirth, "yyyyMMdd", null,
-                                  System.Globalization.DateTimeStyles.None, out DateTime birth)
-                                  ? birth : DateTime.MinValue,
-                Sex = ds.GetSingleValueOrDefault(DicomTag.PatientSex, ""),
-            };
-         }
 
         public void Dispose()
         {

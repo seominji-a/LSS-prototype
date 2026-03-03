@@ -212,6 +212,7 @@
     </Compile>
     <Compile Include="Common_Module\RelayCommand.cs" />
     <Compile Include="DB_CRUD\DB_Manager.cs" />
+    <Compile Include="DB_CRUD\DB_Manager.Dicom.cs" />
     <Compile Include="DB_CRUD\DB_Manager.Patient.cs" />
     <Compile Include="DB_CRUD\DB_Manager.Set.cs" />
     <Compile Include="DB_CRUD\DB_Manager.User.cs" />

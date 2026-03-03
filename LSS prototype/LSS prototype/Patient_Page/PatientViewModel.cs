@@ -225,6 +225,15 @@ namespace LSS_prototype.Patient_Page
                         CustomMessageWindow.MessageIconType.Info);
                 return;
             }
+
+
+            if(!string.IsNullOrWhiteSpace(SelectedPatient.AccessionNumber))
+            {
+                CustomMessageWindow.Show("EMR 데이터는 수정이 \n 불가능합니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageIconType.Warning);
+                return;
+            }
             var vm = new PatientEditViewModel(_dialogService, SelectedPatient);
 
             var result = _dialogService.ShowDialog(vm);
@@ -244,6 +253,14 @@ namespace LSS_prototype.Patient_Page
                     CustomMessageWindow.Show("삭제할 환자를 선택해주세요.",
                             CustomMessageWindow.MessageBoxType.AutoClose, 1,
                             CustomMessageWindow.MessageIconType.Info);
+                    return;
+                }
+
+                if (!string.IsNullOrWhiteSpace(SelectedPatient.AccessionNumber))
+                {
+                    CustomMessageWindow.Show("EMR 데이터는 삭제가 \n 불가능합니다.",
+                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
@@ -279,7 +296,7 @@ namespace LSS_prototype.Patient_Page
                 LoadingWindow.Begin("MWL 조회 중...");
                 var worklistItems = await db.GetWorklistPatientsAsync(
                     pacsSet.MwlMyAET, pacsSet.MwlIP, pacsSet.MwlPort, pacsSet.MwlAET);
-                await Task.Delay(2000);
+                await Task.Delay(500); // 로딩바 테스트 차 0.5 delay 추후 배포 시 해당코드 삭제
 
                 // TODO: LS / LSS 간 표시 데이터 차이 확인 후 바인딩 필드 정리 필요 0227 박한용
                 _emrPatients = worklistItems;

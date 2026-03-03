@@ -90,18 +90,17 @@
                         </Border>
                     </Popup>
 
-                    <TextBlock Text="SEX" Style="{StaticResource InputLabelStyle}"/>
-                    <ComboBox SelectedValue="{Binding Sex, UpdateSourceTrigger=PropertyChanged}" 
-                              SelectedValuePath="Content"
-                              Height="55" FontSize="18" VerticalContentAlignment="Center" Padding="15,0" Margin="0,0,0,10">
-                        <ComboBox.Resources>
-                            <Style TargetType="Border">
-                                <Setter Property="CornerRadius" Value="10"/>
-                            </Style>
-                        </ComboBox.Resources>
-                        <ComboBoxItem Content="M"/>
-                        <ComboBoxItem Content="F"/>
-                    </ComboBox>
+                    <TextBlock Text="SEX"/>
+
+                    <Border Style="{StaticResource InputBoxBorderStyle}">
+                        <ComboBox Style="{StaticResource InputComboBoxStyle}"
+                        ItemContainerStyle="{StaticResource InputComboBoxItemStyle}"
+                        SelectedValue="{Binding Sex}"
+                        SelectedValuePath="Content">
+                            <ComboBoxItem Content="M"/>
+                            <ComboBoxItem Content="F"/>
+                        </ComboBox>
+                    </Border>
                 </StackPanel>
             </ScrollViewer>
             <Grid Grid.Row="2" Margin="0,20,0,0">

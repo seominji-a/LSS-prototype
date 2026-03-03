@@ -72,6 +72,7 @@ namespace LSS_prototype.Patient_Page
             PatientCode = selected.PatientCode;
             PatientName = selected.PatientName;
             BirthDate = selected.BirthDate;
+            BirthDatePreview = BirthDate?.ToString("yyyy-MM-dd");  
             Sex = selected.Sex;
 
             EditCommand = new RelayCommand(UpdatePatient);

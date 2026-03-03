@@ -43,6 +43,8 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        
+        
 
         <Style x:Key="NavBtnActive" TargetType="Button" BasedOn="{StaticResource NavBtn}">
             <Setter Property="Background" Value="{StaticResource PrimaryFade}"/>
@@ -85,8 +87,7 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="Outer" Property="BorderBrush" Value="{StaticResource Primary}"/>
-                                <Setter TargetName="Inner" Property="Background"  Value="#111827"/>
-                                <Setter TargetName="Inner" Property="BorderBrush" Value="#111827"/>
+                                <Setter TargetName="Inner" Property="Background" Value="#CC111827"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -117,8 +118,19 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="440"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Integrated Patient" FontSize="54" FontWeight="Bold"
-                               Foreground="{StaticResource Primary}" VerticalAlignment="Center"/>
+                    <TextBlock FontSize="54" FontWeight="Bold" 
+                    Foreground="{StaticResource Primary}" VerticalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="{Binding PageTitle}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding PageTitle}" Value="{x:Null}">
+                                        <Setter Property="Text" Value="Integrated Patient"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
 
                     <Border Grid.Column="1" Background="{StaticResource Surface}"
                             BorderBrush="{StaticResource Border}" BorderThickness="1.5"
@@ -162,8 +174,7 @@
                     <StackPanel Orientation="Horizontal" Margin="930,0,0,0" VerticalAlignment="Center">
                         <CheckBox x:Name="AllPatientCheckBox" 
                             VerticalAlignment="Center"
-                            Click="CheckBox_Click" 
-                            IsChecked="False">
+                            IsChecked="{Binding ShowAll, Mode=TwoWay}" >
                             <CheckBox.LayoutTransform>
                                 <ScaleTransform ScaleX="2" ScaleY="2.5"/>
                             </CheckBox.LayoutTransform>
@@ -234,7 +245,8 @@
                 </StackPanel>
 
                 <Border Background="#132E43" BorderBrush="#244A66" BorderThickness="1"
-                        CornerRadius="12" Padding="14,12" Margin="0,0,0,20">
+                        CornerRadius="12" Padding="14,12" Margin="0,0,0,20" Cursor="Hand"
+                        MouseLeftButtonUp="SelectedPatientBorder_Click">
                     <StackPanel>
                         <TextBlock Text="Selected Patient" Foreground="#BBD0E1" FontSize="13" Margin="0,0,0,6"/>
                         <TextBlock Text="{Binding SelectedPatient.PatientName}" Foreground="White"

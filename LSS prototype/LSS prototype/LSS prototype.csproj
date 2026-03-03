@@ -437,6 +437,7 @@
     </None>
     <None Include="LSS prototype_TemporaryKey.pfx" />
     <None Include="packages.config" />
+    <None Include="Patient_Page\Patient.md" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

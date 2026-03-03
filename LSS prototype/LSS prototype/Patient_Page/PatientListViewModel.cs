@@ -62,17 +62,21 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
-
-       
-
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
-        // ===== Patients (단일 리스트) =====
+
+        // Patients (EMR + LOCAL 담는 리스트)
         private ObservableCollection<PatientModel> _patients;
+
+        // EMR(DICOM)에서 받아온 예약 환자 목록
+        private List<PatientModel> _emrPatients = new List<PatientModel>();
+
+        // SQLite에서 받아온 당일 접수 환자 목록
+        private List<PatientModel> _localPatients = new List<PatientModel>();
         public ObservableCollection<PatientModel> Patients
         {
             get => _patients;
@@ -84,6 +88,22 @@ namespace LSS_prototype.Patient_Page
         {
             get => _selectedPatient;
             set { _selectedPatient = value; OnPropertyChanged(); }
+        }
+        public string PageTitle => _showAll ? "EMR Patient" : "Integrated Patient";
+
+        // 체크박스 바인딩용 - FALSE: EMR만 / TRUE: EMR + LOCAL
+        private bool _showAll = false;
+        public bool ShowAll
+        {
+            get => _showAll;
+            set
+            {
+                if (_showAll == value) return;
+                _showAll = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(PageTitle)); // 페이지이름 변경 함수호출 
+                RefreshPatients(); // 토글될 때마다 화면 즉시 갱신
+            }
         }
 
         // ===== Commands =====
@@ -110,25 +130,38 @@ namespace LSS_prototype.Patient_Page
             //NavVideoReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new VideoReview_Page.VideoReview()));
             _searchDebouncer = new SearchDebouncer(ExecuteSearch, delayMs: 500);
             LoadPatients();
+            _ = EmrSync(); // task 무시하기위해 _ = 사용 (별의미 X )
 
         }
 
         /// <summary>
-        /// DB에서 전체 환자 목록을 불러와 최신순(내림차순)으로 UI에 반영
+        /// DB에서 로컬등록된  환자 목록을 불러와 최신순(내림차순)으로 UI에 반영
         /// </summary>
         public void LoadPatients()
         {
             try
             {
                 var repo = new DB_Manager();
-                List<PatientModel> data = repo.GetAllPatients(); // 최신순으로 보장하는 쿼리문 수정해야함 ( 2월19일 기준 ) 
-
-                Patients = new ObservableCollection<PatientModel>(data);
+                List<PatientModel> data = repo.GetAllPatients();
+                _localPatients = data;
             }
             catch (Exception ex)
             {
                 Common.WriteLog(ex);
             }
+        }
+
+        /// <summary>
+        /// ShowAll 상태에 따라 표시할 환자 목록을 갱신
+        /// FALSE → EMR만 / TRUE → EMR + LOCAL 합쳐서 표시
+        /// </summary>
+        private void RefreshPatients()
+        {
+            var combined = _showAll
+                ? _emrPatients.Concat(_localPatients)
+                : _emrPatients;
+
+            Patients = new ObservableCollection<PatientModel>(combined);
         }
 
         private void AddPatient()
@@ -191,8 +224,6 @@ namespace LSS_prototype.Patient_Page
                         CustomMessageWindow.MessageIconType.Info);
                 return;
             }
-
-            // ✅ 생성자에 _dialogService를 첫 번째 인자로 추가하여 전달합니다.
             var vm = new PatientEditViewModel(_dialogService, SelectedPatient);
 
             var result = _dialogService.ShowDialog(vm);
@@ -249,16 +280,17 @@ namespace LSS_prototype.Patient_Page
                 await Task.Delay(2000);
 
                 // TODO: LS / LSS 간 표시 데이터 차이 확인 후 바인딩 필드 정리 필요 0227 박한용
-                Patients = new ObservableCollection<PatientModel>(
-                    worklistItems.Select(w => new PatientModel
-                    {
-                        PatientId = w.PatientId,
-                        PatientCode = w.PatientId,
-                        PatientName = w.PatientName,
-                        BirthDate = w.BirthDate,
-                        Sex = w.Sex,
-                        Reg_Date = DateTime.Now
-                    }));
+                _emrPatients = worklistItems.Select(w => new PatientModel
+                {
+                    PatientId = w.PatientId,
+                    PatientCode = w.PatientId,
+                    PatientName = w.PatientName,
+                    BirthDate = w.BirthDate,
+                    Sex = w.Sex,
+                    Reg_Date = DateTime.Now
+                }).ToList();
+
+                RefreshPatients();
             }
             catch (TimeoutException ex)
             {

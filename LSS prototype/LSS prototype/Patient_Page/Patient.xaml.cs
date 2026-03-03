@@ -56,5 +56,17 @@ namespace LSS_prototype.Patient_Page
             if (DataContext is PatientListViewModel vm)
                 vm.OnSearchTextChanged(current);
         }
+
+        /// <summary>
+        /// 우측 selectbox 클릭 시, 선택된 카드의 위치로 스크롤이 자동으로 이동 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void SelectedPatientBorder_Click(object sender, MouseButtonEventArgs e)
+        {
+            var vm = DataContext as PatientListViewModel;
+            if (vm?.SelectedPatient == null) return;
+            PatientListBox.ScrollIntoView(vm.SelectedPatient);
+        }
     }
 }

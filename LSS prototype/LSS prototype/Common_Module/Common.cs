@@ -75,10 +75,12 @@ namespace LSS_prototype
                     string.IsNullOrWhiteSpace(masterKey))
                 {
                     CustomMessageWindow.Show(
-                       "MASTER_ID 또는 MASTER_KEY 환경변수가 설정되지 않았습니다.",
+                       "MASTER_ID 또는 MASTER_KEY 환경변수가 설정되지 않았습니다.\n 설정 후 재시작 해주세요",
                        CustomMessageWindow.MessageBoxType.Ok,
                        0,
                        CustomMessageWindow.MessageIconType.Warning);
+
+                    Application.Current.Shutdown(); //환경변수가 없다면 무조건 프로그램 종료 시켜야함 -> 최고계정이 활성화되지 않기 때문
                     return false;
                 }
 

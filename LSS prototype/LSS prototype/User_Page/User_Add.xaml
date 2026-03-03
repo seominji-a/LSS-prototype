@@ -192,20 +192,23 @@
 
                 <!-- ROLE -->
                 <TextBlock Text="ROLE"
-                           FontSize="18" FontWeight="SemiBold" FontFamily="Arial"
-                           Foreground="{StaticResource TextMuted}"
-                           Margin="0,24,0,10"/>
-                <ComboBox SelectedValue="{Binding Role, UpdateSourceTrigger=PropertyChanged}"
-                          SelectedValuePath="Content"
-                          FontSize="22" FontFamily="Arial"
-                          Height="64" Padding="10,0">
-                    <ComboBoxItem Content="Physician"/>
-                    <ComboBoxItem Content="Therapist"/>
-                    <ComboBoxItem Content="Nurse"/>
-                    <ComboBoxItem Content="Technician"/>
-                    <ComboBoxItem Content="Researcher"/>
-                    <ComboBoxItem Content="Other"/>
-                </ComboBox>
+                            FontSize="18"
+                            FontWeight="SemiBold"
+                            Margin="0,24,0,10"/>
+
+                <Border Style="{StaticResource InputBoxBorderStyle}">
+                    <ComboBox Style="{StaticResource InputComboBoxStyle}"
+                            ItemContainerStyle="{StaticResource InputComboBoxItemStyle}"
+                            SelectedValue="{Binding Role, UpdateSourceTrigger=PropertyChanged}"
+                            SelectedValuePath="Content">
+                        <ComboBoxItem Content="Physician"/>
+                        <ComboBoxItem Content="Therapist"/>
+                        <ComboBoxItem Content="Nurse"/>
+                        <ComboBoxItem Content="Technician"/>
+                        <ComboBoxItem Content="Researcher"/>
+                        <ComboBoxItem Content="Other"/>
+                    </ComboBox>
+                </Border>
 
             </StackPanel>
 

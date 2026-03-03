@@ -1,69 +1,111 @@
 ﻿<UserControl x:Class="LSS_prototype.Patient_Page.Keypad"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:LSS_prototype.Patient_Page"
-        mc:Ignorable="d"
-        d:DesignHeight="500" d:DesignWidth="550" Background="#FFBBB3B3">
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="500"
+             d:DesignWidth="550"
+             Background="#F3F5F7">
 
-        <Grid Margin="20">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="10"/>
-                <RowDefinition/>
-            </Grid.RowDefinitions>
+    <UserControl.Resources>
 
-            <UniformGrid Grid.Row="1" Rows="4" Columns="3" Margin="0,20,0,0">
+        <!-- 공통 색상 -->
+        <SolidColorBrush x:Key="Primary" Color="#173753"/>
+        <SolidColorBrush x:Key="Border" Color="#D6DEE8"/>
+        <SolidColorBrush x:Key="TextDark" Color="#1E293B"/>
 
-            <Button Content="7" 
-        Command="{Binding DataContext.NumberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-        CommandParameter="7" 
-        FontSize="22"/>
-            <Button Content="8" 
-        Command="{Binding DataContext.NumberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-        CommandParameter="8" 
-        FontSize="22"/>
-            <Button Content="9" 
-        Command="{Binding DataContext.NumberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-        CommandParameter="9" 
-        FontSize="22"/>
+        <!-- 기본 버튼 스타일 -->
+        <Style x:Key="KeyButtonStyle" TargetType="Button">
+            <Setter Property="FontSize" Value="32"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontFamily" Value="Arial"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="{StaticResource TextDark}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Border}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
 
-            <Button Content="4" 
-        Command="{Binding DataContext.NumberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-        CommandParameter="4" 
-        FontSize="22"/>
-            <Button Content="5" 
-        Command="{Binding DataContext.NumberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-        CommandParameter="5" 
-        FontSize="22"/>
-            <Button Content="6" 
-        Command="{Binding DataContext.NumberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-        CommandParameter="6" 
-        FontSize="22"/>
+        <!-- ENTER 버튼만 강조 -->
+        <Style x:Key="EnterButtonStyle" TargetType="Button" BasedOn="{StaticResource KeyButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource Primary}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Primary}"/>
+        </Style>
 
-            <Button Content="1" 
-        Command="{Binding DataContext.NumberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-        CommandParameter="1" 
-        FontSize="22"/>
-            <Button Content="2" 
-        Command="{Binding DataContext.NumberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-        CommandParameter="2" 
-        FontSize="22"/>
-            <Button Content="3" 
-        Command="{Binding DataContext.NumberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-        CommandParameter="3" 
-        FontSize="22"/>
+    </UserControl.Resources>
 
-            <Button Content="←" 
-        Command="{Binding DataContext.BackspaceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-        FontSize="22"/>
-            <Button Content="0" 
-        Command="{Binding DataContext.NumberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-        CommandParameter="0" 
-        FontSize="22"/>
-            <Button Content="ENTER" 
-        Command="{Binding DataContext.ConfirmCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-        FontSize="22"/>
+    <!-- 🔥 단 하나의 Grid -->
+    <Grid>
+
+        <!-- 🔥 꽉 채우기 -->
+        <UniformGrid Rows="4" Columns="3"
+                     HorizontalAlignment="Stretch"
+                     VerticalAlignment="Stretch">
+
+            <Button Content="7"
+                    Style="{StaticResource KeyButtonStyle}"
+                    Command="{Binding DataContext.NumberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    CommandParameter="7"/>
+
+            <Button Content="8"
+                    Style="{StaticResource KeyButtonStyle}"
+                    Command="{Binding DataContext.NumberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    CommandParameter="8"/>
+
+            <Button Content="9"
+                    Style="{StaticResource KeyButtonStyle}"
+                    Command="{Binding DataContext.NumberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    CommandParameter="9"/>
+
+            <Button Content="4"
+                    Style="{StaticResource KeyButtonStyle}"
+                    Command="{Binding DataContext.NumberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    CommandParameter="4"/>
+
+            <Button Content="5"
+                    Style="{StaticResource KeyButtonStyle}"
+                    Command="{Binding DataContext.NumberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    CommandParameter="5"/>
+
+            <Button Content="6"
+                    Style="{StaticResource KeyButtonStyle}"
+                    Command="{Binding DataContext.NumberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    CommandParameter="6"/>
+
+            <Button Content="1"
+                    Style="{StaticResource KeyButtonStyle}"
+                    Command="{Binding DataContext.NumberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    CommandParameter="1"/>
+
+            <Button Content="2"
+                    Style="{StaticResource KeyButtonStyle}"
+                    Command="{Binding DataContext.NumberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    CommandParameter="2"/>
+
+            <Button Content="3"
+                    Style="{StaticResource KeyButtonStyle}"
+                    Command="{Binding DataContext.NumberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    CommandParameter="3"/>
+
+            <Button Content="←"
+                    Style="{StaticResource KeyButtonStyle}"
+                    Command="{Binding DataContext.BackspaceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+
+            <Button Content="0"
+                    Style="{StaticResource KeyButtonStyle}"
+                    Command="{Binding DataContext.NumberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    CommandParameter="0"/>
+
+            <Button Content="ENTER"
+                    Style="{StaticResource EnterButtonStyle}"
+                    Command="{Binding DataContext.ConfirmCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+
         </UniformGrid>
-        </Grid>
+
+    </Grid>
 </UserControl>

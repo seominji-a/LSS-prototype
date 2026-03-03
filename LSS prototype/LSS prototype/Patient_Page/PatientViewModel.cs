@@ -8,7 +8,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
-
 using FellowOakDicom;
 using FellowOakDicom.Network;
 using FellowOakDicom.Network.Client;
@@ -21,7 +20,7 @@ namespace LSS_prototype.Patient_Page
     /// 환자 목록 관리 및 CRUD(생성, 조회, 수정, 삭제) 기능 수행을 위한 로직
     /// 2026-02-09 서민지
     /// </summary>
-    internal class PatientListViewModel : INotifyPropertyChanged
+    internal class PatientViewModel : INotifyPropertyChanged
     {
         private readonly SearchDebouncer _searchDebouncer;
         private readonly IDialogService _dialogService;
@@ -63,17 +62,21 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
-
-       
-
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
-        // ===== Patients (단일 리스트) =====
+
+        // Patients (EMR + LOCAL 담는 리스트)
         private ObservableCollection<PatientModel> _patients;
+
+        // EMR(DICOM)에서 받아온 예약 환자 목록
+        private List<PatientModel> _emrPatients = new List<PatientModel>();
+
+        // SQLite에서 받아온 당일 접수 환자 목록
+        private List<PatientModel> _localPatients = new List<PatientModel>();
         public ObservableCollection<PatientModel> Patients
         {
             get => _patients;
@@ -86,6 +89,22 @@ namespace LSS_prototype.Patient_Page
             get => _selectedPatient;
             set { _selectedPatient = value; OnPropertyChanged(); }
         }
+        public string PageTitle => _showAll ? "Integrated Patient" : "EMR Patient";
+
+        // 체크박스 바인딩용 - FALSE: EMR만 / TRUE: EMR + LOCAL
+        private bool _showAll = false;
+        public bool ShowAll
+        {
+            get => _showAll;
+            set
+            {
+                if (_showAll == value) return;
+                _showAll = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(PageTitle)); // 페이지이름 변경 함수호출 
+                RefreshPatients(); // 토글될 때마다 화면 즉시 갱신
+            }
+        }
 
         // ===== Commands =====
         public ICommand PatientAddCommand { get; }
@@ -96,7 +115,7 @@ namespace LSS_prototype.Patient_Page
         public ICommand NavImageReviewCommand { get; }
         public ICommand NavVideoReviewCommand { get; }
 
-        public PatientListViewModel()
+        public PatientViewModel()
         {
             _dialogService = new Dialog();
 
@@ -111,25 +130,39 @@ namespace LSS_prototype.Patient_Page
             //NavVideoReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new VideoReview_Page.VideoReview()));
             _searchDebouncer = new SearchDebouncer(ExecuteSearch, delayMs: 500);
             LoadPatients();
+            _ = EmrSync(); // task 무시하기위해 _ = 사용 (별의미 X )
 
         }
 
         /// <summary>
-        /// DB에서 전체 환자 목록을 불러와 최신순(내림차순)으로 UI에 반영
+        /// DB에서 로컬등록된  환자 목록을 불러와 최신순(내림차순)으로 UI에 반영
         /// </summary>
         public void LoadPatients()
         {
             try
             {
                 var repo = new DB_Manager();
-                List<PatientModel> data = repo.GetAllPatients(); // 최신순으로 보장하는 쿼리문 수정해야함 ( 2월19일 기준 ) 
-
-                Patients = new ObservableCollection<PatientModel>(data);
+                List<PatientModel> data = repo.GetAllPatients();
+                _localPatients = data;
+                RefreshPatients();
             }
             catch (Exception ex)
             {
                 Common.WriteLog(ex);
             }
+        }
+
+        /// <summary>
+        /// ShowAll 상태에 따라 표시할 환자 목록을 갱신
+        /// FALSE → EMR만 / TRUE → EMR + LOCAL 합쳐서 표시
+        /// </summary>
+        private void RefreshPatients()
+        {
+            var combined = _showAll
+                ? _emrPatients.Concat(_localPatients)
+                : _emrPatients;
+
+            Patients = new ObservableCollection<PatientModel>(combined);
         }
 
         private void AddPatient()
@@ -193,7 +226,14 @@ namespace LSS_prototype.Patient_Page
                 return;
             }
 
-            // ✅ 생성자에 _dialogService를 첫 번째 인자로 추가하여 전달합니다.
+
+            if(!string.IsNullOrWhiteSpace(SelectedPatient.AccessionNumber))
+            {
+                CustomMessageWindow.Show("EMR 데이터는 수정이 \n 불가능합니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageIconType.Warning);
+                return;
+            }
             var vm = new PatientEditViewModel(_dialogService, SelectedPatient);
 
             var result = _dialogService.ShowDialog(vm);
@@ -216,9 +256,17 @@ namespace LSS_prototype.Patient_Page
                     return;
                 }
 
+                if (!string.IsNullOrWhiteSpace(SelectedPatient.AccessionNumber))
+                {
+                    CustomMessageWindow.Show("EMR 데이터는 삭제가 \n 불가능합니다.",
+                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
                 if (CustomMessageWindow.Show(
                         $"{SelectedPatient.PatientName} 환자 정보를 삭제하시겠습니까?",
-                        CustomMessageWindow.MessageBoxType.YesNo,0,CustomMessageWindow.MessageIconType.Danger
+                        CustomMessageWindow.MessageBoxType.YesNo, 0, CustomMessageWindow.MessageIconType.Danger
                     ) == CustomMessageWindow.MessageBoxResult.Yes)
                 {
                     var repo = new DB_Manager();
@@ -232,7 +280,7 @@ namespace LSS_prototype.Patient_Page
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Common.WriteLog(ex);
             }
@@ -242,24 +290,18 @@ namespace LSS_prototype.Patient_Page
         {
             try
             {
-                var pacsSet = new DB_Manager().GetPacsSet();
+                var db = new DB_Manager();
+                var pacsSet = db.GetPacsSet();
 
                 LoadingWindow.Begin("MWL 조회 중...");
-                var worklistItems = await GetWorklistPatientsAsync(
+                var worklistItems = await db.GetWorklistPatientsAsync(
                     pacsSet.MwlMyAET, pacsSet.MwlIP, pacsSet.MwlPort, pacsSet.MwlAET);
-                await Task.Delay(2000);
+                await Task.Delay(500); // 로딩바 테스트 차 0.5 delay 추후 배포 시 해당코드 삭제
 
                 // TODO: LS / LSS 간 표시 데이터 차이 확인 후 바인딩 필드 정리 필요 0227 박한용
-                Patients = new ObservableCollection<PatientModel>(
-                    worklistItems.Select(w => new PatientModel
-                    {
-                        PatientId = w.PatientId,
-                        PatientCode = w.PatientId,
-                        PatientName = w.PatientName,
-                        BirthDate = w.BirthDate,
-                        Sex = w.Sex,
-                        Reg_Date = DateTime.Now
-                    }));
+                _emrPatients = worklistItems;
+
+                RefreshPatients();
             }
             catch (TimeoutException ex)
             {
@@ -284,78 +326,6 @@ namespace LSS_prototype.Patient_Page
         }
 
 
-         /// <summary>
-         /// DICOM C-FIND 요청으로 MWL(Modality Worklist) 환자 목록을 조회합니다.
-         /// </summary>
-         /// <param name="sourceAET">로컬 AE Title</param>
-         /// <param name="targetIP">MWL 서버 IP</param>
-         /// <param name="targetPort">MWL 서버 Port</param>
-         /// <param name="targetAET">MWL 서버 AE Title</param>
-         private async Task<List<PatientModel>> GetWorklistPatientsAsync( string sourceAET, string targetIP, int targetPort, string targetAET)
-        {
-            var result = new List<PatientModel>();
-
-         var request = BuildWorklistRequest();
-         request.OnResponseReceived += (_, res) =>
-         {
-             if (res.Status == DicomStatus.Pending && res.Dataset != null)
-                 result.Add(ParsePatientModel(res.Dataset));
-         };
-
-         var client = DicomClientFactory.Create(targetIP, targetPort, false, sourceAET, targetAET);
-         client.NegotiateAsyncOps();
-         await client.AddRequestAsync(request);
-
-         // 5초 내 응답 없으면 TimeoutException
-         var sendTask = client.SendAsync();
-         if (await Task.WhenAny(sendTask, Task.Delay(5000)) == sendTask)
-             await sendTask; // 전송 중 발생한 예외 전파
-         else
-             throw new TimeoutException("DICOM 서버가 응답하지 않습니다.");
-
-         return result;
-         }
-
-         /// <summary>
-         /// 전체 환자 대상 MWL C-FIND 요청 Dataset을 생성합니다.
-         /// </summary>
-         private static DicomCFindRequest BuildWorklistRequest()
-        {
-            return new DicomCFindRequest(DicomQueryRetrieveLevel.NotApplicable)
-            {
-                Dataset = new DicomDataset
-                {
-                    { DicomTag.PatientName,                    "*" },
-                    { DicomTag.PatientID,                      "*" },
-                    { DicomTag.StudyInstanceUID,               ""  },
-                    { DicomTag.StudyDate,                      ""  },
-                    { DicomTag.PatientBirthDate,               ""  },
-                    { DicomTag.PatientSex,                     ""  },
-                    { DicomTag.AccessionNumber,                ""  },
-                    { DicomTag.RequestedProcedureDescription,  ""  },
-                }
-            };
-        }
-
-         /// <summary>
-         /// C-FIND 응답 Dataset을 PatientModel로 변환합니다.
-         /// </summary>
-         private static PatientModel ParsePatientModel(DicomDataset ds)
-        {
-            string rawId = ds.GetSingleValueOrDefault(DicomTag.PatientID, "");
-            string rawBirth = ds.GetSingleValueOrDefault(DicomTag.PatientBirthDate, "");
-
-            return new PatientModel
-            {
-                PatientCode = int.TryParse(rawId, out int code) ? code : 0,
-                PatientName = ds.GetSingleValueOrDefault(DicomTag.PatientName, "").Replace("^", " "),
-                BirthDate = DateTime.TryParseExact(rawBirth, "yyyyMMdd", null,
-                                  System.Globalization.DateTimeStyles.None, out DateTime birth)
-                                  ? birth : DateTime.MinValue,
-                Sex = ds.GetSingleValueOrDefault(DicomTag.PatientSex, ""),
-            };
-         }
-
         public void Dispose()
         {
             _searchDebouncer?.Dispose();
@@ -370,21 +340,31 @@ namespace LSS_prototype.Patient_Page
         {
             try
             {
-                var repo = new DB_Manager();
-                List<PatientModel> data = string.IsNullOrWhiteSpace(keyword)
-                    ? repo.GetAllPatients()
-                    : repo.SearchPatients(keyword);
-
                 Application.Current?.Dispatcher.Invoke(() =>
                 {
-                    // 현재 선택된 유저 ID 기억
                     int? selectedId = SelectedPatient?.PatientId;
 
-                    Patients.Clear();
-                    foreach (var Patient in data)
-                        Patients.Add(Patient);
+                    if (string.IsNullOrWhiteSpace(keyword))
+                    {
+                        // 검색어 없으면 원래 상태로 복원
+                        RefreshPatients();
+                    }
+                    else
+                    {
+                        // LIKE %keyword% 필터링
+                        var filtered = _showAll
+                            ? _emrPatients.Concat(_localPatients)  // 전체에서 검색
+                            : _emrPatients;                         // EMR만 검색
 
-                    // 같은 ID 가진 항목 다시 선택
+                        Patients = new ObservableCollection<PatientModel>(
+                            filtered.Where(p =>
+                                (p.PatientName ?? "").Contains(keyword) ||
+                                (p.PatientCode.ToString()).Contains(keyword) ||
+                                (p.AccessionNumber ?? "").Contains(keyword)
+                            ));
+                    }
+
+                    // 선택 항목 유지
                     if (selectedId.HasValue)
                         SelectedPatient = Patients.FirstOrDefault(u => u.PatientId == selectedId.Value);
                 });

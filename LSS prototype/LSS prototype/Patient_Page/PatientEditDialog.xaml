@@ -41,7 +41,6 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <StackPanel Grid.Row="0" Margin="0,0,0,30">
-                <Border Width="40" Height="5" Background="#333333" CornerRadius="2" Margin="0,0,0,25" HorizontalAlignment="Center"/>
                 <TextBlock Text="REGISTER NEW PATIENT" 
                            FontSize="28" 
                            Foreground="#1A3B5D" 
@@ -91,17 +90,16 @@
                     </Popup>
 
                     <TextBlock Text="SEX" Style="{StaticResource InputLabelStyle}"/>
-                    <ComboBox SelectedValue="{Binding Sex, UpdateSourceTrigger=PropertyChanged}" 
-                              SelectedValuePath="Content"
-                              Height="55" FontSize="18" VerticalContentAlignment="Center" Padding="15,0" Margin="0,0,0,10">
-                        <ComboBox.Resources>
-                            <Style TargetType="Border">
-                                <Setter Property="CornerRadius" Value="10"/>
-                            </Style>
-                        </ComboBox.Resources>
-                        <ComboBoxItem Content="M"/>
-                        <ComboBoxItem Content="F"/>
-                    </ComboBox>
+
+                    <Border Style="{StaticResource InputBoxBorderStyle}">
+                        <ComboBox Style="{StaticResource InputComboBoxStyle}"
+                        ItemContainerStyle="{StaticResource InputComboBoxItemStyle}"
+                        SelectedValue="{Binding Sex}"
+                        SelectedValuePath="Content">
+                            <ComboBoxItem Content="M"/>
+                            <ComboBoxItem Content="F"/>
+                        </ComboBox>
+                    </Border>
                 </StackPanel>
             </ScrollViewer>
             <Grid Grid.Row="2" Margin="0,20,0,0">

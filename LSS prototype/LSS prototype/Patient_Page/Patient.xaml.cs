@@ -25,7 +25,7 @@ namespace LSS_prototype.Patient_Page
         public Patient()
         {
             InitializeComponent();
-            Unloaded += (s, e) => (DataContext as PatientListViewModel)?.Dispose(); // 사용자 입력 감지 타이머 종료 ( 자원 관리 차 ) 
+            Unloaded += (s, e) => (DataContext as PatientViewModel)?.Dispose(); // 사용자 입력 감지 타이머 종료 ( 자원 관리 차 ) 
             txtSearch.TextChanged += OnSearchTextChanged;
         }
 
@@ -41,13 +41,7 @@ namespace LSS_prototype.Patient_Page
 
         private void CheckBox_Click(object sender, RoutedEventArgs e)
         {
-           CheckBox cb = sender as CheckBox;
 
-            // 사용자가 클릭해서 체크가 된 상태일 때만 화면 전환
-            if (cb.IsChecked == false)
-            {
-                MainPage.Instance.NavigateTo(new EmrPatient());
-            }
         }
 
         private void OnSearchTextChanged(object sender, TextChangedEventArgs e)
@@ -59,8 +53,20 @@ namespace LSS_prototype.Patient_Page
             if (current == _lastSearchText) return;
 
             _lastSearchText = current;
-            if (DataContext is PatientListViewModel vm)
+            if (DataContext is PatientViewModel vm)
                 vm.OnSearchTextChanged(current);
+        }
+
+        /// <summary>
+        /// 우측 selectbox 클릭 시, 선택된 카드의 위치로 스크롤이 자동으로 이동 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void SelectedPatientBorder_Click(object sender, MouseButtonEventArgs e)
+        {
+            var vm = DataContext as PatientViewModel;
+            if (vm?.SelectedPatient == null) return;
+            PatientListBox.ScrollIntoView(vm.SelectedPatient);
         }
     }
 }

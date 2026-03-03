@@ -22,7 +22,7 @@
     <PublishUrl>C:\Users\User\Desktop\개발자료\배포테스트\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Web</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateEnabled>true</UpdateEnabled>
     <UpdateMode>Foreground</UpdateMode>
     <UpdateInterval>7</UpdateInterval>
     <UpdateIntervalUnits>Days</UpdateIntervalUnits>
@@ -30,7 +30,7 @@
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
     <InstallUrl>http://192.168.1.35:8080/</InstallUrl>
-    <ApplicationRevision>2</ApplicationRevision>
+    <ApplicationRevision>5</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -212,6 +212,7 @@
     </Compile>
     <Compile Include="Common_Module\RelayCommand.cs" />
     <Compile Include="DB_CRUD\DB_Manager.cs" />
+    <Compile Include="DB_CRUD\DB_Manager.Dicom.cs" />
     <Compile Include="DB_CRUD\DB_Manager.Patient.cs" />
     <Compile Include="DB_CRUD\DB_Manager.Set.cs" />
     <Compile Include="DB_CRUD\DB_Manager.User.cs" />
@@ -238,13 +239,13 @@
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Patient_Page\EmrPatient.xaml.cs">
-      <DependentUpon>EmrPatient.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Patient_Page\Keypad.xaml.cs">
       <DependentUpon>Keypad.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Patient_Page\KeypadViewModel.cs" />
+    <Compile Include="Patient_Page\KeypadViewModel.cs">
+	<DependentUpon>Keypad.xaml</DependentUpon>
+    </Compile>
+	
     <Compile Include="Patient_Page\Patient.xaml.cs">
       <DependentUpon>Patient.xaml</DependentUpon>
     </Compile>
@@ -262,7 +263,6 @@
     <Compile Update="Patient_Page\PatientEditViewModel.cs">
       <DependentUpon>PatientEditDialog.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Patient_Page\PatientListViewModel.cs" />
     <Compile Update="Patient_Page\PatientListViewModel.cs">
       <DependentUpon>Patient.xaml</DependentUpon>
     </Compile>
@@ -270,6 +270,9 @@
     <Compile Update="Patient_Page\PatientModel.cs">
       <DependentUpon>Patient.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Patient_Page\PatientViewModel.cs">
+	  <DependentUpon>Patient.xaml</DependentUpon>
+	</Compile>
     <Compile Include="Scan_Page\Scan.xaml.cs">
       <DependentUpon>Scan.xaml</DependentUpon>
     </Compile>
@@ -346,10 +349,6 @@
       <DependentUpon>Login.xaml</DependentUpon>
     </Compile>
     <Page Include="MainPage.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Patient_Page\EmrPatient.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -444,6 +443,7 @@
     </None>
     <None Include="LSS prototype_TemporaryKey.pfx" />
     <None Include="packages.config" />
+    <None Include="Patient_Page\Patient.md" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

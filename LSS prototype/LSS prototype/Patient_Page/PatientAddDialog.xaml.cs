@@ -25,18 +25,6 @@ namespace LSS_prototype.Patient_Page
             InitializeComponent();
             //DpBirthDate.BlackoutDates.Add(new CalendarDateRange(DateTime.Today.AddDays(1), DateTime.MaxValue));
         }
-        private void DpBirthDate_PreviewMouseUp(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is DatePicker datePicker)
-            {
-                datePicker.IsDropDownOpen = true;
-
-                // 마우스 캡처를 해제하여 달력 내부의 날짜 클릭이 정상 작동하게 합니다.
-                if (Mouse.Captured is DatePickerTextBox)
-                {
-                    Mouse.Capture(null);
-                }
-            }
-        }
+       
     }
 }

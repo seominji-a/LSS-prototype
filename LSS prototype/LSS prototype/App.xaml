@@ -29,74 +29,97 @@
                 <viewUser:User_Edit />
             </DataTemplate>
 
-            <Style x:Key="DefaultRoundedButtonStyle" TargetType="Button">
-                <Setter Property="FontSize" Value="25"/>
-                <Setter Property="FontWeight" Value="Bold"/>
-                <Setter Property="Foreground" Value="Black"/>
-                <Setter Property="Height" Value="83"/>
-                <Setter Property="Width" Value="219"/>
-                <Setter Property="Margin" Value="0,0,0,15"/>
+
+            <Style x:Key="InputBoxBorderStyle" TargetType="Border">
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="BorderBrush" Value="#DDE2E8"/>
+                <Setter Property="BorderThickness" Value="1.5"/>
+                <Setter Property="CornerRadius" Value="10"/>
+                <Setter Property="Height" Value="55"/>
+                <Setter Property="SnapsToDevicePixels" Value="True"/>
+            </Style>
+
+
+            <Style x:Key="InputComboBoxItemStyle" TargetType="ComboBoxItem">
+                <Setter Property="FontSize" Value="18"/>
+                <Setter Property="Height" Value="48"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Padding" Value="15,0"/>
+            </Style>
+
+
+            <Style x:Key="InputComboBoxStyle" TargetType="ComboBox">
+                <Setter Property="Background" Value="Transparent"/>
                 <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="BorderBrush" Value="Transparent"/>
-                <Style.Resources>
-                    <Style TargetType="{x:Type Border}">
-                        <Setter Property="CornerRadius" Value="10"/>
-                    </Style>
-                </Style.Resources>
-            </Style>
+                <Setter Property="FontSize" Value="18"/>
+                <Setter Property="Foreground" Value="#222222"/>
+                <Setter Property="Padding" Value="15,0"/>
+                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="MaxDropDownHeight" Value="260"/>
+                <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
 
-            <Style x:Key="PatientCardStyle" TargetType="Border">
-                <Setter Property="Background" Value="#FFF3ECEC"/>
-                <Setter Property="CornerRadius" Value="15.54"/>
-                <Setter Property="Margin" Value="10"/>
-                <Setter Property="Height" Value="200"/>
-            </Style>
-
-            <Style x:Key="TabCustomStyle" TargetType="TabControl">
                 <Setter Property="Template">
                     <Setter.Value>
-                        <ControlTemplate TargetType="TabControl">
-                            <Grid x:Name="TabControlRoot">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
-                                </Grid.RowDefinitions>
+                        <ControlTemplate TargetType="ComboBox">
+                            <Grid SnapsToDevicePixels="True">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="45"/>
+                                </Grid.ColumnDefinitions>
 
-                                <UniformGrid x:Name="HeaderPanel" 
-                                             Grid.Row="0" 
-                                             Rows="1" 
-                                             Columns="2" 
-                                             IsItemsHost="True"/>
+                                <!-- 전체 터치 영역 -->
+                                <ToggleButton Grid.ColumnSpan="2"
+                                  Background="Transparent"
+                                  BorderThickness="0"
+                                  Focusable="False"
+                                  ClickMode="Press"
+                                  IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
 
-                                <ContentPresenter x:Name="PART_SelectedContentHost" 
-                                                  Grid.Row="1" 
-                                                  ContentSource="SelectedContent"/>
+                                <!-- 선택값 -->
+                                <ContentPresenter Grid.Column="0"
+                                      Margin="{TemplateBinding Padding}"
+                                      VerticalAlignment="Center"
+                                      HorizontalAlignment="Left"
+                                      Content="{TemplateBinding SelectionBoxItem}"
+                                      IsHitTestVisible="False"/>
+
+                                <!-- 화살표 -->
+                                <Border Grid.Column="1"
+                            Background="#F2F4F7"
+                            CornerRadius="0,10,10,0"
+                            IsHitTestVisible="False">
+                                    <Path Data="M 0 0 L 6 6 L 12 0 Z"
+                              Fill="#1A3B5D"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"/>
+                                </Border>
+
+                                <!-- Popup -->
+                                <Popup x:Name="Popup"
+                           Placement="Bottom"
+                           VerticalOffset="5"
+                           IsOpen="{TemplateBinding IsDropDownOpen}"
+                           AllowsTransparency="True"
+                           Focusable="False"
+                           PopupAnimation="Fade">
+                                    <Border Background="White"
+                                BorderBrush="#DDE2E8"
+                                BorderThickness="1.5"
+                                CornerRadius="10"
+                                MinWidth="{TemplateBinding ActualWidth}">
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                            <ItemsPresenter/>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Popup>
                             </Grid>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
 
-            <Style x:Key="TabItemCustomStyle" TargetType="TabItem">
-                <Setter Property="FontSize" Value="36"/>
-                <Setter Property="Height" Value="80"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="TabItem">
-                            <Border x:Name="TabBorder" 
-                                    Background="#FFD2C5C5" 
-                                    BorderBrush="Black" 
-                                    BorderThickness="0,0,0,1">
-                                <ContentPresenter x:Name="ContentSite" 
-                                                  ContentSource="Header" 
-                                                  Margin="10,2,10,2" 
-                                                  HorizontalAlignment="Center" 
-                                                  VerticalAlignment="Center"/>
-                            </Border>
                             <ControlTemplate.Triggers>
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter TargetName="TabBorder" Property="Background" Value="#FFE5E5E5"/>
-                                    <Setter TargetName="TabBorder" Property="BorderThickness" Value="0"/>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.55"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -104,128 +127,7 @@
                 </Setter>
             </Style>
 
-            <Style x:Key="DefaultDIALOGTEXTStyle" TargetType="TextBox">
-                <Setter Property="FontSize" Value="22"/>
-                <Setter Property="Padding" Value="15,10"/>
-                <Setter Property="FontWeight" Value="Bold"/>
-                <Setter Property="Height" Value="55"/>
-                <Setter Property="Margin" Value="0,0,0,30"/>
-                <Setter Property="VerticalContentAlignment" Value="Center"/>
-                <Setter Property="Background" Value="#F9F9F9"/>
-                <Setter Property="BorderThickness" Value="0,0,0,2"/>
-                <Setter Property="BorderBrush" Value="#CCCCCC"/>
-                <Style.Resources>
-                    <Style TargetType="{x:Type Border}">
-                        <Setter Property="CornerRadius" Value="10"/>
-                    </Style>
-                </Style.Resources>
-            </Style>
 
-            <Style x:Key="DefaultPasswordBoxStyle" TargetType="PasswordBox">
-
-                <Setter Property="FontSize" Value="22"/>
-                <Setter Property="Padding" Value="15,10"/>
-                <Setter Property="FontWeight" Value="Bold"/>
-                <Setter Property="Height" Value="55"/>
-                <Setter Property="Margin" Value="0,0,0,30"/>
-                <Setter Property="VerticalContentAlignment" Value="Center"/>
-                <Setter Property="Background" Value="#F9F9F9"/>
-                <Setter Property="BorderThickness" Value="0,0,0,2"/>
-                <Setter Property="BorderBrush" Value="#CCCCCC"/>
-
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="PasswordBox">
-                            <Border
-                    CornerRadius="10"
-                    Background="{TemplateBinding Background}"
-                    BorderBrush="{TemplateBinding BorderBrush}"
-                    BorderThickness="{TemplateBinding BorderThickness}">
-
-                                <ScrollViewer x:Name="PART_ContentHost"/>
-                            </Border>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-
-            </Style>
-
-
-
-            <Style x:Key="DefaultDIALOGDateStyle" TargetType="DatePicker">
-                <Setter Property="FontSize" Value="22"/>
-                <Setter Property="FontWeight" Value="Bold"/>
-                <Setter Property="Height" Value="55"/>
-                <Setter Property="Margin" Value="0,0,0,40"/>
-                <Setter Property="VerticalContentAlignment" Value="Center"/>
-                <Setter Property="Background" Value="#F9F9F9"/>
-                <Setter Property="BorderThickness" Value="0,0,0,2"/>
-                <Setter Property="BorderBrush" Value="#CCCCCC"/>
-                <Setter Property="Focusable" Value="False"/>
-                <Setter Property="IsHitTestVisible" Value="True"/>
-                <Setter Property="Cursor" Value="Hand"/>
-                <Style.Resources>
-                    <Style TargetType="{x:Type Border}">
-                        <Setter Property="CornerRadius" Value="10"/>
-                    </Style>
-                </Style.Resources>
-            </Style>
-
-            <Style x:Key="DefaultDIALOGSexStyle" TargetType="ComboBox">
-                <Setter Property="FontSize" Value="22"/>
-                <Setter Property="FontWeight" Value="Bold"/>
-                <Setter Property="Padding" Value="15,10"/>
-                <Setter Property="Height" Value="55"/>
-                <Setter Property="Margin" Value="0,0,0,40"/>
-                <Setter Property="VerticalContentAlignment" Value="Center"/>
-                <Setter Property="Background" Value="#F9F9F9"/>
-                <Setter Property="BorderThickness" Value="0,0,0,2"/>
-                <Setter Property="BorderBrush" Value="#CCCCCC"/>
-                <Style.Resources>
-                    <Style TargetType="{x:Type Border}">
-                        <Setter Property="CornerRadius" Value="10"/>
-                    </Style>
-                </Style.Resources>
-            </Style>
-
-            <Style x:Key="DefaultDIALOGbuttonblueStyle" TargetType="Button">
-                <Setter Property="FontSize" Value="22"/>
-                <Setter Property="FontWeight" Value="Black"/>
-                <Setter Property="Height" Value="65"/>
-                <Setter Property="Margin" Value="0,0,10,0"/>
-                <Setter Property="VerticalContentAlignment" Value="Center"/>
-                <Setter Property="Background" Value="#4A90E2"/>
-                <Style.Resources>
-                    <Style TargetType="{x:Type Border}">
-                        <Setter Property="CornerRadius" Value="12"/>
-                    </Style>
-                </Style.Resources>
-            </Style>
-
-            <Style x:Key="DefaultDIALOGbuttonwhiteStyle" TargetType="Button">
-                <Setter Property="FontSize" Value="22"/>
-                <Setter Property="FontWeight" Value="Black"/>
-                <Setter Property="Height" Value="65"/>
-                <Setter Property="Margin" Value="10,0,0,0"/>
-                <Setter Property="VerticalContentAlignment" Value="Center"/>
-                <Setter Property="Background" Value="#E0E0E0"/>
-                <Style.Resources>
-                    <Style TargetType="{x:Type Border}">
-                        <Setter Property="CornerRadius" Value="12"/>
-                    </Style>
-                </Style.Resources>
-            </Style>
-
-            <Style x:Key="SelectablePatientCardStyle" TargetType="Border" BasedOn="{StaticResource PatientCardStyle}">
-                <Setter Property="BorderBrush" Value="Transparent"/>
-                <Setter Property="BorderThickness" Value="4"/>
-                <Style.Triggers>
-                    <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                        <Setter Property="BorderBrush" Value="#FF0078D7"/>
-                        <Setter Property="Background" Value="#FFF0F8FF"/>
-                    </DataTrigger>
-                </Style.Triggers>
-            </Style>
 
         </ResourceDictionary>
     </Application.Resources>

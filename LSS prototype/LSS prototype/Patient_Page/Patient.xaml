@@ -114,10 +114,10 @@
                 <Grid Grid.Row="0" Margin="0,0,0,18">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="440"/>
                     </Grid.ColumnDefinitions>
-
-                    <TextBlock FontSize="54" FontWeight="Bold" Foreground="{StaticResource Primary}" VerticalAlignment="Center">
+                    <TextBlock FontSize="54" FontWeight="Bold" 
+                               Foreground="{StaticResource Primary}" VerticalAlignment="Center">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Text" Value="{Binding PageTitle}"/>
@@ -130,109 +130,75 @@
                         </TextBlock.Style>
                     </TextBlock>
 
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-
+                    <Border Grid.Column="1" Background="{StaticResource Surface}"
+                            BorderBrush="{StaticResource Border}" BorderThickness="1.5"
+                            CornerRadius="10" Height="52">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="52"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Background="#F1F5F9" CornerRadius="9,0,0,9">
+                                <TextBlock Text="🔍" FontSize="16"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Foreground="{StaticResource Primary}"/>
+                            </Border>
+                            <Grid Grid.Column="1">
+                                <TextBlock x:Name="PlaceholderText" Text="Search patients..."
+                                           FontSize="17" Foreground="{StaticResource TextMuted}"
+                                           VerticalAlignment="Center" Margin="14,0,0,0"
+                                           IsHitTestVisible="False">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text, ElementName=txtSearch}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBox x:Name="txtSearch"
+                                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                         FontSize="17" BorderThickness="0" Background="Transparent"
+                                         Padding="14,0,0,0" VerticalContentAlignment="Center"
+                                         Foreground="{StaticResource TextDark}"
+                                         CaretBrush="{StaticResource Primary}"
+                                         xml:lang="ko-KR"/>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                    <StackPanel Orientation="Horizontal" Margin="930,0,0,0" VerticalAlignment="Center">
                         <CheckBox x:Name="AllPatientCheckBox" 
-                  IsChecked="{Binding ShowAll, Mode=TwoWay}"
-                  VerticalAlignment="Center" Margin="0,0,15,0" Cursor="Hand">
-                            <CheckBox.Template>
-                                <ControlTemplate TargetType="CheckBox">
-                                    <Grid>
-                                        <Border x:Name="Background" Width="180" Height="54" Background="#E2E8F0" CornerRadius="27">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="ALL" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center" 
-                                           FontSize="18" FontWeight="Bold" Foreground="#64748B"/>
-                                                <TextBlock Text="EMR" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" 
-                                           FontSize="18" FontWeight="Bold" Foreground="#64748B"/>
-                                            </Grid>
-                                        </Border>
-
-                                        <Border x:Name="SelectionThumb" Width="86" Height="46" Background="White" CornerRadius="23" 
-                                HorizontalAlignment="Left" Margin="4,0,0,0">
-                                            <Border.Effect>
-                                                <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.2"/>
-                                            </Border.Effect>
-                                            <TextBlock x:Name="TxtSelected" Text="ALL" VerticalAlignment="Center" HorizontalAlignment="Center" 
-                                       FontSize="18" FontWeight="Bold" Foreground="#1D4ED8"/>
-                                            <Border.RenderTransform>
-                                                <TranslateTransform x:Name="ThumbTranslate" X="0"/>
-                                            </Border.RenderTransform>
-                                        </Border>
-                                    </Grid>
-
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsChecked" Value="True">
-                                            <Setter TargetName="Background" Property="Background" Value="#DBEAFE"/>
-                                            <Trigger.EnterActions>
-                                                <BeginStoryboard>
-                                                    <Storyboard>
-                                                        <DoubleAnimation Storyboard.TargetName="ThumbTranslate" Storyboard.TargetProperty="X"
-                                                         To="0" Duration="0:0:0.2"/>
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </Trigger.EnterActions>
-                                        </Trigger>
-
-                                        <Trigger Property="IsChecked" Value="False">
-                                            <Setter TargetName="Background" Property="Background" Value="#FEE2E2"/>
-                                            <Setter TargetName="TxtSelected" Property="Text" Value="EMR"/>
-                                            <Setter TargetName="TxtSelected" Property="Foreground" Value="#B91C1C"/>
-                                            <Trigger.EnterActions>
-                                                <BeginStoryboard>
-                                                    <Storyboard>
-                                                        <DoubleAnimation Storyboard.TargetName="ThumbTranslate" Storyboard.TargetProperty="X"
-                                                         To="86" Duration="0:0:0.2"/>
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </Trigger.EnterActions>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </CheckBox.Template>
+                                  VerticalAlignment="Center"
+                                  IsChecked="{Binding ShowAll, Mode=TwoWay}" >
+                            <CheckBox.LayoutTransform>
+                                <ScaleTransform ScaleX="2" ScaleY="2.5"/>
+                            </CheckBox.LayoutTransform>
                         </CheckBox>
 
-                        <Border Background="{StaticResource Surface}" BorderBrush="{StaticResource Border}"
-                BorderThickness="1.5" CornerRadius="10" Height="54" Width="440">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="52"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Border Background="#F1F5F9" CornerRadius="9,0,0,9">
-                                    <TextBlock Text="🔍" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Primary}"/>
-                                </Border>
-                                <Grid Grid.Column="1">
-                                    <TextBlock x:Name="PlaceholderText" Text="Search patients..." FontSize="17" Foreground="{StaticResource TextMuted}"
-                               VerticalAlignment="Center" Margin="14,0,0,0" IsHitTestVisible="False">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Text, ElementName=txtSearch}" Value="">
-                                                        <Setter Property="Visibility" Value="Visible"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                    <TextBox x:Name="txtSearch" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             FontSize="17" BorderThickness="0" Background="Transparent" Padding="14,0,0,0"
-                             VerticalContentAlignment="Center" Foreground="{StaticResource TextDark}" xml:lang="ko-KR"/>
-                                </Grid>
-                            </Grid>
-                        </Border>
+                        <TextBlock Text="ALL Patient" 
+                                   Foreground="#FF022020" 
+                                   FontSize="34" 
+                                   VerticalAlignment="Center" 
+                                   Margin="10,0,0,0"/>
                     </StackPanel>
                 </Grid>
 
-                <Border Grid.Row="1" Background="{StaticResource CardOuter}" BorderBrush="{StaticResource Border}"
-                        BorderThickness="1.5" CornerRadius="18" Padding="12">
-                    <ListBox x:Name="PatientListBox" ItemsSource="{Binding Patients}" SelectedItem="{Binding SelectedPatient}"
-                             Background="Transparent" BorderThickness="0" ItemContainerStyle="{StaticResource CardItem}"
-                             HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <Border Grid.Row="1" Background="{StaticResource CardOuter}"
+                        BorderBrush="{StaticResource Border}" BorderThickness="1.5"
+                        CornerRadius="18" Padding="12">
+                    <ListBox x:Name="PatientListBox"
+                             ItemsSource="{Binding Patients}"
+                             SelectedItem="{Binding SelectedPatient}"
+                             Background="Transparent" BorderThickness="0"
+                             ItemContainerStyle="{StaticResource CardItem}"
+                             HorizontalContentAlignment="Stretch"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ScrollViewer.PanningMode="VerticalOnly"
+                             ScrollViewer.CanContentScroll="False">
                         <ListBox.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <UniformGrid Columns="3" VerticalAlignment="Top"/>
@@ -242,9 +208,14 @@
                             <DataTemplate>
                                 <Grid>
                                     <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top">
-                                        <TextBlock x:Name="TxtName" Text="{Binding PatientName}" FontSize="26" FontWeight="Bold" Foreground="{StaticResource TextDark}"/>
-                                        <TextBlock x:Name="TxtCode" Text="{Binding PatientCode}" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource TextMid}" Margin="0,5,0,0"/>
-                                        <TextBlock x:Name="TxtInfo" FontSize="20" Foreground="{StaticResource TextMid}" Margin="0,8,0,0">
+                                        <TextBlock x:Name="TxtName" Text="{Binding PatientName}"
+                                                   FontSize="26" FontWeight="Bold"
+                                                   Foreground="{StaticResource TextDark}"/>
+                                        <TextBlock x:Name="TxtCode" Text="{Binding PatientCode}"
+                                                   FontSize="20" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextMid}" Margin="0,5,0,0"/>
+                                        <TextBlock x:Name="TxtInfo" FontSize="20"
+                                                   Foreground="{StaticResource TextMid}" Margin="0,8,0,0">
                                             <Run Text="{Binding BirthDate, StringFormat=yyyy-MM-dd}"/>
                                             <Run Text="  ·  "/>
                                             <Run Text="{Binding Sex}"/>
@@ -252,8 +223,10 @@
                                     </StackPanel>
 
                                     <Border x:Name="SourceBadge" CornerRadius="6" BorderThickness="1" Padding="12,5"
-                                            HorizontalAlignment="Right" VerticalAlignment="Top" Background="#FEE2E2" BorderBrush="#FCA5A5">
-                                        <TextBlock x:Name="TxtSourceLabel" Text="EMR" FontSize="21" FontWeight="SemiBold" Foreground="#B91C1C"/>
+                                            HorizontalAlignment="Right" VerticalAlignment="Top"
+                                            Background="#FEE2E2" BorderBrush="#FCA5A5">
+                                        <TextBlock x:Name="TxtSourceLabel" Text="EMR" 
+                                                   FontSize="21" FontWeight="SemiBold" Foreground="#B91C1C"/>
                                     </Border>
                                 </Grid>
                                 <DataTemplate.Triggers>
@@ -269,6 +242,7 @@
                                         <Setter TargetName="TxtSourceLabel" Property="Foreground" Value="#1D4ED8"/>
                                         <Setter TargetName="TxtSourceLabel" Property="Text"       Value="LOCAL"/>
                                     </DataTrigger>
+
                                     <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
                                         <Setter TargetName="TxtName" Property="Foreground" Value="White"/>
                                         <Setter TargetName="TxtCode" Property="Foreground" Value="#CBD5E1"/>
@@ -289,20 +263,28 @@
                     <Border Height="2" Width="44" Background="#2A6496" Margin="0,8,0,0"/>
                 </StackPanel>
 
-                <Border Background="#132E43" BorderBrush="#244A66" BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,20" Cursor="Hand"
+                <Border Background="#132E43" BorderBrush="#244A66" BorderThickness="1"
+                        CornerRadius="12" Padding="14,12" Margin="0,0,0,20" Cursor="Hand"
                         MouseLeftButtonUp="SelectedPatientBorder_Click">
                     <StackPanel>
                         <TextBlock Text="Selected Patient" Foreground="#BBD0E1" FontSize="13" Margin="0,0,0,6"/>
-                        <TextBlock Text="{Binding SelectedPatient.PatientName}" Foreground="White" FontSize="18" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
-                        <TextBlock Text="{Binding SelectedPatient.PatientCode}" Foreground="#D3E0EA" FontSize="14" Margin="0,5,0,0" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{Binding SelectedPatient.PatientName}" Foreground="White"
+                                   FontSize="18" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{Binding SelectedPatient.PatientCode}" Foreground="#D3E0EA"
+                                   FontSize="14" Margin="0,5,0,0" TextTrimming="CharacterEllipsis"/>
                     </StackPanel>
                 </Border>
 
-                <Button Style="{StaticResource NavBtn}" Command="{Binding PatientAddCommand}" Content="Add Patient" Width="228" Margin="0,0,0,18"/>
-                <Button Style="{StaticResource NavBtn}" Command="{Binding PatientEditCommand}" Content="Edit Patient" Width="228" Margin="0,0,0,18"/>
-                <Button Style="{StaticResource NavBtn}" Command="{Binding PatientDeleteCommand}" Content="Delete Patient" Width="228" Margin="0,0,0,18"/>
-                <Button Style="{StaticResource NavBtn}" Command="{Binding EmrSyncCommand}" Content="Sync" Width="228" Margin="0,0,0,18"/>
-                <Button Style="{StaticResource NavBtn}" Click="HomeButton_Click" Content="Home" Width="228"/>
+                <Button Style="{StaticResource NavBtn}" Command="{Binding PatientAddCommand}"
+                        Content="Add Patient" Width="228" Margin="0,0,0,18"/>
+                <Button Style="{StaticResource NavBtn}" Command="{Binding PatientEditCommand}"
+                        Content="Edit Patient" Width="228" Margin="0,0,0,18"/>
+                <Button Style="{StaticResource NavBtn}" Command="{Binding PatientDeleteCommand}"
+                        Content="Delete Patient" Width="228" Margin="0,0,0,18"/>
+                <Button Style="{StaticResource NavBtn}" Command="{Binding EmrSyncCommand}"
+                        Content="Sync" Width="228" Margin="0,0,0,18"/>
+                <Button Style="{StaticResource NavBtn}" Click="HomeButton_Click"
+                        Content="Home" Width="228"/>
             </StackPanel>
         </Border>
 
@@ -311,13 +293,16 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="256"/>
             </Grid.ColumnDefinitions>
+
             <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="16,0" VerticalAlignment="Center">
-                <Button Content="Patient" Style="{StaticResource NavBtnActive}" Margin="0,0,10,0"/>
-                <Button Content="Scan" Style="{StaticResource NavBtn}" Command="{Binding NavScanCommand}" Margin="0,0,10,0" />
-                <Button Content="Image Review" Style="{StaticResource NavBtn}" Command="{Binding NavImageReviewCommand}" Margin="0,0,10,0" />
-                <Button Content="Video Review" Style="{StaticResource NavBtn}" Command="{Binding NavVideoReviewCommand}" />
+                <Button Content="Patient"      Style="{StaticResource NavBtnActive}" Margin="0,0,10,0"/>
+                <Button Content="Scan"         Style="{StaticResource NavBtn}"       Command="{Binding NavScanCommand}"         Margin="0,0,10,0" />
+                <Button Content="Image Review" Style="{StaticResource NavBtn}"       Command="{Binding NavImageReviewCommand}"  Margin="0,0,10,0" />
+                <Button Content="Video Review" Style="{StaticResource NavBtn}"       Command="{Binding NavVideoReviewCommand}"                    />
             </StackPanel>
-            <Button Grid.Column="1" Content="EXIT" Style="{StaticResource ExitBtn}" Click="Exit_Click" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+            <Button Grid.Column="1" Content="EXIT" Style="{StaticResource ExitBtn}"
+                    Click="Exit_Click" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Grid>
     </Grid>
 </UserControl>

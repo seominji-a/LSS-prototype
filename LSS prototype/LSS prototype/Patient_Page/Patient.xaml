@@ -163,7 +163,7 @@
                         <CheckBox x:Name="AllPatientCheckBox" 
                             VerticalAlignment="Center"
                             Click="CheckBox_Click" 
-                            IsChecked="True">
+                            IsChecked="False">
                             <CheckBox.LayoutTransform>
                                 <ScaleTransform ScaleX="2" ScaleY="2.5"/>
                             </CheckBox.LayoutTransform>

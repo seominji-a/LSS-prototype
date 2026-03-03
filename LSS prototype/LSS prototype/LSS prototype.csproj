@@ -238,9 +238,6 @@
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Patient_Page\EmrPatient.xaml.cs">
-      <DependentUpon>EmrPatient.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Patient_Page\Keypad.xaml.cs">
       <DependentUpon>Keypad.xaml</DependentUpon>
     </Compile>
@@ -346,10 +343,6 @@
       <DependentUpon>Login.xaml</DependentUpon>
     </Compile>
     <Page Include="MainPage.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Patient_Page\EmrPatient.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

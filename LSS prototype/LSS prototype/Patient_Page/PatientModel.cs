@@ -18,6 +18,4 @@ namespace LSS_prototype.Patient_Page
 
         public DateTime Reg_Date { get; set; }
     }
-
-    
 }

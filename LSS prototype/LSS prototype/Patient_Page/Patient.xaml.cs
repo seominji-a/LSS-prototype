@@ -41,13 +41,7 @@ namespace LSS_prototype.Patient_Page
 
         private void CheckBox_Click(object sender, RoutedEventArgs e)
         {
-           CheckBox cb = sender as CheckBox;
 
-            // 사용자가 클릭해서 체크가 된 상태일 때만 화면 전환
-            if (cb.IsChecked == false)
-            {
-                MainPage.Instance.NavigateTo(new EmrPatient());
-            }
         }
 
         private void OnSearchTextChanged(object sender, TextChangedEventArgs e)

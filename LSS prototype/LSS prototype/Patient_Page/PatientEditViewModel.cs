@@ -158,9 +158,23 @@ namespace LSS_prototype.Patient_Page
         private void OpenKeypad()
         {
             this.KeypadVm = new KeypadViewModel();
-            this.KeypadVm.CloseRequested += OnKeypadClosed;
 
+            // 기존 날짜가 있다면 키패드에 미리 채워넣기
+            if (this.BirthDate.HasValue)
+            {
+                string existingDate = this.BirthDate.Value.ToString("yyyyMMdd");
+
+                // KeypadViewModel의 실제 속성인 InputText에 값을 대입
+                this.KeypadVm.InputText = existingDate;
+
+                // 메인 화면의 프리뷰도 업데이트
+                BirthDatePreview = FormatDatePreview(existingDate);
+            }
+
+            this.KeypadVm.CloseRequested += OnKeypadClosed;
             this.KeypadVm.InputChanged += OnKeypadInputChanged;
+
+            // 팝업 열기
             IsKeypadOpen = true;
         }
 

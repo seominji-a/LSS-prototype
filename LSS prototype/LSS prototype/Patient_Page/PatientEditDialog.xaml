@@ -74,7 +74,7 @@
                            Placement="Right" HorizontalOffset="20" 
                            VerticalOffset="0"
                            AllowsTransparency="True" 
-                           StaysOpen="True">
+                           StaysOpen="False">
                         <Border Background="White"
                                 BorderBrush="Gray"
                                 BorderThickness="1"

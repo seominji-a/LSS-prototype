@@ -11,6 +11,13 @@ namespace LSS_prototype.Patient_Page
 {
     public class KeypadViewModel : INotifyPropertyChanged
     {
+
+        // 추가: 날짜 모드인지 확인하는 플래그 (기본값 true)
+        public bool IsDateMode { get; set; } = true;
+        // 추가: 최대 입력 길이 (기본값 8)
+        public int MaxLength { get; set; } = 8;
+
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -55,7 +62,8 @@ namespace LSS_prototype.Patient_Page
 
         private void AddNumber(string number)
         {
-            if (InputText.Length < 8)
+            // MaxLength를 사용하여 유연하게 제한
+            if (InputText.Length < MaxLength)
                 InputText += number;
         }
 
@@ -68,35 +76,37 @@ namespace LSS_prototype.Patient_Page
         //Keypad ENTER 클릭
         private void Confirm()
         {
-            // 8자리 체크
+            // --- 일반 숫자 모드(PatientCode 등)일 때 ---
+            if (!IsDateMode)
+            {
+                // 빈 값이 아니라면 바로 확인 처리
+                if (!string.IsNullOrEmpty(InputText))
+                {
+                    CloseRequested?.Invoke(true);
+                }
+                return;
+            }
+            // --- 날짜 모드일 때 (기존 로직 유지) ---
             if (string.IsNullOrEmpty(InputText) || InputText.Length != 8)
             {
                 CustomMessageWindow.Show("숫자 8자리를 입력하지 않았습니다. 다시 입력해주십시오.",
                     CustomMessageWindow.MessageBoxType.AutoClose, 2,
                     CustomMessageWindow.MessageIconType.Warning);
-
-                // 입력 값 수정하지 않고 return만 수행
-                // InputText는 입력된 8자리 미만의 숫자를 그대로 유지 가능
                 return;
             }
-
-            // 날짜 유효성 체크
             if (DateTime.TryParseExact(InputText, "yyyyMMdd",
                 null,
                 System.Globalization.DateTimeStyles.None,
                 out DateTime date))
             {
                 ResultDate = date;
-                CloseRequested?.Invoke(true); // 날짜가 완벽할 때만 팝업 종료.
+                CloseRequested?.Invoke(true);
             }
             else
             {
                 CustomMessageWindow.Show("유효하지 않은 날짜 형식입니다. \n 다시 확인해주세요.",
                     CustomMessageWindow.MessageBoxType.AutoClose, 2,
                     CustomMessageWindow.MessageIconType.Danger);
-
-                // 날짜가 틀렸을 때도 return만 하여 입력된 8자리 유지 가능.
-                return;
             }
         }
 

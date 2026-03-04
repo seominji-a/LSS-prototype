@@ -40,8 +40,12 @@
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="500"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
             <StackPanel Grid.Row="0" Margin="0,0,0,30">
-                <TextBlock Text="REGISTER NEW PATIENT" 
+                <TextBlock Text="Edit PATIENT" 
                            FontSize="28" 
                            Foreground="#1A3B5D" 
                            HorizontalAlignment="Left" FontWeight="Bold" FontFamily="Arial"/>

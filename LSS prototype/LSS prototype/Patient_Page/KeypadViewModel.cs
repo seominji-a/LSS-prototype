@@ -79,37 +79,46 @@ namespace LSS_prototype.Patient_Page
         //Keypad ENTER 클릭
         private void Confirm()
         {
-            // --- 일반 숫자 모드(PatientCode 등)일 때 ---
+            // 1. 일반 숫자 모드 (PatientCode 등)
+            // 이 모드에서는 8자리 제한 없이 값이 있기만 하면 창을 닫습니다.
             if (!IsDateMode)
             {
-                // 빈 값이 아니라면 바로 확인 처리
                 if (!string.IsNullOrEmpty(InputText))
                 {
                     CloseRequested?.Invoke(true);
                 }
                 return;
             }
-            // --- 날짜 모드일 때 (기존 로직 유지) ---
+
+            // 2. 날짜 모드 (엄격한 유효성 검사)
+            // ENTER를 누른 시점에 8자리가 아니면 경고를 띄우고 초기화합니다.
             if (string.IsNullOrEmpty(InputText) || InputText.Length != 8)
             {
                 CustomMessageWindow.Show("숫자 8자리를 입력하지 않았습니다. 다시 입력해주십시오.",
                     CustomMessageWindow.MessageBoxType.AutoClose, 2,
                     CustomMessageWindow.MessageIconType.Warning);
+
+                InputText = string.Empty; // 여기서 초기화되므로 외부 클릭 시에는 값이 유지됩니다.
                 return;
             }
+
+            // 3. 날짜 형식 유효성 체크
             if (DateTime.TryParseExact(InputText, "yyyyMMdd",
                 null,
                 System.Globalization.DateTimeStyles.None,
                 out DateTime date))
             {
                 ResultDate = date;
-                CloseRequested?.Invoke(true);
+                CloseRequested?.Invoke(true); // 성공 시에만 결과값을 들고 창을 닫음
             }
             else
             {
                 CustomMessageWindow.Show("유효하지 않은 날짜 형식입니다. \n 다시 확인해주세요.",
                     CustomMessageWindow.MessageBoxType.AutoClose, 2,
                     CustomMessageWindow.MessageIconType.Danger);
+
+                InputText = string.Empty; // 날짜 형식이 틀려도 초기화
+                ResultDate = null;
             }
         }
 

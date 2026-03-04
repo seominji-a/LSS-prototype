@@ -129,27 +129,39 @@ namespace LSS_prototype
             }
 
             IconBorder.Visibility = Visibility.Visible;
+            IconBorder.Background = Brushes.Transparent; // 배경 제거 (아이콘 자체에 색상 포함)
+
+            string pathData;
+            string colorHex;
 
             switch (icon)
             {
                 case MessageIconType.Info:
-                    IconText.Text = "ℹ";
-                    IconText.Foreground = new SolidColorBrush(Color.FromRgb(255, 255, 255));
-                    IconBorder.Background = new SolidColorBrush(Color.FromRgb(23, 55, 83)); // #173753
+                    // Success_2.svg (체크 아이콘)
+                    pathData = "M50,0C22.39,0,0,22.39,0,50s22.39,50,50,50,50-22.39,50-50S77.61,0,50,0ZM83.9,34.48l-38.12,38.12c-.99.99-2.29,1.47-3.6,1.45-1.3.02-2.61-.46-3.6-1.45l-22.48-22.48c-1.94-1.94-1.94-5.13,0-7.07,1.94-1.94,5.13-1.94,7.07,0l19.01,19.01,34.65-34.65c1.94-1.94,5.13-1.94,7.07,0,1.94,1.94,1.94,5.13,0,7.07Z";
+                    colorHex = "#173753";
                     break;
 
                 case MessageIconType.Warning:
-                    IconText.Text = "⚠";
-                    IconText.Foreground = new SolidColorBrush(Color.FromRgb(255, 255, 255));
-                    IconBorder.Background = new SolidColorBrush(Color.FromRgb(234, 179, 8)); // 노란색
+                    // Warning_1.svg (느낌표 아이콘)
+                    pathData = "M50,0C22.39,0,0,22.39,0,50s22.39,50,50,50,50-22.39,50-50S77.61,0,50,0ZM50,83.19c-3.72,0-6.74-3.02-6.74-6.74s3.02-6.74,6.74-6.74,6.74,3.02,6.74,6.74-3.02,6.74-6.74,6.74ZM58.08,25.9l-3.9,33.69c-.64,4.94-7.76,4.9-8.37,0l-3.9-33.69c-.52-4.46,2.68-8.5,7.15-9.02,5.13-.66,9.67,3.9,9.02,9.02Z";
+                    colorHex = "#ff7900";
                     break;
 
                 case MessageIconType.Danger:
-                    IconText.Text = "✖";
-                    IconText.Foreground = new SolidColorBrush(Color.FromRgb(255, 255, 255));
-                    IconBorder.Background = new SolidColorBrush(Color.FromRgb(220, 38, 38)); // 빨간색
+                    // Error.svg (X 아이콘)
+                    pathData = "M50,0C22.39,0,0,22.39,0,50s22.39,50,50,50,50-22.39,50-50S77.61,0,50,0ZM73.54,66.46c1.95,1.95,1.95,5.12,0,7.07-1.95,1.95-5.12,1.95-7.07,0l-16.46-16.46-16.46,16.46c-1.95,1.95-5.12,1.95-7.07,0-1.95-1.95-1.95-5.12,0-7.07l16.46-16.46-16.46-16.46c-1.95-1.95-1.95-5.12,0-7.07,1.95-1.95,5.12-1.95,7.07,0l16.46,16.46,16.46-16.46c1.95-1.95,5.12-1.95,7.07,0,1.95,1.95,1.95,5.12,0,7.07l-16.46,16.46,16.46,16.46Z";
+                    colorHex = "#ea224b";
                     break;
+
+                default:
+                    return;
             }
+
+            IconText.Visibility = Visibility.Collapsed;
+            IconPath.Data = Geometry.Parse(pathData);
+            IconPath.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString(colorHex));
+            IconPath.Visibility = Visibility.Visible;
         }
 
         private void ApplyBlurToAllWindows()

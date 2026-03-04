@@ -54,27 +54,30 @@
                     <Grid Grid.Row="1" VerticalAlignment="Center">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="140"/>
-                            <!-- 아이콘 고정 -->
                             <ColumnDefinition Width="*"/>
-                            <!-- 메시지 최대 활용 -->
                             <ColumnDefinition Width="10"/>
-                            <!-- 우측 최소 여백 -->
                         </Grid.ColumnDefinitions>
 
                         <!-- 아이콘 - 맨 왼쪽 고정 -->
                         <Border x:Name="IconBorder"
-                                Grid.Column="0"
-                                Width="110"
-                                Height="110"
-                                CornerRadius="55"
-                                VerticalAlignment="Center"
-                                HorizontalAlignment="Center"
-                                Visibility="Collapsed">
-                            <TextBlock x:Name="IconText"
-                                       FontSize="64"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       FontFamily="Segoe UI Symbol"/>
+                            Grid.Column="0"
+                            Width="110"
+                            Height="110"
+                            CornerRadius="55"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Visibility="Collapsed">
+                            <Grid>
+                                <TextBlock x:Name="IconText"
+                            FontSize="64"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="Segoe UI Symbol"/>
+                                <Path x:Name="IconPath"
+                            Stretch="Uniform"
+                            Width="80" Height="80"
+                            Visibility="Collapsed"/>
+                            </Grid>
                         </Border>
 
                         <!-- 메시지 - 우측 넓게 -->

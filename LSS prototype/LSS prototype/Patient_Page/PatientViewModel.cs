@@ -266,7 +266,7 @@ namespace LSS_prototype.Patient_Page
 
                 if (CustomMessageWindow.Show(
                         $"{SelectedPatient.PatientName} 환자 정보를 삭제하시겠습니까?",
-                        CustomMessageWindow.MessageBoxType.YesNo, 0, CustomMessageWindow.MessageIconType.Danger
+                        CustomMessageWindow.MessageBoxType.YesNo, 0, CustomMessageWindow.MessageIconType.Info
                     ) == CustomMessageWindow.MessageBoxResult.Yes)
                 {
                     var repo = new DB_Manager();

@@ -58,7 +58,7 @@ namespace LSS_prototype.DB_CRUD
                                          "DB 버전이 다릅니다.\n 기존 로컬 DB가 삭제되고 신규 DB가 생성됩니다.\n진행하시겠습니까?",
                                          CustomMessageWindow.MessageBoxType.YesNo,
                                          autoCloseSeconds: 30,
-                                         icon: CustomMessageWindow.MessageIconType.Danger);
+                                         icon: CustomMessageWindow.MessageIconType.Warning);
 
                                 if (result == CustomMessageWindow.MessageBoxResult.Yes)
                                     needRecreate = true;

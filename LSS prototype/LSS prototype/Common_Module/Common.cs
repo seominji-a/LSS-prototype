@@ -84,7 +84,13 @@ namespace LSS_prototype
                     return false;
                 }
 
+
+
                 // 2) ID 일치 확인 (대소문자 무시)
+                // ID가 비어있으면 MASTER 검증 스킵
+                if (string.IsNullOrWhiteSpace(inputId) || string.IsNullOrWhiteSpace(masterId))
+                    return false;
+
                 if (!string.Equals(inputId.Trim(), masterId.Trim(),
                     StringComparison.OrdinalIgnoreCase))
                     return false;
@@ -241,7 +247,7 @@ namespace LSS_prototype
                         ex.Message,
                         CustomMessageWindow.MessageBoxType.Ok,
                         0,
-                        CustomMessageWindow.MessageIconType.Warning);
+                        CustomMessageWindow.MessageIconType.Danger);
                 });
             }
             catch (Exception logEx)

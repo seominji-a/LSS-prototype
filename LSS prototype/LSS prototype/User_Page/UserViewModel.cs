@@ -295,7 +295,7 @@ namespace LSS_prototype.User_Page
                     $"{SelectedUser.UserName} 사용자를 정말 삭제하시겠습니까?\n되돌릴 수 없는 명령입니다.",
                     CustomMessageWindow.MessageBoxType.YesNo,
                     0,
-                    CustomMessageWindow.MessageIconType.Danger);
+                    CustomMessageWindow.MessageIconType.Warning);
 
                 if (result == CustomMessageWindow.MessageBoxResult.Yes)
                 {

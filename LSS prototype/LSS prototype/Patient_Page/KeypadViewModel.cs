@@ -69,8 +69,11 @@ namespace LSS_prototype.Patient_Page
 
         private void RemoveLast()
         {
-            if (InputText.Length > 0)
-                InputText = InputText.Substring(0, InputText.Length - 1);
+            if (!string.IsNullOrEmpty(InputText) && InputText.Length > 0)
+            {
+                // 마지막 글자를 제거한 새 문자열 할당
+                InputText = InputText.Remove(InputText.Length - 1);
+            }
         }
 
         //Keypad ENTER 클릭

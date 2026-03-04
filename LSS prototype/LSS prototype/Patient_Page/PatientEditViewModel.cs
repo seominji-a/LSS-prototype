@@ -61,6 +61,8 @@ namespace LSS_prototype.Patient_Page
 
         public ICommand OpenKeypadCommand { get; }
 
+        public ICommand OpenPatientCodeKeypadCommand { get; }
+
         public Action<bool?> CloseAction { get; set; }
         
         // IDialogService와 PatientModel을 모두 받음
@@ -78,6 +80,7 @@ namespace LSS_prototype.Patient_Page
             EditCommand = new RelayCommand(UpdatePatient);
             CancelCommand = new RelayCommand(Cancel);
             OpenKeypadCommand = new RelayCommand(OpenKeypad); // 커맨드 연결
+            OpenPatientCodeKeypadCommand = new RelayCommand(OpenPatientCodeKeypad);
         }
 
         private void UpdatePatient()
@@ -176,6 +179,7 @@ namespace LSS_prototype.Patient_Page
 
             // 팝업 열기
             IsKeypadOpen = true;
+            IsCodeKeypadOpen = false;
         }
 
         private void OnKeypadInputChanged(string input)
@@ -194,6 +198,8 @@ namespace LSS_prototype.Patient_Page
             return input.Insert(4, "-").Insert(7, "-");
         }
 
+        
+
         private void OnKeypadClosed(bool? result)
         {
             IsKeypadOpen = false;
@@ -208,6 +214,45 @@ namespace LSS_prototype.Patient_Page
                 BirthDatePreview = BirthDate?.ToString("yyyy-MM-dd");
             }
         }
+
+        private bool _isCodeKeypadOpen;
+        public bool IsCodeKeypadOpen
+        {
+            get => _isCodeKeypadOpen;
+            set { _isCodeKeypadOpen = value; OnPropertyChanged(); }
+        }
+
+        private void OpenPatientCodeKeypad()
+        {
+            this.KeypadVm = new KeypadViewModel();
+            this.KeypadVm.IsDateMode = false;
+            this.KeypadVm.MaxLength = 10;
+            if (this.PatientCode.HasValue)
+            {
+                this.KeypadVm.InputText = this.PatientCode.Value.ToString();
+            }
+            // CloseRequested 이벤트 연결
+            this.KeypadVm.CloseRequested += (result) =>
+            {
+                IsCodeKeypadOpen = false; // 팝업 닫기
+            };
+            // -------------------------------------------------------------
+            this.KeypadVm.InputChanged += (input) => {
+                if (string.IsNullOrEmpty(input))
+                {
+                    this.PatientCode = null;
+                    OnPropertyChanged(nameof(PatientCode));
+                }
+                else if (int.TryParse(input, out int code))
+                {
+                    this.PatientCode = code;
+                    OnPropertyChanged(nameof(PatientCode));
+                }
+            };
+            IsCodeKeypadOpen = true;
+            IsKeypadOpen = false; // 다른 키패드는 확실히 닫기
+        }
+
         private void Cancel()
         {
             CloseAction?.Invoke(false);

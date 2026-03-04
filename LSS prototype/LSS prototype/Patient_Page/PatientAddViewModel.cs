@@ -77,7 +77,7 @@ namespace LSS_prototype.Patient_Page
         {
             if (string.IsNullOrWhiteSpace(PatientName)) { ShowWarning("환자 이름을 입력해주세요."); return; }
             if (PatientCode == null || PatientCode == 0) { ShowWarning("환자 코드를 입력해주세요."); return; }
-            if (BirthDate == null) { ShowWarning("생년월일을 선택해주세요."); return; }
+            if (BirthDate == null) { ShowWarning("생년월일을 확인해주세요."); return; }
             if (string.IsNullOrWhiteSpace(Sex)) { ShowWarning("성별을 선택해주세요."); return; }
 
             // 중복 체크 추가 (창이 닫히기 전에 수행)

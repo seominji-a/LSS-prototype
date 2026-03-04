@@ -75,7 +75,7 @@
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="ListBoxItem">
+                    <ControlTemplate TargetType="ListBoxItem"> <!-- 카드 선택 시, 색상 바뀌게 하는 부분 -->
                         <Border x:Name="Outer" CornerRadius="16" BorderThickness="3" BorderBrush="Transparent" Padding="2">
                             <Border x:Name="Inner" Background="{StaticResource Surface}" BorderBrush="{StaticResource Border}"
                                     BorderThickness="1.5" CornerRadius="14" Padding="22,18">
@@ -367,7 +367,7 @@
                 <Border Background="#132E43" BorderBrush="#244A66" BorderThickness="1"
                         CornerRadius="12" Padding="14,12" Margin="0,0,0,20" Cursor="Hand"
                         MouseLeftButtonUp="SelectedPatientBorder_Click">
-                    <StackPanel>
+                    <StackPanel> <!-- 선택된값이 자동으로 우측상단카드에 binding 된다 별도 비하인드 뷰모델코드 X-->
                         <TextBlock Text="Selected Patient" Foreground="#BBD0E1" FontSize="13" Margin="0,0,0,6"/>
                         <TextBlock Text="{Binding SelectedPatient.PatientName}" Foreground="White"
                                    FontSize="18" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
@@ -384,7 +384,7 @@
                         Content="Delete Patient" Width="228" Margin="0,0,0,18"/>
                 <Button Style="{StaticResource NavBtn}" Command="{Binding EmrSyncCommand}"
                         Content="Sync" Width="228" Margin="0,0,0,18"/>
-                <Button Style="{StaticResource NavBtn}" Click="HomeButton_Click"
+                <Button Style="{StaticResource NavBtn}" Click="HomeButton_Click" x:Name="HomeButton"
                         Content="Home" Width="228"/>
             </StackPanel>
         </Border>
@@ -403,8 +403,27 @@
                 <Button Content="Video Review" Style="{StaticResource NavBtn}"       Command="{Binding NavVideoReviewCommand}"/>
             </StackPanel>
 
-            <Button Grid.Column="1" Content="EXIT" Style="{StaticResource ExitBtn}"
-                    Click="Exit_Click" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <Grid Grid.Column="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <!-- 로그아웃 (1) -->
+                    <ColumnDefinition Width="2*"/>
+                    <!-- EXIT (2) -->
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" Style="{StaticResource ExitBtn}"
+                    Command="{Binding LogoutCommand}"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" 
+                    Margin="0,0,5,0">
+                    <StackPanel>
+                        <TextBlock Text="⏻" FontSize="32" HorizontalAlignment="Center"/>
+                        <TextBlock Text="LOGOUT" FontSize="13" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="1" Content="EXIT" Style="{StaticResource ExitBtn}"
+            Click="Exit_Click"
+            HorizontalAlignment="Center" VerticalAlignment="Center"
+            Margin="5,0,0,0"/>
+            </Grid>
         </Grid>
     </Grid>
 </UserControl>

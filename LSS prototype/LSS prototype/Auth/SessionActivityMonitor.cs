@@ -70,17 +70,36 @@ namespace LSS_prototype.Auth
 
         private void CheckForNewWindows(object state)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            // 앱이 종료 중인지 확인
+            if (Application.Current == null) return;
+
+            try
             {
-                foreach (Window window in Application.Current.Windows)
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    if (window != null && !_monitoredWindows.Contains(window))
+                    // 1. ToList() 또는 Cast<Window>().ToArray()를 사용하여 
+                    // 열거하는 동안 컬렉션이 수정되어 발생하는 오류 방지
+                    var currentWindows = Application.Current.Windows.Cast<Window>().ToList();
+
+                    foreach (Window window in currentWindows)
                     {
-                        System.Diagnostics.Debug.WriteLine($"[새 창 감지] {window.GetType().Name}");
-                        StartMonitoring(window);
+                        // 중복 체크 및 유효성 검사
+                        if (window != null && !_monitoredWindows.Contains(window))
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[새 창 감지] {window.GetType().Name}");
+
+                            // 모니터링 리스트에 먼저 추가하여 중복 호출 방지
+                            _monitoredWindows.Add(window);
+
+                            StartMonitoring(window);
+                        }
                     }
-                }
-            });
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[감지 오류] {ex.Message}");
+            }
         }
 
         private void StartMonitoring(Window window)

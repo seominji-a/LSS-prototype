@@ -1,17 +1,22 @@
-﻿using LSS_prototype.DB_CRUD;
+﻿using FellowOakDicom;
+using FellowOakDicom.Network;
+using FellowOakDicom.Network.Client;
+using LSS_prototype.DB_CRUD;
 using LSS_prototype.User_Page;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Windows.Input;
-using FellowOakDicom;
-using FellowOakDicom.Network;
-using FellowOakDicom.Network.Client;
 using System.Windows;
+using System.Windows.Input;
+
 using LSS_prototype.Auth;
 
 namespace LSS_prototype.Patient_Page
@@ -114,6 +119,8 @@ namespace LSS_prototype.Patient_Page
         public ICommand PatientEditCommand { get; }
         public ICommand PatientDeleteCommand { get; }
         public ICommand EmrSyncCommand { get; }
+
+        public ICommand ImportCommand { get; }
         public ICommand NavScanCommand { get; }
         public ICommand NavImageReviewCommand { get; }
         public ICommand NavVideoReviewCommand { get; }
@@ -126,6 +133,7 @@ namespace LSS_prototype.Patient_Page
             PatientEditCommand = new RelayCommand(_ => EditPatient());
             PatientDeleteCommand = new RelayCommand(_ => DeletePatient());
             EmrSyncCommand = new AsyncRelayCommand(async _ => await EmrSync());
+            ImportCommand = new RelayCommand(_ => ImportPatient());
             LogoutCommand = new RelayCommand(_ => Common.ExecuteLogout());
 
             NavScanCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new Scan_Page.Scan()));
@@ -289,6 +297,107 @@ namespace LSS_prototype.Patient_Page
             catch (Exception ex)
             {
                 Common.WriteLog(ex);
+            }
+        }
+
+        private async void ImportPatient()
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Filter = "DICOM files (*.dcm)|*.dcm",
+                Title = "DICOM 파일 선택",
+                Multiselect = true
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                // 1. 로딩 표시 시작 (필요 시)
+                // LoadingWindow.Begin("파일 가져오기 중...");
+
+                try
+                {
+                    string targetFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DICOM");
+                    if (!Directory.Exists(targetFolder))
+                    {
+                        Directory.CreateDirectory(targetFolder);
+                    }
+
+                    // 2. 파일 복사 작업을 백그라운드 스레드에서 수행 (CPU/IO 바운드 작업)
+                    await Task.Run(() =>
+                    {
+                        var repoInside = new DB_Manager();
+                        foreach (string sourcePath in openFileDialog.FileNames)
+                        {
+                            try
+                            {
+                                DicomFile dicomFile = DicomFile.Open(sourcePath);
+
+                                // 1. 변수 선언: DICOM 태그에서 문자열 읽기 (이 줄이 반드시 위에 있어야 합니다)
+                                string pBirthStr = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.PatientBirthDate, "19000101");
+
+                                string pName = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.PatientName, "Unknown Name");
+                                string pSex = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.PatientSex, "U");
+                                string pCodeStr = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.PatientID, "0");
+
+                                // 2. 날짜 변환 (pBirthStr 사용)
+                                if (!DateTime.TryParseExact(pBirthStr, "yyyyMMdd",
+                                    System.Globalization.CultureInfo.InvariantCulture,
+                                    System.Globalization.DateTimeStyles.None,
+                                    out DateTime birthDate))
+                                {
+                                    birthDate = new DateTime(1900, 1, 1); // 변환 실패 시 기본값
+                                }
+
+                                // 파일 복사
+                                string fileName = Path.GetFileName(sourcePath);
+                                string targetPath = Path.Combine(targetFolder, fileName);
+                                File.Copy(sourcePath, targetPath, true);
+
+                                // DB 저장
+                                if (int.TryParse(pCodeStr, out int pCode))
+                                {
+                                    var patientModel = new PatientModel
+                                    {
+                                        PatientCode = pCode,
+                                        PatientName = pName,
+                                        Sex = pSex,
+                                        BirthDate = birthDate // 변환된 DateTime 객체 사용
+                                    };
+                                    repoInside.AddPatient(patientModel);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"에러: {ex.Message}");
+                            }
+                        }
+                    });
+
+                    // 3. DB에서 데이터를 다시 불러오는 작업 (비동기 처리 권장)
+                    var repo = new DB_Manager();
+
+                    // Task.Run을 사용하여 DB 조회 시 UI 프리징 방지
+                    var updatedList = await Task.Run(() => repo.GetAllPatients());
+
+                    // 4. UI 스레드에서 결과 반영
+                    _localPatients = updatedList;
+                    RefreshPatients();
+
+                    CustomMessageWindow.Show("임포트가 완료되었습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageIconType.Info);
+                }
+                catch (Exception ex)
+                {
+                    Common.WriteLog(ex);
+                    CustomMessageWindow.Show($"오류 발생: {ex.Message}",
+                        CustomMessageWindow.MessageBoxType.Ok, 0,
+                        CustomMessageWindow.MessageIconType.Danger);
+                }
+                finally
+                {
+                    // LoadingWindow.End();
+                }
             }
         }
 

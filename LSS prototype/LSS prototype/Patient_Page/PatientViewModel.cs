@@ -266,7 +266,7 @@ namespace LSS_prototype.Patient_Page
 
                 if (CustomMessageWindow.Show(
                         $"{SelectedPatient.PatientName} 환자 정보를 삭제하시겠습니까?",
-                        CustomMessageWindow.MessageBoxType.YesNo, 0, CustomMessageWindow.MessageIconType.Danger
+                        CustomMessageWindow.MessageBoxType.YesNo, 0, CustomMessageWindow.MessageIconType.Info
                     ) == CustomMessageWindow.MessageBoxResult.Yes)
                 {
                     var repo = new DB_Manager();
@@ -349,33 +349,50 @@ namespace LSS_prototype.Patient_Page
 
                     if (string.IsNullOrWhiteSpace(keyword))
                     {
-                        // 검색어 없으면 원래 상태로 복원
+                        // 검색어 없으면 원래 목록으로 복원
                         RefreshPatients();
                     }
                     else
                     {
-                        // LIKE %keyword% 필터링
-                        var filtered = _showAll
-                            ? _emrPatients.Concat(_localPatients)  // 전체에서 검색
-                            : _emrPatients;                         // EMR만 검색
+                        // 검색 대상 결정: 전체(_showAll) or EMR만
+                        var source = _showAll
+                            ? _emrPatients.Concat(_localPatients)
+                            : _emrPatients;
+
+                        // 검색어 공백 제거 ( ParkHan → Park Hanyong 검색 대응 )
+                        string kwNoSpace = keyword.Replace(" ", "");
 
                         Patients = new ObservableCollection<PatientModel>(
-                            filtered.Where(p =>
-                                (p.PatientName ?? "").Contains(keyword) ||
-                                (p.PatientCode.ToString()).Contains(keyword) ||
-                                (p.AccessionNumber ?? "").Contains(keyword)
-                            ));
+                            source.Where(p => MatchesKeyword(p, keyword, kwNoSpace))
+                        );
                     }
 
-                    // 선택 항목 유지
+                    // 검색 후에도 기존 선택 항목 유지
                     if (selectedId.HasValue)
-                        SelectedPatient = Patients.FirstOrDefault(u => u.PatientId == selectedId.Value);
+                        SelectedPatient = Patients.FirstOrDefault(p => p.PatientId == selectedId.Value);
                 });
             }
             catch (Exception ex)
             {
                 Common.WriteLog(ex);
             }
+        }
+
+        // 환자 한 명이 검색 조건에 맞는지 판단
+        private bool MatchesKeyword(PatientModel p, string keyword, string kwNoSpace)
+        {
+            // 이름 공백 제거 버전 ( ParkHan으로 Park Hanyong 검색 )
+            string nameNoSpace = (p.PatientName ?? "").Replace(" ", "");
+
+            return
+                // 이름: 공백제거 후 대소문자 무시
+                nameNoSpace.IndexOf(kwNoSpace, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                // 이름: 원본 그대로 대소문자 무시 ( park hanyong → Park Hanyong )
+                (p.PatientName ?? "").IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                // 환자코드
+                p.PatientCode.ToString().Contains(keyword);
+            // 접수번호 ( 사용 미지시 일단 주석 )
+            // || (p.AccessionNumber ?? "").Contains(keyword);
         }
     }
 }

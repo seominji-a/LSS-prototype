@@ -135,7 +135,7 @@
                              IsReadOnly="True"/>
                 </Border>
 
-                <!-- Login ID (읽기전용) -->
+                <!-- Login ID (읽기전용, 최고권한 아이디일 땐 수정가능) -->
                 <TextBlock Text="LOGIN ID"
                            FontSize="18" FontWeight="SemiBold" FontFamily="Arial"
                            Foreground="{StaticResource TextMuted}"

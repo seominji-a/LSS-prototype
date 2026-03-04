@@ -202,6 +202,30 @@ namespace LSS_prototype.DB_CRUD
             }
         }
 
+        // 관리자 ID, PASSWROD 수정 시 호출되는 함수 
+        public bool AdminUpdate(string loginId, string newPassword)
+        {
+            string passwordSalt = GenerateSalt();
+            string passwordHash = GenerateHash(newPassword, passwordSalt);
+
+            using (var conn = new SQLiteConnection("Data Source=" + Common.DB_PATH))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(conn))
+                {
+                    cmd.CommandText = Query.PASSWORD_EDIT;
+
+                    cmd.Parameters.AddWithValue("@hash", passwordHash);
+                    cmd.Parameters.AddWithValue("@salt", passwordSalt);
+                    cmd.Parameters.AddWithValue("@password_changedDate", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                    cmd.Parameters.AddWithValue("@loginId", loginId);
+
+                    int result = cmd.ExecuteNonQuery();
+                    return result == 1;
+                }
+            }
+        }
+
         //ADMIN 최초 로그인 후 ID.PW 변경 시 호출되는 함수 
         public bool UpdateCredential(string oldId, string newId, string newPassword)
         {

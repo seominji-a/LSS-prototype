@@ -101,7 +101,7 @@ namespace LSS_prototype.Patient_Page
                 {
                     CustomMessageWindow.Show("이미 사용 중인 환자 번호입니다.",
                         CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Danger);
+                        CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace LSS_prototype.Login_Page
 {
@@ -70,5 +71,25 @@ namespace LSS_prototype.Login_Page
             CapsLockWarningConfirm.Visibility = Visibility.Collapsed;
         }
 
+        private void LoginIdBox_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    LoginIdBox.Focus();
+
+                    // 커서를 텍스트 맨 뒤로 이동 (선택 없이)
+                    LoginIdBox.SelectionStart = LoginIdBox.Text.Length;
+                    LoginIdBox.SelectionLength = 0;
+
+                }), DispatcherPriority.Input);
+            }
+            catch(Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+ 
+        }
     }
 }

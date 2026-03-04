@@ -189,19 +189,41 @@ namespace LSS_prototype.User_Page
 
         private void ExecuteEditUser(object parameter)
         {
-            if (SelectedUser == null)
+            try
             {
-                CustomMessageWindow.Show("수정할 사용자를 선택해주세요.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                    CustomMessageWindow.MessageIconType.Warning);
-                return;
+                if (SelectedUser == null)
+                {
+                    CustomMessageWindow.Show("수정할 사용자를 선택해주세요.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+
+                string masterId = Environment.GetEnvironmentVariable("MASTER_ID", EnvironmentVariableTarget.Machine);
+
+                bool isMaster = Common.CurrentUserId == masterId; 
+                
+
+                if (!isMaster && SelectedUser.UserRole.ToString() == "ADMIN") // 최고권한일땐, 관리자계정도 수정가능 
+                {
+                    CustomMessageWindow.Show("최초 설정된 관리자계정은 변경 불가능합니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                var vm = new User_EditViewModel(SelectedUser);
+                var result = _dialogService.ShowDialog(vm);
+
+                if (result == true)
+                    LoadUsers();
             }
-
-            var vm = new User_EditViewModel(SelectedUser);
-            var result = _dialogService.ShowDialog(vm);
-
-            if (result == true)
-                LoadUsers();
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+           
         }
 
         public void OnSearchTextChanged(string text)
@@ -291,11 +313,20 @@ namespace LSS_prototype.User_Page
                     return;
                 }
 
+                if (SelectedUser.UserRole.ToString() == "ADMIN")
+                {
+                    CustomMessageWindow.Show("최초 설정된 관리자계정은 삭제 불가능합니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+
                 var result = CustomMessageWindow.Show(
                     $"{SelectedUser.UserName} 사용자를 정말 삭제하시겠습니까?\n되돌릴 수 없는 명령입니다.",
                     CustomMessageWindow.MessageBoxType.YesNo,
                     0,
-                    CustomMessageWindow.MessageIconType.Danger);
+                    CustomMessageWindow.MessageIconType.Warning);
 
                 if (result == CustomMessageWindow.MessageBoxResult.Yes)
                 {

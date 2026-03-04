@@ -28,7 +28,7 @@ namespace LSS_prototype.User_Page
             set { _userID = value; OnPropertyChanged(); }
         }
 
-        private string _role = "Physician";
+        private string _role = string.Empty;
         public string Role
         {
             get => _role;

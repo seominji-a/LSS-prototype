@@ -318,7 +318,7 @@
 
         <!-- 오른쪽 사이드 패널 -->
         <Border Grid.Column="1" Background="{StaticResource Panel}">
-            <DockPanel Margin="14,28,14,14">
+            <DockPanel Margin="14,32,14,14">
 
                 <!-- 하단 고정 : Home + EXIT -->
                 <StackPanel DockPanel.Dock="Bottom">

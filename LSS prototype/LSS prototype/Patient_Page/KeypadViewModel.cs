@@ -115,10 +115,11 @@ namespace LSS_prototype.Patient_Page
             {
                 CustomMessageWindow.Show("유효하지 않은 날짜 형식입니다. \n 다시 확인해주세요.",
                     CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                    CustomMessageWindow.MessageIconType.Danger);
+                    CustomMessageWindow.MessageIconType.Warning);
 
                 InputText = string.Empty; // 날짜 형식이 틀려도 초기화
                 ResultDate = null;
+
             }
         }
 

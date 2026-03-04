@@ -86,7 +86,7 @@ namespace LSS_prototype.Patient_Page
             {
                 CustomMessageWindow.Show("중복된 환자가 존재합니다.",
                     CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                    CustomMessageWindow.MessageIconType.Danger);
+                    CustomMessageWindow.MessageIconType.Warning);
 
                 // 여기서 return을 하면 CloseAction이 실행되지 않아 창이 유지됩니다.
                 return;

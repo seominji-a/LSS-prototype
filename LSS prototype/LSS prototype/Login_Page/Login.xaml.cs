@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Data.SQLite;
 using LSS_prototype.DB_CRUD;
+using System.Windows.Threading;
 
 namespace LSS_prototype.Login_Page
 {
@@ -23,7 +24,20 @@ namespace LSS_prototype.Login_Page
             InitializeComponent();
             var db = new DB_Manager();
             db.InitDB();
-            (DataContext as LoginViewModel)?.LoadAdminIds(); // 2. 그 다음 호출
+            var vm = DataContext as LoginViewModel;
+            vm?.LoadAdminIds();
+
+            if (vm != null)
+            {
+                vm.FocusUserIdAction = () =>
+                {
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        UserId.Focus();
+                        Keyboard.Focus(UserId);
+                    }), DispatcherPriority.Input);
+                };
+            }
         }
 
         // ── EXIT 버튼 ──

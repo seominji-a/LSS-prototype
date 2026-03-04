@@ -24,6 +24,10 @@ namespace LSS_prototype.Login_Page
         
         // 버튼과 연결될 객체
         public ICommand LoginCommand { get; }
+        /// <summary>
+        /// 패스워드 포커스 이벤트 호출하기 위한 객체
+        /// </summary>
+        public Action FocusUserIdAction { get; set; }
 
 
         public string UserId
@@ -65,12 +69,18 @@ namespace LSS_prototype.Login_Page
             try
             {
                 var db = new DB_Manager();
-                _adminIdList = db.SelectAdminLoginIds();
+                _adminIdList?.Clear();
+                var list = db.SelectAdminLoginIds();
+
+                if (list != null)
+                {
+                    _adminIdList.AddRange(list);
+                }
             }
             catch (Exception ex)
             {
                 Common.WriteLog(ex);
-                _adminIdList.Clear();
+                _adminIdList?.Clear();
             }
         }
 
@@ -184,7 +194,11 @@ namespace LSS_prototype.Login_Page
                             CustomMessageWindow.MessageIconType.Warning);
                         
                     }
+                    UserId = string.Empty;
+                    LoadAdminIds();
+                    UpdateAdminModeVisibilityByUserId(); // 추가
                     passwordBox?.Clear();
+                    FocusUserIdAction?.Invoke();         // 추가
                     return; // 비밀번호 변경 이벤트가 일어났을땐, 무조건 해당 함수 한번 종료하고
                     // 다시 사용자가 로그인 버튼을 눌러 해당 함수를 호출하도록 구현 ( 0224 박한용 ) 
 

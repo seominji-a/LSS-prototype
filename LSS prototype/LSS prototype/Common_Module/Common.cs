@@ -84,7 +84,13 @@ namespace LSS_prototype
                     return false;
                 }
 
+
+
                 // 2) ID 일치 확인 (대소문자 무시)
+                // ID가 비어있으면 MASTER 검증 스킵
+                if (string.IsNullOrWhiteSpace(inputId) || string.IsNullOrWhiteSpace(masterId))
+                    return false;
+
                 if (!string.Equals(inputId.Trim(), masterId.Trim(),
                     StringComparison.OrdinalIgnoreCase))
                     return false;
@@ -241,7 +247,7 @@ namespace LSS_prototype
                         ex.Message,
                         CustomMessageWindow.MessageBoxType.Ok,
                         0,
-                        CustomMessageWindow.MessageIconType.Warning);
+                        CustomMessageWindow.MessageIconType.Danger);
                 });
             }
             catch (Exception logEx)
@@ -301,6 +307,7 @@ namespace LSS_prototype
         public const string PATIENT_CODE_SEARCH = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode";
         public const string PATIENT_CODE_SEARCHSELF = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND PATIENT_ID <> @Patient_id";
         public const string PASSWORD_EDIT = @"UPDATE USER SET password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @loginId";// 비밀번호변경 쿼리문 
+        public const string ADMIN_UPDATE = @"UPDATE USER SET password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate, login_id = @logiId WHERE login_id = @loginId";// 어드민 로그인 정보 수정 쿼리문 
         public const string CREDENTIAL_EDIT = @"UPDATE USER SET login_id = @newId, password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @oldId";
         public const string SEARCH_USERID_NAME = @" SELECT USER_ID, USER_NAME, LOGIN_ID, USER_ROLE, ROLE_CODE FROM USER WHERE  USER_NAME LIKE @keyword OR  LOGIN_ID  LIKE @keyword ORDER BY USER_ID ASC";
         public const string SEARCH_PATIENT = @" SELECT PATIENT_ID, PATIENT_CODE, PATIENT_NAME, BIRTH_DATE, SEX, REG_DATE FROM PATIENT WHERE PATIENT_NAME LIKE @keyword OR PATIENT_CODE LIKE @keyword ORDER BY PATIENT_ID ASC";

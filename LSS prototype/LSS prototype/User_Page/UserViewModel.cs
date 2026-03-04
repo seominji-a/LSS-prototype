@@ -197,6 +197,14 @@ namespace LSS_prototype.User_Page
                 return;
             }
 
+            if(SelectedUser.RoleCode.ToString() == "A")
+            {
+                CustomMessageWindow.Show("최초 설정된 관리자계정은 변경 불가능합니다.",
+                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    CustomMessageWindow.MessageIconType.Warning);
+                return;
+            }
+
             var vm = new User_EditViewModel(SelectedUser);
             var result = _dialogService.ShowDialog(vm);
 
@@ -290,6 +298,15 @@ namespace LSS_prototype.User_Page
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
+
+                if (SelectedUser.RoleCode.ToString() == "A")
+                {
+                    CustomMessageWindow.Show("최초 설정된 관리자계정은 삭제 불가능합니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
 
                 var result = CustomMessageWindow.Show(
                     $"{SelectedUser.UserName} 사용자를 정말 삭제하시겠습니까?\n되돌릴 수 없는 명령입니다.",

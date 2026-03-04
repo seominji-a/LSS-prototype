@@ -135,18 +135,30 @@
                              IsReadOnly="True"/>
                 </Border>
 
-                <!-- Login ID (읽기전용, 최고권한 아이디일 땐 수정가능) -->
+                <!-- Login ID (읽기전용, 최고권한일 땐 수정가능) -->
                 <TextBlock Text="LOGIN ID"
                            FontSize="18" FontWeight="SemiBold" FontFamily="Arial"
                            Foreground="{StaticResource TextMuted}"
                            Margin="0,24,0,10"/>
-                <Border Style="{StaticResource InputBoxBorderDisabledStyle}">
-                    <TextBox Text="{Binding LoginId, Mode=OneWay}"
+                <Border>
+                    <Border.Style>
+                        <Style TargetType="Border" BasedOn="{StaticResource InputBoxBorderStyle}">
+                            <Setter Property="Background" Value="{StaticResource InputBgDisabled}"/>
+                            <Setter Property="BorderBrush" Value="#E2E8F0"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding CanEditId}" Value="True">
+                                    <Setter Property="Background" Value="{StaticResource InputBg}"/>
+                                    <Setter Property="BorderBrush" Value="{StaticResource InputBorder}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBox Text="{Binding LoginId, UpdateSourceTrigger=PropertyChanged}"
                              FontSize="24" FontFamily="Arial"
                              Background="Transparent" BorderThickness="0"
-                             Padding="18,0" Foreground="{StaticResource TextDisabled}"
+                             Padding="18,0" Foreground="{StaticResource TextDark}"
                              VerticalContentAlignment="Center"
-                             IsReadOnly="True"/>
+                             IsEnabled="{Binding CanEditId}"/>
                 </Border>
 
                 <!-- NEW PASSWORD 레이블 + 캡스락 경고 -->

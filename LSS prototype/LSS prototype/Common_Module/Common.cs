@@ -1,5 +1,7 @@
-﻿using System;
+﻿using LSS_prototype.Auth;
+using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -47,7 +49,46 @@ namespace LSS_prototype
 
         public static void WriteSessionLog(string message)
             => LogService.WriteSessionLog(message);
+
+        public static void ExecuteLogout()
+        {
+            try
+            {
+                var result = CustomMessageWindow.Show(
+                    "로그아웃 하시겠습니까?",
+                    CustomMessageWindow.MessageBoxType.YesNo,
+                    0,
+                    CustomMessageWindow.MessageIconType.Info);
+
+                if (result != CustomMessageWindow.MessageBoxResult.Yes) return;
+
+                // 1. 타이머 정지 (세션 만료 체크 중단)
+                App.ActivityMonitor.Stop(); // 
+
+                // 2. 토큰 초기화
+                AuthToken.SignOut();
+
+                // 3. 세션 완전 종료 (열린 창 모두 닫기)
+                SessionStateManager.ClearSession();
+
+                // 4. 로그인 창 호출
+                var login = new Login_Page.Login();
+                login.Show();
+
+                // 5. 나머지 창 모두 닫기
+                foreach (Window window in Application.Current.Windows.OfType<Window>().ToList())
+                {
+                    if (!(window is Login_Page.Login))
+                        window.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
     }
+
 
     /// <summary>
     /// OTP 관련 로직 (Common에서 호출 래핑)
@@ -421,6 +462,9 @@ namespace LSS_prototype
             _disposed = true;
             Cancel();
         }
+
+       
     }
+
 
 }

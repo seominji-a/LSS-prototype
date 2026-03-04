@@ -253,5 +253,17 @@ namespace LSS_prototype.Auth
             loginWindow.Show();
             Application.Current.MainWindow = loginWindow;
         }
+
+        public void Stop()
+        {
+            _timeoutCheckTimer.Change(Timeout.Infinite, Timeout.Infinite);
+            _windowCheckTimer.Change(Timeout.Infinite, Timeout.Infinite);
+
+            foreach (var window in _monitoredWindows.ToList())
+                RemoveEventHandlers(window);
+
+            _monitoredWindows.Clear();
+        }
+
     }
 }

@@ -213,7 +213,7 @@
                 <!-- 3줄 : 버전 -->
                 <TextBlock>
         <Run FontWeight="Bold">버전</Run>
-        <Run> : 1.0.0.9</Run>
+        <Run> : 1.0.0.15</Run>
                 </TextBlock>
 
             </StackPanel>

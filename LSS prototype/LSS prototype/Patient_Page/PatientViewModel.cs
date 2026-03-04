@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
+using LSS_prototype.Auth;
 
 namespace LSS_prototype.Patient_Page
 {
@@ -28,6 +29,7 @@ namespace LSS_prototype.Patient_Page
     {
         private readonly SearchDebouncer _searchDebouncer;
         private readonly IDialogService _dialogService;
+        public ICommand LogoutCommand { get; }
 
         private string _searchText;
 
@@ -104,6 +106,8 @@ namespace LSS_prototype.Patient_Page
             {
                 if (_showAll == value) return;
                 _showAll = value;
+                _searchText = string.Empty;
+                OnPropertyChanged(nameof(SearchText)); // UI 검색창도 같이 초기화
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(PageTitle)); // 페이지이름 변경 함수호출 
                 RefreshPatients(); // 토글될 때마다 화면 즉시 갱신
@@ -130,6 +134,8 @@ namespace LSS_prototype.Patient_Page
             PatientDeleteCommand = new RelayCommand(_ => DeletePatient());
             EmrSyncCommand = new AsyncRelayCommand(async _ => await EmrSync());
             ImportCommand = new RelayCommand(_ => ImportPatient());
+            LogoutCommand = new RelayCommand(_ => Common.ExecuteLogout());
+
             NavScanCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new Scan_Page.Scan()));
             // 0227 박한용 아래코드는 데이터 관련 처리 완료 후 주석 풀고 연동 예정 
             //NavImageReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new ImageReview_Page.ImageReview()));
@@ -137,8 +143,10 @@ namespace LSS_prototype.Patient_Page
             _searchDebouncer = new SearchDebouncer(ExecuteSearch, delayMs: 500);
             LoadPatients();
             _ = EmrSync(); // task 무시하기위해 _ = 사용 (별의미 X )
-
+           
         }
+
+        
 
         /// <summary>
         /// DB에서 로컬등록된  환자 목록을 불러와 최신순(내림차순)으로 UI에 반영
@@ -160,12 +168,12 @@ namespace LSS_prototype.Patient_Page
 
         /// <summary>
         /// ShowAll 상태에 따라 표시할 환자 목록을 갱신
-        /// FALSE → EMR만 / TRUE → EMR + LOCAL 합쳐서 표시
+        /// FALSE → EMR만 / TRUE → LOCAL만 ( E-SYNC + LOCAL )
         /// </summary>
         private void RefreshPatients()
         {
             var combined = _showAll
-                ? _emrPatients.Concat(_localPatients)
+                ? _localPatients
                 : _emrPatients;
 
             Patients = new ObservableCollection<PatientModel>(combined);
@@ -458,23 +466,24 @@ namespace LSS_prototype.Patient_Page
                     {
                         // 검색어 없으면 원래 목록으로 복원
                         RefreshPatients();
-                    }
-                    else
-                    {
-                        // 검색 대상 결정: 전체(_showAll) or EMR만
-                        var source = _showAll
-                            ? _emrPatients.Concat(_localPatients)
-                            : _emrPatients;
 
-                        // 검색어 공백 제거 ( ParkHan → Park Hanyong 검색 대응 )
-                        string kwNoSpace = keyword.Replace(" ", "");
-
-                        Patients = new ObservableCollection<PatientModel>(
-                            source.Where(p => MatchesKeyword(p, keyword, kwNoSpace))
-                        );
+                        // 검색어 지울 땐 선택 해제 ( 첫번째 항목 자동선택 방지 )
+                        SelectedPatient = null;
+                        return;
                     }
 
-                    // 검색 후에도 기존 선택 항목 유지
+                    // 검색 대상 결정: 전체(_showAll) or EMR만
+                    var source = _showAll
+                        ? _emrPatients.Concat(_localPatients)
+                        : _emrPatients;
+
+                    string kwNoSpace = keyword.Replace(" ", "");
+
+                    Patients = new ObservableCollection<PatientModel>(
+                        source.Where(p => MatchesKeyword(p, keyword, kwNoSpace))
+                    );
+
+                    // 검색 중일 땐 기존 선택 항목 유지
                     if (selectedId.HasValue)
                         SelectedPatient = Patients.FirstOrDefault(p => p.PatientId == selectedId.Value);
                 });

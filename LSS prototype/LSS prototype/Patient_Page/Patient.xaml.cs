@@ -1,6 +1,7 @@
 ﻿using LSS_prototype.User_Page;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,6 +26,13 @@ namespace LSS_prototype.Patient_Page
         public Patient()
         {
             InitializeComponent();
+
+            #if DEBUG // 배포 시 안보임, vs에서 실행하면 home 화면 보임 ( 테스트 차 ) 
+                HomeButton.Visibility = Visibility.Visible;
+            #else
+                HomeButton.Visibility = Visibility.Collapsed;
+            #endif
+
             Unloaded += (s, e) => (DataContext as PatientViewModel)?.Dispose(); // 사용자 입력 감지 타이머 종료 ( 자원 관리 차 ) 
             txtSearch.TextChanged += OnSearchTextChanged;
         }

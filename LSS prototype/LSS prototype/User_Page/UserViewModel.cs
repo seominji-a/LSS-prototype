@@ -213,7 +213,8 @@ namespace LSS_prototype.User_Page
                     return;
                 }
 
-                var vm = new User_EditViewModel(SelectedUser);
+
+                var vm = new User_EditViewModel(SelectedUser, isMaster);
                 var result = _dialogService.ShowDialog(vm);
 
                 if (result == true)

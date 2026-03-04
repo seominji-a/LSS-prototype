@@ -178,6 +178,7 @@ namespace LSS_prototype.DB_CRUD
             }
         }
 
+        //비밀번호 변경 시 호출되는 함수 
         public bool UpdatePassword(string loginId, string newPassword)
         {
             string passwordSalt = GenerateSalt();
@@ -195,6 +196,29 @@ namespace LSS_prototype.DB_CRUD
                     cmd.Parameters.AddWithValue("@password_changedDate", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
                     cmd.Parameters.AddWithValue("@loginId", loginId);
 
+                    int result = cmd.ExecuteNonQuery();
+                    return result == 1;
+                }
+            }
+        }
+
+        //ADMIN 최초 로그인 후 ID.PW 변경 시 호출되는 함수 
+        public bool UpdateCredential(string oldId, string newId, string newPassword)
+        {
+            string passwordSalt = GenerateSalt();
+            string passwordHash = GenerateHash(newPassword, passwordSalt);
+
+            using (var conn = new SQLiteConnection("Data Source=" + Common.DB_PATH))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(conn))
+                {
+                    cmd.CommandText = Query.CREDENTIAL_EDIT;
+                    cmd.Parameters.AddWithValue("@oldId", oldId);
+                    cmd.Parameters.AddWithValue("@newId", newId);
+                    cmd.Parameters.AddWithValue("@hash", passwordHash);
+                    cmd.Parameters.AddWithValue("@salt", passwordSalt);
+                    cmd.Parameters.AddWithValue("@password_changedDate", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
                     int result = cmd.ExecuteNonQuery();
                     return result == 1;
                 }

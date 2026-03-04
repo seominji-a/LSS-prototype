@@ -56,18 +56,42 @@ namespace LSS_prototype
             window.DataContext = viewModel;
             return window.ShowDialog();
         }
-        public void ShowSetting()  
+        public void ShowSetting()
         {
-            var window = new setting();
-            window.Owner = Application.Current.MainWindow;
-            window.ShowDialog();
+            try
+            {
+                var owner = Application.Current.Windows
+                                .OfType<Window>()
+                                .FirstOrDefault(w => w.IsActive && !(w is setting));
+
+                var window = new setting();
+                window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                if (owner != null) window.Owner = owner;
+                window.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
         }
 
         public void ShowDefault()
         {
-            var window = new Default();
-            window.Owner = Application.Current.MainWindow;
-            window.ShowDialog();
+            try
+            {
+                var owner = Application.Current.Windows
+                                .OfType<Window>()
+                                .FirstOrDefault(w => w.IsActive && !(w is Default));
+
+                var window = new Default();
+                window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                if (owner != null) window.Owner = owner;
+                window.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
         }
     }
 }

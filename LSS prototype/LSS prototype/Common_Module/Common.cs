@@ -75,10 +75,12 @@ namespace LSS_prototype
                     string.IsNullOrWhiteSpace(masterKey))
                 {
                     CustomMessageWindow.Show(
-                       "MASTER_ID 또는 MASTER_KEY 환경변수가 설정되지 않았습니다.",
+                       "MASTER_ID 또는 MASTER_KEY 환경변수가 설정되지 않았습니다.\n 설정 후 재시작 해주세요",
                        CustomMessageWindow.MessageBoxType.Ok,
                        0,
                        CustomMessageWindow.MessageIconType.Warning);
+
+                    Application.Current.Shutdown(); //환경변수가 없다면 무조건 프로그램 종료 시켜야함 -> 최고계정이 활성화되지 않기 때문
                     return false;
                 }
 
@@ -299,6 +301,7 @@ namespace LSS_prototype
         public const string PATIENT_CODE_SEARCH = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode";
         public const string PATIENT_CODE_SEARCHSELF = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND PATIENT_ID <> @Patient_id";
         public const string PASSWORD_EDIT = @"UPDATE USER SET password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @loginId";// 비밀번호변경 쿼리문 
+        public const string CREDENTIAL_EDIT = @"UPDATE USER SET login_id = @newId, password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @oldId";
         public const string SEARCH_USERID_NAME = @" SELECT USER_ID, USER_NAME, LOGIN_ID, USER_ROLE, ROLE_CODE FROM USER WHERE  USER_NAME LIKE @keyword OR  LOGIN_ID  LIKE @keyword ORDER BY USER_ID ASC";
         public const string SEARCH_PATIENT = @" SELECT PATIENT_ID, PATIENT_CODE, PATIENT_NAME, BIRTH_DATE, SEX, REG_DATE FROM PATIENT WHERE PATIENT_NAME LIKE @keyword OR PATIENT_CODE LIKE @keyword ORDER BY PATIENT_ID ASC";
         public const string DELETE_USER = @"DELETE FROM USER WHERE USER_ID = @user_id";

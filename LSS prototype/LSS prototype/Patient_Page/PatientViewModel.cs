@@ -302,6 +302,9 @@ namespace LSS_prototype.Patient_Page
                 _emrPatients = worklistItems;
 
                 RefreshPatients();
+                CustomMessageWindow.Show("EMR 동기화 완료되었습니다.",
+                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageIconType.Info);
             }
             catch (TimeoutException ex)
             {

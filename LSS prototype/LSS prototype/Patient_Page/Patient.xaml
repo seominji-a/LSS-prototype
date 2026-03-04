@@ -92,6 +92,107 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- 토글 스위치 스타일 (OFF: EMR / ON: ALL, 슬라이딩 애니메이션) -->
+        <Style x:Key="ToggleSwitch" TargetType="CheckBox">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Grid Width="140" Height="52" Cursor="Hand">
+
+                            <!-- 배경 트랙 -->
+                            <Border x:Name="Track" CornerRadius="26"
+                                    Background="#B91C1C" Width="140" Height="52"/>
+
+                            <!-- OFF 텍스트 : EMR (오른쪽) -->
+                            <TextBlock x:Name="TxtOff" Text="EMR"
+                                       FontSize="20" FontWeight="Bold" FontFamily="Arial"
+                                       Foreground="White"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center"
+                                       Margin="0,0,16,0"/>
+
+                            <!-- ON 텍스트 : ALL (왼쪽) -->
+                            <TextBlock x:Name="TxtOn" Text="ALL"
+                                       FontSize="20" FontWeight="Bold" FontFamily="Arial"
+                                       Foreground="White" Opacity="0"
+                                       HorizontalAlignment="Left" VerticalAlignment="Center"
+                                       Margin="16,0,0,0"/>
+
+                            <!-- 슬라이딩 썸 -->
+                            <Border x:Name="Thumb" Width="44" Height="44"
+                                    CornerRadius="22" Background="White"
+                                    VerticalAlignment="Center"
+                                    HorizontalAlignment="Left" Margin="4,0,0,0">
+                                <Border.RenderTransform>
+                                    <TranslateTransform x:Name="ThumbTranslate" X="0"/>
+                                </Border.RenderTransform>
+                                <Border.Effect>
+                                    <DropShadowEffect ShadowDepth="1" BlurRadius="6" Opacity="0.3"/>
+                                </Border.Effect>
+                            </Border>
+                        </Grid>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <!-- 트랙 → 파란색 -->
+                                            <ColorAnimation Storyboard.TargetName="Track"
+                                                            Storyboard.TargetProperty="Background.Color"
+                                                            To="#3B82F6" Duration="0:0:0.2"/>
+                                            <!-- 썸 오른쪽 슬라이드 -->
+                                            <DoubleAnimation Storyboard.TargetName="ThumbTranslate"
+                                                             Storyboard.TargetProperty="X"
+                                                             To="88" Duration="0:0:0.2">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <!-- EMR 페이드 아웃 -->
+                                            <DoubleAnimation Storyboard.TargetName="TxtOff"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="0" Duration="0:0:0.15"/>
+                                            <!-- ALL 페이드 인 -->
+                                            <DoubleAnimation Storyboard.TargetName="TxtOn"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="1" Duration="0:0:0.15"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <!-- 트랙 → 빨간색 복원 -->
+                                            <ColorAnimation Storyboard.TargetName="Track"
+                                                            Storyboard.TargetProperty="Background.Color"
+                                                            To="#B91C1C" Duration="0:0:0.2"/>
+                                            <!-- 썸 왼쪽 슬라이드 -->
+                                            <DoubleAnimation Storyboard.TargetName="ThumbTranslate"
+                                                             Storyboard.TargetProperty="X"
+                                                             To="0" Duration="0:0:0.2">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <!-- ALL 페이드 아웃 -->
+                                            <DoubleAnimation Storyboard.TargetName="TxtOn"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="0" Duration="0:0:0.15"/>
+                                            <!-- EMR 페이드 인 -->
+                                            <DoubleAnimation Storyboard.TargetName="TxtOff"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="1" Duration="0:0:0.15"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </UserControl.Resources>
 
     <Grid>
@@ -111,12 +212,16 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
+                <!-- 헤더 : 타이틀 + 토글 + 검색창 -->
                 <Grid Grid.Row="0" Margin="0,0,0,18">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="440"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock FontSize="54" FontWeight="Bold" 
+
+                    <!-- 페이지 타이틀 -->
+                    <TextBlock Grid.Column="0" FontSize="54" FontWeight="Bold"
                                Foreground="{StaticResource Primary}" VerticalAlignment="Center">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
@@ -130,7 +235,16 @@
                         </TextBlock.Style>
                     </TextBlock>
 
-                    <Border Grid.Column="1" Background="{StaticResource Surface}"
+                    <!-- ALL Patient 토글 스위치 (OFF: EMR / ON: ALL) -->
+                    <CheckBox Grid.Column="1"
+                              x:Name="AllPatientCheckBox"
+                              VerticalAlignment="Center"
+                              Margin="0,0,16,0"
+                              IsChecked="{Binding ShowAll, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitch}"/>
+
+                    <!-- 검색창 -->
+                    <Border Grid.Column="2" Background="{StaticResource Surface}"
                             BorderBrush="{StaticResource Border}" BorderThickness="1.5"
                             CornerRadius="10" Height="52">
                         <Grid>
@@ -169,23 +283,9 @@
                             </Grid>
                         </Grid>
                     </Border>
-                    <StackPanel Orientation="Horizontal" Margin="930,0,0,0" VerticalAlignment="Center">
-                        <CheckBox x:Name="AllPatientCheckBox" 
-                                  VerticalAlignment="Center"
-                                  IsChecked="{Binding ShowAll, Mode=TwoWay}" >
-                            <CheckBox.LayoutTransform>
-                                <ScaleTransform ScaleX="2" ScaleY="2.5"/>
-                            </CheckBox.LayoutTransform>
-                        </CheckBox>
-
-                        <TextBlock Text="ALL Patient" 
-                                   Foreground="#FF022020" 
-                                   FontSize="34" 
-                                   VerticalAlignment="Center" 
-                                   Margin="10,0,0,0"/>
-                    </StackPanel>
                 </Grid>
 
+                <!-- 환자 카드 리스트 -->
                 <Border Grid.Row="1" Background="{StaticResource CardOuter}"
                         BorderBrush="{StaticResource Border}" BorderThickness="1.5"
                         CornerRadius="18" Padding="12">
@@ -222,10 +322,11 @@
                                         </TextBlock>
                                     </StackPanel>
 
+                                    <!-- EMR / LOCAL 배지 -->
                                     <Border x:Name="SourceBadge" CornerRadius="6" BorderThickness="1" Padding="12,5"
                                             HorizontalAlignment="Right" VerticalAlignment="Top"
                                             Background="#FEE2E2" BorderBrush="#FCA5A5">
-                                        <TextBlock x:Name="TxtSourceLabel" Text="EMR" 
+                                        <TextBlock x:Name="TxtSourceLabel" Text="EMR"
                                                    FontSize="21" FontWeight="SemiBold" Foreground="#B91C1C"/>
                                     </Border>
                                 </Grid>
@@ -242,7 +343,6 @@
                                         <Setter TargetName="TxtSourceLabel" Property="Foreground" Value="#1D4ED8"/>
                                         <Setter TargetName="TxtSourceLabel" Property="Text"       Value="LOCAL"/>
                                     </DataTrigger>
-
                                     <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
                                         <Setter TargetName="TxtName" Property="Foreground" Value="White"/>
                                         <Setter TargetName="TxtCode" Property="Foreground" Value="#CBD5E1"/>
@@ -256,6 +356,7 @@
             </Grid>
         </Border>
 
+        <!-- 우측 사이드 패널 -->
         <Border Grid.Row="0" Grid.Column="1" Background="{StaticResource Panel}">
             <StackPanel Margin="14,32,14,14">
                 <StackPanel HorizontalAlignment="Center" Margin="0,0,0,20">
@@ -288,6 +389,7 @@
             </StackPanel>
         </Border>
 
+        <!-- 하단 네비게이션 바 -->
         <Grid Grid.Row="1" Grid.ColumnSpan="2" Background="{StaticResource Panel}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -296,9 +398,9 @@
 
             <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="16,0" VerticalAlignment="Center">
                 <Button Content="Patient"      Style="{StaticResource NavBtnActive}" Margin="0,0,10,0"/>
-                <Button Content="Scan"         Style="{StaticResource NavBtn}"       Command="{Binding NavScanCommand}"         Margin="0,0,10,0" />
-                <Button Content="Image Review" Style="{StaticResource NavBtn}"       Command="{Binding NavImageReviewCommand}"  Margin="0,0,10,0" />
-                <Button Content="Video Review" Style="{StaticResource NavBtn}"       Command="{Binding NavVideoReviewCommand}"                    />
+                <Button Content="Scan"         Style="{StaticResource NavBtn}"       Command="{Binding NavScanCommand}"        Margin="0,0,10,0"/>
+                <Button Content="Image Review" Style="{StaticResource NavBtn}"       Command="{Binding NavImageReviewCommand}" Margin="0,0,10,0"/>
+                <Button Content="Video Review" Style="{StaticResource NavBtn}"       Command="{Binding NavVideoReviewCommand}"/>
             </StackPanel>
 
             <Button Grid.Column="1" Content="EXIT" Style="{StaticResource ExitBtn}"

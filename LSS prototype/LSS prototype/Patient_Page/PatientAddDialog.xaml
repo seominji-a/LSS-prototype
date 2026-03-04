@@ -162,7 +162,7 @@
                         </Border>
                     </Popup>
 
-                    <TextBlock Text="SEX"/>
+                    <TextBlock Text="SEX" Style="{StaticResource InputLabelStyle}"/>
 
                     <Border Style="{StaticResource InputBoxBorderStyle}">
                         <ComboBox Style="{StaticResource InputComboBoxStyle}"

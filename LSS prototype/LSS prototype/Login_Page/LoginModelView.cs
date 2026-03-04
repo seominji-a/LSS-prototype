@@ -31,7 +31,9 @@ namespace LSS_prototype.Login_Page
             get => _userId;
             set
             {
-                _userId = value; //UI단에서 ID에 값을 넣을때 마다 반영
+                var cleaned = value?.Replace(" ", ""); // ID에 모든 공백을 제거한다. 
+                if (_userId == cleaned) return; // 공백을 제외한 CLANED의 값이 기존 userid의 값과 같으면 사용자는 공백을 입력한것이므로 
+                _userId = cleaned;              // set 작업 return 
                 OnPropertyChanged();
             }
         }

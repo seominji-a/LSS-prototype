@@ -437,6 +437,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="Login_Page\Login.md" />
     <None Include="LSS prototype_TemporaryKey.pfx" />
     <None Include="packages.config" />
     <None Include="Patient_Page\Patient.md" />

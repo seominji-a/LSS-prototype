@@ -186,15 +186,38 @@
         </DataTemplate>
 
         <DataTemplate x:Key="UserRoleCellTemplate">
-            <Border x:Name="RoleBadge"
-                    Background="#EFF6FF" BorderBrush="#BFDBFE"
-                    BorderThickness="1" CornerRadius="6"
-                    Padding="12,5" Margin="14,0"
-                    HorizontalAlignment="Left" VerticalAlignment="Center">
+            <Border x:Name="RoleBadge" BorderThickness="1" CornerRadius="6" Padding="12,5" Margin="14,0" HorizontalAlignment="Left" VerticalAlignment="Center">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <!-- 기본: 파란 배경 -->
+                        <Setter Property="Background" Value="#EFF6FF"/>
+                        <Setter Property="BorderBrush" Value="#BFDBFE"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding UserRole}" Value="ADMIN">
+                                <!-- ADMIN: 빨간 배경 -->
+                                <Setter Property="Background" Value="#FEF2F2"/>
+                                <Setter Property="BorderBrush" Value="#FECACA"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+
                 <TextBlock x:Name="TxtRole"
-                           Text="{Binding UserRole}"
-                           FontSize="15" FontWeight="SemiBold"
-                           Foreground="#1D4ED8"/>
+               Text="{Binding UserRole}"
+               FontSize="15" FontWeight="SemiBold">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <!-- 기본: 파란 글자 -->
+                            <Setter Property="Foreground" Value="#1D4ED8"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding UserRole}" Value="ADMIN">
+                                    <!-- ADMIN: 빨간 글자 -->
+                                    <Setter Property="Foreground" Value="#DC2626"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
             </Border>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding RoleCode}" Value="ADMIN">

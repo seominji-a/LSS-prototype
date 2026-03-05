@@ -102,27 +102,27 @@
 
                             <!-- 배경 트랙 -->
                             <Border x:Name="Track" CornerRadius="26"
-                                    Background="#B91C1C" Width="140" Height="52"/>
+                            Background="#16A34A" Width="140" Height="52"/>
 
                             <!-- OFF 텍스트 : EMR (오른쪽) -->
                             <TextBlock x:Name="TxtOff" Text="EMR"
-                                       FontSize="20" FontWeight="Bold" FontFamily="Arial"
-                                       Foreground="White"
-                                       HorizontalAlignment="Right" VerticalAlignment="Center"
-                                       Margin="0,0,16,0"/>
+                               FontSize="20" FontWeight="Bold" FontFamily="Arial"
+                               Foreground="White"
+                               HorizontalAlignment="Right" VerticalAlignment="Center"
+                               Margin="0,0,16,0"/>
 
                             <!-- ON 텍스트 : ALL (왼쪽) -->
                             <TextBlock x:Name="TxtOn" Text="ALL"
-                                       FontSize="20" FontWeight="Bold" FontFamily="Arial"
-                                       Foreground="White" Opacity="0"
-                                       HorizontalAlignment="Left" VerticalAlignment="Center"
-                                       Margin="16,0,0,0"/>
+                               FontSize="20" FontWeight="Bold" FontFamily="Arial"
+                               Foreground="White" Opacity="0"
+                               HorizontalAlignment="Left" VerticalAlignment="Center"
+                               Margin="16,0,0,0"/>
 
                             <!-- 슬라이딩 썸 -->
                             <Border x:Name="Thumb" Width="44" Height="44"
-                                    CornerRadius="22" Background="White"
-                                    VerticalAlignment="Center"
-                                    HorizontalAlignment="Left" Margin="4,0,0,0">
+                            CornerRadius="22" Background="White"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Left" Margin="4,0,0,0">
                                 <Border.RenderTransform>
                                     <TranslateTransform x:Name="ThumbTranslate" X="0"/>
                                 </Border.RenderTransform>
@@ -137,52 +137,52 @@
                                 <Trigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <!-- 트랙 → 파란색 -->
+                                            <!-- 트랙 → 파란색 (ALL) -->
                                             <ColorAnimation Storyboard.TargetName="Track"
-                                                            Storyboard.TargetProperty="Background.Color"
-                                                            To="#3B82F6" Duration="0:0:0.2"/>
+                                                    Storyboard.TargetProperty="Background.Color"
+                                                    To="#3B82F6" Duration="0:0:0.2"/>
                                             <!-- 썸 오른쪽 슬라이드 -->
                                             <DoubleAnimation Storyboard.TargetName="ThumbTranslate"
-                                                             Storyboard.TargetProperty="X"
-                                                             To="88" Duration="0:0:0.2">
+                                                     Storyboard.TargetProperty="X"
+                                                     To="88" Duration="0:0:0.2">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseOut"/>
                                                 </DoubleAnimation.EasingFunction>
                                             </DoubleAnimation>
                                             <!-- EMR 페이드 아웃 -->
                                             <DoubleAnimation Storyboard.TargetName="TxtOff"
-                                                             Storyboard.TargetProperty="Opacity"
-                                                             To="0" Duration="0:0:0.15"/>
+                                                     Storyboard.TargetProperty="Opacity"
+                                                     To="0" Duration="0:0:0.15"/>
                                             <!-- ALL 페이드 인 -->
                                             <DoubleAnimation Storyboard.TargetName="TxtOn"
-                                                             Storyboard.TargetProperty="Opacity"
-                                                             To="1" Duration="0:0:0.15"/>
+                                                     Storyboard.TargetProperty="Opacity"
+                                                     To="1" Duration="0:0:0.15"/>
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </Trigger.EnterActions>
                                 <Trigger.ExitActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <!-- 트랙 → 빨간색 복원 -->
+                                            <!-- 트랙 → 초록색 복원 (EMR) -->
                                             <ColorAnimation Storyboard.TargetName="Track"
-                                                            Storyboard.TargetProperty="Background.Color"
-                                                            To="#B91C1C" Duration="0:0:0.2"/>
+                                                    Storyboard.TargetProperty="Background.Color"
+                                                    To="#16A34A" Duration="0:0:0.2"/>
                                             <!-- 썸 왼쪽 슬라이드 -->
                                             <DoubleAnimation Storyboard.TargetName="ThumbTranslate"
-                                                             Storyboard.TargetProperty="X"
-                                                             To="0" Duration="0:0:0.2">
+                                                     Storyboard.TargetProperty="X"
+                                                     To="0" Duration="0:0:0.2">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseOut"/>
                                                 </DoubleAnimation.EasingFunction>
                                             </DoubleAnimation>
                                             <!-- ALL 페이드 아웃 -->
                                             <DoubleAnimation Storyboard.TargetName="TxtOn"
-                                                             Storyboard.TargetProperty="Opacity"
-                                                             To="0" Duration="0:0:0.15"/>
+                                                     Storyboard.TargetProperty="Opacity"
+                                                     To="0" Duration="0:0:0.15"/>
                                             <!-- EMR 페이드 인 -->
                                             <DoubleAnimation Storyboard.TargetName="TxtOff"
-                                                             Storyboard.TargetProperty="Opacity"
-                                                             To="1" Duration="0:0:0.15"/>
+                                                     Storyboard.TargetProperty="Opacity"
+                                                     To="1" Duration="0:0:0.15"/>
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </Trigger.ExitActions>
@@ -323,12 +323,11 @@
                                     </StackPanel>
 
                                     <!-- EMR / LOCAL 배지 -->
-                                    <Border x:Name="SourceBadge" CornerRadius="6" BorderThickness="1" Padding="12,5"
-                                            HorizontalAlignment="Right" VerticalAlignment="Top"
-                                            Background="#FEE2E2" BorderBrush="#FCA5A5">
-                                        <TextBlock x:Name="TxtSourceLabel" Text="EMR"
-                                                   FontSize="21" FontWeight="SemiBold" Foreground="#B91C1C"/>
-                                    </Border>
+                                        <Border x:Name="SourceBadge" CornerRadius="6" BorderThickness="1" Padding="12,5"
+                                                        HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                        Background="#DCFCE7" BorderBrush="#86EFAC">
+                                            <TextBlock x:Name="TxtSourceLabel" Text="EMR" FontSize="21" FontWeight="SemiBold" Foreground="#15803D"/>
+                                        </Border>
                                 </Grid>
                                 <DataTemplate.Triggers>
                                     <DataTrigger Binding="{Binding AccessionNumber}" Value="{x:Null}">

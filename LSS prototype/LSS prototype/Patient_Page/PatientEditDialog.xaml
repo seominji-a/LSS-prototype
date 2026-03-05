@@ -175,6 +175,11 @@
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Setter Property="Background" Value="#122B45"/>
                                 </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Background" Value="#C0C0C0"/>
+                                    <Setter Property="Foreground" Value="#666666"/>
+                                    <Setter Property="Cursor" Value="Arrow"/>
+                                </Trigger>
                             </Style.Triggers>
                         </Style>
                     </Button.Style>

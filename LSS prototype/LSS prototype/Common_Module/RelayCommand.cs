@@ -3,7 +3,7 @@ using System.Windows.Input;
 
 namespace LSS_prototype
 {
-    internal class RelayCommand : ICommand
+    public class RelayCommand : ICommand
     {
 
         private readonly Action _execute;
@@ -12,6 +12,8 @@ namespace LSS_prototype
 
         private readonly Action<object> _executeParam;
         private readonly Predicate<object> _canExecuteParam;
+
+
 
 
         public RelayCommand(Action execute, Func<bool> canExecute = null)
@@ -48,6 +50,11 @@ namespace LSS_prototype
         {
             add { CommandManager.RequerySuggested += value; }
             remove { CommandManager.RequerySuggested -= value; }
+        }
+
+        public void RaiseCanExecuteChanged()
+        {
+            CommandManager.InvalidateRequerySuggested();
         }
     }
 }

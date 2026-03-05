@@ -27,8 +27,28 @@ namespace LSS_prototype.Patient_Page
         // 의존성 주입을 위한 필드
         private readonly IDialogService _dialogService;
 
-        public string PatientName { get; set; }
-        public int? PatientCode { get; set; }
+        private string _patientName;
+        public string PatientName
+        {
+            get => _patientName;
+            set
+            {
+                _patientName = value;
+                OnPropertyChanged();
+                (EditCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            }
+        }
+        private int? _patientCode;
+        public int? PatientCode
+        {
+            get => _patientCode;
+            set
+            {
+                _patientCode = value;
+                OnPropertyChanged();
+                (EditCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            }
+        }
 
         public int Patient_id { get; set; }
 
@@ -40,6 +60,7 @@ namespace LSS_prototype.Patient_Page
             {
                 _birthDate = value;
                 OnPropertyChanged();
+                (EditCommand as RelayCommand)?.RaiseCanExecuteChanged();
             }
         }
 
@@ -54,9 +75,27 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
-        public string Sex { get; set; }
+        private string _sex;
+        public string Sex
+        {
+            get => _sex;
+            set
+            {
+                _sex = value;
+                OnPropertyChanged();
+                (EditCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            }
+        }
 
-        public ICommand EditCommand { get; }
+        private string OriginalName;
+        private int? OriginalCode;
+        private DateTime? OriginalBirthDate;
+        private string OriginalSex;
+
+        public RelayCommand EditCommand { get; }
+
+
+
         public ICommand CancelCommand { get; }
 
         public ICommand OpenKeypadCommand { get; }
@@ -77,26 +116,43 @@ namespace LSS_prototype.Patient_Page
             BirthDatePreview = BirthDate?.ToString("yyyy-MM-dd");  
             Sex = selected.Sex;
 
-            EditCommand = new RelayCommand(UpdatePatient);
+            OriginalName = PatientName;
+            OriginalCode = PatientCode;
+            OriginalBirthDate = BirthDate;
+            OriginalSex = Sex;
+
+            EditCommand = new RelayCommand(UpdatePatient, CanEditPatient);
             CancelCommand = new RelayCommand(Cancel);
             OpenKeypadCommand = new RelayCommand(OpenKeypad); // 커맨드 연결
             OpenPatientCodeKeypadCommand = new RelayCommand(OpenPatientCodeKeypad);
+        }
+
+        private bool IsValid()
+        {
+            if (string.IsNullOrWhiteSpace(PatientName)) return false;
+            if (PatientCode == null || PatientCode == 0) return false;
+            if (BirthDate == null) return false;
+            if (string.IsNullOrWhiteSpace(Sex)) return false;
+            return true;
+        }
+        private bool IsDirty()
+        {
+            return
+                PatientName != OriginalName ||
+                PatientCode != OriginalCode ||
+                BirthDate != OriginalBirthDate ||
+                Sex != OriginalSex;
+        }
+        private bool CanEditPatient()
+        {
+            return IsValid() && IsDirty();
         }
 
         private void UpdatePatient()
         {
             try
             {
-
-                if (string.IsNullOrWhiteSpace(PatientName)) { ShowWarning("환자 이름을 입력해주세요."); return; }
-                if (PatientCode == null || PatientCode == 0) { ShowWarning("환자 코드를 입력해주세요."); return; }
-                if (BirthDate == null) { ShowWarning("생년월일을 확인해주세요."); return; }
-                if (string.IsNullOrWhiteSpace(Sex)) { ShowWarning("성별을 선택해주세요."); return; }
-
                 var repo = new DB_Manager();
-
-                // 1. 중복 체크 (자기 자신은 제외)
-                // Patient_id는 생성자에서 SelectedPatient로부터 받아온 고유 값입니다.
                 if (repo.ExistsPatientCodeExceptSelf(this.PatientCode.Value, this.Patient_id))
                 {
                     CustomMessageWindow.Show("이미 사용 중인 환자 번호입니다.",
@@ -104,16 +160,14 @@ namespace LSS_prototype.Patient_Page
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
-
                 var model = new PatientModel
                 {
-                    PatientId = this.Patient_id,    
+                    PatientId = this.Patient_id,
                     PatientCode = this.PatientCode.Value,
                     PatientName = this.PatientName,
                     BirthDate = this.BirthDate.Value,
                     Sex = this.Sex
                 };
-
                 if (repo.UpdatePatient(model))
                 {
                     CustomMessageWindow.Show("수정되었습니다.",

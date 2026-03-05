@@ -25,7 +25,9 @@ namespace LSS_prototype.User_Page
 
         public ICommand DelegateCommand { get; }
         public ICommand DismissCommand { get; }
-        
+        public ICommand LogoutCommand { get; }
+        public ICommand ExitCommand { get; }
+
 
 
         private readonly SearchDebouncer _searchDebouncer;
@@ -81,6 +83,8 @@ namespace LSS_prototype.User_Page
 
             DelegateCommand = new RelayCommand(ExecuteDelegate);
             DismissCommand = new RelayCommand(ExecuteDismiss);
+            LogoutCommand = new RelayCommand(Common.ExecuteLogout);
+            ExitCommand = new RelayCommand(Common.ExcuteExit);
 
             _searchDebouncer = new SearchDebouncer(ExecuteSearch, delayMs: 500);
 
@@ -141,7 +145,7 @@ namespace LSS_prototype.User_Page
                 {
                     CustomMessageWindow.Show("권한 해임할 사용자를 선택해 주세요.",
                         CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                        CustomMessageWindow.MessageIconType.Warning);
+                        CustomMessageWindow.MessageIconType.Info);
                     return;
                 }
 
@@ -150,7 +154,15 @@ namespace LSS_prototype.User_Page
                 {
                     CustomMessageWindow.Show("이미 일반 권한입니다.",
                         CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                        CustomMessageWindow.MessageIconType.Warning);
+                        CustomMessageWindow.MessageIconType.Info);
+                    return;
+                }
+
+                if (SelectedUser.UserRole == "ADMIN")
+                {
+                    CustomMessageWindow.Show("최초로 설정된 관리자\n계정은 해임 불가합니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Info);
                     return;
                 }
 
@@ -158,7 +170,7 @@ namespace LSS_prototype.User_Page
                         $"{SelectedUser.UserName} 사용자에게 관리자 권한을\n해임하시겠습니까?",
                         CustomMessageWindow.MessageBoxType.YesNo,
                         0,
-                        CustomMessageWindow.MessageIconType.Warning);
+                        CustomMessageWindow.MessageIconType.Info);
 
                 if (result == CustomMessageWindow.MessageBoxResult.Yes)
                 {

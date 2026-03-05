@@ -29,7 +29,8 @@ namespace LSS_prototype.Patient_Page
     {
         private readonly SearchDebouncer _searchDebouncer;
         private readonly IDialogService _dialogService;
-        public ICommand LogoutCommand { get; }
+
+
 
         private string _searchText;
 
@@ -124,17 +125,20 @@ namespace LSS_prototype.Patient_Page
         public ICommand NavScanCommand { get; }
         public ICommand NavImageReviewCommand { get; }
         public ICommand NavVideoReviewCommand { get; }
+        public ICommand LogoutCommand { get; }
+        public ICommand ExitCommand { get; }
 
         public PatientViewModel()
         {
             _dialogService = new Dialog();
 
-            PatientAddCommand = new RelayCommand(_ => AddPatient());
-            PatientEditCommand = new RelayCommand(_ => EditPatient());
-            PatientDeleteCommand = new RelayCommand(_ => DeletePatient());
+            PatientAddCommand = new RelayCommand(AddPatient);
+            PatientEditCommand = new RelayCommand(EditPatient);
+            PatientDeleteCommand = new RelayCommand(DeletePatient);
             EmrSyncCommand = new AsyncRelayCommand(async _ => await EmrSync());
-            ImportCommand = new RelayCommand(_ => ImportPatient());
-            LogoutCommand = new RelayCommand(_ => Common.ExecuteLogout());
+            ImportCommand = new RelayCommand(ImportPatient);
+            LogoutCommand = new RelayCommand(Common.ExecuteLogout);
+            ExitCommand = new RelayCommand(Common.ExcuteExit);
 
             NavScanCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new Scan_Page.Scan()));
             // 0227 박한용 아래코드는 데이터 관련 처리 완료 후 주석 풀고 연동 예정 

@@ -42,15 +42,6 @@ namespace LSS_prototype.Patient_Page
             MainPage.Instance.NavigateTo(new User());
         }
 
-        private void Exit_Click(object sender, RoutedEventArgs e)
-        {
-            Application.Current.Shutdown();
-        }
-
-        private void CheckBox_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
 
         private void OnSearchTextChanged(object sender, TextChangedEventArgs e)
         {

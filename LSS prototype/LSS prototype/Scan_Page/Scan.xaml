@@ -209,7 +209,7 @@
         <!-- ══ 카메라 영역 ══ -->
         <Grid Grid.Column="0">
             <Border Background="Black">
-                <Image x:Name="CameraPreviewImage" Stretch="Uniform"/>
+                <Image x:Name="CameraPreviewImage" Stretch="Uniform" Source="{Binding PreviewSource}" />
             </Border>
             <StackPanel Margin="16,12" VerticalAlignment="Top" HorizontalAlignment="Left">
                 <TextBlock Text="Jung Wooseok(10005)" Foreground="White" FontSize="18" FontWeight="Bold"/>

@@ -58,7 +58,7 @@ namespace LSS_prototype
                     "로그아웃 하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo,
                     0,
-                    CustomMessageWindow.MessageIconType.Info);
+                    CustomMessageWindow.MessageIconType.Warning);
 
                 if (result != CustomMessageWindow.MessageBoxResult.Yes) return;
 
@@ -86,6 +86,21 @@ namespace LSS_prototype
             {
                 Common.WriteLog(ex);
             }
+        }
+
+
+
+        public static void ExcuteExit()
+        {
+            var result = CustomMessageWindow.Show(
+                    "프로그램을 종료하시겠습니까?",
+                    CustomMessageWindow.MessageBoxType.YesNo,
+                    0,
+                    CustomMessageWindow.MessageIconType.Warning);
+
+            if (result != CustomMessageWindow.MessageBoxResult.Yes) return;
+
+            Application.Current.Shutdown();
         }
     }
 

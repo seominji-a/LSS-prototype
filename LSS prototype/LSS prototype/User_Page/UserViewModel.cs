@@ -25,7 +25,9 @@ namespace LSS_prototype.User_Page
 
         public ICommand DelegateCommand { get; }
         public ICommand DismissCommand { get; }
-        
+        public ICommand LogoutCommand { get; }
+        public ICommand ExitCommand { get; }
+
 
 
         private readonly SearchDebouncer _searchDebouncer;
@@ -81,6 +83,8 @@ namespace LSS_prototype.User_Page
 
             DelegateCommand = new RelayCommand(ExecuteDelegate);
             DismissCommand = new RelayCommand(ExecuteDismiss);
+            LogoutCommand = new RelayCommand(Common.ExecuteLogout);
+            ExitCommand = new RelayCommand(Common.ExcuteExit);
 
             _searchDebouncer = new SearchDebouncer(ExecuteSearch, delayMs: 500);
 

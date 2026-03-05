@@ -275,10 +275,12 @@
     <Compile Include="Scan_Page\Scan.xaml.cs">
       <DependentUpon>Scan.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Scan_Page\ScanModel.xaml.cs">
-      <DependentUpon>ScanModel.xaml</DependentUpon>
+    <Compile Include="Scan_Page\ScanModel.cs" >
+	 <DependentUpon>Scan.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Scan_Page\ScanViewModel.cs" />
+    <Compile Include="Scan_Page\ScanViewModel.cs">
+      <DependentUpon>Scan.xaml</DependentUpon>
+    </Compile>
     <Compile Include="User_Page\Default.xaml.cs">
       <DependentUpon>Default.xaml</DependentUpon>
     </Compile>
@@ -368,10 +370,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Scan_Page\Scan.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Scan_Page\ScanModel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

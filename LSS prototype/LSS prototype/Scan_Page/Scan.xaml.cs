@@ -47,18 +47,9 @@ namespace LSS_prototype.Scan_Page
                 : Visibility.Collapsed;
         }
 
-        // ★ 초기화 버튼 → 커스텀 메시지창 호출
-        private void ResetSetting_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show("초기화되었습니다.");
-        }
 
         private void PatientButton_Click(object sender, RoutedEventArgs e)
             => MainPage.Instance.NavigateTo(new Patient_Page.Patient());
 
-    
-
-        private void Exit_Click(object sender, RoutedEventArgs e)
-            => Application.Current.Shutdown();
     }
 }

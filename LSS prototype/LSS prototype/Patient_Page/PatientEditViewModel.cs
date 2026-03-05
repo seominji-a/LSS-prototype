@@ -90,7 +90,7 @@ namespace LSS_prototype.Patient_Page
 
                 if (string.IsNullOrWhiteSpace(PatientName)) { ShowWarning("환자 이름을 입력해주세요."); return; }
                 if (PatientCode == null || PatientCode == 0) { ShowWarning("환자 코드를 입력해주세요."); return; }
-                if (BirthDate == null) { ShowWarning("생년월일을 선택해주세요."); return; }
+                if (BirthDate == null) { ShowWarning("생년월일을 확인해주세요."); return; }
                 if (string.IsNullOrWhiteSpace(Sex)) { ShowWarning("성별을 선택해주세요."); return; }
 
                 var repo = new DB_Manager();
@@ -161,23 +161,34 @@ namespace LSS_prototype.Patient_Page
         private void OpenKeypad()
         {
             this.KeypadVm = new KeypadViewModel();
+            this.KeypadVm.IsDateMode = true;
 
-            // 기존 날짜가 있다면 키패드에 미리 채워넣기
-            if (this.BirthDate.HasValue)
+            // 기존에 입력 중이던 값이 있다면 (BirthDate가 null이라도 프리뷰 텍스트가 있다면) 로드
+            // 만약 BirthDatePreview를 사용 중이라면 그것을 기반으로 숫자를 추출하여 전달
+            if (!string.IsNullOrEmpty(this.BirthDatePreview))
             {
-                string existingDate = this.BirthDate.Value.ToString("yyyyMMdd");
-
-                // KeypadViewModel의 실제 속성인 InputText에 값을 대입
-                this.KeypadVm.InputText = existingDate;
-
-                // 메인 화면의 프리뷰도 업데이트
-                BirthDatePreview = FormatDatePreview(existingDate);
+                this.KeypadVm.InputText = this.BirthDatePreview.Replace("-", "");
             }
 
-            this.KeypadVm.CloseRequested += OnKeypadClosed;
-            this.KeypadVm.InputChanged += OnKeypadInputChanged;
+            this.KeypadVm.InputChanged += (input) => {
+                // [중요] 입력 중에는 공백으로 만들지 않고 오직 '프리뷰'만 업데이트합니다.
+                BirthDatePreview = FormatDatePreview(input);
 
-            // 팝업 열기
+                // 8자리가 완벽할 때만 실제 데이터(BirthDate)에 할당
+                if (input.Length == 8 && DateTime.TryParseExact(input, "yyyyMMdd", null,
+                    System.Globalization.DateTimeStyles.None, out DateTime date))
+                {
+                    this.BirthDate = date;
+                }
+                else
+                {
+                    // 아직 8자리가 아니거나 유효하지 않아도 BirthDate만 null로 유지하고 
+                    // InputText(키패드 내부 값)는 건드리지 않습니다.
+                    this.BirthDate = null;
+                }
+            };
+
+            this.KeypadVm.CloseRequested += OnKeypadClosed;
             IsKeypadOpen = true;
             IsCodeKeypadOpen = false;
         }

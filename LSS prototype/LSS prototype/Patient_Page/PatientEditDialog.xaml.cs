@@ -24,6 +24,7 @@ namespace LSS_prototype.Patient_Page
         {
             InitializeComponent();
             //DpBirthDate.BlackoutDates.Add(new CalendarDateRange(DateTime.Today.AddDays(1), DateTime.MaxValue));
+            this.PreviewMouseDown += Window_PreviewMouseDown;
         }
 
           private void DpBirthDate_PreviewMouseUp(object sender, MouseButtonEventArgs e)
@@ -38,6 +39,51 @@ namespace LSS_prototype.Patient_Page
                     Mouse.Capture(null);
                 }
             }
+        }
+        private void Window_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (DataContext is PatientEditViewModel vm)
+            {
+                if (vm.KeypadVm == null)
+                    return;
+
+                if (e.OriginalSource is DependencyObject source)
+                {
+                    if (FindParent<Keypad>(source) != null)
+                        return;
+                }
+
+                // DOB keypad
+                if (vm.IsKeypadOpen)
+                {
+                    if (!vm.KeypadVm.ValidateInput())
+                        return;
+
+                    vm.KeypadVm.ConfirmCommand.Execute(null);
+                }
+
+                // Code keypad
+                if (vm.IsCodeKeypadOpen)
+                {
+                    if (!vm.KeypadVm.ValidateInput())
+                        return;
+
+                    vm.KeypadVm.ConfirmCommand.Execute(null);
+                }
+            }
+        }
+
+        private T FindParent<T>(DependencyObject child) where T : DependencyObject
+        {
+            while (child != null)
+            {
+                if (child is T parent)
+                    return parent;
+
+                child = VisualTreeHelper.GetParent(child);
+            }
+
+            return null;
         }
     }
 }

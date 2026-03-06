@@ -11,7 +11,7 @@ namespace LSS_prototype.Patient_Page
 {
     public class KeypadViewModel : INotifyPropertyChanged
     {
-
+        private bool _isClosing = false;
         // 추가: 날짜 모드인지 확인하는 플래그 (기본값 true)
         public bool IsDateMode { get; set; } = true;
         // 추가: 최대 입력 길이 (기본값 8)
@@ -77,57 +77,16 @@ namespace LSS_prototype.Patient_Page
         //Keypad ENTER 클릭
         private void Confirm()
         {
-            // 1. 일반 숫자 모드 (PatientCode 등)
-            // 이 모드에서는 8자리 제한 없이 값이 있기만 하면 창을 닫습니다.
+            if (_isClosing) return;
+            _isClosing = true;
 
-
-            if (!IsDateMode)
+            if (!ValidateInput())
             {
-                if (string.IsNullOrEmpty(InputText))
-                {
-                    CustomMessageWindow.Show(
-                        "환자번호를 입력하지 않았습니다.\n수정된 환자번호를 다시 입력해주십시오.",
-                        CustomMessageWindow.MessageBoxType.AutoClose,2,
-                        CustomMessageWindow.MessageIconType.Warning);
-
-                    return;
-                }
-
-                CloseRequested?.Invoke(true);
+                _isClosing = false;
                 return;
             }
 
-            // 2. 날짜 모드 (엄격한 유효성 검사)
-            // ENTER를 누른 시점에 8자리가 아니면 경고를 띄우고 초기화합니다.
-            if (string.IsNullOrEmpty(InputText) || InputText.Length != 8)
-            {
-                CustomMessageWindow.Show("숫자 8자리를 입력하지 않았습니다.\n 수정된 날짜를 다시 입력해주십시오.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                    CustomMessageWindow.MessageIconType.Warning);
-
-                InputText = string.Empty; // 여기서 초기화되므로 외부 클릭 시에는 값이 유지됩니다.
-                return;
-            }
-
-            // 3. 날짜 형식 유효성 체크
-            if (DateTime.TryParseExact(InputText, "yyyyMMdd",
-                null,
-                System.Globalization.DateTimeStyles.None,
-                out DateTime date))
-            {
-                ResultDate = date;
-                CloseRequested?.Invoke(true); // 성공 시에만 결과값을 들고 창을 닫음
-            }
-            else
-            {
-                CustomMessageWindow.Show("유효하지 않은 날짜 형식입니다. \n 다시 확인해주세요.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                    CustomMessageWindow.MessageIconType.Warning);
-
-                InputText = string.Empty; // 날짜 형식이 틀려도 초기화
-                ResultDate = null;
-
-            }
+            CloseRequested?.Invoke(true);
         }
 
         //Keypad <- 버튼 클릭
@@ -137,5 +96,56 @@ namespace LSS_prototype.Patient_Page
         }
 
         public event Action<bool?> CloseRequested;
+
+        public void TryConfirmFromOutside()
+        {
+            Confirm();
+        }
+
+        public bool ValidateInput()
+        {
+            // PatientCode 모드
+            if (!IsDateMode)
+            {
+                if (string.IsNullOrEmpty(InputText))
+                {
+                    CustomMessageWindow.Show(
+                        "환자번호를 입력하지 않았습니다.\n수정된 환자번호를 다시 입력해주십시오.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+
+                    return false;
+                }
+
+                return true;
+            }
+
+            // DOB 모드
+            if (string.IsNullOrEmpty(InputText) || InputText.Length != 8)
+            {
+                CustomMessageWindow.Show(
+                    "숫자 8자리를 입력하지 않았습니다.\n수정된 날짜를 다시 입력해주십시오.",
+                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    CustomMessageWindow.MessageIconType.Warning);
+
+                return false;
+            }
+
+            if (!DateTime.TryParseExact(InputText, "yyyyMMdd",
+                null,
+                System.Globalization.DateTimeStyles.None,
+                out DateTime date))
+            {
+                CustomMessageWindow.Show(
+                    "유효하지 않은 날짜 형식입니다.\n다시 확인해주세요.",
+                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    CustomMessageWindow.MessageIconType.Warning);
+
+                return false;
+            }
+
+            ResultDate = date;
+            return true;
+        }
     }
 }

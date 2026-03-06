@@ -1,9 +1,12 @@
-﻿using SpinnakerNET;
+﻿using OpenCvSharp;
+using SpinnakerNET;
 using SpinnakerNET.GenApi;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -28,6 +31,9 @@ namespace LSS_prototype.Common_Module
 
         public bool IsConnected => _camConnection;
         public bool IsOpen => _camOpen;
+
+        private Thread _testVideoThread;
+        private bool _testVideoRunning = false;
 
         // ────────────────────────────────────────────
         // 생성자 - ManagedSystem 초기화
@@ -99,19 +105,99 @@ namespace LSS_prototype.Common_Module
             _camOpen = true;
         }
 
-        // ────────────────────────────────────────────
-        // 라이브뷰 정지
-        // ────────────────────────────────────────────
+        /// <summary>
+        /// 테스트 비디오 실행 함수
+        /// </summary>
+        /// <param name="videoPath"></param>
+        public void StartTestVideo(string videoPath)
+        {
+            if (!File.Exists(videoPath))
+            {
+                ErrorOccurred?.Invoke($"테스트 영상 파일이 없습니다: {videoPath}");
+                return;
+            }
+
+            _testVideoRunning = true;
+            _camOpen = true;
+
+            _testVideoThread = new Thread(() =>
+            {
+                using (VideoCapture cap = new VideoCapture(videoPath))
+                {
+                    if (!cap.IsOpened())
+                    {
+                        ErrorOccurred?.Invoke("테스트 영상 파일을 열 수 없습니다.");
+                        return;
+                    }
+
+                    // 원본 FPS 유지 (없으면 30 기본값)
+                    double fps = cap.Get(VideoCaptureProperties.Fps);
+                    if (fps <= 0) fps = 30;
+                    int delay = (int)(1000.0 / fps);
+                    Console.WriteLine($"> TestVideo FPS: {fps}");
+
+                    using (Mat frame = new Mat())
+                    {
+                        while (_testVideoRunning)
+                        {
+                            if (!cap.Read(frame) || frame.Empty())
+                            {
+                                // 영상 끝나면 처음부터 반복
+                                cap.Set(VideoCaptureProperties.PosFrames, 0);
+                                continue;
+                            }
+
+                            // Mat → byte[] → WriteableBitmap → FrameArrived
+                            int width = frame.Width;
+                            int height = frame.Rows;
+                            int stride = width * 3; // BGR = 3 bytes
+                            byte[] data = new byte[height * stride];
+                            Marshal.Copy(frame.Data, data, 0, data.Length);
+
+                            WriteableBitmap bitmap = null;
+                            Application.Current?.Dispatcher.Invoke(() =>
+                            {
+                                bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgr24, null);
+                                bitmap.Lock();
+                                Marshal.Copy(data, 0, bitmap.BackBuffer, data.Length);
+                                bitmap.AddDirtyRect(new Int32Rect(0, 0, width, height));
+                                bitmap.Unlock();
+                                bitmap.Freeze();
+                            });
+
+                            if (bitmap != null)
+                                FrameArrived?.Invoke(bitmap);
+
+                            Thread.Sleep(delay);
+                        }
+                    }
+                }
+            });
+
+            _testVideoThread.IsBackground = true;
+            _testVideoThread.Start();
+            Console.WriteLine("> 테스트 영상 재생 시작");
+        }
+
+
         public void StopLiveView()
         {
             if (!_camOpen) return;
 
-            for (int i = 0; i < _managedCameras.Count; i++)
+            // 테스트 영상 정지
+            _testVideoRunning = false;
+            _testVideoThread?.Join(500);
+
+            // 카메라 정지
+            if (_managedCameras != null)
             {
-                try { _managedCameras[i].EndAcquisition(); } catch { }
+                for (int i = 0; i < _managedCameras.Count; i++)
+                    try { _managedCameras[i].EndAcquisition(); } catch { }
             }
+
             _camOpen = false;
         }
+
 
         // ────────────────────────────────────────────
         // Worker - 프레임 1장 캡처

@@ -34,9 +34,7 @@ namespace LSS_prototype.Patient_Page
             set
             {
                 _inputText = value;
-                OnPropertyChanged();
-
-                
+                OnPropertyChanged();           
                 InputChanged?.Invoke(_inputText);
             }
         }
@@ -81,12 +79,21 @@ namespace LSS_prototype.Patient_Page
         {
             // 1. 일반 숫자 모드 (PatientCode 등)
             // 이 모드에서는 8자리 제한 없이 값이 있기만 하면 창을 닫습니다.
+
+
             if (!IsDateMode)
             {
-                if (!string.IsNullOrEmpty(InputText))
+                if (string.IsNullOrEmpty(InputText))
                 {
-                    CloseRequested?.Invoke(true);
+                    CustomMessageWindow.Show(
+                        "환자번호를 입력하지 않았습니다.\n수정된 환자번호를 다시 입력해주십시오.",
+                        CustomMessageWindow.MessageBoxType.AutoClose,2,
+                        CustomMessageWindow.MessageIconType.Warning);
+
+                    return;
                 }
+
+                CloseRequested?.Invoke(true);
                 return;
             }
 
@@ -94,7 +101,7 @@ namespace LSS_prototype.Patient_Page
             // ENTER를 누른 시점에 8자리가 아니면 경고를 띄우고 초기화합니다.
             if (string.IsNullOrEmpty(InputText) || InputText.Length != 8)
             {
-                CustomMessageWindow.Show("숫자 8자리를 입력하지 않았습니다. 다시 입력해주십시오.",
+                CustomMessageWindow.Show("숫자 8자리를 입력하지 않았습니다.\n 수정된 날짜를 다시 입력해주십시오.",
                     CustomMessageWindow.MessageBoxType.AutoClose, 2,
                     CustomMessageWindow.MessageIconType.Warning);
 

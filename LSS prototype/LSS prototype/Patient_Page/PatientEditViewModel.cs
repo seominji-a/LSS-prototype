@@ -52,6 +52,31 @@ namespace LSS_prototype.Patient_Page
 
         public int Patient_id { get; set; }
 
+        private bool _isDobConfirmed;
+        public bool IsDobConfirmed
+        {
+            get => _isDobConfirmed;
+            set
+            {
+                _isDobConfirmed = value;
+                OnPropertyChanged();
+                EditCommand?.RaiseCanExecuteChanged();
+            }
+        }
+
+        private bool _isCodeConfirmed = true;
+        public bool IsCodeConfirmed
+        {
+            get => _isCodeConfirmed;
+            set
+            {
+                _isCodeConfirmed = value;
+                OnPropertyChanged();
+                EditCommand?.RaiseCanExecuteChanged();
+            }
+        }
+
+
         private DateTime? _birthDate;
         public DateTime? BirthDate
         {
@@ -121,9 +146,12 @@ namespace LSS_prototype.Patient_Page
             OriginalBirthDate = BirthDate;
             OriginalSex = Sex;
 
+            IsDobConfirmed = true;
+            IsCodeConfirmed = true;
+
             EditCommand = new RelayCommand(UpdatePatient, CanEditPatient);
             CancelCommand = new RelayCommand(Cancel);
-            OpenKeypadCommand = new RelayCommand(OpenKeypad); // 커맨드 연결
+            OpenKeypadCommand = new RelayCommand(OpenKeypad);
             OpenPatientCodeKeypadCommand = new RelayCommand(OpenPatientCodeKeypad);
         }
 
@@ -145,7 +173,7 @@ namespace LSS_prototype.Patient_Page
         }
         private bool CanEditPatient()
         {
-            return IsValid() && IsDirty();
+            return IsValid() && IsDirty() && IsDobConfirmed && IsCodeConfirmed;
         }
 
         private void UpdatePatient()
@@ -214,35 +242,27 @@ namespace LSS_prototype.Patient_Page
 
         private void OpenKeypad()
         {
+            IsDobConfirmed = false; // 입력 시작,  Edit 비활성
+
             this.KeypadVm = new KeypadViewModel();
             this.KeypadVm.IsDateMode = true;
 
-            // 기존에 입력 중이던 값이 있다면 (BirthDate가 null이라도 프리뷰 텍스트가 있다면) 로드
-            // 만약 BirthDatePreview를 사용 중이라면 그것을 기반으로 숫자를 추출하여 전달
             if (!string.IsNullOrEmpty(this.BirthDatePreview))
             {
                 this.KeypadVm.InputText = this.BirthDatePreview.Replace("-", "");
             }
 
-            this.KeypadVm.InputChanged += (input) => {
-                // [중요] 입력 중에는 공백으로 만들지 않고 오직 '프리뷰'만 업데이트합니다.
+            this.KeypadVm.InputChanged += (input) =>
+            {
+                // 입력 중에는 Preview만 표시
                 BirthDatePreview = FormatDatePreview(input);
 
-                // 8자리가 완벽할 때만 실제 데이터(BirthDate)에 할당
-                if (input.Length == 8 && DateTime.TryParseExact(input, "yyyyMMdd", null,
-                    System.Globalization.DateTimeStyles.None, out DateTime date))
-                {
-                    this.BirthDate = date;
-                }
-                else
-                {
-                    // 아직 8자리가 아니거나 유효하지 않아도 BirthDate만 null로 유지하고 
-                    // InputText(키패드 내부 값)는 건드리지 않습니다.
-                    this.BirthDate = null;
-                }
+                // 입력 중에는 실제 DOB 확정하지 않음
+                this.BirthDate = null;
             };
 
             this.KeypadVm.CloseRequested += OnKeypadClosed;
+
             IsKeypadOpen = true;
             IsCodeKeypadOpen = false;
         }
@@ -263,20 +283,27 @@ namespace LSS_prototype.Patient_Page
             return input.Insert(4, "-").Insert(7, "-");
         }
 
-        
+
 
         private void OnKeypadClosed(bool? result)
         {
             IsKeypadOpen = false;
-            if (_keypadVm != null)
+
+            // Cancel
+            if (result != true)
             {
-                _keypadVm.CloseRequested -= OnKeypadClosed;
-                _keypadVm.InputChanged -= OnKeypadInputChanged;
+                BirthDate = OriginalBirthDate;
+                BirthDatePreview = OriginalBirthDate?.ToString("yyyy-MM-dd");
+                return;
             }
-            if (result == true && _keypadVm.ResultDate != null)
+
+            // Confirm
+            if (KeypadVm.ResultDate != null)
             {
-                BirthDate = _keypadVm.ResultDate;
-                BirthDatePreview = BirthDate?.ToString("yyyy-MM-dd");
+                BirthDate = KeypadVm.ResultDate;
+                BirthDatePreview = BirthDate.Value.ToString("yyyy-MM-dd");
+
+                IsDobConfirmed = true;
             }
         }
 
@@ -289,6 +316,7 @@ namespace LSS_prototype.Patient_Page
 
         private void OpenPatientCodeKeypad()
         {
+            IsCodeConfirmed = false; // 입력 시작, Edit 비활성
             this.KeypadVm = new KeypadViewModel();
             this.KeypadVm.IsDateMode = false;
             this.KeypadVm.MaxLength = 10;
@@ -296,26 +324,36 @@ namespace LSS_prototype.Patient_Page
             {
                 this.KeypadVm.InputText = this.PatientCode.Value.ToString();
             }
-            // CloseRequested 이벤트 연결
-            this.KeypadVm.CloseRequested += (result) =>
+            this.KeypadVm.InputChanged += (input) =>
             {
-                IsCodeKeypadOpen = false; // 팝업 닫기
-            };
-            // -------------------------------------------------------------
-            this.KeypadVm.InputChanged += (input) => {
+                // 입력 중에는 확정하지 않음
                 if (string.IsNullOrEmpty(input))
                 {
                     this.PatientCode = null;
-                    OnPropertyChanged(nameof(PatientCode));
                 }
                 else if (int.TryParse(input, out int code))
                 {
                     this.PatientCode = code;
-                    OnPropertyChanged(nameof(PatientCode));
                 }
+                OnPropertyChanged(nameof(PatientCode));
             };
+            this.KeypadVm.CloseRequested += OnPatientCodeKeypadClosed;
             IsCodeKeypadOpen = true;
-            IsKeypadOpen = false; // 다른 키패드는 확실히 닫기
+            IsKeypadOpen = false;
+        }
+
+        private void OnPatientCodeKeypadClosed(bool? result)
+        {
+            IsCodeKeypadOpen = false;
+            // Cancel
+            if (result != true)
+            {
+                PatientCode = OriginalCode;
+                OnPropertyChanged(nameof(PatientCode));
+                return;
+            }
+            // Confirm
+            IsCodeConfirmed = true; // ⭐ Confirm 완료 → Edit 활성 가능
         }
 
         private void Cancel()

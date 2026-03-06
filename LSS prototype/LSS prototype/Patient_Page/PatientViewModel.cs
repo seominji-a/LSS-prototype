@@ -161,6 +161,10 @@ namespace LSS_prototype.Patient_Page
             {
                 var repo = new DB_Manager();
                 List<PatientModel> data = repo.GetAllPatients();
+
+                // 여기서 DICOM을 다시 읽어 EMR/LOCAL 판정 (DB 저장 안 함)
+                ApplyEmrFlagsFromDicomFolder(data);
+
                 _localPatients = data;
                 RefreshPatients();
             }
@@ -342,6 +346,8 @@ namespace LSS_prototype.Patient_Page
                                 string pName = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.PatientName, "Unknown Name");
                                 string pSex = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.PatientSex, "U");
                                 string pCodeStr = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.PatientID, "0");
+                                string pAccess = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, string.Empty);
+
 
                                 // 2. 날짜 변환 (pBirthStr 사용)
                                 if (!DateTime.TryParseExact(pBirthStr, "yyyyMMdd",
@@ -365,7 +371,9 @@ namespace LSS_prototype.Patient_Page
                                         PatientCode = pCode,
                                         PatientName = pName,
                                         Sex = pSex,
-                                        BirthDate = birthDate // 변환된 DateTime 객체 사용
+                                        BirthDate = birthDate, // 변환된 DateTime 객체 사용
+                                        AccessionNumber = pAccess,
+                                        Source = string.IsNullOrWhiteSpace(pAccess) ? PatientSource.Local : PatientSource.EmrImported
                                     };
                                     repoInside.AddPatient(patientModel);
                                 }
@@ -380,9 +388,13 @@ namespace LSS_prototype.Patient_Page
                     // 3. DB에서 데이터를 다시 불러오는 작업 (비동기 처리 권장)
                     var repo = new DB_Manager();
 
+                    
+
                     // Task.Run을 사용하여 DB 조회 시 UI 프리징 방지
                     var updatedList = await Task.Run(() => repo.GetAllPatients());
 
+                    // 추가: DB에서 읽은 뒤 다시 DICOM으로 EMR/LOCAL 판정
+                    ApplyEmrFlagsFromDicomFolder(updatedList);
                     // 4. UI 스레드에서 결과 반영
                     _localPatients = updatedList;
                     RefreshPatients();
@@ -513,6 +525,41 @@ namespace LSS_prototype.Patient_Page
                 p.PatientCode.ToString().Contains(keyword);
             // 접수번호 ( 사용 미지시 일단 주석 )
             // || (p.AccessionNumber ?? "").Contains(keyword);
+        }
+
+        private void ApplyEmrFlagsFromDicomFolder(List<PatientModel> patients)
+        {
+            string dicomFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DICOM");
+            if (!Directory.Exists(dicomFolder)) return;
+
+            // DICOM 폴더에서 "AccessionNumber 있는 PatientID" 수집
+            var emrPatientCodes = new HashSet<int>();
+
+            foreach (var file in Directory.EnumerateFiles(dicomFolder, "*.dcm"))
+            {
+                try
+                {
+                    var dcm = DicomFile.Open(file);
+
+                    // AccessionNumber(0008,0050)
+                    string acc = dcm.Dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, string.Empty);
+                    if (string.IsNullOrWhiteSpace(acc))
+                        continue; // 없으면 LOCAL로 취급
+
+                    // PatientID(0010,0020) -> PatientCode로 쓴다고 가정
+                    string pid = dcm.Dataset.GetSingleValueOrDefault(DicomTag.PatientID, string.Empty);
+                    if (int.TryParse(pid, out int code))
+                        emrPatientCodes.Add(code);
+                }
+                catch
+                {
+                    // 손상/비표준 파일은 무시
+                }
+            }
+
+            // DB로부터 읽어온 환자 리스트에 플래그 적용
+            foreach (var p in patients)
+                p.IsEmrPatient = emrPatientCodes.Contains(p.PatientCode);
         }
     }
 }

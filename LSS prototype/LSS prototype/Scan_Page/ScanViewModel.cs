@@ -12,7 +12,7 @@ using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
-namespace LSS_prototype.Scan_Page
+namespace LSS_prototype.Scan_Page { 
 
     public class ScanViewModel : INotifyPropertyChanged, IDisposable
     {

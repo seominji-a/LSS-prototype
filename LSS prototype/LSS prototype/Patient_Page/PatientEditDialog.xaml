@@ -7,6 +7,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="800" d:DesignWidth="550">
     <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <Style x:Key="InputTextBoxStyle" TargetType="TextBox">
             <Setter Property="Height" Value="55"/>
             <Setter Property="Padding" Value="15,0"/>
@@ -100,7 +101,10 @@
                                 <DropShadowEffect BlurRadius="15" Opacity="0.2" ShadowDepth="2"/>
                             </Border.Effect>
 
-                            <local:Keypad DataContext="{Binding KeypadVm}" />
+                            <local:Keypad 
+                                    x:Name="KeypadControl"
+                                    DataContext="{Binding KeypadVm}"
+                                    Visibility="{Binding IsCodeKeypadOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
                         </Border>
                     </Popup>
 

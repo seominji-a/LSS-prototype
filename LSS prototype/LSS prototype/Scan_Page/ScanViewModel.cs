@@ -16,7 +16,8 @@
 //   - 페이지 이동, 로그아웃, 종료 커맨드 처리
 // ================================================================
 
-using LSS_prototype.Common_Module;      
+//using LSS_prototype.Common_Module;      
+using LSS_prototype.Common_Module;
 using System;
 using System.ComponentModel;            
 using System.Runtime.CompilerServices; 

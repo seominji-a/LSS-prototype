@@ -23,5 +23,7 @@ namespace LSS_prototype.Patient_Page
         {
             InitializeComponent();
         }
+
+        
     }
 }

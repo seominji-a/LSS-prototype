@@ -18,6 +18,7 @@ using System.Windows;
 using System.Windows.Input;
 
 using LSS_prototype.Auth;
+using System.Threading;
 
 namespace LSS_prototype.Patient_Page
 {
@@ -29,6 +30,10 @@ namespace LSS_prototype.Patient_Page
     {
         private readonly SearchDebouncer _searchDebouncer;
         private readonly IDialogService _dialogService;
+        private CancellationTokenSource _cts = new CancellationTokenSource(); 
+        // 위 변수 사용이유
+        // dicom 이 연결끊킨 상태일때 한번의 task가 실행되고 -> 두번째 Patient 호출 시 -> 에러발생 
+        // 첫번째때 연결된 task를 끊어주기위해서 0306 박한용
 
 
 
@@ -146,8 +151,8 @@ namespace LSS_prototype.Patient_Page
             //NavVideoReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new VideoReview_Page.VideoReview()));
             _searchDebouncer = new SearchDebouncer(ExecuteSearch, delayMs: 500);
             LoadPatients();
-            _ = EmrSync(); // task 무시하기위해 _ = 사용 (별의미 X )
-           
+            _ = EmrSync(_cts.Token); // task 무시하기위해 _ = 사용 (별의미 X )
+
         }
 
         
@@ -405,7 +410,7 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
-        private async Task EmrSync()
+        private async Task EmrSync(CancellationToken ct = default)
         {
             try
             {
@@ -433,6 +438,8 @@ namespace LSS_prototype.Patient_Page
                     CustomMessageWindow.MessageBoxType.Ok, 0,
                     CustomMessageWindow.MessageIconType.Warning);
             }
+            catch (OperationCanceledException) { } // task 해제되는 경우 
+
             catch (Exception ex)
             {
                 Common.WriteLog(ex);
@@ -441,6 +448,7 @@ namespace LSS_prototype.Patient_Page
                     CustomMessageWindow.MessageBoxType.Ok, 0,
                     CustomMessageWindow.MessageIconType.Warning);
             }
+            
             finally
             {
                 LoadingWindow.End();

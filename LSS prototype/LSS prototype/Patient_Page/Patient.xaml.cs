@@ -35,6 +35,7 @@ namespace LSS_prototype.Patient_Page
 
             Unloaded += (s, e) => (DataContext as PatientViewModel)?.Dispose(); // 사용자 입력 감지 타이머 종료 ( 자원 관리 차 ) 
             txtSearch.TextChanged += OnSearchTextChanged;
+
         }
 
         private void HomeButton_Click(object sender, RoutedEventArgs e)

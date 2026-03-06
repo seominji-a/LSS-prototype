@@ -1,20 +1,4 @@
-﻿// ================================================================
-// 파일명 : ScanViewModel.cs
-// 위치   : LSS prototype / Scan_Page / ScanViewModel.cs
-//
-// 이 파일의 역할
-//   Scan 화면의 두뇌 역할을 해요.
-//   화면(Scan.xaml) 과 카메라(CameraService) 사이를 연결해요.
-//
-//   쉽게 비유하면?
-//   CameraService → 이미지 전달 → ScanViewModel → 화면에 표시
-//
-// ViewModel 이 하는 일
-//   - CameraService 를 소유하고 카메라 연결 / 해제를 담당
-//   - 카메라에서 새 프레임이 오면 PreviewSource 를 업데이트
-//   - 화면(Scan.xaml) 이 PreviewSource 를 바인딩해서 자동으로 갱신됨
-//   - 페이지 이동, 로그아웃, 종료 커맨드 처리
-// ================================================================
+﻿
 
 using LSS_prototype.Common_Module;
 using System;
@@ -28,10 +12,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
 namespace LSS_prototype.Scan_Page
-{
-    // IDisposable 을 상속받는 이유?
-    //   Scan.xaml.cs 의 Unloaded 이벤트에서 Dispose() 를 호출하면
-    //   카메라까지 같이 정리
+
     public class ScanViewModel : INotifyPropertyChanged, IDisposable
     {
         // Scan 화면이 열릴 때 같이 생성되고, 닫힐 때 같이 해제

@@ -27,6 +27,7 @@ namespace LSS_prototype.Scan_Page
         {
             InitializeComponent();
             DataContext = new ScanViewModel();
+            Unloaded += (s, e) => (DataContext as ScanViewModel)?.Dispose(); // 페이지 떠날 시 정확하게 카메라 자원해제 해주는 것.
         }
 
 

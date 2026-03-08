@@ -1,39 +1,19 @@
-﻿// ================================================================
-// 파일명 : ScanViewModel.cs
-// 위치   : LSS prototype / Scan_Page / ScanViewModel.cs
-//
-// 이 파일의 역할
-//   Scan 화면의 두뇌 역할을 해요.
-//   화면(Scan.xaml) 과 카메라(CameraService) 사이를 연결해요.
-//
-//   쉽게 비유하면?
-//   CameraService → 이미지 전달 → ScanViewModel → 화면에 표시
-//
-// ViewModel 이 하는 일
-//   - CameraService 를 소유하고 카메라 연결 / 해제를 담당
-//   - 카메라에서 새 프레임이 오면 PreviewSource 를 업데이트
-//   - 화면(Scan.xaml) 이 PreviewSource 를 바인딩해서 자동으로 갱신됨
-//   - 페이지 이동, 로그아웃, 종료 커맨드 처리
-// ================================================================
+﻿
 
-//using LSS_prototype.Common_Module;      
+
 using LSS_prototype.Common_Module;
 using System;
-using System.ComponentModel;            
-using System.Runtime.CompilerServices; 
-using System.Threading.Tasks;           
-using System.Windows;                   
-using System.Windows.Input;             
-using System.Windows.Media.Imaging;     
-using System.Windows.Threading;         
+using System.ComponentModel;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Input;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 
-namespace LSS_prototype.Scan_Page
-{
- 
-    // IDisposable 을 상속받는 이유?
-    //   Scan.xaml.cs 의 Unloaded 이벤트에서 Dispose() 를 호출하면
-    //   카메라까지 같이 정리
-    // ================================================================
+namespace LSS_prototype.Scan_Page { 
+
     public class ScanViewModel : INotifyPropertyChanged, IDisposable
     {
         // Scan 화면이 열릴 때 같이 생성되고, 닫힐 때 같이 해제
@@ -42,6 +22,9 @@ namespace LSS_prototype.Scan_Page
         private int _frameCount = 0;
         private DateTime _lastTime = DateTime.Now;
 
+        // exe 바로 옆에 있는 테스트 영상 경로
+        // 카메라가 없을 때 자동으로 이 영상을 재생
+        private static readonly string TEST_VIDEO_PATH = Path.Combine(Common.executablePath, "sample.avi");
 
         // 카메라 라이브 화면을 담는 변수 ( xaml에 이미지 바인딩 역할 ) 
         private WriteableBitmap _previewSource;
@@ -71,7 +54,6 @@ namespace LSS_prototype.Scan_Page
             ExitCommand = new RelayCommand(Common.ExcuteExit);
 
             // 카메라에서 새 프레임이 오면 OnFrameArrived() 를 호출
-            // += 문법 : "이 상황이 생기면 이 함수 불러줘" 라고 등록하는 것
             _cameraService.FrameArrived += OnFrameArrived;
 
             // 카메라에서 에러가 생기면 OnCameraError() 를 호출
@@ -92,8 +74,16 @@ namespace LSS_prototype.Scan_Page
                 try
                 {
                     bool success = _cameraService.Connect();
-                    if (success)
-                        _cameraService.StartLiveView();
+
+                    // 카메라가 없으면 테스트 영상으로 대체
+                    if (!success)
+                    {
+                        Console.WriteLine("> 카메라 없음 → 테스트 영상 모드");
+                        _cameraService.StartTestVideo(TEST_VIDEO_PATH);
+                        return;
+                    }
+
+                    _cameraService.StartLiveView();
                 }
                 catch (Exception ex)
                 {
@@ -101,7 +91,6 @@ namespace LSS_prototype.Scan_Page
                 }
             });
         }
-
 
 
         // ================================================================
@@ -114,7 +103,6 @@ namespace LSS_prototype.Scan_Page
         /// <param name="bitmap">처리 완료된 화면에 표시할 이미지</param>
         private void OnFrameArrived(WriteableBitmap bitmap)
         {
-
             if (_disposed) return;
 
             // FPS 측정
@@ -126,8 +114,8 @@ namespace LSS_prototype.Scan_Page
                 _lastTime = DateTime.Now;
             }
 
-            Application.Current?.Dispatcher.BeginInvoke(
-                new Action(() => PreviewSource = bitmap),
+            Application.Current?.Dispatcher.Invoke(
+                () => PreviewSource = bitmap,
                 DispatcherPriority.Render);
         }
 
@@ -143,7 +131,6 @@ namespace LSS_prototype.Scan_Page
         {
             Application.Current?.Dispatcher.Invoke(() =>
             {
-                // 상태 텍스트를 에러 내용으로 업데이트
                 Console.WriteLine($"오류 : {message}");
                 Common.WriteSessionLog(message);
                 CustomMessageWindow.Show(
@@ -162,7 +149,7 @@ namespace LSS_prototype.Scan_Page
 
         public void Dispose()
         {
-            if (_disposed) return;  
+            if (_disposed) return;
             _disposed = true;
 
             _cameraService.FrameArrived -= OnFrameArrived;
@@ -177,4 +164,6 @@ namespace LSS_prototype.Scan_Page
         protected void OnPropertyChanged([CallerMemberName] string name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
+
+
 }

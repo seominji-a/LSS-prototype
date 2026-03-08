@@ -31,7 +31,7 @@
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
     <InstallUrl>http://192.168.1.35:8080/</InstallUrl>
-    <ApplicationRevision>16</ApplicationRevision>
+    <ApplicationRevision>25</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -137,7 +137,7 @@
     <Reference Include="OpenCvSharp, Version=1.0.0.0, Culture=neutral, PublicKeyToken=6adad1e807fea099, processorArchitecture=MSIL">
       <HintPath>..\packages\OpenCvSharp4.4.9.0.20240103\lib\netstandard2.0\OpenCvSharp.dll</HintPath>
     </Reference>
-    <Reference Include="SpinnakerNET_v140, Version=4.0.0.116, Culture=neutral, PublicKeyToken=e3ed2bf1f221d241, processorArchitecture=AMD64">
+    <Reference Include="SpinnakerNET_v140, Version=4.3.0.189, Culture=neutral, PublicKeyToken=e3ed2bf1f221d241, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>bin\x64\Debug\SpinnakerNET_v140.dll</HintPath>
     </Reference>
@@ -440,6 +440,9 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Content Include="XMLParser_MD_VC140_v3_0.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -452,6 +455,33 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+    <Content Include="GCBase_MD_VC140_v3_0.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="GenApi_MD_VC140_v3_0.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="log4cpp_MD_VC140_v3_0.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Log_MD_VC140_v3_0.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="MathParser_MD_VC140_v3_0.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="NodeMapData_MD_VC140_v3_0.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="sample.avi">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="SpinnakerC_v140.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Spinnaker_v140.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="TestDicom.dcm">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

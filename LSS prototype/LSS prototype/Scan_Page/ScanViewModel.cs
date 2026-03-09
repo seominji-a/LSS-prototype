@@ -53,9 +53,6 @@ namespace LSS_prototype.Scan_Page {
             LogoutCommand = new RelayCommand(Common.ExecuteLogout);
             ExitCommand = new RelayCommand(Common.ExcuteExit);
 
-            // 카메라에서 새 프레임이 오면 OnFrameArrived() 를 호출
-            _cameraService.FrameArrived += OnFrameArrived;
-
             // 카메라에서 에러가 생기면 OnCameraError() 를 호출
             _cameraService.ErrorOccurred += OnCameraError;
 
@@ -94,33 +91,6 @@ namespace LSS_prototype.Scan_Page {
 
 
         // ================================================================
-        // 프레임 도착 콜백
-        // ================================================================
-        /// <summary>
-        /// CameraService 가 새 프레임을 처리하면 자동으로 호출
-        /// 백그라운드 스레드에서 호출되므로 Dispatcher 로 UI 업데이트
-        /// </summary>
-        /// <param name="bitmap">처리 완료된 화면에 표시할 이미지</param>
-        private void OnFrameArrived(WriteableBitmap bitmap)
-        {
-            if (_disposed) return;
-
-            // FPS 측정
-            _frameCount++;
-            if ((DateTime.Now - _lastTime).TotalSeconds >= 1.0)
-            {
-                Console.WriteLine($"> FPS: {_frameCount}");
-                _frameCount = 0;
-                _lastTime = DateTime.Now;
-            }
-
-            Application.Current?.Dispatcher.Invoke(
-                () => PreviewSource = bitmap,
-                DispatcherPriority.Render);
-        }
-
-
-        // ================================================================
         // 카메라 에러 콜백
         // ================================================================
         /// <summary>
@@ -152,7 +122,6 @@ namespace LSS_prototype.Scan_Page {
             if (_disposed) return;
             _disposed = true;
 
-            _cameraService.FrameArrived -= OnFrameArrived;
             _cameraService.ErrorOccurred -= OnCameraError;
 
             try { _cameraService.StopLiveView(); } catch { }

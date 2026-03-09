@@ -10,7 +10,9 @@ namespace LSS_prototype.Patient_Page
     public enum PatientSource
     {
         Local = 0,        // AccessionNumber 없음
-        EmrImported = 1   // AccessionNumber 있음 (파일로 들어온 EMR성 데이터)
+        EmrImported = 1,   // AccessionNumber 있음 (파일로 들어온 EMR성 데이터)
+        ImportLocal,   // Import 했는데 AccessionNumber 없음
+        ImportEmr,     // Import 했는데 AccessionNumber 있음
     }
 
     public class PatientModel

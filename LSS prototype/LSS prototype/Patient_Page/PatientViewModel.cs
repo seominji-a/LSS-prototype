@@ -185,11 +185,21 @@ namespace LSS_prototype.Patient_Page
         /// </summary>
         private void RefreshPatients()
         {
-            var combined = _showAll
-                ? _localPatients
-                : _emrPatients;
+            IEnumerable<PatientModel> list;
 
-            Patients = new ObservableCollection<PatientModel>(combined);
+            if (_showAll)
+            {
+                // Integrated (EMR 제외)
+                list = _localPatients
+                    .Where(p => p.Source != PatientSource.EmrImported);
+            }
+            else
+            {
+                // EMR만
+                list = _emrPatients;
+            }
+
+            Patients = new ObservableCollection<PatientModel>(list);
         }
 
         private void AddPatient()
@@ -371,6 +381,7 @@ namespace LSS_prototype.Patient_Page
                                 // DB 저장
                                 if (int.TryParse(pCodeStr, out int pCode))
                                 {
+
                                     var patientModel = new PatientModel
                                     {
                                         PatientCode = pCode,
@@ -378,9 +389,17 @@ namespace LSS_prototype.Patient_Page
                                         Sex = pSex,
                                         BirthDate = birthDate, // 변환된 DateTime 객체 사용
                                         AccessionNumber = pAccess,
-                                        Source = string.IsNullOrWhiteSpace(pAccess) ? PatientSource.Local : PatientSource.EmrImported
+                                        Source = string.IsNullOrWhiteSpace(pAccess)
+                                                ? PatientSource.ImportLocal
+                                                : PatientSource.EmrImported,
+                                                IsEmrPatient = !string.IsNullOrWhiteSpace(pAccess)
                                     };
                                     repoInside.AddPatient(patientModel);
+                                    // 중요: DB를 다시 GetAllPatients()로 불러오면 Source가 다 날아갑니다(저장 안함)
+                                    // “화면 리스트용” 컬렉션에는 직접 추가해줘야 합니다.
+                                    //_localPatients.Add(patientModel);
+
+
                                 }
                             }
                             catch (Exception ex)
@@ -403,6 +422,13 @@ namespace LSS_prototype.Patient_Page
                     // 4. UI 스레드에서 결과 반영
                     _localPatients = updatedList;
                     RefreshPatients();
+
+                    Debug.WriteLine("LOCAL COUNT: " + _localPatients.Count);
+
+                    foreach (var p in _localPatients)
+                    {
+                        Debug.WriteLine($"{p.PatientName} {p.Source}");
+                    }
 
                     CustomMessageWindow.Show("임포트가 완료되었습니다.",
                         CustomMessageWindow.MessageBoxType.AutoClose, 1,
@@ -437,6 +463,11 @@ namespace LSS_prototype.Patient_Page
                 // TODO: LS / LSS 간 표시 데이터 차이 확인 후 바인딩 필드 정리 필요 0227 박한용
                 _emrPatients = worklistItems;
 
+                foreach (var p in _emrPatients)
+                {
+                    p.Source = PatientSource.EmrImported;
+                    p.IsEmrPatient = true; 
+                }
                 RefreshPatients();
                 CustomMessageWindow.Show("EMR 동기화 완료되었습니다.",
                             CustomMessageWindow.MessageBoxType.AutoClose, 1,
@@ -540,7 +571,6 @@ namespace LSS_prototype.Patient_Page
             string dicomFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DICOM");
             if (!Directory.Exists(dicomFolder)) return;
 
-            // DICOM 폴더에서 "AccessionNumber 있는 PatientID" 수집
             var emrPatientCodes = new HashSet<int>();
 
             foreach (var file in Directory.EnumerateFiles(dicomFolder, "*.dcm"))
@@ -549,25 +579,27 @@ namespace LSS_prototype.Patient_Page
                 {
                     var dcm = DicomFile.Open(file);
 
-                    // AccessionNumber(0008,0050)
                     string acc = dcm.Dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, string.Empty);
                     if (string.IsNullOrWhiteSpace(acc))
-                        continue; // 없으면 LOCAL로 취급
+                        continue;
 
-                    // PatientID(0010,0020) -> PatientCode로 쓴다고 가정
                     string pid = dcm.Dataset.GetSingleValueOrDefault(DicomTag.PatientID, string.Empty);
                     if (int.TryParse(pid, out int code))
                         emrPatientCodes.Add(code);
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // 손상/비표준 파일은 무시
+                    Common.WriteLog(ex);
                 }
             }
 
-            // DB로부터 읽어온 환자 리스트에 플래그 적용
             foreach (var p in patients)
+            {
                 p.IsEmrPatient = emrPatientCodes.Contains(p.PatientCode);
+
+                //  DB에 AccessionNumber 저장 안 해도, 여기서 Source를 복원 가능
+                p.Source = p.IsEmrPatient ? PatientSource.ImportEmr : PatientSource.ImportLocal;
+            }
         }
     }
 }

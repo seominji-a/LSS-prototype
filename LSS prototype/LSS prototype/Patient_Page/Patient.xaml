@@ -330,18 +330,23 @@
                                         </Border>
                                 </Grid>
                                 <DataTemplate.Triggers>
-                                    <DataTrigger Binding="{Binding AccessionNumber}" Value="{x:Null}">
+
+                                    <!-- ImportLocal => LOCAL (파란색) -->
+                                    <DataTrigger Binding="{Binding Source}" Value="ImportLocal">
                                         <Setter TargetName="SourceBadge" Property="Background"  Value="#EFF6FF"/>
                                         <Setter TargetName="SourceBadge" Property="BorderBrush" Value="#BFDBFE"/>
                                         <Setter TargetName="TxtSourceLabel" Property="Foreground" Value="#1D4ED8"/>
-                                        <Setter TargetName="TxtSourceLabel" Property="Text"       Value="LOCAL"/>
+                                        <Setter TargetName="TxtSourceLabel" Property="Text" Value="LOCAL"/>
                                     </DataTrigger>
-                                    <DataTrigger Binding="{Binding AccessionNumber}" Value="">
-                                        <Setter TargetName="SourceBadge" Property="Background"  Value="#EFF6FF"/>
-                                        <Setter TargetName="SourceBadge" Property="BorderBrush" Value="#BFDBFE"/>
-                                        <Setter TargetName="TxtSourceLabel" Property="Foreground" Value="#1D4ED8"/>
-                                        <Setter TargetName="TxtSourceLabel" Property="Text"       Value="LOCAL"/>
+
+                                    <!-- ImportEmr => EMR (초록색) -->
+                                    <DataTrigger Binding="{Binding Source}" Value="ImportEmr">
+                                        <Setter TargetName="SourceBadge" Property="Background"  Value="#DCFCE7"/>
+                                        <Setter TargetName="SourceBadge" Property="BorderBrush" Value="#86EFAC"/>
+                                        <Setter TargetName="TxtSourceLabel" Property="Foreground" Value="#15803D"/>
+                                        <Setter TargetName="TxtSourceLabel" Property="Text" Value="E-SYNC"/>
                                     </DataTrigger>
+
                                     <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
                                         <Setter TargetName="TxtName" Property="Foreground" Value="White"/>
                                         <Setter TargetName="TxtCode" Property="Foreground" Value="#CBD5E1"/>

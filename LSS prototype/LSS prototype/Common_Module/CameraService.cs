@@ -63,6 +63,8 @@ namespace LSS_prototype.Common_Module
                 LensCtrl.Instance.UsbSetConfig();       // USB 설정
                 LensCtrl.Instance.ZoomParameterReadSet(); // zoomMin, zoomMax, zoomSpeed 읽기
                 LensCtrl.Instance.ZoomCurrentAddrReadSet(); // 현재 줌 위치 읽기
+                LensCtrl.Instance.FocusParameterReadSet(); // 포커스 읽기
+                LensCtrl.Instance.FocusCurrentAddrReadSet();
                 Console.WriteLine($"> 렌즈 초기화 완료: zoom={LensCtrl.Instance.zoomCurrentAddr} min={LensCtrl.Instance.zoomMinAddr} max={LensCtrl.Instance.zoomMaxAddr}");
             }
             catch (Exception ex)
@@ -85,7 +87,6 @@ namespace LSS_prototype.Common_Module
                     nextZoom = LensCtrl.Instance.zoomMaxAddr;
 
                 LensCtrl.Instance.ZoomMove(nextZoom);
-                Console.WriteLine($"> ZoomIn: {LensCtrl.Instance.zoomCurrentAddr}");
             }
             catch (Exception ex)
             {
@@ -104,12 +105,45 @@ namespace LSS_prototype.Common_Module
                     nextZoom = LensCtrl.Instance.zoomMinAddr;
 
                 LensCtrl.Instance.ZoomMove(nextZoom);
-                Console.WriteLine($"> ZoomOut: {LensCtrl.Instance.zoomCurrentAddr}");
             }
             catch (Exception ex)
             {
                 Common.WriteLog(ex);
             }
+        }
+
+        public void FocusIn()
+        {
+            try
+            {
+                if (LensCtrl.Instance.focusMaxAddr == 0)
+                {
+                    LensCtrl.Instance.FocusParameterReadSet();
+                    LensCtrl.Instance.FocusCurrentAddrReadSet();
+                }
+
+                ushort nextFocus = (ushort)(LensCtrl.Instance.focusCurrentAddr + _zoomStep);
+
+                if (nextFocus > LensCtrl.Instance.focusMaxAddr)
+                    nextFocus = LensCtrl.Instance.focusMaxAddr;
+
+                LensCtrl.Instance.FocusMove(nextFocus);
+            }
+            catch (Exception ex) { Common.WriteLog(ex); }
+        }
+
+        public void FocusOut()
+        {
+            try
+            {
+                ushort nextFocus = (ushort)(LensCtrl.Instance.focusCurrentAddr - _zoomStep);
+
+                if (nextFocus < LensCtrl.Instance.focusMinAddr)
+                    nextFocus = LensCtrl.Instance.focusMinAddr;
+
+                LensCtrl.Instance.FocusMove(nextFocus);
+            }
+            catch (Exception ex) { Common.WriteLog(ex); }
         }
 
 
@@ -204,7 +238,11 @@ namespace LSS_prototype.Common_Module
                 }
                 catch (SpinnakerException se)
                 {
-                    Console.WriteLine($"[Err] BeginAcquisition [{i}]: {se.Message}");
+                    Common.WriteLog(se);
+                }
+                catch (Exception ex)
+                {
+                    Common.WriteLog(ex);
                 }
             }
             _camOpen = true;
@@ -239,7 +277,6 @@ namespace LSS_prototype.Common_Module
                     double fps = cap.Get(VideoCaptureProperties.Fps);
                     if (fps <= 0) fps = 30;
                     int delay = (int)(1000.0 / fps);
-                    Console.WriteLine($"> TestVideo FPS: {fps}");
 
                     using (Mat frame = new Mat())
                     {
@@ -252,7 +289,6 @@ namespace LSS_prototype.Common_Module
                                 continue;
                             }
 
-                            // Mat → byte[] → WriteableBitmap → FrameArrived
                             int width = frame.Width;
                             int height = frame.Rows;
                             int stride = width * 3; // BGR = 3 bytes
@@ -281,7 +317,6 @@ namespace LSS_prototype.Common_Module
 
             _testVideoThread.IsBackground = true;
             _testVideoThread.Start();
-            Console.WriteLine("> 테스트 영상 재생 시작");
         }
 
 
@@ -328,7 +363,11 @@ namespace LSS_prototype.Common_Module
             }
             catch (SpinnakerException se)
             {
-                Console.WriteLine($"[GetNextImage Error] {se.Message}");
+                Common.WriteLog(se);
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
             }
         }
 

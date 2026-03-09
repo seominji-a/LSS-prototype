@@ -45,6 +45,17 @@ namespace LSS_prototype.Scan_Page {
             get => _zoomText;
             private set { _zoomText = value; OnPropertyChanged(); }
         }
+
+        public string FocusMaxText => $"MAX ({LensCtrl.Instance.focusMaxAddr})";
+        public string FocusMinText => $"MIN ({LensCtrl.Instance.focusMinAddr})";
+        private string _focusText = $"{LensCtrl.Instance.focusCurrentAddr}";
+        public string FocusText
+        {
+            get => _focusText;
+            private set { _focusText = value; OnPropertyChanged(); }
+
+        }
+
         //스캔 최초 설정값 Origin-> 버튼클릭 시 -> 토글형식으로 Gray, Red로 
         public string ColorMap { get; set; } = "Origin";
 
@@ -54,8 +65,12 @@ namespace LSS_prototype.Scan_Page {
 
         public ICommand ExitCommand { get; }
         public ICommand ColorMapCommand { get; }
+
         public ICommand ZoomIncCommand { get; }
         public ICommand ZoomDecCommand { get; }
+
+        public ICommand FocusIncCommand { get; }
+        public ICommand FocusDecCommand { get; }
 
 
 
@@ -71,8 +86,12 @@ namespace LSS_prototype.Scan_Page {
             _cameraService.ErrorOccurred += OnCameraError;
 
             ConnectCamera();
+
             ZoomIncCommand = new RelayCommand(OnZoomInc);
             ZoomDecCommand = new RelayCommand(OnZoomDec);
+
+            FocusIncCommand = new RelayCommand(OnFocusInc);
+            FocusDecCommand = new RelayCommand(OnFocusDec);
         }
 
 
@@ -101,6 +120,35 @@ namespace LSS_prototype.Scan_Page {
                 Common.WriteLog(ex);
             }
         }
+
+        private void OnFocusInc()
+        {
+            try
+            {
+                _cameraService.FocusIn();
+                FocusText = $"{LensCtrl.Instance.focusCurrentAddr}";
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
+
+
+        private void OnFocusDec()
+        {
+            try
+            {
+                _cameraService.FocusOut();
+                FocusText = $"{LensCtrl.Instance.focusCurrentAddr}";
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
+
+
 
         private void OnFrameArrived(WriteableBitmap bitmap)
         {

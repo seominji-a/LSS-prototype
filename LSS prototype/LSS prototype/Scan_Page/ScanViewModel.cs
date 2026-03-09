@@ -19,8 +19,7 @@ namespace LSS_prototype.Scan_Page {
         // Scan 화면이 열릴 때 같이 생성되고, 닫힐 때 같이 해제
         private readonly CameraService _cameraService = new CameraService();
         private bool _disposed = false; // 찰나의 타이밍에 dispose를 하던 도중 마지막 프레임이 도착했을때, 에러방지 위해 flag 변수 사용 
-        private int _frameCount = 0;
-        private DateTime _lastTime = DateTime.Now;
+
 
         // exe 바로 옆에 있는 테스트 영상 경로
         // 카메라가 없을 때 자동으로 이 영상을 재생
@@ -37,14 +36,15 @@ namespace LSS_prototype.Scan_Page {
                 OnPropertyChanged();
             }
         }
+        //스캔 최초 설정값 Origin-> 버튼클릭 시 -> 토글형식으로 Gray, Red로 
+        public string ColorMap { get; set; } = "Origin";
 
         public ICommand NavigatePatientCommand { get; private set; }
 
-        // 로그아웃 버튼
         public ICommand LogoutCommand { get; }
 
-        // 종료 버튼
         public ICommand ExitCommand { get; }
+        public ICommand ColorMapCommand { get; }
 
 
         public ScanViewModel()
@@ -52,13 +52,37 @@ namespace LSS_prototype.Scan_Page {
             NavigatePatientCommand = new RelayCommand(NavigateToPatient);
             LogoutCommand = new RelayCommand(Common.ExecuteLogout);
             ExitCommand = new RelayCommand(Common.ExcuteExit);
+            ColorMapCommand = new RelayCommand(ToggleColorMap);
 
             // 카메라에서 에러가 생기면 OnCameraError() 를 호출
+            _cameraService.FrameArrived += OnFrameArrived;  
             _cameraService.ErrorOccurred += OnCameraError;
 
             ConnectCamera();
         }
 
+
+        private void OnFrameArrived(WriteableBitmap bitmap)
+        {
+            if (_disposed) return;
+            Application.Current?.Dispatcher.Invoke(
+                () => PreviewSource = bitmap,
+                DispatcherPriority.Render);
+        }
+
+        // ================================================================
+        // 컬러맵 
+        // ================================================================
+        private void ToggleColorMap()
+        {
+            string prev = _cameraService.ColorMap;
+
+            if (_cameraService.ColorMap == "Origin") _cameraService.ColorMap = "Rainbow";
+            else if (_cameraService.ColorMap == "Rainbow") _cameraService.ColorMap = "Invert";
+            else _cameraService.ColorMap = "Origin";
+
+            Console.WriteLine($"> 컬러맵 변경: {prev} → {_cameraService.ColorMap}");
+        }
 
         // ================================================================
         // 카메라 연결
@@ -123,6 +147,7 @@ namespace LSS_prototype.Scan_Page {
             _disposed = true;
 
             _cameraService.ErrorOccurred -= OnCameraError;
+            _cameraService.FrameArrived -= OnFrameArrived;
 
             try { _cameraService.StopLiveView(); } catch { }
             _cameraService.Dispose();

@@ -15,7 +15,7 @@ namespace LSS_prototype.Common_Module
 {
     public class CameraService : IDisposable
     {
-        // ── Spinnaker 핵심 객체 ──
+        // ── Spinnaker 핵심 객체 ( 버전이 안맞으면 catch 로 안빠져서 그냥 뻗어버림 주의 ( C++ DLL LOAD 단에서 에러나는거라 CATCH 어려움 ) ──
         private ManagedSystem _managedSystem;
         private ManagedCameraList _managedCameras;
         private List<BackgroundWorker> _workers = new List<BackgroundWorker>();
@@ -28,6 +28,8 @@ namespace LSS_prototype.Common_Module
         // ── UI 로 프레임 전달하는 이벤트 ──
         public event Action<WriteableBitmap> FrameArrived;
         public event Action<string> ErrorOccurred;
+
+        public string ColorMap { get; set; } = "Origin";
 
         public bool IsConnected => _camConnection;
         public bool IsOpen => _camOpen;
@@ -42,8 +44,46 @@ namespace LSS_prototype.Common_Module
         {
             _managedSystem = new ManagedSystem();
             LibraryVersion ver = _managedSystem.GetLibraryVersion();
-            Console.WriteLine($"## Spinnaker Version: {ver.major}.{ver.minor}.{ver.type}.{ver.build}");
         }
+
+
+
+        private Mat ApplyColorMap(Mat src)
+        {
+            try
+            {
+                Mat src3ch = new Mat();
+                Cv2.CvtColor(src, src3ch, ColorConversionCodes.GRAY2BGR);
+
+                Mat dst = new Mat();
+
+                if (ColorMap == "Origin")
+                {
+                    src3ch.CopyTo(dst);
+                }
+                else if (ColorMap == "Rainbow")
+                {
+                    Mat notImg = new Mat();
+                    Cv2.BitwiseNot(src3ch, notImg);
+                    Cv2.ApplyColorMap(notImg, dst, ColormapTypes.Rainbow);
+                    notImg.Dispose();
+                }
+                else if (ColorMap == "Invert")
+                {
+                    Cv2.BitwiseNot(src3ch, dst);
+                }
+
+                src3ch.Dispose();
+                return dst;
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                return src;
+            }
+        }
+
+
 
         // ────────────────────────────────────────────
         // 카메라 연결 + Init
@@ -216,6 +256,7 @@ namespace LSS_prototype.Common_Module
 
                     // 2. Convert 없이 rawImage 직접 전달
                     WriteableBitmap bitmap = ToBitmap(rawImage);
+   
                     if (bitmap != null)
                         FrameArrived?.Invoke(bitmap);
                 }
@@ -258,18 +299,30 @@ namespace LSS_prototype.Common_Module
             {
                 int width = (int)image.Width;
                 int height = (int)image.Height;
-
-                // DataPtr 대신 ManagedData 사용
                 byte[] data = image.ManagedData;
 
-                int stride = data.Length / height;
+                // Mat 처리는 using 블록 안에서 완전히 끝내고
+                // byte[] 로 복사해서 using 블록 밖으로 꺼냄
+                byte[] processedData;
+                int stride;
+                bool isColor;
+
+                using (Mat src = new Mat(height, width, MatType.CV_8UC1, data))
+                using (Mat processed = ApplyColorMap(src))
+                {
+                    stride = (int)processed.Step();
+                    isColor = processed.Channels() == 3;
+                    processedData = new byte[height * stride];
+                    Marshal.Copy(processed.Data, processedData, 0, processedData.Length);
+                } // ← 여기서 Mat 해제, 이후엔 byte[] 만 사용
 
                 WriteableBitmap bitmap = null;
                 Application.Current?.Dispatcher.Invoke(() =>
                 {
-                    bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Gray8, null);
+                    var format = isColor ? PixelFormats.Bgr24 : PixelFormats.Gray8;
+                    bitmap = new WriteableBitmap(width, height, 96, 96, format, null);
                     bitmap.Lock();
-                    Marshal.Copy(data, 0, bitmap.BackBuffer, data.Length);
+                    Marshal.Copy(processedData, 0, bitmap.BackBuffer, processedData.Length);
                     bitmap.AddDirtyRect(new Int32Rect(0, 0, width, height));
                     bitmap.Unlock();
                     bitmap.Freeze();
@@ -279,7 +332,7 @@ namespace LSS_prototype.Common_Module
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[ToBitmap Error] {ex.Message}");
+                Common.WriteLog(ex);
                 return null;
             }
         }

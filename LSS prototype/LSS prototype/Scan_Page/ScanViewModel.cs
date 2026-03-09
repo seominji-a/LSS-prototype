@@ -26,6 +26,7 @@ namespace LSS_prototype.Scan_Page {
         // 카메라가 없을 때 자동으로 이 영상을 재생
         private static readonly string TEST_VIDEO_PATH = Path.Combine(Common.executablePath, "sample.avi");
 
+
         // 카메라 라이브 화면을 담는 변수 ( xaml에 이미지 바인딩 역할 ) 
         private WriteableBitmap _previewSource;
         public WriteableBitmap PreviewSource
@@ -59,6 +60,13 @@ namespace LSS_prototype.Scan_Page {
         //스캔 최초 설정값 Origin-> 버튼클릭 시 -> 토글형식으로 Gray, Red로 
         public string ColorMap { get; set; } = "Origin";
 
+        private string _sharpness;
+        public string Sharpness
+        {
+            get => _sharpness;
+            private set { _sharpness = value; OnPropertyChanged(); }
+        }
+
         public ICommand NavigatePatientCommand { get; private set; }
 
         public ICommand LogoutCommand { get; }
@@ -71,6 +79,8 @@ namespace LSS_prototype.Scan_Page {
 
         public ICommand FocusIncCommand { get; }
         public ICommand FocusDecCommand { get; }
+
+        public ICommand AutoFocusCommand { get; }
 
 
 
@@ -92,6 +102,14 @@ namespace LSS_prototype.Scan_Page {
 
             FocusIncCommand = new RelayCommand(OnFocusInc);
             FocusDecCommand = new RelayCommand(OnFocusDec);
+
+            _cameraService.SharpnessUpdated += (val) => Sharpness = $"{val:F2}";
+
+            AutoFocusCommand = new RelayCommand(OnAutoFocus);
+        }
+        private async void OnAutoFocus()
+        {
+            await _cameraService.AutoFocus();
         }
 
 

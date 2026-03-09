@@ -219,7 +219,7 @@
                 <TextBlock Text="Gain"      Foreground="#AAA" FontSize="16" HorizontalAlignment="Right"/>
                 <TextBlock Text="30dB"      Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Right"/>
                 <TextBlock Text="Sharpness" Foreground="#AAA" FontSize="16" HorizontalAlignment="Right" Margin="0,6,0,0"/>
-                <TextBlock Text="218.56"    Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Right"/>
+                <TextBlock Text="{Binding Sharpness, FallbackValue='SHARP VALUE'}" Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Right"/>
             </StackPanel>
             <Grid x:Name="NavBar" VerticalAlignment="Bottom" Height="0" ClipToBounds="True">
                 <Border Background="#E61C2B3A"/>

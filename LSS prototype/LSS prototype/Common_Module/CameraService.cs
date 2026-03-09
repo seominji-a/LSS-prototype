@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -21,6 +22,10 @@ namespace LSS_prototype.Common_Module
         private ManagedCameraList _managedCameras;
         private List<BackgroundWorker> _workers = new List<BackgroundWorker>();
 
+        public event Action<double> SharpnessUpdated; // 선명도 출력 이벤트 
+
+        private Mat _lastFrame = null;
+
         // ── 상태 플래그 ──
         private bool _camOpen = false;
         private bool _camConnection = false;
@@ -29,6 +34,8 @@ namespace LSS_prototype.Common_Module
         // ── UI 로 프레임 전달하는 이벤트 ──
         public event Action<WriteableBitmap> FrameArrived;
         public event Action<string> ErrorOccurred;
+
+
 
         public string ColorMap { get; set; } = "Origin";
 
@@ -238,6 +245,8 @@ namespace LSS_prototype.Common_Module
                 }
                 catch (SpinnakerException se)
                 {
+                    if (se.Message.Contains("Stream has been aborted"))
+                        return;
                     Common.WriteLog(se);
                 }
                 catch (Exception ex)
@@ -246,6 +255,93 @@ namespace LSS_prototype.Common_Module
                 }
             }
             _camOpen = true;
+        }
+
+        /// <summary>
+        /// 선명도 계산 함수 
+        /// </summary>
+        /// <param name="src"></param>
+        /// <returns></returns>
+        public double CalcSharpness(Mat src)
+        {
+            try
+            {
+                int roiW = src.Width / 4;
+                int roiH = src.Height / 4;
+                int roiX = src.Width / 2 - roiW / 2;
+                int roiY = src.Height / 2 - roiH / 2;
+
+                using (Mat roi = new Mat(src, new OpenCvSharp.Rect(roiX, roiY, roiW, roiH)))
+                using (Mat gray = new Mat())
+                using (Mat sobelX = new Mat())
+                using (Mat sobelY = new Mat())
+                {
+                    if (roi.Channels() == 3)
+                        Cv2.CvtColor(roi, gray, ColorConversionCodes.BGR2GRAY);
+                    else
+                        roi.CopyTo(gray);
+
+                    // Tenengrad - Sobel X, Y 계산
+                    Cv2.Sobel(gray, sobelX, MatType.CV_64F, 1, 0);
+                    Cv2.Sobel(gray, sobelY, MatType.CV_64F, 0, 1);
+
+                    // 제곱합 계산
+                    Mat sobelX2 = sobelX.Mul(sobelX);
+                    Mat sobelY2 = sobelY.Mul(sobelY);
+                    Scalar sumVal = Cv2.Sum(sobelX2 + sobelY2);
+
+                    sobelX2.Dispose();
+                    sobelY2.Dispose();
+
+                    return sumVal.Val0;
+                }
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                return 0;
+            }
+        }
+
+        public async Task AutoFocus()
+        {
+            await Task.Run(() =>
+            {
+                try
+                {
+                    if (_lastFrame == null) return;
+
+                    int low = LensCtrl.Instance.focusMinAddr;
+                    int high = LensCtrl.Instance.focusMaxAddr;
+                    double golden = 0.618;
+
+                    while (high - low > 50)
+                    {
+                        int mid1 = (int)(low + (high - low) * (1 - golden));
+                        int mid2 = (int)(low + (high - low) * golden);
+
+                        LensCtrl.Instance.FocusMove((ushort)mid1);
+                        Thread.Sleep(200); 
+                        double sharp1 = CalcSharpness(_lastFrame);
+
+                        LensCtrl.Instance.FocusMove((ushort)mid2);
+                        Thread.Sleep(200); 
+                        double sharp2 = CalcSharpness(_lastFrame);
+
+                        if (sharp1 > sharp2) high = mid2;
+                        else low = mid1;
+
+                        Console.WriteLine($"> mid1:{mid1} s1:{sharp1:F0} mid2:{mid2} s2:{sharp2:F0}");
+                    }
+
+                    LensCtrl.Instance.FocusMove((ushort)((low + high) / 2));
+                    Console.WriteLine($"> 오토포커스 완료: {LensCtrl.Instance.focusCurrentAddr}");
+                }
+                catch (Exception ex)
+                {
+                    Common.WriteLog(ex);
+                }
+            });
         }
 
         /// <summary>
@@ -363,6 +459,8 @@ namespace LSS_prototype.Common_Module
             }
             catch (SpinnakerException se)
             {
+                if (se.Message.Contains("Stream has been aborted"))
+                    return;
                 Common.WriteLog(se);
             }
             catch (Exception ex)
@@ -414,11 +512,14 @@ namespace LSS_prototype.Common_Module
                 using (Mat src = new Mat(height, width, MatType.CV_8UC1, data))
                 using (Mat processed = ApplyColorMap(src))
                 {
+                    _lastFrame = src.Clone(); 
                     stride = (int)processed.Step();
                     isColor = processed.Channels() == 3;
                     processedData = new byte[height * stride];
                     Marshal.Copy(processed.Data, processedData, 0, processedData.Length);
-                } // ← 여기서 Mat 해제, 이후엔 byte[] 만 사용
+                    double sharpness = CalcSharpness(src);
+                    SharpnessUpdated?.Invoke(sharpness);
+                } 
 
                 WriteableBitmap bitmap = null;
                 Application.Current?.Dispatcher.Invoke(() =>

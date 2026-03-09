@@ -219,7 +219,7 @@
                 <TextBlock Text="Gain"      Foreground="#AAA" FontSize="16" HorizontalAlignment="Right"/>
                 <TextBlock Text="30dB"      Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Right"/>
                 <TextBlock Text="Sharpness" Foreground="#AAA" FontSize="16" HorizontalAlignment="Right" Margin="0,6,0,0"/>
-                <TextBlock Text="218.56"    Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Right"/>
+                <TextBlock Text="{Binding Sharpness, FallbackValue='SHARP VALUE'}" Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Right"/>
             </StackPanel>
             <Grid x:Name="NavBar" VerticalAlignment="Bottom" Height="0" ClipToBounds="True">
                 <Border Background="#E61C2B3A"/>
@@ -536,7 +536,7 @@
                                     <TextBlock Grid.Column="0" Text="ZOOM"
                                    Foreground="White" FontSize="13" FontWeight="Bold"
                                    VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Column="2" Text="(1x)"
+                                    <TextBlock Grid.Column="2"  Text="{Binding ZoomText, FallbackValue='CURRENT'}"
                                    Foreground="White" FontSize="15" FontWeight="Bold"
                                    VerticalAlignment="Center"/>
                                 </Grid>
@@ -554,7 +554,7 @@
                                     <Button.Content>
                                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <TextBlock Text="+" Foreground="White" FontSize="28" FontWeight="Bold" HorizontalAlignment="Center"/>
-                                            <TextBlock Text="MAX" Foreground="White" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                            <TextBlock Text="{Binding ZoomMaxText, FallbackValue='MAX VALUE'}" Foreground="White" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,2,0,0"/>
                                         </StackPanel>
                                     </Button.Content>
                                 </Button>
@@ -572,7 +572,7 @@
                                     <Button.Content>
                                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <TextBlock Text="−" Foreground="White" FontSize="28" FontWeight="Bold" HorizontalAlignment="Center"/>
-                                            <TextBlock Text="MIN" Foreground="White" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                            <TextBlock Text="{Binding ZoomMinText, FallbackValue='MIN VALUE'}" Foreground="White" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,2,0,0"/>
                                         </StackPanel>
                                     </Button.Content>
                                 </Button>
@@ -601,7 +601,7 @@
                                     <TextBlock Grid.Column="0" Text="FOCUS"
                                    Foreground="White" FontSize="13" FontWeight="Bold"
                                    VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Column="2" Text="(16mm)"
+                                    <TextBlock Grid.Column="2" Text="{Binding FocusText, FallbackValue='CURRENT'}"
                                    Foreground="White" FontSize="15" FontWeight="Bold"
                                    VerticalAlignment="Center"/>
                                 </Grid>
@@ -619,7 +619,7 @@
                                     <Button.Content>
                                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <TextBlock Text="+" Foreground="White" FontSize="28" FontWeight="Bold" HorizontalAlignment="Center"/>
-                                            <TextBlock Text="MAX" Foreground="White" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                            <TextBlock Text="{Binding FocusMaxText, FallbackValue='MAX VALUE'}" Foreground="White" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,2,0,0"/>
                                         </StackPanel>
                                     </Button.Content>
                                 </Button>
@@ -637,7 +637,7 @@
                                     <Button.Content>
                                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <TextBlock Text="−" Foreground="White" FontSize="28" FontWeight="Bold" HorizontalAlignment="Center"/>
-                                            <TextBlock Text="MIN" Foreground="White" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                            <TextBlock Text="{Binding FocusMinText, FallbackValue='MIN VALUE'}" Foreground="White" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,2,0,0"/>
                                         </StackPanel>
                                     </Button.Content>
                                 </Button>

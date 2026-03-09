@@ -150,3 +150,46 @@ EMR과 LOCAL에 동일 환자가 존재할 경우
 중복 제거 또는 병합 정책 결정 예정 (TODO)
 
 ────────────────────────────────────
+
+■ 6. import 데이터 처리 정책
+
+PatientModel.cs
+
+=PatientSource 함수
+Local 수동 등록 데이터
+EmrImported DICOM EMR
+ImportLocal import 되어진 local 데이터
+ImpotEmr Import 되어진 emr 데이터
+
+PatientViewModel.cs
+
+-RefreshPatient 함수
+EMR-EmrImported
+Intergrated-Local, ImportLocal, ImportEmr
+
+-ApplyEmrFlagsFromDicomFolder 함수
+DB에서 환자 리스트를 읽은 다음, DICOM 폴더를 다시 스캔해서 ISEmrPatient/Source를 재계산해서 UI에 배치
+
+DICOM 폴더를 스캔해서 AccessionNumber가 있는 환자(PatientID) 목록 생성,
+DB에서 불러온 환자 리스트에 IsEmrPatient/Source를 다시 붙여서 EMR/LOCAL 배지 표시가 가능
+
+1. DB에 AccessionNumber를 저장하지 않으면, GetAllPatients()로 다시 로드할 때 EMR/LOCAL 구분 정보가 사라짐 방지 목적으로
+DICOM 파일 자체를 근거로 매번 EMR/LOCAL 표시용 플래그를 재생성
+
+2. EMRImported 환자와 importEmr 환자 모두 따로 DB에 AccessNumber(접수 번호)를 저장하지 않으므로
+환자를 구분하기 위해 다른 '공통 키'로  DICOM 파일과 DB 환자 레코드 연결
+
+3. DICOM 파일에서 Patient id를 꺼내고 그 값을 int로 변경해서 code로 만든다. 
+DB의 paientcode(int)와 동일한지 여부를 판단한다
+
+-Patient.xaml
+PatientModel의 PatientModel.Source 기준(데이터 상태)에 따라 배지(SourceBadge) UI를 자동으로 바꿔주는 조건부 스타일 규칙
+
+1. Source == ImportLocal
+SourceBadge 배경/테두리 + TxtSourceLabel 글자색/텍스트
+파란 배지 + “LOCAL”
+
+2. Source == ImportEmr	
+SourceBadge 배경/테두리 + TxtSourceLabel 글자색/텍스트
+초록 배지 + “E-Sync”
+

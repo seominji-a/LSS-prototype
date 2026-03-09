@@ -236,6 +236,11 @@
     <Compile Include="Common_Module\LoadingWindow.xaml.cs">
       <DependentUpon>LoadingWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Lens_Module\configVal.cs" />
+    <Compile Include="Lens_Module\DevAddr.cs" />
+    <Compile Include="Lens_Module\LensCtrl.cs" />
+    <Compile Include="Lens_Module\SLABCP2112.cs" />
+    <Compile Include="Lens_Module\UsbCtrl.cs" />
     <Compile Include="Login_Page\ChangePasswordDialog.xaml.cs">
       <DependentUpon>ChangePasswordDialog.xaml</DependentUpon>
     </Compile>

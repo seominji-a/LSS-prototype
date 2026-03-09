@@ -536,7 +536,7 @@
                                     <TextBlock Grid.Column="0" Text="ZOOM"
                                    Foreground="White" FontSize="13" FontWeight="Bold"
                                    VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Column="2" Text="(1x)"
+                                    <TextBlock Grid.Column="2"  Text="{Binding ZoomText}"
                                    Foreground="White" FontSize="15" FontWeight="Bold"
                                    VerticalAlignment="Center"/>
                                 </Grid>
@@ -554,7 +554,7 @@
                                     <Button.Content>
                                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <TextBlock Text="+" Foreground="White" FontSize="28" FontWeight="Bold" HorizontalAlignment="Center"/>
-                                            <TextBlock Text="MAX" Foreground="White" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                            <TextBlock Text="{Binding ZoomMaxText, FallbackValue='MAX VALUE'}" Foreground="White" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,2,0,0"/>
                                         </StackPanel>
                                     </Button.Content>
                                 </Button>
@@ -572,7 +572,7 @@
                                     <Button.Content>
                                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <TextBlock Text="−" Foreground="White" FontSize="28" FontWeight="Bold" HorizontalAlignment="Center"/>
-                                            <TextBlock Text="MIN" Foreground="White" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                            <TextBlock Text="{Binding ZoomMinText, FallbackValue='MIN VALUE'}" Foreground="White" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,2,0,0"/>
                                         </StackPanel>
                                     </Button.Content>
                                 </Button>

@@ -2,6 +2,7 @@
 
 
 using LSS_prototype.Common_Module;
+using LSS_prototype.Lens_Module;
 using System;
 using System.ComponentModel;
 using System.IO;
@@ -36,6 +37,14 @@ namespace LSS_prototype.Scan_Page {
                 OnPropertyChanged();
             }
         }
+        public string ZoomMaxText => $"MAX ({LensCtrl.Instance.zoomMaxAddr})";
+        public string ZoomMinText => $"MIN ({LensCtrl.Instance.zoomMinAddr})";
+        private string _zoomText = $"{LensCtrl.Instance.zoomCurrentAddr}";
+        public string ZoomText
+        {
+            get => _zoomText;
+            private set { _zoomText = value; OnPropertyChanged(); }
+        }
         //스캔 최초 설정값 Origin-> 버튼클릭 시 -> 토글형식으로 Gray, Red로 
         public string ColorMap { get; set; } = "Origin";
 
@@ -45,6 +54,9 @@ namespace LSS_prototype.Scan_Page {
 
         public ICommand ExitCommand { get; }
         public ICommand ColorMapCommand { get; }
+        public ICommand ZoomIncCommand { get; }
+        public ICommand ZoomDecCommand { get; }
+
 
 
         public ScanViewModel()
@@ -59,8 +71,36 @@ namespace LSS_prototype.Scan_Page {
             _cameraService.ErrorOccurred += OnCameraError;
 
             ConnectCamera();
+            ZoomIncCommand = new RelayCommand(OnZoomInc);
+            ZoomDecCommand = new RelayCommand(OnZoomDec);
         }
 
+
+        private void OnZoomInc()
+        {
+            try
+            {
+                _cameraService.ZoomIn();
+                ZoomText = $"{LensCtrl.Instance.zoomCurrentAddr}";
+            }
+            catch(Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
+
+        private void OnZoomDec()
+        {
+            try
+            {
+                _cameraService.ZoomOut();
+                ZoomText = $"{LensCtrl.Instance.zoomCurrentAddr}";
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
 
         private void OnFrameArrived(WriteableBitmap bitmap)
         {
@@ -69,6 +109,8 @@ namespace LSS_prototype.Scan_Page {
                 () => PreviewSource = bitmap,
                 DispatcherPriority.Render);
         }
+
+
 
         // ================================================================
         // 컬러맵 

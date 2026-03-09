@@ -1,4 +1,5 @@
-﻿using OpenCvSharp;
+﻿using LSS_prototype.Lens_Module;
+using OpenCvSharp;
 using SpinnakerNET;
 using SpinnakerNET.GenApi;
 using System;
@@ -37,15 +38,79 @@ namespace LSS_prototype.Common_Module
         private Thread _testVideoThread;
         private bool _testVideoRunning = false;
 
+        // ── 카메라 zoom In/Out 관련 변수  ──
+
+        private const int _zoomStep = 300; // 한번 누를 때 증가 감소 범위 
+
+
         // ────────────────────────────────────────────
         // 생성자 - ManagedSystem 초기화
         // ────────────────────────────────────────────
         public CameraService()
         {
             _managedSystem = new ManagedSystem();
-            LibraryVersion ver = _managedSystem.GetLibraryVersion();
+            InitLens();
         }
 
+        // ────────────────────────────────────────────
+        // 렌즈 초기화 - 현재 줌 위치 및 파라미터 읽기
+        // ────────────────────────────────────────────
+        private void InitLens()
+        {
+            try
+            {
+                LensCtrl.Instance.UsbOpen(0);           // USB 연결
+                LensCtrl.Instance.UsbSetConfig();       // USB 설정
+                LensCtrl.Instance.ZoomParameterReadSet(); // zoomMin, zoomMax, zoomSpeed 읽기
+                LensCtrl.Instance.ZoomCurrentAddrReadSet(); // 현재 줌 위치 읽기
+                Console.WriteLine($"> 렌즈 초기화 완료: zoom={LensCtrl.Instance.zoomCurrentAddr} min={LensCtrl.Instance.zoomMinAddr} max={LensCtrl.Instance.zoomMaxAddr}");
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                Common.WriteSessionLog($"렌즈 초기화 실패: {ex.Message}");
+            }
+        }
+
+
+        public void ZoomIn()
+        {
+            try
+            {
+                // 현재 줌 위치에서 _zoomStep 만큼 증가
+                ushort nextZoom = (ushort)(LensCtrl.Instance.zoomCurrentAddr + _zoomStep);
+
+                // 최대값 초과하면 최대값으로 고정
+                if (nextZoom > LensCtrl.Instance.zoomMaxAddr)
+                    nextZoom = LensCtrl.Instance.zoomMaxAddr;
+
+                LensCtrl.Instance.ZoomMove(nextZoom);
+                Console.WriteLine($"> ZoomIn: {LensCtrl.Instance.zoomCurrentAddr}");
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
+
+        public void ZoomOut()
+        {
+            try
+            {
+                ushort nextZoom = (ushort)(LensCtrl.Instance.zoomCurrentAddr - _zoomStep);
+
+                // 최소값 미만이면 최소값으로 고정 ( 별도의 소리? 뭐 안넣어도되는지 고려하기 )
+                if (nextZoom < LensCtrl.Instance.zoomMinAddr)
+                    nextZoom = LensCtrl.Instance.zoomMinAddr;
+
+                LensCtrl.Instance.ZoomMove(nextZoom);
+                Console.WriteLine($"> ZoomOut: {LensCtrl.Instance.zoomCurrentAddr}");
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
 
 
         private Mat ApplyColorMap(Mat src)

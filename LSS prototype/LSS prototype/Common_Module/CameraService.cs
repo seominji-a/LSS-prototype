@@ -325,7 +325,7 @@ namespace LSS_prototype.Common_Module
                         double sharp1 = CalcSharpness(_lastFrame);
 
                         LensCtrl.Instance.FocusMove((ushort)mid2);
-                        Thread.Sleep(200); 
+                        Thread.Sleep(200); // 새 프레임 도착 대기
                         double sharp2 = CalcSharpness(_lastFrame);
 
                         if (sharp1 > sharp2) high = mid2;

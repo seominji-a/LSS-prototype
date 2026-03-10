@@ -24,7 +24,10 @@ namespace LSS_prototype.Common_Module
 
         public event Action<double> SharpnessUpdated; // 선명도 출력 이벤트 
 
+        private Timer _reconnectTimer; // 카메라 재연결 감지 타이머 
+
         private Mat _lastFrame = null;
+        private readonly object _frameLock = new object(); // ── _lastFrame 스레드 안전 lock ( 화면 멈춤 방지 ) ──
 
         // ── 상태 플래그 ──
         private bool _camOpen = false;
@@ -35,6 +38,9 @@ namespace LSS_prototype.Common_Module
         public event Action<WriteableBitmap> FrameArrived;
         public event Action<string> ErrorOccurred;
 
+        // ── 카메라 끊켰을 때, 재연결 때 뷰모델로 전달 이벤트 ──
+        public event Action CameraDisconnected;
+        public event Action CameraReconnected;
 
 
         public string ColorMap { get; set; } = "Origin";
@@ -46,7 +52,6 @@ namespace LSS_prototype.Common_Module
         private bool _testVideoRunning = false;
 
         // ── 카메라 zoom In/Out 관련 변수  ──
-
         private const int _zoomStep = 300; // 한번 누를 때 증가 감소 범위 
 
 
@@ -66,11 +71,11 @@ namespace LSS_prototype.Common_Module
         {
             try
             {
-                LensCtrl.Instance.UsbOpen(0);           // USB 연결
-                LensCtrl.Instance.UsbSetConfig();       // USB 설정
-                LensCtrl.Instance.ZoomParameterReadSet(); // zoomMin, zoomMax, zoomSpeed 읽기
-                LensCtrl.Instance.ZoomCurrentAddrReadSet(); // 현재 줌 위치 읽기
-                LensCtrl.Instance.FocusParameterReadSet(); // 포커스 읽기
+                LensCtrl.Instance.UsbOpen(0);                   // USB 연결
+                LensCtrl.Instance.UsbSetConfig();               // USB 설정
+                LensCtrl.Instance.ZoomParameterReadSet();       // zoomMin, zoomMax, zoomSpeed 읽기
+                LensCtrl.Instance.ZoomCurrentAddrReadSet();     // 현재 줌 위치 읽기
+                LensCtrl.Instance.FocusParameterReadSet();      // 포커스 읽기
                 LensCtrl.Instance.FocusCurrentAddrReadSet();
                 Console.WriteLine($"> 렌즈 초기화 완료: zoom={LensCtrl.Instance.zoomCurrentAddr} min={LensCtrl.Instance.zoomMinAddr} max={LensCtrl.Instance.zoomMaxAddr}");
             }
@@ -86,14 +91,11 @@ namespace LSS_prototype.Common_Module
         {
             try
             {
-                // 현재 줌 위치에서 _zoomStep 만큼 증가
-                ushort nextZoom = (ushort)(LensCtrl.Instance.zoomCurrentAddr + _zoomStep);
-
-                // 최대값 초과하면 최대값으로 고정
+                int nextZoom = LensCtrl.Instance.zoomCurrentAddr + _zoomStep;
                 if (nextZoom > LensCtrl.Instance.zoomMaxAddr)
                     nextZoom = LensCtrl.Instance.zoomMaxAddr;
 
-                LensCtrl.Instance.ZoomMove(nextZoom);
+                LensCtrl.Instance.ZoomMove((ushort)nextZoom);
             }
             catch (Exception ex)
             {
@@ -105,13 +107,12 @@ namespace LSS_prototype.Common_Module
         {
             try
             {
-                ushort nextZoom = (ushort)(LensCtrl.Instance.zoomCurrentAddr - _zoomStep);
-
-                // 최소값 미만이면 최소값으로 고정 ( 별도의 소리? 뭐 안넣어도되는지 고려하기 )
+                // ── int 로 먼저 계산 → 음수 언더플로우 방지 ──
+                int nextZoom = LensCtrl.Instance.zoomCurrentAddr - _zoomStep;
                 if (nextZoom < LensCtrl.Instance.zoomMinAddr)
                     nextZoom = LensCtrl.Instance.zoomMinAddr;
 
-                LensCtrl.Instance.ZoomMove(nextZoom);
+                LensCtrl.Instance.ZoomMove((ushort)nextZoom);
             }
             catch (Exception ex)
             {
@@ -129,12 +130,12 @@ namespace LSS_prototype.Common_Module
                     LensCtrl.Instance.FocusCurrentAddrReadSet();
                 }
 
-                ushort nextFocus = (ushort)(LensCtrl.Instance.focusCurrentAddr + _zoomStep);
-
+            
+                int nextFocus = LensCtrl.Instance.focusCurrentAddr + _zoomStep;
                 if (nextFocus > LensCtrl.Instance.focusMaxAddr)
                     nextFocus = LensCtrl.Instance.focusMaxAddr;
 
-                LensCtrl.Instance.FocusMove(nextFocus);
+                LensCtrl.Instance.FocusMove((ushort)nextFocus);
             }
             catch (Exception ex) { Common.WriteLog(ex); }
         }
@@ -143,12 +144,12 @@ namespace LSS_prototype.Common_Module
         {
             try
             {
-                ushort nextFocus = (ushort)(LensCtrl.Instance.focusCurrentAddr - _zoomStep);
-
+     
+                int nextFocus = LensCtrl.Instance.focusCurrentAddr - _zoomStep;
                 if (nextFocus < LensCtrl.Instance.focusMinAddr)
                     nextFocus = LensCtrl.Instance.focusMinAddr;
 
-                LensCtrl.Instance.FocusMove(nextFocus);
+                LensCtrl.Instance.FocusMove((ushort)nextFocus);
             }
             catch (Exception ex) { Common.WriteLog(ex); }
         }
@@ -188,7 +189,6 @@ namespace LSS_prototype.Common_Module
                 return src;
             }
         }
-
 
 
         // ────────────────────────────────────────────
@@ -257,11 +257,9 @@ namespace LSS_prototype.Common_Module
             _camOpen = true;
         }
 
-        /// <summary>
-        /// 선명도 계산 함수 
-        /// </summary>
-        /// <param name="src"></param>
-        /// <returns></returns>
+        // ────────────────────────────────────────────
+        // 선명도 계산 함수
+        // ────────────────────────────────────────────
         public double CalcSharpness(Mat src)
         {
             try
@@ -309,7 +307,10 @@ namespace LSS_prototype.Common_Module
             {
                 try
                 {
-                    if (_lastFrame == null) return;
+                    // ── [Fix 1] _lastFrame 을 lock 으로 안전하게 복사 ──
+                    Mat frame;
+                    lock (_frameLock) { frame = _lastFrame?.Clone(); }
+                    if (frame == null) return;
 
                     int low = LensCtrl.Instance.focusMinAddr;
                     int high = LensCtrl.Instance.focusMaxAddr;
@@ -321,12 +322,17 @@ namespace LSS_prototype.Common_Module
                         int mid2 = (int)(low + (high - low) * golden);
 
                         LensCtrl.Instance.FocusMove((ushort)mid1);
-                        Thread.Sleep(200); 
-                        double sharp1 = CalcSharpness(_lastFrame);
+                        Thread.Sleep(200);
+
+                        // ── [Fix 1] 루프 내에서도 매번 최신 프레임을 lock 으로 안전하게 복사 ──
+                        lock (_frameLock) { frame?.Dispose(); frame = _lastFrame?.Clone(); }
+                        double sharp1 = CalcSharpness(frame);
 
                         LensCtrl.Instance.FocusMove((ushort)mid2);
-                        Thread.Sleep(200); // 새 프레임 도착 대기
-                        double sharp2 = CalcSharpness(_lastFrame);
+                        Thread.Sleep(200);
+
+                        lock (_frameLock) { frame?.Dispose(); frame = _lastFrame?.Clone(); }
+                        double sharp2 = CalcSharpness(frame);
 
                         if (sharp1 > sharp2) high = mid2;
                         else low = mid1;
@@ -335,6 +341,7 @@ namespace LSS_prototype.Common_Module
                     }
 
                     LensCtrl.Instance.FocusMove((ushort)((low + high) / 2));
+                    frame?.Dispose();
                     Console.WriteLine($"> 오토포커스 완료: {LensCtrl.Instance.focusCurrentAddr}");
                 }
                 catch (Exception ex)
@@ -344,10 +351,9 @@ namespace LSS_prototype.Common_Module
             });
         }
 
-        /// <summary>
-        /// 테스트 비디오 실행 함수
-        /// </summary>
-        /// <param name="videoPath"></param>
+        // ────────────────────────────────────────────
+        // 테스트 비디오 실행 함수
+        // ────────────────────────────────────────────
         public void StartTestVideo(string videoPath)
         {
             if (!File.Exists(videoPath))
@@ -452,7 +458,7 @@ namespace LSS_prototype.Common_Module
 
                     // 2. Convert 없이 rawImage 직접 전달
                     WriteableBitmap bitmap = ToBitmap(rawImage);
-   
+
                     if (bitmap != null)
                         FrameArrived?.Invoke(bitmap);
                 }
@@ -484,16 +490,54 @@ namespace LSS_prototype.Common_Module
             }
             else
             {
-                // 스트리밍 종료
+                if (_camOpen && _camConnection)
+                {
+                    _camOpen = false;
+                    _camConnection = false;
+                    ErrorOccurred?.Invoke("카메라 연결이 끊어졌습니다.\n 5초 마다 재연결을 시도합니다.");
+                    CameraDisconnected?.Invoke();
+                    StartReconnectTimer();
+                }
                 _workers.Remove(worker);
                 worker.Dispose();
                 Console.WriteLine($"> Camera [{idx}] Worker 종료");
             }
         }
 
+        private void StartReconnectTimer()
+        {
+            _reconnectTimer?.Dispose();
+            _reconnectTimer = new Timer(_ =>
+            {
+                if (_camConnection) return;
+                try
+                {
+                    var cameras = _managedSystem.GetCameras();
+                    if (cameras.Count > 0)
+                    {
+                        _reconnectTimer?.Dispose();
+
+                        // 테스트 영상 강제 정지
+                        _testVideoRunning = false;
+                        _testVideoThread?.Join(500);
+
+                        _managedCameras = cameras;
+                        foreach (IManagedCamera cam in _managedCameras)
+                            cam.Init();
+
+                        _camConnection = true;
+                        StartLiveView();
+                        CameraReconnected?.Invoke();
+                    }
+                }
+                catch (Exception ex) { Common.WriteLog(ex); }
+
+            }, null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
+        }
+
+
         // ────────────────────────────────────────────
         // IManagedImage (BGR8) → WriteableBitmap
-        // 필터 없음, 날것 원본 그대로 변환
         // ────────────────────────────────────────────
         private WriteableBitmap ToBitmap(IManagedImage image)
         {
@@ -512,14 +556,20 @@ namespace LSS_prototype.Common_Module
                 using (Mat src = new Mat(height, width, MatType.CV_8UC1, data))
                 using (Mat processed = ApplyColorMap(src))
                 {
-                    _lastFrame = src.Clone(); 
+                    // ── [Fix 1] lock 으로 _lastFrame 교체 안전하게 처리 ──
+                    lock (_frameLock)
+                    {
+                        _lastFrame?.Dispose();
+                        _lastFrame = src.Clone();
+                    }
+
                     stride = (int)processed.Step();
                     isColor = processed.Channels() == 3;
                     processedData = new byte[height * stride];
                     Marshal.Copy(processed.Data, processedData, 0, processedData.Length);
                     double sharpness = CalcSharpness(src);
                     SharpnessUpdated?.Invoke(sharpness);
-                } 
+                }
 
                 WriteableBitmap bitmap = null;
                 Application.Current?.Dispatcher.Invoke(() =>
@@ -566,7 +616,9 @@ namespace LSS_prototype.Common_Module
         {
             if (_disposed) return;
             _disposed = true;
+            _reconnectTimer?.Dispose();
             Disconnect();
+            lock (_frameLock) { _lastFrame?.Dispose(); _lastFrame = null; }
             _managedSystem?.Dispose();
         }
     }

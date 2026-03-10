@@ -106,7 +106,23 @@ namespace LSS_prototype.Scan_Page {
             _cameraService.SharpnessUpdated += (val) => Sharpness = $"{val:F2}";
 
             AutoFocusCommand = new RelayCommand(OnAutoFocus);
+
+            _cameraService.CameraDisconnected += OnCameraDisconnected;
+            _cameraService.CameraReconnected += OnCameraReconnected;
         }
+
+        private void OnCameraDisconnected()
+        {
+            Application.Current?.Dispatcher.Invoke(() =>
+                _cameraService.StartTestVideo(TEST_VIDEO_PATH));
+        }
+
+        private void OnCameraReconnected()
+        {
+            Application.Current?.Dispatcher.Invoke(() =>
+                Console.WriteLine("> 카메라 재연결 완료"));
+        }
+
         private async void OnAutoFocus()
         {
             await _cameraService.AutoFocus();
@@ -237,8 +253,8 @@ namespace LSS_prototype.Scan_Page {
                 Common.WriteSessionLog(message);
                 CustomMessageWindow.Show(
                     message,
-                    CustomMessageWindow.MessageBoxType.Ok,
-                    0,
+                    CustomMessageWindow.MessageBoxType.AutoClose,
+                    2,
                     CustomMessageWindow.MessageIconType.Warning);
             });
         }
@@ -256,6 +272,9 @@ namespace LSS_prototype.Scan_Page {
 
             _cameraService.ErrorOccurred -= OnCameraError;
             _cameraService.FrameArrived -= OnFrameArrived;
+
+            _cameraService.CameraDisconnected -= OnCameraDisconnected;
+            _cameraService.CameraReconnected -= OnCameraReconnected;
 
             try { _cameraService.StopLiveView(); } catch { }
             _cameraService.Dispose();

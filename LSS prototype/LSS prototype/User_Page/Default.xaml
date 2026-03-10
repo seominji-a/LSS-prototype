@@ -157,7 +157,7 @@
                                     Margin="0,0,7.2,0" Command="{Binding ExposureDecCommand}"/>
                             <Border Grid.Column="1" Background="{StaticResource ValueBg}" CornerRadius="9.6">
                                 <TextBlock Text="{Binding ExposureValue}"
-                                           Foreground="White" FontSize="25.6" FontWeight="Bold"
+                                           Foreground="White" FontSize="23" FontWeight="Bold"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <RepeatButton Delay="500" Interval="80" Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
@@ -268,7 +268,7 @@
                             <RepeatButton Delay="500" Interval="80" Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
                                     Margin="7.2,0,0,0" Command="{Binding FocusIncCommand}"/>
                         </Grid>
-                        <TextBlock Grid.Row="4" Text="3545 ~ 8310  |  Step 100"
+                        <TextBlock Grid.Row="4" Text="3545 ~ 8310  |  Step 300"
                                    Foreground="{StaticResource Muted}" FontSize="12"
                                    HorizontalAlignment="Center"/>
                     </Grid>
@@ -338,7 +338,7 @@
                             <RepeatButton Delay="500" Interval="80" Grid.Column="2" Content="+" Style="{StaticResource PmBtn}"
                                     Margin="7.2,0,0,0" Command="{Binding ZoomIncCommand}"/>
                         </Grid>
-                        <TextBlock Grid.Row="4" Text="1138 ~ 4669  |  Step 100"
+                        <TextBlock Grid.Row="4" Text="1138 ~ 4669  |  Step 300"
                                    Foreground="{StaticResource Muted}" FontSize="12"
                                    HorizontalAlignment="Center"/>
                     </Grid>

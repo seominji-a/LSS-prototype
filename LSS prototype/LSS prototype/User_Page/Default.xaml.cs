@@ -23,7 +23,9 @@ namespace LSS_prototype.User_Page
         public Default()
         {
             InitializeComponent();
-            DataContext = new DefaultViewModel();
+            var vm = new DefaultViewModel();
+            vm.CloseAction = result => this.Close();
+            DataContext = vm;
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)

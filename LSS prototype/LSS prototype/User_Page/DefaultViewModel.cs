@@ -39,6 +39,8 @@ namespace LSS_prototype.User_Page
         public ICommand ResetCommand { get; }
         public ICommand SaveCommand { get; }
 
+        public Action<bool?> CloseAction { get; set; }
+
 
         // 생성자
         public DefaultViewModel()
@@ -127,6 +129,8 @@ namespace LSS_prototype.User_Page
                     CustomMessageWindow.Show("변경되었습니다.",
                         CustomMessageWindow.MessageBoxType.AutoClose, 1,
                         CustomMessageWindow.MessageIconType.Info);
+
+                    CloseAction?.Invoke(true);
                 }
             }
             catch (Exception ex)
@@ -142,7 +146,7 @@ namespace LSS_prototype.User_Page
             val < min ? min : val > max ? max : val;
 
         private void ChangeExposure(double delta) =>
-            ExposureValue = Math.Round(Clamp(ExposureValue + delta, ExposureMin, ExposureMax), 1);
+            ExposureValue = Clamp(ExposureValue + delta, ExposureMin, ExposureMax);
         private void ChangeGain(double delta) =>
             GainValue = Math.Round(Clamp(GainValue + delta, GainMin, GainMax), 1);
         private void ChangeGamma(double delta) =>

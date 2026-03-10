@@ -26,9 +26,6 @@ DICOM 객체(Dataset)는 저장 시점에만 사용,
 저장 완료 후에는 용량이 큰 원본 데이터셋은 메모리에서 비우고, 
 DB에는 꼭 필요한 환자 정보와 촬영 횟수 같은 통계값만 남기도록 설계해 성능 최적화 필요
 
-AccessionNumber 충돌 방지를 위해 로컬 환자는 빈 값을 권장한다
-
-
 <LSIS Scan 전체 흐름>
 
 ■ Scan 동작 처리 
@@ -278,4 +275,64 @@ DB에 저장 불가, JSON 직렬화 불가(JsonIgnore 처리 필요)
     PatientModel.AccessionNumber = "" or "RIS번호"
     → Dataset 없이 AccessionNumber만으로 EMR/LOCAL 구분 가능
 
+<AccessionNumber 관련 사항>
+DICOM 표준상 AccessionNumber (0008,0050)는 Type 2 태그
+Type 2는 태그는 반드시 존재해야 하지만, 값은 비워도(empty string) 가능
+즉, 로컬 환자처럼 병원 RIS에서 할당받지 않은 경우 빈 값("")으로 두는 것이 표준
 
+■ LSIS에 날짜+"0001"로 채워준 이유
+PACS 서버가 빈 AccessionNumber를 거부하거나 중복 처리 문제가 생길 것을 우려해 임시로 넣어둔 것으로 보입니다. 
+같은 날 여러 검사가 생기면 AccessionNumber가 충돌하는 문제가 있습니다.
+
+■ 수정 방향
+MWL(워크리스트)에서 로드된 환자 → AccessionNumber 그대로 사용, 
+로컬 수동 생성 환자 → "" 빈 값으로 설정하면 됩니다. 
+slt.Dataset의 null 여부로 이미 두 케이스를 구분하고 있으니 분기를 활용하면 됩니다.
+
+(수정 부분)
+1.Save_Click 내부 (SetStudy 호출 부분):
+
+// ── 변경 전 ──
+dm.SetStudy(
+    DateTime.Now.ToString("yyyyMMdd") + "0001",  // StudyID
+    DateTime.Now.ToString("yyyyMMdd") + "0001",  // AccessionNumber ← 문제 부분
+    ...
+);
+
+// ── 변경 후 ──
+string accessionNumber = (slt.Dataset != null)
+    ? slt.Dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, "") // MWL 환자: 서버값 사용-병원 RIS와 연동 필요
+    : "";  // 로컬 환자: 빈 값-Type 2 허용, 충돌 방지
+
+dm.SetStudy(
+    DateTime.Now.ToString("yyyyMMdd") + "0001",  // StudyID는 내부 관리용이므로 유지 가능
+    accessionNumber,                              // AccessionNumber
+    DateTime.Now.ToString("yyyyMMdd"),
+    time,
+    slt.SelectInjectionTime,
+    hpt.GetHospitalName(),
+    ""
+);
+
+2.SetStudy() 내부에서 AddIfNotExists → AddOrUpdate 
+// DicomManager.cs - SetStudy() 내부
+// 변경 전
+AddIfNotExists(DicomTag.AccessionNumber, accessionNumber);
+
+// 변경 후 (빈 값도 명시적으로 기록하고 싶을 때)
+dataset.AddOrUpdate(DicomTag.AccessionNumber, accessionNumber);
+
+<Orthanc의 빈 AccessionNumber 처리 방식>
+AccessionNumber (0008,0050)는 DICOM Type 2 태그로 정의
+Type 2 의미: "태그는 존재해야 하지만, 값은 비워도 된다"
+
+ AccessionNumber, PatientID, StudyInstanceUID, SeriesInstanceUID, SOPInstanceUID 등의 DICOM 식별자 인덱스 
+ 내부적으로 유지하면서 자체 내부 ID에 매핑
+
+ RIS에서 AccessionNumber를 사전 할당받지 못한 경우에도 나중에 환자 정보를 채워 넣는 reconciliation 프로세스가 가능하도록 설계
+
+ 빈 AccessionNumber("")로 C-STORE를 받아도 거부하지 않는다
+
+ ■ 수정할 필요 없는 부분
+ DicomManager.SetStudy() 내부 코드
+ AddIfNotExists를 쓰고 있으므로 MWL Dataset에 이미 AccessionNumber가 있으면 자동으로 그 값이 유지 가능

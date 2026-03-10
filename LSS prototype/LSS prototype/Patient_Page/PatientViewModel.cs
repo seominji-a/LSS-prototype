@@ -423,13 +423,6 @@ namespace LSS_prototype.Patient_Page
                     _localPatients = updatedList;
                     RefreshPatients();
 
-                    Debug.WriteLine("LOCAL COUNT: " + _localPatients.Count);
-
-                    foreach (var p in _localPatients)
-                    {
-                        Debug.WriteLine($"{p.PatientName} {p.Source}");
-                    }
-
                     CustomMessageWindow.Show("임포트가 완료되었습니다.",
                         CustomMessageWindow.MessageBoxType.AutoClose, 1,
                         CustomMessageWindow.MessageIconType.Info);

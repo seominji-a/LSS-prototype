@@ -216,6 +216,20 @@
             </Setter>
         </Style>
 
+        <Style x:Key="TransparentBtn" TargetType="Button">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="Transparent">
+                            <ContentPresenter/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- ══ Animations ══ -->
         <Storyboard x:Key="NavIn">
             <DoubleAnimation Storyboard.TargetName="NavBar"  Storyboard.TargetProperty="Height"
@@ -253,6 +267,18 @@
                 <Image x:Name="CameraPreviewImage" Stretch="Uniform" Source="{Binding PreviewSource}"/>
             </Border>
 
+            <!-- 위아래 2분할 감마 컨트롤 오버레이 -->
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Button Grid.Row="0" Background="#01000000" BorderThickness="0" Cursor="Hand" Style="{StaticResource TransparentBtn}"
+                Command="{Binding GainIncCommand}"/>
+                <Button Grid.Row="1" Background="#01000000" BorderThickness="0" Cursor="Hand" Style="{StaticResource TransparentBtn}"
+                Command="{Binding GainDecCommand}"/>
+            </Grid>
+
             <!-- 좌상단: 환자 정보 -->
             <StackPanel Margin="16,12" VerticalAlignment="Top" HorizontalAlignment="Left">
                 <TextBlock Text="Jung Wooseok(10005)" Foreground="White" FontSize="18" FontWeight="Bold"/>
@@ -262,10 +288,10 @@
             <!-- 우상단: Gain / Sharpness -->
             <StackPanel Margin="0,12,16,0" VerticalAlignment="Top" HorizontalAlignment="Right">
                 <TextBlock Text="Gain"      Foreground="#AAA" FontSize="16" HorizontalAlignment="Right"/>
-                <TextBlock Text="30dB"      Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Right"/>
+                <TextBlock Text="{Binding GainText, FallbackValue='-- dB'}" Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Right"/>
                 <TextBlock Text="Sharpness" Foreground="#AAA" FontSize="16" HorizontalAlignment="Right" Margin="0,6,0,0"/>
                 <TextBlock Text="{Binding Sharpness, FallbackValue='SHARP VALUE'}"
-                           Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Right"/>
+                   Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Right"/>
             </StackPanel>
 
             <!-- 하단 Nav Bar -->

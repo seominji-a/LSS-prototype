@@ -1,7 +1,4 @@
-﻿
-
-
-using LSS_prototype.Common_Module;
+﻿using LSS_prototype.Common_Module;
 using LSS_prototype.Lens_Module;
 using System;
 using System.ComponentModel;
@@ -38,8 +35,7 @@ namespace LSS_prototype.Scan_Page {
                 OnPropertyChanged();
             }
         }
-        public string ZoomMaxText => $"MAX ({LensCtrl.Instance.zoomMaxAddr})";
-        public string ZoomMinText => $"MIN ({LensCtrl.Instance.zoomMinAddr})";
+
         private string _zoomText = $"{LensCtrl.Instance.zoomCurrentAddr}";
         public string ZoomText
         {
@@ -47,15 +43,21 @@ namespace LSS_prototype.Scan_Page {
             private set { _zoomText = value; OnPropertyChanged(); }
         }
 
-        public string FocusMaxText => $"MAX ({LensCtrl.Instance.focusMaxAddr})";
-        public string FocusMinText => $"MIN ({LensCtrl.Instance.focusMinAddr})";
+     
         private string _focusText = $"{LensCtrl.Instance.focusCurrentAddr}";
         public string FocusText
         {
             get => _focusText;
             private set { _focusText = value; OnPropertyChanged(); }
-
         }
+
+        private string _gainText;
+        public string GainText
+        {
+            get => _gainText;
+            private set { _gainText = value; OnPropertyChanged(); }
+        }
+
 
         //스캔 최초 설정값 Origin-> 버튼클릭 시 -> 토글형식으로 Gray, Red로 
         public string ColorMap { get; set; } = "Origin";
@@ -81,7 +83,8 @@ namespace LSS_prototype.Scan_Page {
         public ICommand FocusDecCommand { get; }
 
         public ICommand AutoFocusCommand { get; }
-
+        public ICommand GainIncCommand { get; }
+        public ICommand GainDecCommand { get; }
 
 
         public ScanViewModel()
@@ -109,6 +112,20 @@ namespace LSS_prototype.Scan_Page {
 
             _cameraService.CameraDisconnected += OnCameraDisconnected;
             _cameraService.CameraReconnected += OnCameraReconnected;
+
+            GainIncCommand = new RelayCommand(OnGainInc);
+            GainDecCommand = new RelayCommand(OnGainDec);
+        }
+
+        private void OnGainInc()
+        {
+            _cameraService.GainInc();
+            GainText = $"{_cameraService.GainCurrentRead():F1} dB";
+        }
+        private void OnGainDec()
+        {
+            _cameraService.GainDec();
+            GainText = $"{_cameraService.GainCurrentRead():F1} dB";
         }
 
         private void OnCameraDisconnected()
@@ -229,6 +246,7 @@ namespace LSS_prototype.Scan_Page {
                     }
 
                     _cameraService.StartLiveView();
+                    GainText = $"{_cameraService.GainCurrentRead():F1} dB";
                 }
                 catch (Exception ex)
                 {

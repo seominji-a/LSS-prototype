@@ -297,7 +297,7 @@ namespace LSS_prototype
                 }
 
                 // 사용자에게 알려주기 위한 팝업 표시 
-                Application.Current.Dispatcher.Invoke(() =>
+                Application.Current?.Dispatcher.Invoke(() =>
                 {
                     CustomMessageWindow.Show(
                         ex.Message,

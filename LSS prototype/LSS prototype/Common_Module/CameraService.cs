@@ -54,6 +54,12 @@ namespace LSS_prototype.Common_Module
         // ── 카메라 zoom In/Out 관련 변수  ──
         private const int _zoomStep = 300; // 한번 누를 때 증가 감소 범위 
 
+        //── 카메라 게인 + - 관련 변수   ──
+        private double _gainValue = 0.0;
+        private const double _gainStep = 3.0; // 증가 감소값
+        private const double _gainMin = 0.0;
+        private const double _gainMax = 30.0;
+
 
         // ────────────────────────────────────────────
         // 생성자 - ManagedSystem 초기화
@@ -84,6 +90,43 @@ namespace LSS_prototype.Common_Module
                 Common.WriteLog(ex);
                 Common.WriteSessionLog($"렌즈 초기화 실패: {ex.Message}");
             }
+        }
+
+        public void GainInc()
+        {
+            try
+            {
+                double next = _gainValue + _gainStep;
+                if (next > _gainMax) next = _gainMax;
+                ApplyGain(next);
+            }
+            catch (Exception ex) { Common.WriteLog(ex); }
+        }
+
+        public void GainDec()
+        {
+            try
+            {
+                double next = _gainValue - _gainStep;
+                if (next < _gainMin) next = _gainMin;
+                ApplyGain(next);
+            }
+            catch (Exception ex) { Common.WriteLog(ex); }
+        }
+
+        private void ApplyGain(double value)
+        {
+            if (_managedCameras == null) return;
+
+            for (int i = 0; i < _managedCameras.Count; i++)
+            {
+                INodeMap nodeMap = _managedCameras[i].GetNodeMap();
+                IFloat iGain = nodeMap.GetNode<IFloat>("Gain");
+                iGain.Value = value;
+            }
+
+            _gainValue = value;
+            Console.WriteLine($"> Gain 변경: {_gainValue}");
         }
 
 
@@ -154,6 +197,23 @@ namespace LSS_prototype.Common_Module
             catch (Exception ex) { Common.WriteLog(ex); }
         }
 
+        public double GainCurrentRead()
+        {
+            try
+            {
+                if (_managedCameras == null) return _gainValue;
+
+                INodeMap nodeMap = _managedCameras[0].GetNodeMap();
+                IFloat iGain = nodeMap.GetNode<IFloat>("Gain");
+                _gainValue = iGain.Value;
+                return _gainValue;
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                return _gainValue;
+            }
+        }
 
         private Mat ApplyColorMap(Mat src)
         {
@@ -190,6 +250,8 @@ namespace LSS_prototype.Common_Module
             }
         }
 
+       
+
 
         // ────────────────────────────────────────────
         // 카메라 연결 + Init
@@ -211,6 +273,7 @@ namespace LSS_prototype.Common_Module
                     cam.Init();
 
                 _camConnection = true;
+                _gainValue = GainCurrentRead();
                 Console.WriteLine("> 카메라 Init 완료");
                 return true;
             }

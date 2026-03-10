@@ -160,12 +160,15 @@ namespace LSS_prototype.User_Page
 
 
         // 바인딩 프로퍼티
+        public string ExposureText => $"{ExposureValue / 1000000:F1}s";
+
         private double _exposureValue;
         public double ExposureValue
         {
             get => _exposureValue;
-            set { _exposureValue = value; OnPropertyChanged(); }
-        }
+            set { _exposureValue = value; OnPropertyChanged();
+                OnPropertyChanged(nameof(ExposureText)); }
+            }
 
         private double _gainValue;
         public double GainValue

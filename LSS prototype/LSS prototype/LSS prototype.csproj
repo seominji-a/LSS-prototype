@@ -215,6 +215,7 @@
     <Compile Include="Auth\SessionActivityMonitor.cs" />
     <Compile Include="Auth\SessionStateManager.cs" />
     <Compile Include="Common_Module\CameraService.cs" />
+    <Compile Include="Common_Module\CameraService.Lens.cs" />
     <Compile Include="Common_Module\Common.cs" />
     <Compile Include="Common_Module\CustomMessageWindow.xaml.cs">
       <DependentUpon>CustomMessageWindow.xaml</DependentUpon>

@@ -9,23 +9,22 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace LSS_prototype.Common_Module
 {
-    public class CameraService : IDisposable
+    public partial class CameraService : IDisposable
     {
+        #region 필드 & 이벤트
+
         // ── Spinnaker 핵심 객체 ( 버전이 안맞으면 catch 로 안빠져서 그냥 뻗어버림 주의 ( C++ DLL LOAD 단에서 에러나는거라 CATCH 어려움 ) ──
         private ManagedSystem _managedSystem;
         private ManagedCameraList _managedCameras;
         private List<BackgroundWorker> _workers = new List<BackgroundWorker>();
 
-        public event Action<double> SharpnessUpdated; // 선명도 출력 이벤트 
-
-        private Timer _reconnectTimer; // 카메라 재연결 감지 타이머 
+        private Timer _reconnectTimer; // 카메라 재연결 감지 타이머
 
         private Mat _lastFrame = null;
         private readonly object _frameLock = new object(); // ── _lastFrame 스레드 안전 lock ( 화면 멈춤 방지 ) ──
@@ -35,36 +34,30 @@ namespace LSS_prototype.Common_Module
         private bool _camConnection = false;
         private bool _disposed = false;
 
+        // ── 테스트 영상 ──
+        private Thread _testVideoThread;
+        private bool _testVideoRunning = false;
+
         // ── UI 로 프레임 전달하는 이벤트 ──
         public event Action<WriteableBitmap> FrameArrived;
         public event Action<string> ErrorOccurred;
+        public event Action<double> SharpnessUpdated; // 선명도 출력 이벤트
 
         // ── 카메라 끊켰을 때, 재연결 때 뷰모델로 전달 이벤트 ──
         public event Action CameraDisconnected;
         public event Action CameraReconnected;
 
-
+        // ── 컬러맵 ──
         public string ColorMap { get; set; } = "Origin";
 
+        // ── 상태 프로퍼티 ──
         public bool IsConnected => _camConnection;
         public bool IsOpen => _camOpen;
 
-        private Thread _testVideoThread;
-        private bool _testVideoRunning = false;
+        #endregion
 
-        // ── 카메라 zoom In/Out 관련 변수  ──
-        private const int _zoomStep = 300; // 한번 누를 때 증가 감소 범위 
+        #region 생성자 & 렌즈 초기화
 
-        //── 카메라 게인 + - 관련 변수   ──
-        private double _gainValue = 0.0;
-        private const double _gainStep = 3.0; // 증가 감소값
-        private const double _gainMin = 0.0;
-        private const double _gainMax = 30.0;
-
-
-        // ────────────────────────────────────────────
-        // 생성자 - ManagedSystem 초기화
-        // ────────────────────────────────────────────
         public CameraService()
         {
             _managedSystem = new ManagedSystem();
@@ -93,166 +86,9 @@ namespace LSS_prototype.Common_Module
             }
         }
 
-        public void GainInc()
-        {
-            try
-            {
-                double next = _gainValue + _gainStep;
-                if (next > _gainMax) next = _gainMax;
-                ApplyGain(next);
-            }
-            catch (Exception ex) { Common.WriteLog(ex); }
-        }
+        #endregion
 
-        public void GainDec()
-        {
-            try
-            {
-                double next = _gainValue - _gainStep;
-                if (next < _gainMin) next = _gainMin;
-                ApplyGain(next);
-            }
-            catch (Exception ex) { Common.WriteLog(ex); }
-        }
-
-        private void ApplyGain(double value)
-        {
-            if (_managedCameras == null) return;
-
-            for (int i = 0; i < _managedCameras.Count; i++)
-            {
-                INodeMap nodeMap = _managedCameras[i].GetNodeMap();
-                IFloat iGain = nodeMap.GetNode<IFloat>("Gain");
-                iGain.Value = value;
-            }
-
-            _gainValue = value;
-            Console.WriteLine($"> Gain 변경: {_gainValue}");
-        }
-
-
-        public void ZoomIn()
-        {
-            try
-            {
-                int nextZoom = LensCtrl.Instance.zoomCurrentAddr + _zoomStep;
-                if (nextZoom > LensCtrl.Instance.zoomMaxAddr)
-                    nextZoom = LensCtrl.Instance.zoomMaxAddr;
-
-                LensCtrl.Instance.ZoomMove((ushort)nextZoom);
-            }
-            catch (Exception ex)
-            {
-                Common.WriteLog(ex);
-            }
-        }
-
-        public void ZoomOut()
-        {
-            try
-            {
-                // ── int 로 먼저 계산 → 음수 언더플로우 방지 ──
-                int nextZoom = LensCtrl.Instance.zoomCurrentAddr - _zoomStep;
-                if (nextZoom < LensCtrl.Instance.zoomMinAddr)
-                    nextZoom = LensCtrl.Instance.zoomMinAddr;
-
-                LensCtrl.Instance.ZoomMove((ushort)nextZoom);
-            }
-            catch (Exception ex)
-            {
-                Common.WriteLog(ex);
-            }
-        }
-
-        public void FocusIn()
-        {
-            try
-            {
-                if (LensCtrl.Instance.focusMaxAddr == 0)
-                {
-                    LensCtrl.Instance.FocusParameterReadSet();
-                    LensCtrl.Instance.FocusCurrentAddrReadSet();
-                }
-
-            
-                int nextFocus = LensCtrl.Instance.focusCurrentAddr + _zoomStep;
-                if (nextFocus > LensCtrl.Instance.focusMaxAddr)
-                    nextFocus = LensCtrl.Instance.focusMaxAddr;
-
-                LensCtrl.Instance.FocusMove((ushort)nextFocus);
-            }
-            catch (Exception ex) { Common.WriteLog(ex); }
-        }
-
-        public void FocusOut()
-        {
-            try
-            {
-     
-                int nextFocus = LensCtrl.Instance.focusCurrentAddr - _zoomStep;
-                if (nextFocus < LensCtrl.Instance.focusMinAddr)
-                    nextFocus = LensCtrl.Instance.focusMinAddr;
-
-                LensCtrl.Instance.FocusMove((ushort)nextFocus);
-            }
-            catch (Exception ex) { Common.WriteLog(ex); }
-        }
-
-        public double GainCurrentRead()
-        {
-            try
-            {
-                if (_managedCameras == null) return _gainValue;
-
-                INodeMap nodeMap = _managedCameras[0].GetNodeMap();
-                IFloat iGain = nodeMap.GetNode<IFloat>("Gain");
-                _gainValue = iGain.Value;
-                return _gainValue;
-            }
-            catch (Exception ex)
-            {
-                Common.WriteLog(ex);
-                return _gainValue;
-            }
-        }
-
-        private Mat ApplyColorMap(Mat src)
-        {
-            try
-            {
-                Mat src3ch = new Mat();
-                Cv2.CvtColor(src, src3ch, ColorConversionCodes.GRAY2BGR);
-
-                Mat dst = new Mat();
-
-                if (ColorMap == "Origin")
-                {
-                    src3ch.CopyTo(dst);
-                }
-                else if (ColorMap == "Rainbow")
-                {
-                    Mat notImg = new Mat();
-                    Cv2.BitwiseNot(src3ch, notImg);
-                    Cv2.ApplyColorMap(notImg, dst, ColormapTypes.Rainbow);
-                    notImg.Dispose();
-                }
-                else if (ColorMap == "Invert")
-                {
-                    Cv2.BitwiseNot(src3ch, dst);
-                }
-
-                src3ch.Dispose();
-                return dst;
-            }
-            catch (Exception ex)
-            {
-                Common.WriteLog(ex);
-                return src;
-            }
-        }
-
-       
-
+        #region 카메라 연결 & 라이브뷰
 
         // ────────────────────────────────────────────
         // 카메라 연결 + Init
@@ -274,7 +110,6 @@ namespace LSS_prototype.Common_Module
                     cam.Init();
 
                 _camConnection = true;
-                _gainValue = GainCurrentRead();
                 Console.WriteLine("> 카메라 Init 완료");
                 return true;
             }
@@ -309,8 +144,7 @@ namespace LSS_prototype.Common_Module
                 }
                 catch (SpinnakerException se)
                 {
-                    if (se.Message.Contains("Stream has been aborted"))
-                        return;
+                    if (se.Message.Contains("Stream has been aborted")) return;
                     Common.WriteLog(se);
                 }
                 catch (Exception ex)
@@ -320,6 +154,234 @@ namespace LSS_prototype.Common_Module
             }
             _camOpen = true;
         }
+
+        public void StopLiveView()
+        {
+            if (!_camOpen) return;
+
+            // 테스트 영상 정지
+            _testVideoRunning = false;
+            _testVideoThread?.Join(500);
+
+            // 카메라 정지
+            if (_managedCameras != null)
+            {
+                for (int i = 0; i < _managedCameras.Count; i++)
+                    try { _managedCameras[i].EndAcquisition(); } catch { }
+            }
+
+            _camOpen = false;
+        }
+
+        // ────────────────────────────────────────────
+        // 연결 해제
+        // ────────────────────────────────────────────
+        public void Disconnect()
+        {
+            StopLiveView();
+
+            if (_managedCameras != null)
+            {
+                foreach (IManagedCamera cam in _managedCameras)
+                    try { cam.DeInit(); } catch { }
+
+                _managedCameras.Clear();
+            }
+            _camConnection = false;
+        }
+
+        private void StartReconnectTimer()
+        {
+            _reconnectTimer?.Dispose();
+            _reconnectTimer = new Timer(_ =>
+            {
+                if (_camConnection) return;
+                try
+                {
+                    var cameras = _managedSystem.GetCameras();
+                    if (cameras.Count > 0)
+                    {
+                        _reconnectTimer?.Dispose();
+
+                        // 테스트 영상 강제 정지
+                        _testVideoRunning = false;
+                        _testVideoThread?.Join(500);
+
+                        _managedCameras = cameras;
+                        foreach (IManagedCamera cam in _managedCameras)
+                            cam.Init();
+
+                        _camConnection = true;
+                        StartLiveView();
+                        CameraReconnected?.Invoke();
+                    }
+                }
+                catch (Exception ex) { Common.WriteLog(ex); }
+
+            }, null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
+        }
+
+        #endregion
+
+        #region 프레임 처리 (Worker & 이미지 변환)
+
+        // ────────────────────────────────────────────
+        // Worker - 프레임 1장 캡처
+        // GetNextImage → BGR8 변환 → WriteableBitmap
+        // ────────────────────────────────────────────
+        private void Worker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            IManagedCamera cam = (IManagedCamera)e.Argument;
+
+            try
+            {
+                // 1. 카메라에서 이미지 1장 가져오기
+                using (IManagedImage rawImage = cam.GetNextImage(1000))
+                {
+                    if (rawImage.IsIncomplete) return;
+
+                    // 2. Convert 없이 rawImage 직접 전달
+                    WriteableBitmap bitmap = ToBitmap(rawImage);
+
+                    if (bitmap != null)
+                        FrameArrived?.Invoke(bitmap);
+                }
+            }
+            catch (SpinnakerException se)
+            {
+                if (se.Message.Contains("Stream has been aborted")) return;
+                Common.WriteLog(se);
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
+
+        // ────────────────────────────────────────────
+        // Worker 완료 → 카메라 스트리밍 중이면 다음 프레임 요청
+        // ────────────────────────────────────────────
+        private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            BackgroundWorker worker = (BackgroundWorker)sender;
+            int idx = _workers.IndexOf(worker);
+
+            if (idx >= 0 && idx < _managedCameras.Count && _managedCameras[idx].IsStreaming())
+            {
+                // 스트리밍 중이면 계속 다음 프레임 요청
+                worker.RunWorkerAsync(argument: _managedCameras[idx]);
+            }
+            else
+            {
+                if (_camOpen && _camConnection)
+                {
+                    _camOpen = false;
+                    _camConnection = false;
+                    ErrorOccurred?.Invoke("카메라 연결이 끊어졌습니다.\n 5초 마다 재연결을 시도합니다.");
+                    CameraDisconnected?.Invoke();
+                    StartReconnectTimer();
+                }
+                _workers.Remove(worker);
+                worker.Dispose();
+                Console.WriteLine($"> Camera [{idx}] Worker 종료");
+            }
+        }
+
+        // ────────────────────────────────────────────
+        // IManagedImage (BGR8) → WriteableBitmap
+        // ────────────────────────────────────────────
+        private WriteableBitmap ToBitmap(IManagedImage image)
+        {
+            try
+            {
+                int width = (int)image.Width;
+                int height = (int)image.Height;
+                byte[] data = image.ManagedData;
+
+                // Mat 처리는 using 블록 안에서 완전히 끝내고
+                // byte[] 로 복사해서 using 블록 밖으로 꺼냄
+                byte[] processedData;
+                int stride;
+                bool isColor;
+
+                using (Mat src = new Mat(height, width, MatType.CV_8UC1, data))
+                using (Mat processed = ApplyColorMap(src))
+                {
+                    // ──  lock 으로 _lastFrame 교체 안전하게 처리 ──
+                    lock (_frameLock)
+                    {
+                        _lastFrame?.Dispose();
+                        _lastFrame = src.Clone();
+                    }
+
+                    stride = (int)processed.Step();
+                    isColor = processed.Channels() == 3;
+                    processedData = new byte[height * stride];
+                    Marshal.Copy(processed.Data, processedData, 0, processedData.Length);
+                    double sharpness = CalcSharpness(src);
+                    SharpnessUpdated?.Invoke(sharpness);
+                }
+
+                WriteableBitmap bitmap = null;
+                Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    var format = isColor ? PixelFormats.Bgr24 : PixelFormats.Gray8;
+                    bitmap = new WriteableBitmap(width, height, 96, 96, format, null);
+                    bitmap.Lock();
+                    Marshal.Copy(processedData, 0, bitmap.BackBuffer, processedData.Length);
+                    bitmap.AddDirtyRect(new Int32Rect(0, 0, width, height));
+                    bitmap.Unlock();
+                    bitmap.Freeze();
+                });
+
+                return bitmap;
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                return null;
+            }
+        }
+
+        private Mat ApplyColorMap(Mat src)
+        {
+            try
+            {
+                Mat src3ch = new Mat();
+                Cv2.CvtColor(src, src3ch, ColorConversionCodes.GRAY2BGR);
+
+                Mat dst = new Mat();
+
+                if (ColorMap == "Rainbow")
+                {
+                    Mat notImg = new Mat();
+                    Cv2.BitwiseNot(src3ch, notImg);
+                    Cv2.ApplyColorMap(notImg, dst, ColormapTypes.Rainbow);
+                    notImg.Dispose();
+                }
+                else if (ColorMap == "Invert")
+                {
+                    Cv2.BitwiseNot(src3ch, dst);
+                }
+                else
+                {
+                    // Origin 또는 알 수 없는 값 → 원본 그대로 (fallback)
+                    src3ch.CopyTo(dst);
+                }
+
+                src3ch.Dispose();
+                return dst;
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                return src;
+            }
+        }
+
+        #endregion
+
+        #region 선명도 계산
 
         // ────────────────────────────────────────────
         // 선명도 계산 함수
@@ -365,55 +427,9 @@ namespace LSS_prototype.Common_Module
             }
         }
 
-        public async Task AutoFocus()
-        {
-            await Task.Run(() =>
-            {
-                try
-                {
-                    // ── [Fix 1] _lastFrame 을 lock 으로 안전하게 복사 ──
-                    Mat frame;
-                    lock (_frameLock) { frame = _lastFrame?.Clone(); }
-                    if (frame == null) return;
+        #endregion
 
-                    int low = LensCtrl.Instance.focusMinAddr;
-                    int high = LensCtrl.Instance.focusMaxAddr;
-                    double golden = 0.618;
-
-                    while (high - low > 50)
-                    {
-                        int mid1 = (int)(low + (high - low) * (1 - golden));
-                        int mid2 = (int)(low + (high - low) * golden);
-
-                        LensCtrl.Instance.FocusMove((ushort)mid1);
-                        Thread.Sleep(200);
-
-                        // ── [Fix 1] 루프 내에서도 매번 최신 프레임을 lock 으로 안전하게 복사 ──
-                        lock (_frameLock) { frame?.Dispose(); frame = _lastFrame?.Clone(); }
-                        double sharp1 = CalcSharpness(frame);
-
-                        LensCtrl.Instance.FocusMove((ushort)mid2);
-                        Thread.Sleep(200);
-
-                        lock (_frameLock) { frame?.Dispose(); frame = _lastFrame?.Clone(); }
-                        double sharp2 = CalcSharpness(frame);
-
-                        if (sharp1 > sharp2) high = mid2;
-                        else low = mid1;
-
-                        Console.WriteLine($"> mid1:{mid1} s1:{sharp1:F0} mid2:{mid2} s2:{sharp2:F0}");
-                    }
-
-                    LensCtrl.Instance.FocusMove((ushort)((low + high) / 2));
-                    frame?.Dispose();
-                    Console.WriteLine($"> 오토포커스 완료: {LensCtrl.Instance.focusCurrentAddr}");
-                }
-                catch (Exception ex)
-                {
-                    Common.WriteLog(ex);
-                }
-            });
-        }
+        #region 테스트 영상
 
         // ────────────────────────────────────────────
         // 테스트 비디오 실행 함수
@@ -485,238 +501,9 @@ namespace LSS_prototype.Common_Module
             _testVideoThread.Start();
         }
 
+        #endregion
 
-        public void StopLiveView()
-        {
-            if (!_camOpen) return;
-
-            // 테스트 영상 정지
-            _testVideoRunning = false;
-            _testVideoThread?.Join(500);
-
-            // 카메라 정지
-            if (_managedCameras != null)
-            {
-                for (int i = 0; i < _managedCameras.Count; i++)
-                    try { _managedCameras[i].EndAcquisition(); } catch { }
-            }
-
-            _camOpen = false;
-        }
-
-
-        // ────────────────────────────────────────────
-        // Worker - 프레임 1장 캡처
-        // GetNextImage → BGR8 변환 → WriteableBitmap
-        // ────────────────────────────────────────────
-        private void Worker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            IManagedCamera cam = (IManagedCamera)e.Argument;
-
-            try
-            {
-                // 1. 카메라에서 이미지 1장 가져오기
-                using (IManagedImage rawImage = cam.GetNextImage(1000))
-                {
-                    if (rawImage.IsIncomplete) return;
-
-                    // 2. Convert 없이 rawImage 직접 전달
-                    WriteableBitmap bitmap = ToBitmap(rawImage);
-
-                    if (bitmap != null)
-                        FrameArrived?.Invoke(bitmap);
-                }
-            }
-            catch (SpinnakerException se)
-            {
-                if (se.Message.Contains("Stream has been aborted"))
-                    return;
-                Common.WriteLog(se);
-            }
-            catch (Exception ex)
-            {
-                Common.WriteLog(ex);
-            }
-        }
-
-        // ────────────────────────────────────────────
-        // Worker 완료 → 카메라 스트리밍 중이면 다음 프레임 요청
-        // ────────────────────────────────────────────
-        private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            BackgroundWorker worker = (BackgroundWorker)sender;
-            int idx = _workers.IndexOf(worker);
-
-            if (idx >= 0 && idx < _managedCameras.Count && _managedCameras[idx].IsStreaming())
-            {
-                // 스트리밍 중이면 계속 다음 프레임 요청
-                worker.RunWorkerAsync(argument: _managedCameras[idx]);
-            }
-            else
-            {
-                if (_camOpen && _camConnection)
-                {
-                    _camOpen = false;
-                    _camConnection = false;
-                    ErrorOccurred?.Invoke("카메라 연결이 끊어졌습니다.\n 5초 마다 재연결을 시도합니다.");
-                    CameraDisconnected?.Invoke();
-                    StartReconnectTimer();
-                }
-                _workers.Remove(worker);
-                worker.Dispose();
-                Console.WriteLine($"> Camera [{idx}] Worker 종료");
-            }
-        }
-
-        private void StartReconnectTimer()
-        {
-            _reconnectTimer?.Dispose();
-            _reconnectTimer = new Timer(_ =>
-            {
-                if (_camConnection) return;
-                try
-                {
-                    var cameras = _managedSystem.GetCameras();
-                    if (cameras.Count > 0)
-                    {
-                        _reconnectTimer?.Dispose();
-
-                        // 테스트 영상 강제 정지
-                        _testVideoRunning = false;
-                        _testVideoThread?.Join(500);
-
-                        _managedCameras = cameras;
-                        foreach (IManagedCamera cam in _managedCameras)
-                            cam.Init();
-
-                        _camConnection = true;
-                        StartLiveView();
-                        CameraReconnected?.Invoke();
-                    }
-                }
-                catch (Exception ex) { Common.WriteLog(ex); }
-
-            }, null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
-        }
-
-
-        // ────────────────────────────────────────────
-        // IManagedImage (BGR8) → WriteableBitmap
-        // ────────────────────────────────────────────
-        private WriteableBitmap ToBitmap(IManagedImage image)
-        {
-            try
-            {
-                int width = (int)image.Width;
-                int height = (int)image.Height;
-                byte[] data = image.ManagedData;
-
-                // Mat 처리는 using 블록 안에서 완전히 끝내고
-                // byte[] 로 복사해서 using 블록 밖으로 꺼냄
-                byte[] processedData;
-                int stride;
-                bool isColor;
-
-                using (Mat src = new Mat(height, width, MatType.CV_8UC1, data))
-                using (Mat processed = ApplyColorMap(src))
-                {
-                    // ── [Fix 1] lock 으로 _lastFrame 교체 안전하게 처리 ──
-                    lock (_frameLock)
-                    {
-                        _lastFrame?.Dispose();
-                        _lastFrame = src.Clone();
-                    }
-
-                    stride = (int)processed.Step();
-                    isColor = processed.Channels() == 3;
-                    processedData = new byte[height * stride];
-                    Marshal.Copy(processed.Data, processedData, 0, processedData.Length);
-                    double sharpness = CalcSharpness(src);
-                    SharpnessUpdated?.Invoke(sharpness);
-                }
-
-                WriteableBitmap bitmap = null;
-                Application.Current?.Dispatcher.Invoke(() =>
-                {
-                    var format = isColor ? PixelFormats.Bgr24 : PixelFormats.Gray8;
-                    bitmap = new WriteableBitmap(width, height, 96, 96, format, null);
-                    bitmap.Lock();
-                    Marshal.Copy(processedData, 0, bitmap.BackBuffer, processedData.Length);
-                    bitmap.AddDirtyRect(new Int32Rect(0, 0, width, height));
-                    bitmap.Unlock();
-                    bitmap.Freeze();
-                });
-
-                return bitmap;
-            }
-            catch (Exception ex)
-            {
-                Common.WriteLog(ex);
-                return null;
-            }
-        }
-
-        public void InitializeCameraSettings(DefaultModel data)
-        {
-            try
-            {
-                // ── 카메라 설정 ──
-                if (_managedCameras != null)
-                {
-                    for (int i = 0; i < _managedCameras.Count; i++)
-                    {
-                        INodeMap nodeMap = _managedCameras[i].GetNodeMap();
-
-                        IEnum iExposureAuto = nodeMap.GetNode<IEnum>("ExposureAuto");
-                        iExposureAuto.Value = iExposureAuto.GetEntryByName("Off").Symbolic;
-                        IFloat iExposureTime = nodeMap.GetNode<IFloat>("ExposureTime");
-                        iExposureTime.Value = data.ExposureTime;
-
-                        IEnum iGainAuto = nodeMap.GetNode<IEnum>("GainAuto");
-                        iGainAuto.Value = iGainAuto.GetEntryByName("Off").Symbolic;
-                        IFloat iGain = nodeMap.GetNode<IFloat>("Gain");
-                        iGain.Value = data.Gain;
-                        _gainValue = data.Gain;
-
-                        IFloat iGamma = nodeMap.GetNode<IFloat>("Gamma");
-                        iGamma.Value = data.Gamma;
-                    }
-                    Console.WriteLine($"> 카메라 초기 설정 완료: exposure={data.ExposureTime} gain={data.Gain} gamma={data.Gamma}");
-                }
-
-                // ── 렌즈파라미터 읽기  ──
-                LensCtrl.Instance.ZoomParameterReadSet();
-                LensCtrl.Instance.FocusParameterReadSet();
-                LensCtrl.Instance.IrisParameterReadSet();
-                LensCtrl.Instance.OptFilterParameterReadSet();
-
-
-                // ── 렌즈 설정 ──
-                LensCtrl.Instance.ZoomMove((ushort)data.Zoom);
-                LensCtrl.Instance.FocusMove((ushort)data.Focus);
-                LensCtrl.Instance.IrisMove((ushort)data.Iris);
-                LensCtrl.Instance.OptFilterMove(data.Filter == 0 ? (ushort)0 : (ushort)1);
-                Console.WriteLine($"> 렌즈 초기 설정 완료: zoom={data.Zoom} focus={data.Focus} iris={data.Iris} filter={data.Filter}");
-            }
-            catch (Exception ex) { Common.WriteLog(ex); }
-        }
-
-        // ────────────────────────────────────────────
-        // 연결 해제
-        // ────────────────────────────────────────────
-        public void Disconnect()
-        {
-            StopLiveView();
-
-            if (_managedCameras != null)
-            {
-                foreach (IManagedCamera cam in _managedCameras)
-                    try { cam.DeInit(); } catch { }
-
-                _managedCameras.Clear();
-            }
-            _camConnection = false;
-        }
+        #region Dispose
 
         // ────────────────────────────────────────────
         // Dispose
@@ -730,5 +517,7 @@ namespace LSS_prototype.Common_Module
             lock (_frameLock) { _lastFrame?.Dispose(); _lastFrame = null; }
             _managedSystem?.Dispose();
         }
+
+        #endregion
     }
 }

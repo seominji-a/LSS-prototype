@@ -496,6 +496,7 @@
     <Content Include="TestDicom.dcm">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <None Include="Scan_Page\ScanFlow.md" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

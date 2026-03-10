@@ -150,6 +150,8 @@ EMR과 LOCAL에 동일 환자가 존재할 경우
 중복 제거 또는 병합 정책 결정 예정 (TODO)
 
 ────────────────────────────────────
+작성일: 2026-03-10
+작성자: 서민지
 
 ■ 6. import 데이터 처리 정책
 
@@ -193,3 +195,46 @@ SourceBadge 배경/테두리 + TxtSourceLabel 글자색/텍스트
 SourceBadge 배경/테두리 + TxtSourceLabel 글자색/텍스트
 초록 배지 + “E-Sync”
 
+
+<현재 import 전체 흐름 요약>
+      [DICOM 파일 선택]
+             │
+             ▼
+  파일 열기 → AccessionNumber 읽기
+            │
+         비어있나?
+  ┌────┴────┐
+ YES                  NO
+LOCAL                 EMR
+  │        │        │
+  └────┬────┘
+            ▼
+    PatientModel 생성
+Source / IsEmrPatient 설정
+           │
+           ▼
+DB 저장 (Source/IsEmrPatient는 저장 안 됨)
+          │
+          ▼
+DB에서 전체 재조회 (Source 날아간 상태)
+          │
+          ▼
+ApplyEmrFlagsFromDicomFolder()
+  DICOM 폴더 재스캔
+  AccessionNumber 있음 → EMR
+  AccessionNumber 없음 → LOCAL
+  Source / IsEmrPatient 재복원
+         │
+         ▼
+UI 반영 (RefreshPatients)
+
+
+[현재 상황]
+LOCAL dcm 파일에 AccessionNumber = "202503100001" 존재
+→ import 시 EMR로 잘못 분류됨 ❌
+
+[해결]
+① 기존 LSIS의 Save_Click 수정 → LOCAL은 AccessionNumber = "" 로 저장
+② 기존 잘못된 dcm 파일 삭제
+③ 재촬영 → 재저장 → 재import
+→ LOCAL/EMR 정확히 분류됨 ✅

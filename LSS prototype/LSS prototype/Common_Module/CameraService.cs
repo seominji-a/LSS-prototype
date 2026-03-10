@@ -195,15 +195,18 @@ namespace LSS_prototype.Common_Module
             _reconnectTimer?.Dispose();
             _reconnectTimer = new Timer(_ =>
             {
-                if (_camConnection) return;
+              
+                if (_disposed) return;
+
+  
+                if (_camConnection || _managedSystem == null) return;
+
                 try
                 {
                     var cameras = _managedSystem.GetCameras();
                     if (cameras.Count > 0)
                     {
                         _reconnectTimer?.Dispose();
-
-                        // 테스트 영상 강제 정지
                         _testVideoRunning = false;
                         _testVideoThread?.Join(500);
 
@@ -512,10 +515,14 @@ namespace LSS_prototype.Common_Module
         {
             if (_disposed) return;
             _disposed = true;
+
             _reconnectTimer?.Dispose();
+            _reconnectTimer = null;
+
             Disconnect();
             lock (_frameLock) { _lastFrame?.Dispose(); _lastFrame = null; }
             _managedSystem?.Dispose();
+            _managedSystem = null;  
         }
 
         #endregion

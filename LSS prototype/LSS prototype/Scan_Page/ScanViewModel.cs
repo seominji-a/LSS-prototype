@@ -1,5 +1,7 @@
 ﻿using LSS_prototype.Common_Module;
+using LSS_prototype.DB_CRUD;
 using LSS_prototype.Lens_Module;
+using LSS_prototype.User_Page;
 using System;
 using System.ComponentModel;
 using System.IO;
@@ -243,6 +245,22 @@ namespace LSS_prototype.Scan_Page {
                         Console.WriteLine("> 카메라 없음 → 테스트 영상 모드");
                         _cameraService.StartTestVideo(TEST_VIDEO_PATH);
                         return;
+                    }
+
+                    // ── DB 에서 기본값 읽어서 CameraService 로 전달 ──
+                    DB_Manager db = new DB_Manager();
+                    DefaultModel data = db.GetDefaultSet();
+
+                    if (data != null)
+                    {
+                        _cameraService.InitializeCameraSettings(data);
+
+                        Application.Current?.Dispatcher.Invoke(() =>
+                            GainText = $"{data.Gain:F1} dB");
+                    }
+                    else
+                    {
+                        Console.WriteLine("> DB 기본값 없음 → 카메라 기본값 사용");
                     }
 
                     _cameraService.StartLiveView();

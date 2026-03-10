@@ -1,4 +1,5 @@
 ﻿using LSS_prototype.Lens_Module;
+using LSS_prototype.User_Page;
 using OpenCvSharp;
 using SpinnakerNET;
 using SpinnakerNET.GenApi;
@@ -653,6 +654,51 @@ namespace LSS_prototype.Common_Module
                 Common.WriteLog(ex);
                 return null;
             }
+        }
+
+        public void InitializeCameraSettings(DefaultModel data)
+        {
+            try
+            {
+                // ── 카메라 설정 ──
+                if (_managedCameras != null)
+                {
+                    for (int i = 0; i < _managedCameras.Count; i++)
+                    {
+                        INodeMap nodeMap = _managedCameras[i].GetNodeMap();
+
+                        IEnum iExposureAuto = nodeMap.GetNode<IEnum>("ExposureAuto");
+                        iExposureAuto.Value = iExposureAuto.GetEntryByName("Off").Symbolic;
+                        IFloat iExposureTime = nodeMap.GetNode<IFloat>("ExposureTime");
+                        iExposureTime.Value = data.ExposureTime;
+
+                        IEnum iGainAuto = nodeMap.GetNode<IEnum>("GainAuto");
+                        iGainAuto.Value = iGainAuto.GetEntryByName("Off").Symbolic;
+                        IFloat iGain = nodeMap.GetNode<IFloat>("Gain");
+                        iGain.Value = data.Gain;
+                        _gainValue = data.Gain;
+
+                        IFloat iGamma = nodeMap.GetNode<IFloat>("Gamma");
+                        iGamma.Value = data.Gamma;
+                    }
+                    Console.WriteLine($"> 카메라 초기 설정 완료: exposure={data.ExposureTime} gain={data.Gain} gamma={data.Gamma}");
+                }
+
+                // ── 렌즈파라미터 읽기  ──
+                LensCtrl.Instance.ZoomParameterReadSet();
+                LensCtrl.Instance.FocusParameterReadSet();
+                LensCtrl.Instance.IrisParameterReadSet();
+                LensCtrl.Instance.OptFilterParameterReadSet();
+
+
+                // ── 렌즈 설정 ──
+                LensCtrl.Instance.ZoomMove((ushort)data.Zoom);
+                LensCtrl.Instance.FocusMove((ushort)data.Focus);
+                LensCtrl.Instance.IrisMove((ushort)data.Iris);
+                LensCtrl.Instance.OptFilterMove(data.Filter == 0 ? (ushort)0 : (ushort)1);
+                Console.WriteLine($"> 렌즈 초기 설정 완료: zoom={data.Zoom} focus={data.Focus} iris={data.Iris} filter={data.Filter}");
+            }
+            catch (Exception ex) { Common.WriteLog(ex); }
         }
 
         // ────────────────────────────────────────────

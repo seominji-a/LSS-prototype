@@ -288,7 +288,7 @@
             <!-- 우상단: Gain / Sharpness -->
             <StackPanel Margin="0,12,16,0" VerticalAlignment="Top" HorizontalAlignment="Right">
                 <TextBlock Text="Gain"      Foreground="#AAA" FontSize="16" HorizontalAlignment="Right"/>
-                <TextBlock Text="{Binding GainText, FallbackValue='-- dB'}" Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Right"/>
+                <TextBlock Text="{Binding GainText, FallbackValue='GAIN VALUE'}" Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Right"/>
                 <TextBlock Text="Sharpness" Foreground="#AAA" FontSize="16" HorizontalAlignment="Right" Margin="0,6,0,0"/>
                 <TextBlock Text="{Binding Sharpness, FallbackValue='SHARP VALUE'}"
                    Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Right"/>

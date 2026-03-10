@@ -12,12 +12,12 @@ namespace LSS_prototype.User_Page
         // ────────────────────────────────────────
         // 범위 & 스텝 상수
         // ────────────────────────────────────────
-        private const double ExposureMin = 0.2, ExposureMax = 1.0, ExposureStep = 0.1;
-        private const double GainMin = 3.0, GainMax = 45.0, GainStep = 1.0;
+        private const double ExposureMin = 100000, ExposureMax = 1000000, ExposureStep = 100000;
+        private const double GainMin = 3.0, GainMax = 30.0, GainStep = 3.0;
         private const double GammaMin = 0.3, GammaMax = 1.0, GammaStep = 0.1;
-        private const double FocusMin = 3545, FocusMax = 8310, FocusStep = 100;
+        private const double FocusMin = 3545, FocusMax = 8310, FocusStep = 300;
         private const double IrisMin = 0, IrisMax = 656, IrisStep = 50;
-        private const int ZoomMin = 1138, ZoomMax = 4669, ZoomStep = 100;
+        private const int ZoomMin = 1138, ZoomMax = 4669, ZoomStep = 300;
 
         // ────────────────────────────────────────
         // 커맨드

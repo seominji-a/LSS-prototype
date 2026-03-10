@@ -1,8 +1,7 @@
-﻿
-
-
-using LSS_prototype.Common_Module;
+﻿using LSS_prototype.Common_Module;
+using LSS_prototype.DB_CRUD;
 using LSS_prototype.Lens_Module;
+using LSS_prototype.User_Page;
 using System;
 using System.ComponentModel;
 using System.IO;
@@ -10,10 +9,11 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
-namespace LSS_prototype.Scan_Page { 
+namespace LSS_prototype.Scan_Page {
 
     public class ScanViewModel : INotifyPropertyChanged, IDisposable
     {
@@ -38,8 +38,7 @@ namespace LSS_prototype.Scan_Page {
                 OnPropertyChanged();
             }
         }
-        public string ZoomMaxText => $"MAX ({LensCtrl.Instance.zoomMaxAddr})";
-        public string ZoomMinText => $"MIN ({LensCtrl.Instance.zoomMinAddr})";
+
         private string _zoomText = $"{LensCtrl.Instance.zoomCurrentAddr}";
         public string ZoomText
         {
@@ -47,14 +46,42 @@ namespace LSS_prototype.Scan_Page {
             private set { _zoomText = value; OnPropertyChanged(); }
         }
 
-        public string FocusMaxText => $"MAX ({LensCtrl.Instance.focusMaxAddr})";
-        public string FocusMinText => $"MIN ({LensCtrl.Instance.focusMinAddr})";
+
         private string _focusText = $"{LensCtrl.Instance.focusCurrentAddr}";
         public string FocusText
         {
             get => _focusText;
             private set { _focusText = value; OnPropertyChanged(); }
+        }
 
+        private string _gainText;
+        public string GainText
+        {
+            get => _gainText;
+            private set { _gainText = value; OnPropertyChanged(); }
+        }
+
+        private string _exposureText;
+        public string ExposureText
+        {
+            get => _exposureText;
+            private set { _exposureText = value; OnPropertyChanged(); }
+        }
+
+        private double _gammaValue;
+        public double GammaValue
+        {
+            get => _gammaValue;
+            private set { _gammaValue = value;
+                _gammaValue = Math.Round(value, 2); 
+                OnPropertyChanged(); }
+            }
+
+        private double _irisValue;
+        public double IrisValue
+        {
+            get => _irisValue;
+            private set { _irisValue = value; OnPropertyChanged(); }
         }
 
         //스캔 최초 설정값 Origin-> 버튼클릭 시 -> 토글형식으로 Gray, Red로 
@@ -65,6 +92,19 @@ namespace LSS_prototype.Scan_Page {
         {
             get => _sharpness;
             private set { _sharpness = value; OnPropertyChanged(); }
+        }
+
+        private int _filterValue;
+        public int FilterValue
+        {
+            get => _filterValue;
+            private set
+            {
+                _filterValue = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(FilterOnBackground));
+                OnPropertyChanged(nameof(FilterOffBackground));
+            }
         }
 
         public ICommand NavigatePatientCommand { get; private set; }
@@ -81,6 +121,18 @@ namespace LSS_prototype.Scan_Page {
         public ICommand FocusDecCommand { get; }
 
         public ICommand AutoFocusCommand { get; }
+        public ICommand GainIncCommand { get; }
+        public ICommand GainDecCommand { get; }
+        public ICommand ExposureIncCommand { get; }
+        public ICommand ExposureDecCommand { get; }
+        public ICommand GammaIncCommand { get; }
+        public ICommand GammaDecCommand { get; }
+        public ICommand IrisIncCommand { get; }
+        public ICommand IrisDecCommand { get; }
+
+        public ICommand ResetSettingCommand { get; }
+        public ICommand FilterOnCommand { get; }
+        public ICommand FilterOffCommand { get; }
 
 
 
@@ -92,7 +144,7 @@ namespace LSS_prototype.Scan_Page {
             ColorMapCommand = new RelayCommand(ToggleColorMap);
 
             // 카메라에서 에러가 생기면 OnCameraError() 를 호출
-            _cameraService.FrameArrived += OnFrameArrived;  
+            _cameraService.FrameArrived += OnFrameArrived;
             _cameraService.ErrorOccurred += OnCameraError;
 
             ConnectCamera();
@@ -106,7 +158,145 @@ namespace LSS_prototype.Scan_Page {
             _cameraService.SharpnessUpdated += (val) => Sharpness = $"{val:F2}";
 
             AutoFocusCommand = new RelayCommand(OnAutoFocus);
+
+            _cameraService.CameraDisconnected += OnCameraDisconnected;
+            _cameraService.CameraReconnected += OnCameraReconnected;
+
+            GainIncCommand = new RelayCommand(OnGainInc);
+            GainDecCommand = new RelayCommand(OnGainDec);
+
+            ExposureIncCommand = new RelayCommand(_ => OnExposureInc());
+            ExposureDecCommand = new RelayCommand(_ => OnExposureDec());
+
+            GammaIncCommand = new RelayCommand(_ => OnGammaInc());
+            GammaDecCommand = new RelayCommand(_ => OnGammaDec());
+
+            IrisIncCommand = new RelayCommand(_ => OnIrisInc());
+            IrisDecCommand = new RelayCommand(_ => OnIrisDec());
+
+            ResetSettingCommand = new RelayCommand(ResetValue);
+
+            FilterOnCommand = new RelayCommand(_ => OnFilterOn());
+            FilterOffCommand = new RelayCommand(_ => OnFilterOff());
+
+
         }
+
+        private void ResetValue()
+        {
+            var confirm = CustomMessageWindow.Show(
+                "기본 셋팅값으로 초기화하시겠습니까?",
+                CustomMessageWindow.MessageBoxType.YesNo,
+                0,
+                CustomMessageWindow.MessageIconType.Info);
+
+            if (confirm != CustomMessageWindow.MessageBoxResult.Yes) return;
+
+            DB_Manager db = new DB_Manager();
+            DefaultModel data = db.GetDefaultSet();
+
+            if (data == null) return;
+
+            // 카메라 + 렌즈 실제 초기화
+            _cameraService.InitializeCameraSettings(data);
+
+            // UI 업데이트
+            Application.Current?.Dispatcher.Invoke(() =>
+            {
+                ExposureText = $"{data.ExposureTime / 1000000:F1}s";
+                GainText = $"{data.Gain:F1} dB";
+                GammaValue = data.Gamma;
+                IrisValue = data.Iris;
+            });
+
+            CustomMessageWindow.Show("초기화 되었습니다.",
+                CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                CustomMessageWindow.MessageIconType.Info);
+        }
+        // Filter 토글 배경색 (DefaultViewModel 이랑 동일하게)
+        public SolidColorBrush FilterOnBackground =>
+            FilterValue == 1
+                ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3B82F6"))
+                : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3F55"));
+
+        public SolidColorBrush FilterOffBackground =>
+            FilterValue == 0
+                ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3B82F6"))
+                : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3F55"));
+
+        // 메서드
+        private void OnFilterOn()
+        {
+            LensCtrl.Instance.OptFilterMove(1);
+            FilterValue = 1;
+        }
+
+        private void OnFilterOff()
+        {
+            LensCtrl.Instance.OptFilterMove(0);
+            FilterValue = 0;
+        }
+
+        // Exposure
+        private void OnExposureInc()
+        {
+            _cameraService.ExposureInc();
+            ExposureText = $"{_cameraService.ExposureCurrentRead() / 1000000:F1}s";
+        }
+        private void OnExposureDec()
+        {
+            _cameraService.ExposureDec();
+            ExposureText = $"{_cameraService.ExposureCurrentRead() / 1000000:F1}s";
+        }
+
+        // Gain
+        private void OnGainInc()
+        {
+            _cameraService.GainInc();
+            GainText = $"{_cameraService.GainCurrentRead():F1} dB";
+        }
+        private void OnGainDec()
+        {
+            _cameraService.GainDec();
+            GainText = $"{_cameraService.GainCurrentRead():F1} dB";
+        }
+
+        // Gamma
+        private void OnGammaInc()
+        {
+            _cameraService.GammaInc();
+            GammaValue = _cameraService.GammaCurrentRead();
+        }
+        private void OnGammaDec()
+        {
+            _cameraService.GammaDec();
+            GammaValue = _cameraService.GammaCurrentRead();
+        }
+
+        // Iris
+        private void OnIrisInc()
+        {
+            _cameraService.IrisInc();
+            IrisValue = _cameraService.IrisCurrentRead();
+        }
+        private void OnIrisDec()
+        {
+            _cameraService.IrisDec();
+            IrisValue = _cameraService.IrisCurrentRead();
+        }
+
+        private void OnCameraDisconnected()
+        {
+            Application.Current?.Dispatcher.Invoke(() =>
+                _cameraService.StartTestVideo(TEST_VIDEO_PATH));
+        }
+
+        private void OnCameraReconnected()
+        {
+            Application.Current?.Dispatcher.Invoke(() =>
+                Console.WriteLine("> 카메라 재연결 완료"));
+        }
+
         private async void OnAutoFocus()
         {
             await _cameraService.AutoFocus();
@@ -212,7 +402,31 @@ namespace LSS_prototype.Scan_Page {
                         return;
                     }
 
+                    // ── DB 에서 기본값 읽어서 CameraService 로 전달 ──
+                    DB_Manager db = new DB_Manager();
+                    DefaultModel data = db.GetDefaultSet();
+
+                    if (data != null)
+                    {
+                        _cameraService.InitializeCameraSettings(data);
+
+                        Application.Current?.Dispatcher.Invoke(() =>
+                            GainText = $"{data.Gain:F1} dB");
+
+                        // 세팅 패널 초기값
+                        ExposureText = $"{data.ExposureTime / 1000000:F1}s";
+                        GainText = $"{data.Gain:F1} dB";
+                        GammaValue = data.Gamma;
+                        IrisValue = data.Iris;
+                        FilterValue = data.Filter;
+                    }
+                    else
+                    {
+                        Console.WriteLine("> DB 기본값 없음 → 카메라 기본값 사용");
+                    }
+
                     _cameraService.StartLiveView();
+                    GainText = $"{_cameraService.GainCurrentRead():F1} dB";
                 }
                 catch (Exception ex)
                 {
@@ -237,8 +451,8 @@ namespace LSS_prototype.Scan_Page {
                 Common.WriteSessionLog(message);
                 CustomMessageWindow.Show(
                     message,
-                    CustomMessageWindow.MessageBoxType.Ok,
-                    0,
+                    CustomMessageWindow.MessageBoxType.AutoClose,
+                    2,
                     CustomMessageWindow.MessageIconType.Warning);
             });
         }
@@ -256,6 +470,9 @@ namespace LSS_prototype.Scan_Page {
 
             _cameraService.ErrorOccurred -= OnCameraError;
             _cameraService.FrameArrived -= OnFrameArrived;
+
+            _cameraService.CameraDisconnected -= OnCameraDisconnected;
+            _cameraService.CameraReconnected -= OnCameraReconnected;
 
             try { _cameraService.StopLiveView(); } catch { }
             _cameraService.Dispose();

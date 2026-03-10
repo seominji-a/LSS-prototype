@@ -31,7 +31,7 @@
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
     <InstallUrl>http://192.168.1.35:8080/</InstallUrl>
-    <ApplicationRevision>25</ApplicationRevision>
+    <ApplicationRevision>27</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -215,6 +215,7 @@
     <Compile Include="Auth\SessionActivityMonitor.cs" />
     <Compile Include="Auth\SessionStateManager.cs" />
     <Compile Include="Common_Module\CameraService.cs" />
+    <Compile Include="Common_Module\CameraService.Lens.cs" />
     <Compile Include="Common_Module\Common.cs" />
     <Compile Include="Common_Module\CustomMessageWindow.xaml.cs">
       <DependentUpon>CustomMessageWindow.xaml</DependentUpon>

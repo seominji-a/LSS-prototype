@@ -134,7 +134,7 @@ namespace LSS_prototype.Common_Module
         {
             try
             {
-                if (_managedCameras == null) return _exposureValue;
+                if (_managedCameras == null || _managedCameras.Count == 0 ) return _exposureValue;
                 INodeMap nodeMap = _managedCameras[0].GetNodeMap();
                 IFloat iExposure = nodeMap.GetNode<IFloat>("ExposureTime");
                 _exposureValue = iExposure.Value;
@@ -188,7 +188,7 @@ namespace LSS_prototype.Common_Module
         {
             try
             {
-                if (_managedCameras == null) return _gainValue;
+                if (_managedCameras == null || _managedCameras.Count == 0) return _gainValue;
 
                 INodeMap nodeMap = _managedCameras[0].GetNodeMap();
                 IFloat iGain = nodeMap.GetNode<IFloat>("Gain");
@@ -245,7 +245,7 @@ namespace LSS_prototype.Common_Module
         {
             try
             {
-                if (_managedCameras == null) return _gammaValue;
+                if (_managedCameras == null || _managedCameras.Count == 0) return _gammaValue;
                 INodeMap nodeMap = _managedCameras[0].GetNodeMap();
                 IFloat iGamma = nodeMap.GetNode<IFloat>("Gamma");
                 _gammaValue = iGamma.Value;

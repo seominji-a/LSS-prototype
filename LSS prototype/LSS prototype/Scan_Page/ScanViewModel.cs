@@ -142,6 +142,7 @@ namespace LSS_prototype.Scan_Page
         public ICommand FilterOnCommand { get; }
         public ICommand FilterOffCommand { get; }
         public ICommand ImageScanCommand { get; }
+        public ICommand ImageCommentCommand { get; }
 
 
 
@@ -187,6 +188,8 @@ namespace LSS_prototype.Scan_Page
 
 
             ImageScanCommand = new RelayCommand(async _ => await CaptureAndSaveDicomAsync());
+
+            ImageCommentCommand = new RelayCommand(OpenImageComment);
         }
 
         // ─────────────────────────────────────────────
@@ -362,8 +365,7 @@ namespace LSS_prototype.Scan_Page
 
         private void OpenImageComment()
         {
-            var win = new ImageComment_Page.ImageComment();
-            win.Show();
+            MainPage.Instance.NavigateTo(new ImageComment_Page.ImageComment(SelectedPatient));
         }
 
         private void ResetValue()

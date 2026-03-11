@@ -704,7 +704,7 @@
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
                                 <Button Grid.Row="0"
-                                       
+                                        Command="{Binding ImageCommentCommand}"
                                         BorderThickness="0" Padding="0" Cursor="Hand">
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">

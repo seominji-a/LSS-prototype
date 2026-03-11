@@ -160,6 +160,9 @@ namespace LSS_prototype.Lens_Module
         {
             try
             {
+                if (receivedData == null || receivedData.Length < 2)
+                    return 0;
+
                 return (ushort)((receivedData[0] << 8) | receivedData[1]);
             }
             catch (Exception ex)

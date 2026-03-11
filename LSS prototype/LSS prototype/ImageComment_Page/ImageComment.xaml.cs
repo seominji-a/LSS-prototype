@@ -1,129 +1,142 @@
-﻿using System;
-using System.IO;
+﻿using LSS_prototype.Patient_Page;
+using LSS_prototype.Scan_Page;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 namespace LSS_prototype.ImageComment_Page
 {
-    public partial class ImageComment : Window
+    public partial class ImageComment : UserControl
     {
-        // ── 드로잉 속성 ──
+        // ═══════════════════════════════════════════
+        //  코드비하인드 역할
+        //  InkCanvas(그림판) UI 조작만 담당
+        //  데이터/로직/팝업은 전부 ViewModel
+        // ═══════════════════════════════════════════
+
+        // 펜 속성 (UI 전용 - ViewModel 불필요)
         private Color _penColor = Color.FromRgb(0xFF, 0x44, 0x44);
         private double _penThickness = 4.0;
 
-        // ── 드로잉 변경 여부 (ISF 로드 직후엔 false, 실제 획 추가/삭제 시 true)
+        // 실제로 새 드로잉 작업을 했는지 여부
+        // ISF 로드 직후 false, 획 추가/삭제 시 true
         private bool _isDirty = false;
 
+        // 버튼 색상 (토글 상태 표현용)
         private static readonly SolidColorBrush BrushAccent = new SolidColorBrush(Color.FromRgb(0x3B, 0x82, 0xF6));
         private static readonly SolidColorBrush BrushBtnDark = new SolidColorBrush(Color.FromRgb(0x2A, 0x3F, 0x55));
 
+        private readonly PatientModel _patient;
 
-        private static readonly string[] ImageNames = { "sample", "sample2" };
-        private int _currentIndex = 0;
+        private ImageCommentViewModel VM => DataContext as ImageCommentViewModel;
 
-        private string ImageDir => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "image");
-        private string IsfDir => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "isf");
-
-        public ImageComment()
+        public ImageComment(PatientModel selectedPatient)
         {
             InitializeComponent();
-            Loaded += OnLoaded;
+            _patient = selectedPatient;  
+            DataContext = new ImageCommentViewModel();
+
+            // ViewModel 프로퍼티 변경 감지
+            // CurrentImage  변경 → CapturedImage.Source 갱신
+            // CurrentStrokes 변경 → DrawingCanvas.Strokes 갱신
+            VM.PropertyChanged += OnViewModelPropertyChanged;
+
+            Loaded += (s, e) => OnLoaded(selectedPatient);
         }
 
-        private void OnLoaded(object sender, RoutedEventArgs e)
+        // ═══════════════════════════════════════════
+        //  Loaded
+        //  ViewModel.Initialize() 로 DCM 파일 목록 수집 및 첫 페이지 로드
+        //  실패 시 팝업은 ViewModel 에서 처리
+        // ═══════════════════════════════════════════
+        private void OnLoaded(PatientModel patient)
         {
             try
             {
-                // isf 폴더 없으면 미리 생성
-                Directory.CreateDirectory(IsfDir);
-
-                _currentIndex = 0;
-                LoadPage(_currentIndex);
+                bool success = VM.Initialize(patient);
+                if (!success) return;
 
                 DrawingCanvas.EditingMode = InkCanvasEditingMode.None;
                 ApplyDrawingAttributes();
-                DrawingCanvas.PreviewMouseDown += DrawingCanvas_PreviewMouseDown;
+                DrawingCanvas.PreviewMouseDown += OnCanvasPreviewMouseDown;
             }
             catch (Exception ex) { Common.WriteLog(ex); }
         }
 
-        //  페이지 로드 (이미지 + ISF)
-        private void LoadPage(int index)
+        // ═══════════════════════════════════════════
+        //  ViewModel 프로퍼티 변경 감지
+        //  CurrentImage   → CapturedImage.Source 갱신
+        //  CurrentStrokes → DrawingCanvas.Strokes 갱신
+        // ═══════════════════════════════════════════
+        private void OnViewModelPropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            string baseName = ImageNames[index];
-
-            // ── 이미지 로드 ──
-            string pngPath = Path.Combine(ImageDir, baseName + ".png");
-            if (!File.Exists(pngPath))
+            try
             {
-                Common.WriteLog(new FileNotFoundException($"이미지 파일 없음: {pngPath}"));
-                CapturedImage.Source = null;
+                if (e.PropertyName == nameof(VM.CurrentImage))
+                    CapturedImage.Source = VM.CurrentImage;
+
+                if (e.PropertyName == nameof(VM.CurrentStrokes))
+                {
+                    // 기존 구독 해제 후 새 StrokeCollection 연결
+                    DrawingCanvas.Strokes.StrokesChanged -= OnStrokesChanged;
+                    DrawingCanvas.Strokes = VM.CurrentStrokes ?? new StrokeCollection();
+                    _isDirty = false;
+                    DrawingCanvas.Strokes.StrokesChanged += OnStrokesChanged;
+                }
             }
-            else
-            {
-                var bmp = new BitmapImage();
-                bmp.BeginInit();
-                bmp.UriSource = new Uri(pngPath, UriKind.Absolute);
-                bmp.CacheOption = BitmapCacheOption.OnLoad;
-                bmp.EndInit();
-                bmp.Freeze();
-                CapturedImage.Source = bmp;
-            }
-
-            // ── ISF 로드 (없으면 빈 StrokeCollection) ──
-            string isfPath = Path.Combine(IsfDir, baseName + ".isf");
-
-            // StrokesChanged 기존 구독 해제 (페이지 전환 시 중복 방지)
-            DrawingCanvas.Strokes.StrokesChanged -= OnStrokesChanged;
-
-            if (File.Exists(isfPath))
-            {
-                using (var fs = File.OpenRead(isfPath))
-                    DrawingCanvas.Strokes = new StrokeCollection(fs);
-            }
-            else
-            {
-                DrawingCanvas.Strokes = new StrokeCollection();
-            }
-
-            // 로드 직후 → 변경 없음
-            _isDirty = false;
-
-            // 새 StrokeCollection 에 이벤트 구독
-            DrawingCanvas.Strokes.StrokesChanged += OnStrokesChanged;
+            catch (Exception ex) { Common.WriteLog(ex); }
         }
 
-        // ────────────────────────────────────────────
-        //  현재 페이지 ISF 저장
-        // ────────────────────────────────────────────
-        private void SaveCurrentIsf()
-        {
-            string baseName = ImageNames[_currentIndex];
-            string isfPath = Path.Combine(IsfDir, baseName + ".isf");
-
-            if (DrawingCanvas.Strokes.Count == 0)
-            {
-                // 드로잉 없으면 ISF 파일 삭제 (깔끔하게)
-                if (File.Exists(isfPath)) File.Delete(isfPath);
-                return;
-            }
-
-            using (var fs = File.Create(isfPath))
-                DrawingCanvas.Strokes.Save(fs);
-        }
-
-        // ────────────────────────────────────────────
-        //  실제 획 추가/삭제 시 dirty 플래그 ON ( 드로잉이 그려져있어도 추가 드로잉이 없으면 y/n 없이 바로 페이지 이동 ) 
-        // ────────────────────────────────────────────
+        // ═══════════════════════════════════════════
+        //  획 추가/삭제 감지 → _isDirty ON
+        //  페이지 이동 시 저장 여부 확인에 사용
+        // ═══════════════════════════════════════════
         private void OnStrokesChanged(object sender, StrokeCollectionChangedEventArgs e)
         {
             _isDirty = true;
         }
 
+        // ═══════════════════════════════════════════
+        //  좌/우 20% 터치 → 페이지 이동
+        //  PEN/ERASE 모드일 때는 이동 안함 (그림 그리는 중)
+        //  _isDirty 시 ViewModel 에 저장 여부 확인 요청
+        // ═══════════════════════════════════════════
+        private void OnCanvasPreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            try
+            {
+                if (DrawingCanvas.EditingMode != InkCanvasEditingMode.None) return;
+
+                double ratio = e.GetPosition(DrawingCanvas).X / DrawingCanvas.ActualWidth;
+                if (DrawingCanvas.ActualWidth <= 0) return;
+
+                bool goNext = ratio >= 0.80;
+                bool goPrev = ratio <= 0.20;
+                if (!goNext && !goPrev) return;
+
+                e.Handled = true;
+
+                // 새 드로잉이 있으면 저장 여부 확인
+                if (_isDirty)
+                {
+                    bool save = VM.ConfirmSaveDrawing();
+                    if (save) VM.SaveIsf(DrawingCanvas.Strokes);
+                }
+
+                // 페이지 이동 성공 시 펜 모드 해제
+                bool moved = VM.NavigatePage(goNext);
+                if (moved) SetDrawingMode(false);
+            }
+            catch (Exception ex) { Common.WriteLog(ex); }
+        }
+
+        // ═══════════════════════════════════════════
+        //  DrawingAttributes 적용
+        //  색상/굵기 변경 시마다 호출
+        // ═══════════════════════════════════════════
         private void ApplyDrawingAttributes()
         {
             DrawingCanvas.DefaultDrawingAttributes = new DrawingAttributes
@@ -137,6 +150,11 @@ namespace LSS_prototype.ImageComment_Page
             };
         }
 
+        // ═══════════════════════════════════════════
+        //  드로잉 모드 전환
+        //  on=true  → Ink (그리기)
+        //  on=false → None (터치 이동 모드)
+        // ═══════════════════════════════════════════
         private void SetDrawingMode(bool on)
         {
             if (on)
@@ -153,66 +171,20 @@ namespace LSS_prototype.ImageComment_Page
             }
         }
 
-        // ────────────────────────────────────────────
-        //  좌/우 20% 터치  [최상단 - try-catch]
-        //  - None 모드일 때만 동작
-        //  - 드로잉 있으면 저장 여부 확인 후 페이지 전환
-        // ────────────────────────────────────────────
-        private void DrawingCanvas_PreviewMouseDown(object sender, MouseButtonEventArgs e)
-        {
-            try
-            {
-                if (DrawingCanvas.EditingMode != InkCanvasEditingMode.None) return;
-
-                double ratio = e.GetPosition(DrawingCanvas).X / DrawingCanvas.ActualWidth;
-                if (DrawingCanvas.ActualWidth <= 0) return;
-
-                bool goNext = ratio >= 0.80;
-                bool goPrev = ratio <= 0.20;
-                if (!goNext && !goPrev) return;
-
-                e.Handled = true;
-
-                int targetIndex = goNext ? _currentIndex + 1 : _currentIndex - 1;
-
-                // 범위 체크
-                if (targetIndex < 0 || targetIndex >= ImageNames.Length)
-                {
-                    CustomMessageWindow.Show(
-                        goNext ? "마지막 이미지입니다." : "첫 번째 이미지입니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose,
-                        autoCloseSeconds: 1,
-                        icon: CustomMessageWindow.MessageIconType.Info);
-                    return;
-                }
-
-                // 실제로 새 드로잉 작업을 했을 때만 저장 여부 확인
-                if (_isDirty)
-                {
-                    var result = CustomMessageWindow.Show(
-                        "드로잉을 저장하시겠습니까?",
-                        CustomMessageWindow.MessageBoxType.YesNo,
-                        icon: CustomMessageWindow.MessageIconType.Info);
-
-                    if (result == CustomMessageWindow.MessageBoxResult.Yes)
-                        SaveCurrentIsf();
-                    // No 선택 시 → 저장 안 하고 그냥 이동 (ISF 파일 유지)
-                }
-
-                // 페이지 전환
-                _currentIndex = targetIndex;
-                LoadPage(_currentIndex);
-                SetDrawingMode(false); // 이동 후 펜 모드 해제
-            }
-            catch (Exception ex) { Common.WriteLog(ex); }
-        }
-
+        // ═══════════════════════════════════════════
+        //  PEN 토글
+        //  현재 Ink 모드면 OFF, 아니면 ON
+        // ═══════════════════════════════════════════
         private void BtnPen_Click(object sender, RoutedEventArgs e)
         {
             try { SetDrawingMode(DrawingCanvas.EditingMode != InkCanvasEditingMode.Ink); }
             catch (Exception ex) { Common.WriteLog(ex); }
         }
 
+        // ═══════════════════════════════════════════
+        //  ERASE 토글
+        //  획 단위 지우기 모드 (EraseByStroke)
+        // ═══════════════════════════════════════════
         private void BtnErase_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -231,12 +203,19 @@ namespace LSS_prototype.ImageComment_Page
             catch (Exception ex) { Common.WriteLog(ex); }
         }
 
+        // ═══════════════════════════════════════════
+        //  CLEAR - 전체 획 삭제
+        // ═══════════════════════════════════════════
         private void BtnClear_Click(object sender, RoutedEventArgs e)
         {
             try { DrawingCanvas.Strokes.Clear(); }
             catch (Exception ex) { Common.WriteLog(ex); }
         }
 
+        // ═══════════════════════════════════════════
+        //  색상 버튼 클릭 → 펜 색상 변경 + 자동 PEN ON
+        //  Button.Tag 에 색상 HEX 값 저장
+        // ═══════════════════════════════════════════
         private void ColorBtn_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -251,6 +230,10 @@ namespace LSS_prototype.ImageComment_Page
             catch (Exception ex) { Common.WriteLog(ex); }
         }
 
+        // ═══════════════════════════════════════════
+        //  굵기 슬라이더
+        //  숫자 박스(TxtThickness) 동기화
+        // ═══════════════════════════════════════════
         private void SliderThickness_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             try
@@ -263,40 +246,29 @@ namespace LSS_prototype.ImageComment_Page
             catch (Exception ex) { Common.WriteLog(ex); }
         }
 
-        private void BtnImageDelete_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                CapturedImage.Source = null;
-                DrawingCanvas.Strokes.Clear();
-                SetDrawingMode(false);
-            }
-            catch (Exception ex) { Common.WriteLog(ex); }
-        }
-
+        // ═══════════════════════════════════════════
+        //  RESET
+        //  InkCanvas 초기화 + ViewModel 입력값 초기화
+        // ═══════════════════════════════════════════
         private void BtnReset_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 DrawingCanvas.Strokes.Clear();
-                TxtComment.Text = string.Empty;
-                CbPosition.SelectedIndex = -1;
-                CbAnatomical.SelectedIndex = -1;
                 SetDrawingMode(false);
+                VM.Reset();
             }
             catch (Exception ex) { Common.WriteLog(ex); }
         }
 
-
-        private void BtnLogout_Click(object sender, RoutedEventArgs e)
+        // ═══════════════════════════════════════════
+        //  BACK → Scan 화면으로 복귀
+        //  UserControl 이라 this.Close() 불가
+        //  MainPage.NavigateTo() 로 Scan 화면 교체
+        // ═══════════════════════════════════════════
+        private void Back_Click(object sender, RoutedEventArgs e)
         {
-            try { this.Close(); }
-            catch (Exception ex) { Common.WriteLog(ex); }
-        }
-
-        private void BtnExit_Click(object sender, RoutedEventArgs e)
-        {
-            try { }
+            try { MainPage.Instance.NavigateTo(new Scan(_patient)); }
             catch (Exception ex) { Common.WriteLog(ex); }
         }
     }

@@ -24,16 +24,29 @@ namespace LSS_prototype.Scan_Page
 {
     public class ScanViewModel : INotifyPropertyChanged, IDisposable
     {
+        #region 카메라 서비스
+
         // ── 카메라 서비스 ──
         private readonly CameraService _cameraService = new CameraService();
         private bool _disposed = false;
 
-        
-
         private static readonly string TEST_VIDEO_PATH = Path.Combine(Common.executablePath, "sample.avi");
+
+        #endregion
+
+        #region 필드
 
         // ── 촬영 이미지 리스트 ──
         private readonly ScanModel _img = new ScanModel();
+
+        private string _currentSeriesNumber;
+        private int _currentInstanceIndex = 0;
+
+        private bool _isFrameReady = false; //프레임 준비 여부 플래그 추가-프레임이 준비되기 전에는 촬영 버튼 방지
+
+        #endregion
+
+        #region 바인딩 프로퍼티
 
         // ── 선택된 환자 (Patient 화면에서 Scan 화면으로 넘어올 때 설정) ──
         private PatientModel _selectedPatient;
@@ -42,10 +55,6 @@ namespace LSS_prototype.Scan_Page
             get => _selectedPatient;
             set { _selectedPatient = value; OnPropertyChanged(); }
         }
-
-        // ─────────────────────────────────────────────
-        // UI 바인딩 프로퍼티
-        // ─────────────────────────────────────────────
 
         private WriteableBitmap _previewSource;
         public WriteableBitmap PreviewSource
@@ -118,15 +127,20 @@ namespace LSS_prototype.Scan_Page
             }
         }
 
-        private string _currentStudyId;
-        private string _currentSeriesNumber;
-        private int _currentInstanceIndex = 0;
+        // 필터 버튼 색상 (ON/OFF 상태 표현)
+        public SolidColorBrush FilterOnBackground =>
+            FilterValue == 1
+                ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3B82F6"))
+                : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3F55"));
 
-        private bool _isFrameReady = false; //프레임 준비 여부 플래그 추가-프레임이 준비되기 전에는 촬영 버튼 방지
+        public SolidColorBrush FilterOffBackground =>
+            FilterValue == 0
+                ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3B82F6"))
+                : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3F55"));
 
-        // ─────────────────────────────────────────────
-        // 커맨드
-        // ─────────────────────────────────────────────
+        #endregion
+
+        #region 커맨드
 
         public ICommand NavigatePatientCommand { get; private set; }
         public ICommand LogoutCommand { get; }
@@ -151,29 +165,22 @@ namespace LSS_prototype.Scan_Page
         public ICommand ImageScanCommand { get; }
         public ICommand ImageCommentCommand { get; }
 
+        #endregion
 
-        public ScanViewModel(PatientModel selectedPatient, string seriesNumber = null)
+        #region 생성자
+
+        public ScanViewModel(PatientModel selectedPatient, string seriesNumber = null, int instanceIndex = 0)
         {
             SelectedPatient = selectedPatient;
-            _currentSeriesNumber = seriesNumber?? GenerateSeriesNumber(SelectedPatient.PatientId.ToString());
+            _currentSeriesNumber = seriesNumber ?? GenerateSeriesNumber(SelectedPatient.PatientId.ToString());
             // 시리얼 넘버가없으면 새로생성, 있으면 그대로 사용( 코멘트나 리뷰페이지에서 넘어온 경우 ) 
             // 위 코드추가한이유 -> 커멘트 페이지에서 -> 다시 scan으로 넘어왔을때, 기존 시리얼넘버값을 그대로 유지하기위해 
-            
+            _currentInstanceIndex = instanceIndex;
+
             NavigatePatientCommand = new RelayCommand(NavigateToPatient);
             LogoutCommand = new RelayCommand(Common.ExecuteLogout);
             ExitCommand = new RelayCommand(Common.ExcuteExit);
             ColorMapCommand = new RelayCommand(ToggleColorMap);
-
-            _cameraService.FrameArrived += OnFrameArrived;
-            _cameraService.ErrorOccurred += OnCameraError;
-            _cameraService.SharpnessUpdated += (val) => Sharpness = $"{val:F2}";
-            _cameraService.CameraDisconnected += OnCameraDisconnected;
-            _cameraService.CameraReconnected += OnCameraReconnected;
-            //_currentSeriesNumber = GenerateSeriesNumber(SelectedPatient.PatientId.ToString());
-            _currentInstanceIndex = 0;
-
-            ConnectCamera();
-
             ZoomIncCommand = new RelayCommand(OnZoomInc);
             ZoomDecCommand = new RelayCommand(OnZoomDec);
             FocusIncCommand = new RelayCommand(OnFocusInc);
@@ -181,30 +188,30 @@ namespace LSS_prototype.Scan_Page
             AutoFocusCommand = new RelayCommand(OnAutoFocus);
             GainIncCommand = new RelayCommand(OnGainInc);
             GainDecCommand = new RelayCommand(OnGainDec);
-
             ExposureIncCommand = new RelayCommand(OnExposureInc);
             ExposureDecCommand = new RelayCommand(OnExposureDec);
-
             GammaIncCommand = new RelayCommand(OnGammaInc);
             GammaDecCommand = new RelayCommand(OnGammaDec);
-
             IrisIncCommand = new RelayCommand(OnIrisInc);
             IrisDecCommand = new RelayCommand(OnIrisDec);
-
             ResetSettingCommand = new RelayCommand(ResetValue);
-
             FilterOnCommand = new RelayCommand(OnFilterOn);
             FilterOffCommand = new RelayCommand(OnFilterOff);
-
-
             ImageScanCommand = new RelayCommand(async _ => await CaptureAndSaveDicomAsync());
-
             ImageCommentCommand = new RelayCommand(OpenImageComment);
+
+            _cameraService.FrameArrived += OnFrameArrived;
+            _cameraService.ErrorOccurred += OnCameraError;
+            _cameraService.SharpnessUpdated += (val) => Sharpness = $"{val:F2}";
+            _cameraService.CameraDisconnected += OnCameraDisconnected;
+            _cameraService.CameraReconnected += OnCameraReconnected;
+
+            ConnectCamera();
         }
 
-        // ─────────────────────────────────────────────
-        // DICOM 저장
-        // ─────────────────────────────────────────────
+        #endregion
+
+        #region DICOM 저장
 
         private async Task CaptureAndSaveDicomAsync()
         {
@@ -213,14 +220,6 @@ namespace LSS_prototype.Scan_Page
 
             try
             {
-                if (SelectedPatient == null)
-                {
-                    CustomMessageWindow.Show("환자를 먼저 선택해주세요.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
-                    return;
-                }
-
                 if (!_isFrameReady)
                 {
                     CustomMessageWindow.Show("카메라 영상이 아직 준비되지 않았습니다.",
@@ -228,7 +227,6 @@ namespace LSS_prototype.Scan_Page
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
-
 
                 frame = _cameraService.GetCurrentFrame();
 
@@ -278,45 +276,17 @@ namespace LSS_prototype.Scan_Page
                     CalculateAge(SelectedPatient.BirthDate).ToString()
                 );
 
-                if (string.IsNullOrEmpty(_currentStudyId))
-                {
-                    string studyId = ResolveStudyId(
-                        SelectedPatient.PatientName,
-                        SelectedPatient.PatientCode.ToString()
-                    );
-
-                    StartNewStudy(studyId);
-                }
-
-                String studyID = _currentStudyId;
-
-                dm.SetStudy(
-                    studyID,
-                    accessionNumber,
-                    date,
-                    time,
-                    "",
-                    hospName,
-                    ""
-                );
-
-                dm.SetSeries(
-                    seriesNumber,
-                    "",
-                    date,
-                    time
-                );
-
+                dm.SetStudy(date + "0001", accessionNumber, date, time, "", hospName, "");
+                dm.SetSeries(seriesNumber, "", date, time);
                 dm.SetContent(seriesNumber, date, time, instanceIndex.ToString());
                 dm.SetPrivateDataElement(exposure, gain, gamma);
 
                 string path = GenerateSavePath(
-                        SelectedPatient.PatientName,
-                        SelectedPatient.PatientCode.ToString(),
-                        studyID,
-                        seriesNumber,
-                        instanceIndex
-                        );
+                    SelectedPatient.PatientName,
+                    SelectedPatient.PatientCode.ToString(),
+                    seriesNumber,
+                    instanceIndex
+                );
 
                 await dm.SaveImageFile(path, bitmap);
 
@@ -338,270 +308,19 @@ namespace LSS_prototype.Scan_Page
             }
         }
 
-        // ─────────────────────────────────────────────
-        // 헬퍼 메서드
-        // ─────────────────────────────────────────────
+        #endregion
 
-        /// <summary>
-        /// 시리즈 번호 생성: 환자ID 기반
-        /// </summary>
-        private string GenerateSeriesNumber(string patientId)
-        {
-            string numericId = new string(patientId.Where(char.IsDigit).ToArray());
+        #region 화면 이동
 
-            if (string.IsNullOrWhiteSpace(numericId))
-                numericId = "1";
+        private void NavigateToPatient() =>
+            MainPage.Instance.NavigateTo(new Patient_Page.Patient());
 
-            if (numericId.Length >= 4)
-                numericId = numericId.Substring(numericId.Length - 4);
+        private void OpenImageComment() =>
+            MainPage.Instance.NavigateTo(new ImageComment_Page.ImageComment(SelectedPatient, _currentSeriesNumber, _currentInstanceIndex));
 
-            numericId = numericId.TrimStart('0');
-            if (string.IsNullOrEmpty(numericId))
-                numericId = "1";
+        #endregion
 
-            return numericId + DateTime.Now.ToString("HHmmss");
-        }
-
-        /// <summary>
-        /// DICOM 파일 저장 경로 생성
-        /// 예: (exe 위치)\DICOM\홍길동_1234_12340001_0.dcm
-        /// </summary>
-        private string GenerateSavePath(string name, string code, string studyID, string seriesNumber, int instanceIndex)
-        {
-            string patientFolderName = $"{name}_{code}";
-
-            string rootDir = Path.Combine(Common.executablePath, "DICOM");
-            string patientDir = Path.Combine(rootDir, patientFolderName);
-            string studyDir = Path.Combine(patientDir, studyID);
-            string seriesDir = Path.Combine(studyDir, seriesNumber);
-
-            Directory.CreateDirectory(seriesDir);
-
-            string fileName = $"{patientFolderName}_{seriesNumber}_{instanceIndex}.dcm";
-            return Path.Combine(seriesDir, fileName);
-        }
-
-        /// <summary>
-        /// 생년월일로 나이 계산
-        /// </summary>
-        private int CalculateAge(DateTime birthDate)
-        {
-            int age = DateTime.Today.Year - birthDate.Year;
-            if (birthDate.Date > DateTime.Today.AddYears(-age)) age--;
-            return age;
-        }
-
-        // ─────────────────────────────────────────────
-        // StudyID 관련 메서드들
-        // ─────────────────────────────────────────────
-
-        /// <summary>
-        /// 오늘의 StudyID 목록 가져오는 함수
-        /// </summary>
-
-        private List<string> GetTodayStudyIds(string patientName, string patientCode)
-        {
-            string patientFolderName = $"{patientName}_{patientCode}";
-            string patientDir = Path.Combine(Common.executablePath, "DICOM", patientFolderName);
-
-            var result = new List<string>();
-
-            if (!Directory.Exists(patientDir))
-                return result;
-
-            string today = DateTime.Now.ToString("yyyyMMdd");
-
-            foreach (string dir in Directory.GetDirectories(patientDir))
-            {
-                string folderName = Path.GetFileName(dir);
-
-                // 형식: yyyyMMdd0001
-                if (folderName.StartsWith(today) && folderName.Length == 12)
-                {
-                    result.Add(folderName);
-                }
-            }
-
-            result.Sort();
-            return result;
-        }
-
-        /// <summary>
-        /// 다음 StudyID 계산 함수
-        /// </summary>
-
-        private string GetNextStudyId(List<string> todayStudyIds)
-        {
-            string today = DateTime.Now.ToString("yyyyMMdd");
-
-            if (todayStudyIds == null || todayStudyIds.Count == 0)
-                return today + "0001";
-
-            string lastStudyId = todayStudyIds[todayStudyIds.Count - 1];
-
-            string seqText = lastStudyId.Substring(8, 4);
-            int seq;
-
-            if (!int.TryParse(seqText, out seq))
-                seq = 0;
-
-            seq++;
-
-            return today + seq.ToString("D4");
-        }
-
-        /// <summary>
-        /// 마지막 StudyID 가져오는 함수
-        /// </summary>
-        private string GetLastStudyId(List<string> todayStudyIds)
-        {
-            if (todayStudyIds == null || todayStudyIds.Count == 0)
-                return null;
-
-            todayStudyIds.Sort();
-            return todayStudyIds[todayStudyIds.Count - 1];
-        }
-
-        /// <summary>
-        /// 최종 StudyID 결정 함수
-        /// </summary>
-        private string ResolveStudyId(string patientName, string patientCode)
-        {
-            var todayStudyIds = GetTodayStudyIds(patientName, patientCode);
-
-            // 오늘 촬영 이력이 없으면 무조건 0001
-            if (todayStudyIds.Count == 0)
-                return DateTime.Now.ToString("yyyyMMdd") + "0001";
-
-            string lastStudyId = GetLastStudyId(todayStudyIds);
-            string nextStudyId = GetNextStudyId(todayStudyIds);
-
-            var result = CustomMessageWindow.Show(
-                $"오늘 촬영된 이미지가 존재합니다.\n\n" +
-                $"기존 촬영을 이어서 사용하시겠습니까?\n" +
-                $"- 예: {lastStudyId}\n" +
-                $"- 아니오: 새 촬영 {nextStudyId}",
-                CustomMessageWindow.MessageBoxType.YesNo,
-                0,
-                CustomMessageWindow.MessageIconType.Info);
-
-            if (result == CustomMessageWindow.MessageBoxResult.Yes)
-                return lastStudyId;
-
-            return nextStudyId;
-        }
-
-        private void StartNewStudy(string studyId)
-        {
-            _currentStudyId = studyId;
-        }
-        // ─────────────────────────────────────────────
-        // 기존 메서드들
-        // ─────────────────────────────────────────────
-
-
-        private void OpenImageComment()
-        {
-            MainPage.Instance.NavigateTo(new ImageComment_Page.ImageComment(SelectedPatient, _currentSeriesNumber));
-        }
-
-        private void ResetValue()
-        {
-            var confirm = CustomMessageWindow.Show(
-                "기본 셋팅값으로 초기화하시겠습니까?",
-                CustomMessageWindow.MessageBoxType.YesNo, 0,
-                CustomMessageWindow.MessageIconType.Info);
-
-            if (confirm != CustomMessageWindow.MessageBoxResult.Yes) return;
-
-            DB_Manager db = new DB_Manager();
-            DefaultModel data = db.GetDefaultSet();
-            if (data == null) return;
-
-            _cameraService.InitializeCameraSettings(data);
-
-            Application.Current?.Dispatcher.Invoke(() =>
-            {
-                ExposureText = $"{data.ExposureTime / 1000000:F1}s";
-                GainText = $"{data.Gain:F1} dB";
-                GammaValue = data.Gamma;
-                IrisValue = data.Iris;
-            });
-
-            CustomMessageWindow.Show("초기화 되었습니다.",
-                CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                CustomMessageWindow.MessageIconType.Info);
-        }
-
-        public SolidColorBrush FilterOnBackground =>
-            FilterValue == 1
-                ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3B82F6"))
-                : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3F55"));
-
-        public SolidColorBrush FilterOffBackground =>
-            FilterValue == 0
-                ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3B82F6"))
-                : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3F55"));
-
-        private void OnFilterOn() { LensCtrl.Instance.OptFilterMove(1); FilterValue = 1; }
-        private void OnFilterOff() { LensCtrl.Instance.OptFilterMove(0); FilterValue = 0; }
-
-        private void OnExposureInc() { _cameraService.ExposureInc(); ExposureText = $"{_cameraService.ExposureCurrentRead() / 1000000:F1}s"; }
-        private void OnExposureDec() { _cameraService.ExposureDec(); ExposureText = $"{_cameraService.ExposureCurrentRead() / 1000000:F1}s"; }
-        private void OnGainInc() { _cameraService.GainInc(); GainText = $"{_cameraService.GainCurrentRead():F1} dB"; }
-        private void OnGainDec() { _cameraService.GainDec(); GainText = $"{_cameraService.GainCurrentRead():F1} dB"; }
-        private void OnGammaInc() { _cameraService.GammaInc(); GammaValue = _cameraService.GammaCurrentRead(); }
-        private void OnGammaDec() { _cameraService.GammaDec(); GammaValue = _cameraService.GammaCurrentRead(); }
-        private void OnIrisInc() { _cameraService.IrisInc(); IrisValue = _cameraService.IrisCurrentRead(); }
-        private void OnIrisDec() { _cameraService.IrisDec(); IrisValue = _cameraService.IrisCurrentRead(); }
-
-        private void OnCameraDisconnected() =>
-            Application.Current?.Dispatcher.Invoke(() => _cameraService.StartTestVideo(TEST_VIDEO_PATH));
-
-        private void OnCameraReconnected() =>
-            Application.Current?.Dispatcher.Invoke(() => Console.WriteLine("> 카메라 재연결 완료"));
-
-        private async void OnAutoFocus() => await _cameraService.AutoFocus();
-
-        private void OnZoomInc()
-        {
-            try { _cameraService.ZoomIn(); ZoomText = $"{LensCtrl.Instance.zoomCurrentAddr}"; }
-            catch (Exception ex) { Common.WriteLog(ex); }
-        }
-        private void OnZoomDec()
-        {
-            try { _cameraService.ZoomOut(); ZoomText = $"{LensCtrl.Instance.zoomCurrentAddr}"; }
-            catch (Exception ex) { Common.WriteLog(ex); }
-        }
-        private void OnFocusInc()
-        {
-            try { _cameraService.FocusIn(); FocusText = $"{LensCtrl.Instance.focusCurrentAddr}"; }
-            catch (Exception ex) { Common.WriteLog(ex); }
-        }
-        private void OnFocusDec()
-        {
-            try { _cameraService.FocusOut(); FocusText = $"{LensCtrl.Instance.focusCurrentAddr}"; }
-            catch (Exception ex) { Common.WriteLog(ex); }
-        }
-
-        private void OnFrameArrived(WriteableBitmap bitmap)
-        {
-            if (_disposed) return;
-
-            _isFrameReady = true;
-
-            Application.Current?.Dispatcher.Invoke(
-                () => PreviewSource = bitmap, DispatcherPriority.Render);
-        }
-
-        private void ToggleColorMap()
-        {
-            string prev = _cameraService.ColorMap;
-            if (_cameraService.ColorMap == "Origin") _cameraService.ColorMap = "Rainbow";
-            else if (_cameraService.ColorMap == "Rainbow") _cameraService.ColorMap = "Invert";
-            else _cameraService.ColorMap = "Origin";
-            Console.WriteLine($"> 컬러맵 변경: {prev} → {_cameraService.ColorMap}");
-        }
+        #region 카메라 제어
 
         private void ConnectCamera()
         {
@@ -638,6 +357,14 @@ namespace LSS_prototype.Scan_Page
             });
         }
 
+        private void OnFrameArrived(WriteableBitmap bitmap)
+        {
+            if (_disposed) return;
+            _isFrameReady = true;
+            Application.Current?.Dispatcher.Invoke(
+                () => PreviewSource = bitmap, DispatcherPriority.Render);
+        }
+
         private void OnCameraError(string message)
         {
             Application.Current?.Dispatcher.Invoke(() =>
@@ -650,12 +377,145 @@ namespace LSS_prototype.Scan_Page
             });
         }
 
-        private void NavigateToPatient() =>
-            MainPage.Instance.NavigateTo(new Patient_Page.Patient());
+        private void OnCameraDisconnected() =>
+            Application.Current?.Dispatcher.Invoke(() => _cameraService.StartTestVideo(TEST_VIDEO_PATH));
 
-        // ─────────────────────────────────────────────
-        // Dispose
-        // ─────────────────────────────────────────────
+        private void OnCameraReconnected() =>
+            Application.Current?.Dispatcher.Invoke(() => Console.WriteLine("> 카메라 재연결 완료"));
+
+        #endregion
+
+        #region 렌즈 제어
+
+        private async void OnAutoFocus() => await _cameraService.AutoFocus();
+
+        private void OnZoomInc()
+        {
+            try { _cameraService.ZoomIn(); ZoomText = $"{LensCtrl.Instance.zoomCurrentAddr}"; }
+            catch (Exception ex) { Common.WriteLog(ex); }
+        }
+        private void OnZoomDec()
+        {
+            try { _cameraService.ZoomOut(); ZoomText = $"{LensCtrl.Instance.zoomCurrentAddr}"; }
+            catch (Exception ex) { Common.WriteLog(ex); }
+        }
+        private void OnFocusInc()
+        {
+            try { _cameraService.FocusIn(); FocusText = $"{LensCtrl.Instance.focusCurrentAddr}"; }
+            catch (Exception ex) { Common.WriteLog(ex); }
+        }
+        private void OnFocusDec()
+        {
+            try { _cameraService.FocusOut(); FocusText = $"{LensCtrl.Instance.focusCurrentAddr}"; }
+            catch (Exception ex) { Common.WriteLog(ex); }
+        }
+
+        private void OnExposureInc() { _cameraService.ExposureInc(); ExposureText = $"{_cameraService.ExposureCurrentRead() / 1000000:F1}s"; }
+        private void OnExposureDec() { _cameraService.ExposureDec(); ExposureText = $"{_cameraService.ExposureCurrentRead() / 1000000:F1}s"; }
+        private void OnGainInc() { _cameraService.GainInc(); GainText = $"{_cameraService.GainCurrentRead():F1} dB"; }
+        private void OnGainDec() { _cameraService.GainDec(); GainText = $"{_cameraService.GainCurrentRead():F1} dB"; }
+        private void OnGammaInc() { _cameraService.GammaInc(); GammaValue = _cameraService.GammaCurrentRead(); }
+        private void OnGammaDec() { _cameraService.GammaDec(); GammaValue = _cameraService.GammaCurrentRead(); }
+        private void OnIrisInc() { _cameraService.IrisInc(); IrisValue = _cameraService.IrisCurrentRead(); }
+        private void OnIrisDec() { _cameraService.IrisDec(); IrisValue = _cameraService.IrisCurrentRead(); }
+        private void OnFilterOn() { LensCtrl.Instance.OptFilterMove(1); FilterValue = 1; }
+        private void OnFilterOff() { LensCtrl.Instance.OptFilterMove(0); FilterValue = 0; }
+
+        private void ToggleColorMap()
+        {
+            string prev = _cameraService.ColorMap;
+            if (_cameraService.ColorMap == "Origin") _cameraService.ColorMap = "Rainbow";
+            else if (_cameraService.ColorMap == "Rainbow") _cameraService.ColorMap = "Invert";
+            else _cameraService.ColorMap = "Origin";
+            Console.WriteLine($"> 컬러맵 변경: {prev} → {_cameraService.ColorMap}");
+        }
+
+        #endregion
+
+        #region 설정 초기화
+
+        private void ResetValue()
+        {
+            var confirm = CustomMessageWindow.Show(
+                "기본 셋팅값으로 초기화하시겠습니까?",
+                CustomMessageWindow.MessageBoxType.YesNo, 0,
+                CustomMessageWindow.MessageIconType.Info);
+
+            if (confirm != CustomMessageWindow.MessageBoxResult.Yes) return;
+
+            DB_Manager db = new DB_Manager();
+            DefaultModel data = db.GetDefaultSet();
+            if (data == null) return;
+
+            _cameraService.InitializeCameraSettings(data);
+
+            Application.Current?.Dispatcher.Invoke(() =>
+            {
+                ExposureText = $"{data.ExposureTime / 1000000:F1}s";
+                GainText = $"{data.Gain:F1} dB";
+                GammaValue = data.Gamma;
+                IrisValue = data.Iris;
+            });
+
+            CustomMessageWindow.Show("초기화 되었습니다.",
+                CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                CustomMessageWindow.MessageIconType.Info);
+        }
+
+        #endregion
+
+        #region 헬퍼 메서드
+
+        /// <summary>
+        /// 시리즈 번호 생성: 환자ID 기반
+        /// </summary>
+        private string GenerateSeriesNumber(string patientId)
+        {
+            string numericId = new string(patientId.Where(char.IsDigit).ToArray());
+
+            if (string.IsNullOrWhiteSpace(numericId))
+                numericId = "1";
+
+            if (numericId.Length >= 4)
+                numericId = numericId.Substring(numericId.Length - 4);
+
+            numericId = numericId.TrimStart('0');
+            if (string.IsNullOrEmpty(numericId))
+                numericId = "1";
+
+            return numericId + DateTime.Now.ToString("HHmmss");
+        }
+
+        /// <summary>
+        /// DICOM 파일 저장 경로 생성
+        /// 예: (exe 위치)\DICOM\홍길동_1234_12340001_0.dcm
+        /// </summary>
+        private string GenerateSavePath(string name, string code, string seriesNumber, int instanceIndex)
+        {
+            string safeCode = $"{name}_{code}";
+            string rootDir = Path.Combine(Common.executablePath, "DICOM");
+            string patientDir = Path.Combine(rootDir, safeCode);
+            string seriesDir = Path.Combine(patientDir, seriesNumber);
+
+            Directory.CreateDirectory(seriesDir);
+
+            string fileName = $"{safeCode}_{seriesNumber}_{instanceIndex}.dcm";
+            return Path.Combine(seriesDir, fileName);
+        }
+
+        /// <summary>
+        /// 생년월일로 나이 계산
+        /// </summary>
+        private int CalculateAge(DateTime birthDate)
+        {
+            int age = DateTime.Today.Year - birthDate.Year;
+            if (birthDate.Date > DateTime.Today.AddYears(-age)) age--;
+            return age;
+        }
+
+        #endregion
+
+        #region Dispose
 
         public void Dispose()
         {
@@ -671,12 +531,14 @@ namespace LSS_prototype.Scan_Page
             _cameraService.Dispose();
         }
 
+        #endregion
+
+        #region INotifyPropertyChanged
+
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
-       
+        #endregion
     }
-
-
 }

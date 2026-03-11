@@ -34,6 +34,8 @@ namespace LSS_prototype.ImageComment_Page
         // 현재 세션 번호 - 이 세션의 이미지만 로드하기 위해 보관
         private readonly string _seriesNumber;
 
+        private readonly int _instanceIndex;  // 마지막으로 촬영한 번호 ( 코멘트에서 다시 스캔으로 돌아왔을때 이어서 촬영하기 위해 )
+
         private ImageCommentViewModel VM => DataContext as ImageCommentViewModel;
 
         // ═══════════════════════════════════════════
@@ -42,10 +44,11 @@ namespace LSS_prototype.ImageComment_Page
         //  selectedPatient 와 seriesNumber 를 함께 받음
         //  → 현재 세션 이미지만 로드하기 위해
         // ═══════════════════════════════════════════
-        public ImageComment(PatientModel selectedPatient, string seriesNumber)
+        public ImageComment(PatientModel selectedPatient, string seriesNumber, int instanceIndex)
         {
             _patient = selectedPatient;
             _seriesNumber = seriesNumber;
+            _instanceIndex = instanceIndex;  
 
             InitializeComponent();
             DataContext = new ImageCommentViewModel();
@@ -280,7 +283,7 @@ namespace LSS_prototype.ImageComment_Page
         // ═══════════════════════════════════════════
         private void Back_Click(object sender, RoutedEventArgs e)
         {
-            try { MainPage.Instance.NavigateTo(new Scan_Page.Scan(_patient, _seriesNumber)); }
+            try { MainPage.Instance.NavigateTo(new Scan_Page.Scan(_patient, _seriesNumber, _instanceIndex)); }
             catch (Exception ex) { Common.WriteLog(ex); }
         }
     }

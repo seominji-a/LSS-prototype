@@ -231,6 +231,7 @@
     <Compile Include="ImageComment_Page\ImageComment.xaml.cs">
       <DependentUpon>ImageComment.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ImageComment_Page\ImageCommentViewModel.cs" />
     <Compile Include="ImageReview_Page\ImageReview.xaml.cs">
       <DependentUpon>ImageReview.xaml</DependentUpon>
     </Compile>

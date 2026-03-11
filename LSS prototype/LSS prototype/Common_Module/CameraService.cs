@@ -304,7 +304,7 @@ namespace LSS_prototype.Common_Module
                 int stride;
                 bool isColor;
 
-                using (Mat src = new Mat(height, width, MatType.CV_8UC1, data))
+                using (Mat src = Mat.FromPixelData(height, width, MatType.CV_8UC1, data))
                 using (Mat processed = ApplyColorMap(src))
                 {
                     // ──  lock 으로 _lastFrame 교체 안전하게 처리 ──
@@ -340,6 +340,14 @@ namespace LSS_prototype.Common_Module
             {
                 Common.WriteLog(ex);
                 return null;
+            }
+        }
+
+        public Mat GetCurrentFrame()
+        {
+            lock (_frameLock)
+            {
+                return _lastFrame?.Clone();
             }
         }
 
@@ -489,7 +497,12 @@ namespace LSS_prototype.Common_Module
                             });
 
                             if (bitmap != null)
-                                FrameArrived?.Invoke(bitmap);
+                                lock (_frameLock)
+                                {
+                                    _lastFrame?.Dispose();
+                                    _lastFrame = frame.Clone();
+                                }
+                            FrameArrived?.Invoke(bitmap);
 
                             Thread.Sleep(delay);
                         }

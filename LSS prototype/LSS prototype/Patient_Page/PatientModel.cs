@@ -30,5 +30,7 @@ namespace LSS_prototype.Patient_Page
 
         public bool IsEmrPatient { get; set; }   // 화면 표시용(저장 안 함)
         public PatientSource Source { get; set; }
+
+        public FellowOakDicom.DicomDataset Dataset { get; set; }
     }
 }

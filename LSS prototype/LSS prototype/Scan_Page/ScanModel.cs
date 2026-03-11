@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OpenCvSharp;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,5 +9,6 @@ namespace LSS_prototype.Scan_Page
 {
     public class ScanModel
     {
+        public List<Mat> CapturedImages { get; set; } = new List<Mat>();
     }
 }

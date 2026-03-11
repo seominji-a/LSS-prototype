@@ -117,6 +117,7 @@ namespace LSS_prototype.Scan_Page
             }
         }
 
+        private string _currentStudyId;
         private string _currentSeriesNumber;
         private int _currentInstanceIndex = 0;
 
@@ -265,7 +266,17 @@ namespace LSS_prototype.Scan_Page
                     CalculateAge(SelectedPatient.BirthDate).ToString()
                 );
 
-                string studyID = date + "0001";
+                if (string.IsNullOrEmpty(_currentStudyId))
+                {
+                    string studyId = ResolveStudyId(
+                        SelectedPatient.PatientName,
+                        SelectedPatient.PatientCode.ToString()
+                    );
+
+                    StartNewStudy(studyId);
+                }
+
+                String studyID = _currentStudyId;
 
                 dm.SetStudy(
                     studyID,
@@ -345,8 +356,6 @@ namespace LSS_prototype.Scan_Page
         /// </summary>
         private string GenerateSavePath(string name, string code, string studyID, string seriesNumber, int instanceIndex)
         {
-
-
             string patientFolderName = $"{name}_{code}";
 
             string rootDir = Path.Combine(Common.executablePath, "DICOM");
@@ -360,8 +369,6 @@ namespace LSS_prototype.Scan_Page
             return Path.Combine(seriesDir, fileName);
         }
 
-        
-
         /// <summary>
         /// 생년월일로 나이 계산
         /// </summary>
@@ -372,6 +379,110 @@ namespace LSS_prototype.Scan_Page
             return age;
         }
 
+        // ─────────────────────────────────────────────
+        // StudyID 관련 메서드들
+        // ─────────────────────────────────────────────
+
+        /// <summary>
+        /// 오늘의 StudyID 목록 가져오는 함수
+        /// </summary>
+
+        private List<string> GetTodayStudyIds(string patientName, string patientCode)
+        {
+            string patientFolderName = $"{patientName}_{patientCode}";
+            string patientDir = Path.Combine(Common.executablePath, "DICOM", patientFolderName);
+
+            var result = new List<string>();
+
+            if (!Directory.Exists(patientDir))
+                return result;
+
+            string today = DateTime.Now.ToString("yyyyMMdd");
+
+            foreach (string dir in Directory.GetDirectories(patientDir))
+            {
+                string folderName = Path.GetFileName(dir);
+
+                // 형식: yyyyMMdd0001
+                if (folderName.StartsWith(today) && folderName.Length == 12)
+                {
+                    result.Add(folderName);
+                }
+            }
+
+            result.Sort();
+            return result;
+        }
+
+        /// <summary>
+        /// 다음 StudyID 계산 함수
+        /// </summary>
+
+        private string GetNextStudyId(List<string> todayStudyIds)
+        {
+            string today = DateTime.Now.ToString("yyyyMMdd");
+
+            if (todayStudyIds == null || todayStudyIds.Count == 0)
+                return today + "0001";
+
+            string lastStudyId = todayStudyIds[todayStudyIds.Count - 1];
+
+            string seqText = lastStudyId.Substring(8, 4);
+            int seq;
+
+            if (!int.TryParse(seqText, out seq))
+                seq = 0;
+
+            seq++;
+
+            return today + seq.ToString("D4");
+        }
+
+        /// <summary>
+        /// 마지막 StudyID 가져오는 함수
+        /// </summary>
+        private string GetLastStudyId(List<string> todayStudyIds)
+        {
+            if (todayStudyIds == null || todayStudyIds.Count == 0)
+                return null;
+
+            todayStudyIds.Sort();
+            return todayStudyIds[todayStudyIds.Count - 1];
+        }
+
+        /// <summary>
+        /// 최종 StudyID 결정 함수
+        /// </summary>
+        private string ResolveStudyId(string patientName, string patientCode)
+        {
+            var todayStudyIds = GetTodayStudyIds(patientName, patientCode);
+
+            // 오늘 촬영 이력이 없으면 무조건 0001
+            if (todayStudyIds.Count == 0)
+                return DateTime.Now.ToString("yyyyMMdd") + "0001";
+
+            string lastStudyId = GetLastStudyId(todayStudyIds);
+            string nextStudyId = GetNextStudyId(todayStudyIds);
+
+            var result = CustomMessageWindow.Show(
+                $"오늘 촬영된 이미지가 존재합니다.\n\n" +
+                $"기존 촬영을 이어서 사용하시겠습니까?\n" +
+                $"- 예: {lastStudyId}\n" +
+                $"- 아니오: 새 촬영 {nextStudyId}",
+                CustomMessageWindow.MessageBoxType.YesNo,
+                0,
+                CustomMessageWindow.MessageIconType.Info);
+
+            if (result == CustomMessageWindow.MessageBoxResult.Yes)
+                return lastStudyId;
+
+            return nextStudyId;
+        }
+
+        private void StartNewStudy(string studyId)
+        {
+            _currentStudyId = studyId;
+        }
         // ─────────────────────────────────────────────
         // 기존 메서드들
         // ─────────────────────────────────────────────

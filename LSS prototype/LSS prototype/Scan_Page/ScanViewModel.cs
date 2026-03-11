@@ -117,6 +117,9 @@ namespace LSS_prototype.Scan_Page
             }
         }
 
+        private string _currentSeriesNumber;
+        private int _currentInstanceIndex = 0;
+
         // ─────────────────────────────────────────────
         // 커맨드
         // ─────────────────────────────────────────────
@@ -160,6 +163,8 @@ namespace LSS_prototype.Scan_Page
             _cameraService.SharpnessUpdated += (val) => Sharpness = $"{val:F2}";
             _cameraService.CameraDisconnected += OnCameraDisconnected;
             _cameraService.CameraReconnected += OnCameraReconnected;
+            _currentSeriesNumber = GenerateSeriesNumber(SelectedPatient.PatientId.ToString());
+            _currentInstanceIndex = 0;
 
             ConnectCamera();
 
@@ -193,7 +198,6 @@ namespace LSS_prototype.Scan_Page
 
             try
             {
-                // 1. 환자 선택 확인
                 if (SelectedPatient == null)
                 {
                     CustomMessageWindow.Show("환자를 먼저 선택해주세요.",
@@ -202,7 +206,6 @@ namespace LSS_prototype.Scan_Page
                     return;
                 }
 
-                // 2. 현재 프레임 가져오기
                 frame = _cameraService.GetCurrentFrame();
 
                 if (frame == null || frame.Empty())
@@ -213,39 +216,38 @@ namespace LSS_prototype.Scan_Page
                     return;
                 }
 
-                // 3. Bitmap 변환
                 bitmap = BitmapConverter.ToBitmap(frame);
 
-                // 4. 공통값 준비
                 string date = DateTime.Now.ToString("yyyyMMdd");
                 string time = DateTime.Now.ToString("HHmmss");
-                string seriesNumber = GenerateSeriesNumber(SelectedPatient.PatientId.ToString());
 
-                // 5. AccessionNumber
+                // 촬영 세션 동안 고정
+                string seriesNumber = _currentSeriesNumber;
+
+                // 촬영할 때마다 1 증가
+                _currentInstanceIndex++;
+                int instanceIndex = _currentInstanceIndex;
+
                 string accessionNumber = (SelectedPatient.Dataset != null)
                     ? SelectedPatient.Dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, "")
                     : "";
 
-                // 6. 카메라 파라미터 읽기
                 double exposure = _cameraService.ExposureCurrentRead();
                 double gain = _cameraService.GainCurrentRead();
                 double gamma = _cameraService.GammaCurrentRead();
 
-                // 7. 병원명 읽기
                 var db = new DB_Manager();
                 var setting = db.GetPacsSet();
                 string hospName = setting?.HospitalName ?? "";
 
-                // 8. 장비 시리얼번호
                 string serialNumber = "00000001";
 
-                // 9. DICOM 생성
                 DicomManager dm = (SelectedPatient.Dataset == null)
                     ? new DicomManager(SelectedPatient.PatientId.ToString(), serialNumber)
                     : new DicomManager(SelectedPatient.PatientId.ToString(), serialNumber, SelectedPatient.Dataset);
 
                 dm.SetPatient(
-                    SelectedPatient.PatientId.ToString(),
+                    SelectedPatient.PatientCode.ToString(),
                     SelectedPatient.PatientName,
                     SelectedPatient.BirthDate.ToString("yyyyMMdd"),
                     SelectedPatient.Sex,
@@ -269,22 +271,16 @@ namespace LSS_prototype.Scan_Page
                     time
                 );
 
-                string safeSeriesNumber = seriesNumber.TrimStart('0');
-                if (string.IsNullOrEmpty(safeSeriesNumber))
-                    safeSeriesNumber = "1";
-
-                dm.SetContent(safeSeriesNumber, date, time, "1");
-
+                dm.SetContent(seriesNumber, date, time, instanceIndex.ToString());
                 dm.SetPrivateDataElement(exposure, gain, gamma);
 
                 string path = GenerateSavePath(
                     SelectedPatient.PatientName,
                     SelectedPatient.PatientCode.ToString(),
                     seriesNumber,
-                    0
+                    instanceIndex
                 );
 
-                // 10. 저장
                 await dm.SaveImageFile(path, bitmap);
 
                 CustomMessageWindow.Show("촬영 및 저장이 완료되었습니다.",

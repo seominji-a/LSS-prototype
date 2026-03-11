@@ -26,8 +26,77 @@ DICOM 객체(Dataset)는 저장 시점에만 사용,
 저장 완료 후에는 용량이 큰 원본 데이터셋은 메모리에서 비우고, 
 DB에는 꼭 필요한 환자 정보와 촬영 횟수 같은 통계값만 남기도록 설계해 성능 최적화 필요
 
-<LSIS Scan 전체 흐름>
+■ 현재 촬영 구조 
+환자 선택-> Scan 메뉴 클릭(study 생성)->촬영 시작-> 촬영 설정(series 생성)-> image scan 촬영 버튼(instance 생성)
+Study(Setstudy): 각 환자 검사 번호
+Series(SetSeries): 각 촬영 세션 번호
+Instance(SetContent): 각 이미지가 저장 번호
 
+■PACS 연동 시 가장 중요한 것
+StudyInstanceUID 유지
+SeriesInstanceUID 유지
+SOPInstanceUID 매 이미지 생성
+
+(고려사항)
+언제 새 Series를 만들지 결정 필요
+-촬영 모드(icg/dual) 변경
+-컬러맵/필터 변경
+-검사 단계 변경
+-장비 조건의 의미 있는 변화(설정 값 변경)
+-사용자가 “새 촬영 세트 시작”을 눌렀을 때
+
+같은 촬영 세션에서 여러 장을 찍을 거면 SeriesNumber는 고정 권고
+이유: 같은 시리즈에 속한 이미지들은 PACS에서 한 묶음으로 보이는게 필수
+
+SeriesNumber를 고정하는 이유는
+같은 촬영 세션에서 찍은 여러 장을 PACS에서 하나의 Series로 묶기 위함
+
+한 촬영 세션 동안은 같은 값 유지 
+반대로 단순히 같은 조건으로 여러 장 찍는 건 새 Series가 아니라 같은 Series의 여러 Instance가 맞음 
+
+ex)ICG 모드로 연속 10장 촬영
+한 Series
+
+ex)ICG 모드에서 찍다가 화이트 모드로 바꿈 및 줌/필터/촬영 조건이 바뀜
+새 Series
+
+PACS 뷰어는 보통 Series 단위로 썸네일/스택/그룹핑-스택 탐색 편리, 같은 촬영 묶음인지 파악 가능
+홍길동
+ └ 2026-03-11 Study
+     └ ICG Series
+         ├ 1
+         ├ 2
+         ├ 3
+         ├ 4
+         └ 5
+
+■ 규칙
+-StudyInstanceUID - 같은 검사에서는 동일
+-SeriesInstanceUID - 촬영 세션마다 새로 생성
+현재 촬영 진입 시점 별로 새로 생성 
+-SOPInstanceUID - 이미지 마다 새로 생성
+향후 - ex) icg/dual 설정 차이 존재, 설정 값 변경
+
+
+■ Dicom 파일 안에 각 환자(이름)별 폴더 생성
+patientid를 사용해서 폴더 생성
+
+■ 향후 개발 진행 계획
+1. 이미지 코멘트 관련
+이미지가 저장되었을 경우 실시간으로 썸네일 저장 방법 고려
+(1)실시간으로 저장될 때 로드시키는 방법
+(2)폴더의 이미지를 시리즈 별로 읽어서 로드시키는 방법
+
+2. icg 주입 설정 시간 포함
+
+3. icg led, dual led 별로 이미지 파일명 차이 존재
+
+4. Record dicom, Record video 관련 구현
+
+
+
+
+<LSIS Scan 전체 흐름>
 ■ Scan 동작 처리 
 (Scan 버튼 클릭 -> 주사 시간 등록)
 

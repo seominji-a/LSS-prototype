@@ -3,23 +3,46 @@ using FellowOakDicom.Imaging;
 using LSS_prototype.Patient_Page;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Windows.Ink;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 
 namespace LSS_prototype.ImageComment_Page
 {
-    class ImageCommentViewModel : INotifyPropertyChanged
+    public class ImageCommentViewModel : INotifyPropertyChanged
     {
         // ═══════════════════════════════════════════
         //  경로
+        //  DICOM 과 ISF 는 동일한 폴더 구조로 관리
+        //
+        //  DICOM/
+        //  └── 박한용_0225/
+        //      └── 12340001/
+        //          ├── 박한용_0225_12340001_1.dcm
+        //          └── 박한용_0225_12340001_2.dcm
+        //
+        //  ISF/
+        //  └── 박한용_0225/
+        //      └── 12340001/
+        //          ├── 박한용_0225_12340001_1.isf
+        //          └── 박한용_0225_12340001_2.isf
         // ═══════════════════════════════════════════
         private string DicomDir => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DICOM");
-        private string IsfDir   => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "isf");
+        private string IsfDir => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ISF");
+
+        // DCM 경로 → ISF 경로 변환
+        // DICOM/박한용_0225/12340001/파일.dcm
+        //   → ISF/박한용_0225/12340001/파일.isf
+        private string GetIsfPath(string dcmPath)
+        {
+            string relative = dcmPath.Substring(DicomDir.Length).TrimStart(Path.DirectorySeparatorChar);
+            string isfRelative = Path.ChangeExtension(relative, ".isf");
+            return Path.Combine(IsfDir, isfRelative);
+        }
 
         // ═══════════════════════════════════════════
         //  DCM 파일 목록 & 현재 인덱스
@@ -75,18 +98,14 @@ namespace LSS_prototype.ImageComment_Page
         // ═══════════════════════════════════════════
         //  커맨드
         // ═══════════════════════════════════════════
-        public ICommand DeleteCommand { get; }
-        public ICommand ExitCommand { get; }
-
-
+        public ICommand ImageDeleteCommand { get; }
 
         // ═══════════════════════════════════════════
         //  생성자
         // ═══════════════════════════════════════════
         public ImageCommentViewModel()
         {
-            DeleteCommand = new RelayCommand(_ => ExecuteImageDelete());
-            ExitCommand = new RelayCommand(Common.ExcuteExit);
+            ImageDeleteCommand = new RelayCommand(_ => ExecuteImageDelete());
         }
 
         // ═══════════════════════════════════════════
@@ -94,16 +113,36 @@ namespace LSS_prototype.ImageComment_Page
         //  OnLoaded 에서 호출
         //  반환값: 파일이 있으면 true, 없으면 false
         // ═══════════════════════════════════════════
-        public bool Initialize(PatientModel patient)
+        // ═══════════════════════════════════════════
+        //  초기화 - 현재 세션 DCM 파일 목록 수집
+        //  seriesNumber: ScanViewModel._currentSeriesNumber
+        //  → 이 세션 폴더만 탐색 (이전 세션 이미지 제외)
+        //  반환값: 파일이 있으면 true, 없으면 false
+        // ═══════════════════════════════════════════
+        public bool Initialize(PatientModel patient, string seriesNumber)
         {
             try
             {
-                Directory.CreateDirectory(IsfDir);
+                // 환자 폴더: DICOM/박한용_0225/세션번호/
+                string patientFolder = $"{patient.PatientName}_{patient.PatientCode}";
+                string seriesDir = Path.Combine(DicomDir, patientFolder, seriesNumber);
 
-                // 파일명이 "{환자명}_{환자코드}_" 로 시작하는 DCM 만 수집
-                string prefix = $"{patient.PatientName}_{patient.PatientCode}_";
-                _dcmFiles = Directory.EnumerateFiles(DicomDir, "*.dcm")
-                    .Where(f => Path.GetFileName(f).StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                // ISF 도 동일한 구조로 폴더 미리 생성
+                string isfSeriesDir = Path.Combine(IsfDir, patientFolder, seriesNumber);
+                Directory.CreateDirectory(isfSeriesDir);
+
+                if (!Directory.Exists(seriesDir))
+                {
+                    CustomMessageWindow.Show(
+                        "해당 세션의 DICOM 폴더가 없습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return false;
+                }
+
+                // 현재 세션 폴더에서만 DCM 수집 (이전 세션 제외)
+                // DICOM/박한용_0225/12340001/*.dcm
+                _dcmFiles = Directory.EnumerateFiles(seriesDir, "*.dcm")
                     .OrderBy(f => f)
                     .ToList();
 
@@ -134,16 +173,17 @@ namespace LSS_prototype.ImageComment_Page
         // ═══════════════════════════════════════════
         private void LoadPage(int index)
         {
-            string dcmPath  = _dcmFiles[index];
-            string baseName = Path.GetFileNameWithoutExtension(dcmPath);
-            string isfPath  = Path.Combine(IsfDir, baseName + ".isf");
+            string dcmPath = _dcmFiles[index];
+            // DCM 경로와 동일한 폴더 구조로 ISF 경로 계산
+            // DICOM/박한용_0225/12340001/파일.dcm → ISF/박한용_0225/12340001/파일.isf
+            string isfPath = GetIsfPath(dcmPath);
 
             // DCM → WriteableBitmap 변환
-            var dicomFile  = DicomFile.Open(dcmPath);
+            var dicomFile = DicomFile.Open(dcmPath);
             var dicomImage = new DicomImage(dicomFile.Dataset);
-            var rendered   = dicomImage.RenderImage();
-            var pixels     = rendered.As<byte[]>();
-            var bitmap     = new WriteableBitmap(
+            var rendered = dicomImage.RenderImage();
+            var pixels = rendered.As<byte[]>();
+            var bitmap = new WriteableBitmap(
                 rendered.Width, rendered.Height, 96, 96,
                 System.Windows.Media.PixelFormats.Bgra32, null);
             bitmap.WritePixels(
@@ -167,20 +207,24 @@ namespace LSS_prototype.ImageComment_Page
         // ═══════════════════════════════════════════
         //  ISF 저장
         //  코드비하인드에서 현재 StrokeCollection 을 넘겨줌
-        //  드로잉 없으면 ISF 파일 삭제 
+        //  드로잉 없으면 ISF 파일 삭제 (깔끔하게 유지)
         // ═══════════════════════════════════════════
         public void SaveIsf(StrokeCollection strokes)
         {
             try
             {
-                string baseName = Path.GetFileNameWithoutExtension(_dcmFiles[_currentIndex]);
-                string isfPath  = Path.Combine(IsfDir, baseName + ".isf");
+                string dcmPath = _dcmFiles[_currentIndex];
+                // DCM 과 동일한 폴더 구조로 ISF 경로 계산
+                string isfPath = GetIsfPath(dcmPath);
 
                 if (strokes == null || strokes.Count == 0)
                 {
                     if (File.Exists(isfPath)) File.Delete(isfPath);
                     return;
                 }
+
+                // ISF 저장 전 폴더 생성 (세션 폴더가 없을 수 있음)
+                Directory.CreateDirectory(Path.GetDirectoryName(isfPath));
 
                 using (var fs = File.Create(isfPath))
                     strokes.Save(fs);
@@ -245,6 +289,8 @@ namespace LSS_prototype.ImageComment_Page
 
         // ═══════════════════════════════════════════
         //  이미지 삭제
+        //  확인 팝업 → Yes 시 삭제 진행
+        //  반환값: 삭제 확정 여부 (코드비하인드에서 View 정리)
         // ═══════════════════════════════════════════
         private bool ExecuteImageDelete()
         {
@@ -275,12 +321,16 @@ namespace LSS_prototype.ImageComment_Page
         // ═══════════════════════════════════════════
         public void Reset()
         {
-            SelectedPosition   = null;
+            SelectedPosition = null;
             SelectedAnatomical = null;
-            CommentText        = string.Empty;
+            CommentText = string.Empty;
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;   // 인터페이스 요구 멤버
+        // ═══════════════════════════════════════════
+        //  INotifyPropertyChanged 구현
+        //  프로젝트 전체 ViewModel 공통 패턴
+        // ═══════════════════════════════════════════
+        public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }

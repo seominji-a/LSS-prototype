@@ -8,9 +8,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LSS_prototype.DB_CRUD
+namespace LSS_prototype.Dicom_Module
 {
-    public partial class DB_Manager
+    public partial class DicomManager
     {
         /// <summary>
         /// DICOM C-FIND 요청으로 MWL 서버에서 환자 목록을 조회합니다.

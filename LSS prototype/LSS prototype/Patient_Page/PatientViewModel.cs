@@ -19,6 +19,7 @@ using System.Windows.Input;
 
 using LSS_prototype.Auth;
 using System.Threading;
+using LSS_prototype.Dicom_Module;
 
 namespace LSS_prototype.Patient_Page
 {
@@ -145,7 +146,7 @@ namespace LSS_prototype.Patient_Page
             LogoutCommand = new RelayCommand(Common.ExecuteLogout);
             ExitCommand = new RelayCommand(Common.ExcuteExit);
 
-            NavScanCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new Scan_Page.Scan(SelectedPatient)));
+            NavScanCommand = new RelayCommand(NavScan);
             // 0227 박한용 아래코드는 데이터 관련 처리 완료 후 주석 풀고 연동 예정 
             //NavImageReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new ImageReview_Page.ImageReview()));
             //NavVideoReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new VideoReview_Page.VideoReview()));
@@ -155,7 +156,22 @@ namespace LSS_prototype.Patient_Page
 
         }
 
-        
+        private void NavScan()
+        {
+
+            if(SelectedPatient == null)
+            {
+                CustomMessageWindow.Show("환자를 먼저 선택해주세요.",
+                      CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                      CustomMessageWindow.MessageIconType.Warning);
+
+                return;
+            }
+            MainPage.Instance.NavigateTo(new Scan_Page.Scan(SelectedPatient));
+
+        }
+
+
 
         /// <summary>
         /// DB에서 로컬등록된  환자 목록을 불러와 최신순(내림차순)으로 UI에 반영
@@ -448,8 +464,11 @@ namespace LSS_prototype.Patient_Page
                 var db = new DB_Manager();
                 var pacsSet = db.GetPacsSet();
 
+                var dicom = new DicomManager();
+                
+
                 LoadingWindow.Begin("MWL 조회 중...");
-                var worklistItems = await db.GetWorklistPatientsAsync(
+                var worklistItems = await dicom.GetWorklistPatientsAsync(
                     pacsSet.MwlMyAET, pacsSet.MwlIP, pacsSet.MwlPort, pacsSet.MwlAET);
                 await Task.Delay(500); // 로딩바 테스트 차 0.5 delay 추후 배포 시 해당코드 삭제
 

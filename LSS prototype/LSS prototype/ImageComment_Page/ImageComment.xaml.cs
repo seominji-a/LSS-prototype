@@ -1,5 +1,4 @@
 ﻿using LSS_prototype.Patient_Page;
-using LSS_prototype.Scan_Page;
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -29,14 +28,26 @@ namespace LSS_prototype.ImageComment_Page
         private static readonly SolidColorBrush BrushAccent = new SolidColorBrush(Color.FromRgb(0x3B, 0x82, 0xF6));
         private static readonly SolidColorBrush BrushBtnDark = new SolidColorBrush(Color.FromRgb(0x2A, 0x3F, 0x55));
 
+        // Back 시 Scan 화면에 환자 정보를 다시 전달하기 위해 보관
         private readonly PatientModel _patient;
+
+        // 현재 세션 번호 - 이 세션의 이미지만 로드하기 위해 보관
+        private readonly string _seriesNumber;
 
         private ImageCommentViewModel VM => DataContext as ImageCommentViewModel;
 
-        public ImageComment(PatientModel selectedPatient)
+        // ═══════════════════════════════════════════
+        //  생성자
+        //  ScanViewModel.OpenImageComment() 에서
+        //  selectedPatient 와 seriesNumber 를 함께 받음
+        //  → 현재 세션 이미지만 로드하기 위해
+        // ═══════════════════════════════════════════
+        public ImageComment(PatientModel selectedPatient, string seriesNumber)
         {
+            _patient = selectedPatient;
+            _seriesNumber = seriesNumber;
+
             InitializeComponent();
-            _patient = selectedPatient;  
             DataContext = new ImageCommentViewModel();
 
             // ViewModel 프로퍼티 변경 감지
@@ -44,19 +55,21 @@ namespace LSS_prototype.ImageComment_Page
             // CurrentStrokes 변경 → DrawingCanvas.Strokes 갱신
             VM.PropertyChanged += OnViewModelPropertyChanged;
 
-            Loaded += (s, e) => OnLoaded(selectedPatient);
+            Loaded += (s, e) => OnLoaded();
         }
 
         // ═══════════════════════════════════════════
         //  Loaded
-        //  ViewModel.Initialize() 로 DCM 파일 목록 수집 및 첫 페이지 로드
+        //  ViewModel.Initialize() 로 현재 세션 DCM 목록 수집 및 첫 페이지 로드
         //  실패 시 팝업은 ViewModel 에서 처리
         // ═══════════════════════════════════════════
-        private void OnLoaded(PatientModel patient)
+        private void OnLoaded()
         {
             try
             {
-                bool success = VM.Initialize(patient);
+                // patient + seriesNumber 둘 다 넘겨줌
+                // → 현재 세션 폴더만 탐색
+                bool success = VM.Initialize(_patient, _seriesNumber);
                 if (!success) return;
 
                 DrawingCanvas.EditingMode = InkCanvasEditingMode.None;
@@ -263,12 +276,11 @@ namespace LSS_prototype.ImageComment_Page
 
         // ═══════════════════════════════════════════
         //  BACK → Scan 화면으로 복귀
-        //  UserControl 이라 this.Close() 불가
-        //  MainPage.NavigateTo() 로 Scan 화면 교체
+        //  _patient 를 그대로 넘겨서 선택된 환자 유지
         // ═══════════════════════════════════════════
         private void Back_Click(object sender, RoutedEventArgs e)
         {
-            try { MainPage.Instance.NavigateTo(new Scan(_patient)); }
+            try { MainPage.Instance.NavigateTo(new Scan_Page.Scan(_patient, _seriesNumber)); }
             catch (Exception ex) { Common.WriteLog(ex); }
         }
     }

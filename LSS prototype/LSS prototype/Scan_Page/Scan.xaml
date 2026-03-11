@@ -703,13 +703,21 @@
                                     <RowDefinition Height="6"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
-                                <Border Grid.Row="0" Background="#0A1929" CornerRadius="10" ClipToBounds="True">
-                                    <Viewbox Stretch="Uniform">
-                                        <Border Width="400" Height="300">
-                                            <Image x:Name="ThumbImage1" Stretch="UniformToFill"/>
-                                        </Border>
-                                    </Viewbox>
-                                </Border>
+                                <Button Grid.Row="0"
+                                       
+                                        BorderThickness="0" Padding="0" Cursor="Hand">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="#0A1929" CornerRadius="10" ClipToBounds="True">
+                                                <Viewbox Stretch="Uniform">
+                                                    <Border Width="400" Height="300">
+                                                        <Image x:Name="ThumbImage1" Stretch="UniformToFill"/>
+                                                    </Border>
+                                                </Viewbox>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
                                 <Border Grid.Row="2" Background="#0A1929" CornerRadius="10" ClipToBounds="True">
                                     <Viewbox Stretch="Uniform">
                                         <Border Width="400" Height="300">
@@ -794,7 +802,7 @@
                             VerticalAlignment="Stretch"
                             Command="{Binding ExposureIncCommand}"/>
                                         </Grid>
-                                        
+
                                     </Grid>
                                 </Border>
 
@@ -828,7 +836,7 @@
                             VerticalAlignment="Stretch"
                             Command="{Binding GainIncCommand}"/>
                                         </Grid>
-                                        
+
                                     </Grid>
                                 </Border>
 
@@ -862,7 +870,7 @@
                             VerticalAlignment="Stretch"
                             Command="{Binding GammaIncCommand}"/>
                                         </Grid>
-                                       
+
                                     </Grid>
                                 </Border>
 
@@ -896,7 +904,7 @@
                             VerticalAlignment="Stretch"
                             Command="{Binding IrisIncCommand}"/>
                                         </Grid>
-                                       
+
                                     </Grid>
                                 </Border>
 

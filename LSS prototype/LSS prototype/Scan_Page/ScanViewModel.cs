@@ -143,9 +143,9 @@ namespace LSS_prototype.Scan_Page
         public ICommand FilterOffCommand { get; }
         public ICommand ImageScanCommand { get; }
 
-        // ─────────────────────────────────────────────
-        // 생성자
-        // ─────────────────────────────────────────────
+
+
+
 
         public ScanViewModel(PatientModel selectedPatient)
         {
@@ -170,15 +170,22 @@ namespace LSS_prototype.Scan_Page
             AutoFocusCommand = new RelayCommand(OnAutoFocus);
             GainIncCommand = new RelayCommand(OnGainInc);
             GainDecCommand = new RelayCommand(OnGainDec);
-            ExposureIncCommand = new RelayCommand(_ => OnExposureInc());
-            ExposureDecCommand = new RelayCommand(_ => OnExposureDec());
-            GammaIncCommand = new RelayCommand(_ => OnGammaInc());
-            GammaDecCommand = new RelayCommand(_ => OnGammaDec());
-            IrisIncCommand = new RelayCommand(_ => OnIrisInc());
-            IrisDecCommand = new RelayCommand(_ => OnIrisDec());
+
+            ExposureIncCommand = new RelayCommand(OnExposureInc);
+            ExposureDecCommand = new RelayCommand(OnExposureDec);
+
+            GammaIncCommand = new RelayCommand(OnGammaInc);
+            GammaDecCommand = new RelayCommand(OnGammaDec);
+
+            IrisIncCommand = new RelayCommand(OnIrisInc);
+            IrisDecCommand = new RelayCommand(OnIrisDec);
+
             ResetSettingCommand = new RelayCommand(ResetValue);
-            FilterOnCommand = new RelayCommand(_ => OnFilterOn());
-            FilterOffCommand = new RelayCommand(_ => OnFilterOff());
+
+            FilterOnCommand = new RelayCommand(OnFilterOn);
+            FilterOffCommand = new RelayCommand(OnFilterOff);
+
+
             ImageScanCommand = new RelayCommand(async _ => await CaptureAndSaveDicomAsync());
         }
 
@@ -351,9 +358,13 @@ namespace LSS_prototype.Scan_Page
             return age;
         }
 
-        // ─────────────────────────────────────────────
-        // 기존 메서드들
-        // ─────────────────────────────────────────────
+
+
+        private void OpenImageComment()
+        {
+            var win = new ImageComment_Page.ImageComment();
+            win.Show();
+        }
 
         private void ResetValue()
         {

@@ -27,8 +27,22 @@ namespace LSS_prototype.Scan_Page
         public Scan(PatientModel selectedPatient)
         {
             InitializeComponent();
+
+            if (selectedPatient == null)
+            {
+                Loaded += (s, e) =>
+                {
+                    CustomMessageWindow.Show("환자를 먼저 선택해주세요.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+
+                    MainPage.Instance.NavigateTo(new Patient_Page.Patient());
+                };
+                return;
+            }
+
             DataContext = new ScanViewModel(selectedPatient);
-            Unloaded += (s, e) => (DataContext as ScanViewModel)?.Dispose(); // 페이지 떠날 시 정확하게 카메라 자원해제 해주는 것.
+            Unloaded += (s, e) => (DataContext as ScanViewModel)?.Dispose();
         }
 
 

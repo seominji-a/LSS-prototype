@@ -120,6 +120,8 @@ namespace LSS_prototype.Scan_Page
         private string _currentSeriesNumber;
         private int _currentInstanceIndex = 0;
 
+        private bool _isFrameReady = false; //프레임 준비 여부 플래그 추가-프레임이 준비되기 전에는 촬영 버튼 방지
+
         // ─────────────────────────────────────────────
         // 커맨드
         // ─────────────────────────────────────────────
@@ -205,6 +207,15 @@ namespace LSS_prototype.Scan_Page
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
+
+                if (!_isFrameReady)
+                {
+                    CustomMessageWindow.Show("카메라 영상이 아직 준비되지 않았습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
 
                 frame = _cameraService.GetCurrentFrame();
 
@@ -331,11 +342,21 @@ namespace LSS_prototype.Scan_Page
         /// </summary>
         private string GenerateSavePath(string name, string code, string seriesNumber, int instanceIndex)
         {
-            string dir = Path.Combine(Common.executablePath, "DICOM");
-            Directory.CreateDirectory(dir);
-            string fileName = $"{name}_{code}_{seriesNumber}_{instanceIndex}.dcm";
-            return Path.Combine(dir, fileName);
+           
+
+            string safeCode = $"{name}_{code}";
+
+            string rootDir = Path.Combine(Common.executablePath, "DICOM");
+            string patientDir = Path.Combine(rootDir, safeCode);
+            string seriesDir = Path.Combine(patientDir, seriesNumber);
+
+            Directory.CreateDirectory(seriesDir);
+
+            string fileName = $"{safeCode}_{seriesNumber}_{instanceIndex}.dcm";
+            return Path.Combine(seriesDir, fileName);
         }
+
+        
 
         /// <summary>
         /// 생년월일로 나이 계산
@@ -433,6 +454,9 @@ namespace LSS_prototype.Scan_Page
         private void OnFrameArrived(WriteableBitmap bitmap)
         {
             if (_disposed) return;
+
+            _isFrameReady = true;
+
             Application.Current?.Dispatcher.Invoke(
                 () => PreviewSource = bitmap, DispatcherPriority.Render);
         }

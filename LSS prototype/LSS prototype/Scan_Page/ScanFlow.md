@@ -75,7 +75,7 @@ PACS 뷰어는 보통 Series 단위로 썸네일/스택/그룹핑-스택 탐색 
 -SeriesInstanceUID - 촬영 세션마다 새로 생성
 현재 촬영 진입 시점 별로 새로 생성 
 -SOPInstanceUID - 이미지 마다 새로 생성
-향후 - ex) icg/dual 설정 차이 존재, 설정 값 변경
+
 
 
 ■ Dicom 파일 안에 각 환자(이름)별 폴더 생성

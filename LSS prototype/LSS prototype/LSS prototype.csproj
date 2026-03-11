@@ -154,7 +154,7 @@
       <HintPath>..\packages\SQLitePCLRaw.provider.e_sqlite3.3.0.2\lib\net471\SQLitePCLRaw.provider.e_sqlite3.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Drawing" /> 
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Buffers, Version=4.0.5.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Buffers.4.6.1\lib\net462\System.Buffers.dll</HintPath>
     </Reference>
@@ -229,13 +229,13 @@
     </Compile>
     <Compile Include="Common_Module\RelayCommand.cs" />
     <Compile Include="DB_CRUD\DB_Manager.cs" />
-    <Compile Include="DB_CRUD\DB_Manager.Dicom.cs" />
+    <Compile Include="Dicom_Module\DicomManager.Receive.cs" />
     <Compile Include="DB_CRUD\DB_Manager.Patient.cs" />
     <Compile Include="DB_CRUD\DB_Manager.Set.cs" />
     <Compile Include="DB_CRUD\DB_Manager.User.cs" />
     <Compile Include="Common_Module\Dialog.cs" />
     <Compile Include="Auth\AuthToken.cs" />
-    <Compile Include="DB_CRUD\DicomManager.cs" />
+    <Compile Include="Dicom_Module\DicomManager.cs" />
     <Compile Include="ImageComment_Page\ImageComment.xaml.cs">
       <DependentUpon>ImageComment.xaml</DependentUpon>
     </Compile>

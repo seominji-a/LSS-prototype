@@ -24,24 +24,10 @@ namespace LSS_prototype.Scan_Page
         private bool _navOpen = false;
         private bool _settingOpen = false;
 
-        public Scan(PatientModel selectedPatient)
+        public Scan(PatientModel selectedPatient, string seriesNumber = null)
         {
-            InitializeComponent();
-
-            if (selectedPatient == null)
-            {
-                Loaded += (s, e) =>
-                {
-                    CustomMessageWindow.Show("환자를 먼저 선택해주세요.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
-
-                    MainPage.Instance.NavigateTo(new Patient_Page.Patient());
-                };
-                return;
-            }
-
-            DataContext = new ScanViewModel(selectedPatient);
+            InitializeComponent();       
+            DataContext = new ScanViewModel(selectedPatient, seriesNumber);
             Unloaded += (s, e) => (DataContext as ScanViewModel)?.Dispose();
         }
 

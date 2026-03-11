@@ -1,6 +1,7 @@
 ﻿using FellowOakDicom;
 using LSS_prototype.Common_Module;
 using LSS_prototype.DB_CRUD;
+using LSS_prototype.Dicom_Module;
 using LSS_prototype.Lens_Module;
 using LSS_prototype.Patient_Page;
 using LSS_prototype.User_Page;
@@ -148,14 +149,16 @@ namespace LSS_prototype.Scan_Page
         public ICommand FilterOnCommand { get; }
         public ICommand FilterOffCommand { get; }
         public ICommand ImageScanCommand { get; }
+        public ICommand ImageCommentCommand { get; }
 
-        // ─────────────────────────────────────────────
-        // 생성자
-        // ─────────────────────────────────────────────
 
-        public ScanViewModel(PatientModel selectedPatient)
+        public ScanViewModel(PatientModel selectedPatient, string seriesNumber = null)
         {
             SelectedPatient = selectedPatient;
+            _currentSeriesNumber = seriesNumber?? GenerateSeriesNumber(SelectedPatient.PatientId.ToString());
+            // 시리얼 넘버가없으면 새로생성, 있으면 그대로 사용( 코멘트나 리뷰페이지에서 넘어온 경우 ) 
+            // 위 코드추가한이유 -> 커멘트 페이지에서 -> 다시 scan으로 넘어왔을때, 기존 시리얼넘버값을 그대로 유지하기위해 
+            
             NavigatePatientCommand = new RelayCommand(NavigateToPatient);
             LogoutCommand = new RelayCommand(Common.ExecuteLogout);
             ExitCommand = new RelayCommand(Common.ExcuteExit);
@@ -166,7 +169,7 @@ namespace LSS_prototype.Scan_Page
             _cameraService.SharpnessUpdated += (val) => Sharpness = $"{val:F2}";
             _cameraService.CameraDisconnected += OnCameraDisconnected;
             _cameraService.CameraReconnected += OnCameraReconnected;
-            _currentSeriesNumber = GenerateSeriesNumber(SelectedPatient.PatientId.ToString());
+            //_currentSeriesNumber = GenerateSeriesNumber(SelectedPatient.PatientId.ToString());
             _currentInstanceIndex = 0;
 
             ConnectCamera();
@@ -178,16 +181,25 @@ namespace LSS_prototype.Scan_Page
             AutoFocusCommand = new RelayCommand(OnAutoFocus);
             GainIncCommand = new RelayCommand(OnGainInc);
             GainDecCommand = new RelayCommand(OnGainDec);
-            ExposureIncCommand = new RelayCommand(_ => OnExposureInc());
-            ExposureDecCommand = new RelayCommand(_ => OnExposureDec());
-            GammaIncCommand = new RelayCommand(_ => OnGammaInc());
-            GammaDecCommand = new RelayCommand(_ => OnGammaDec());
-            IrisIncCommand = new RelayCommand(_ => OnIrisInc());
-            IrisDecCommand = new RelayCommand(_ => OnIrisDec());
+
+            ExposureIncCommand = new RelayCommand(OnExposureInc);
+            ExposureDecCommand = new RelayCommand(OnExposureDec);
+
+            GammaIncCommand = new RelayCommand(OnGammaInc);
+            GammaDecCommand = new RelayCommand(OnGammaDec);
+
+            IrisIncCommand = new RelayCommand(OnIrisInc);
+            IrisDecCommand = new RelayCommand(OnIrisDec);
+
             ResetSettingCommand = new RelayCommand(ResetValue);
-            FilterOnCommand = new RelayCommand(_ => OnFilterOn());
-            FilterOffCommand = new RelayCommand(_ => OnFilterOff());
+
+            FilterOnCommand = new RelayCommand(OnFilterOn);
+            FilterOffCommand = new RelayCommand(OnFilterOff);
+
+
             ImageScanCommand = new RelayCommand(async _ => await CaptureAndSaveDicomAsync());
+
+            ImageCommentCommand = new RelayCommand(OpenImageComment);
         }
 
         // ─────────────────────────────────────────────
@@ -486,6 +498,12 @@ namespace LSS_prototype.Scan_Page
         // ─────────────────────────────────────────────
         // 기존 메서드들
         // ─────────────────────────────────────────────
+
+
+        private void OpenImageComment()
+        {
+            MainPage.Instance.NavigateTo(new ImageComment_Page.ImageComment(SelectedPatient, _currentSeriesNumber));
+        }
 
         private void ResetValue()
         {

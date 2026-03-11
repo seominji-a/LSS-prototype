@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using OpenCvSharp.Extensions;
 
-namespace LSS_prototype.DB_CRUD
+namespace LSS_prototype.Dicom_Module
 {
     public partial class DicomManager
     {
@@ -37,6 +37,11 @@ namespace LSS_prototype.DB_CRUD
                 foreach (var item in sourceDataset)
                     dataset.AddOrUpdate(item);
             }
+        }
+
+        public DicomManager()
+        {
+
         }
 
         /// <summary>

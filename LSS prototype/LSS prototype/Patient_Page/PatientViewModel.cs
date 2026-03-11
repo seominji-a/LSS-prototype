@@ -145,7 +145,7 @@ namespace LSS_prototype.Patient_Page
             LogoutCommand = new RelayCommand(Common.ExecuteLogout);
             ExitCommand = new RelayCommand(Common.ExcuteExit);
 
-            NavScanCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new Scan_Page.Scan()));
+            NavScanCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new Scan_Page.Scan(SelectedPatient)));
             // 0227 박한용 아래코드는 데이터 관련 처리 완료 후 주석 풀고 연동 예정 
             //NavImageReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new ImageReview_Page.ImageReview()));
             //NavVideoReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new VideoReview_Page.VideoReview()));

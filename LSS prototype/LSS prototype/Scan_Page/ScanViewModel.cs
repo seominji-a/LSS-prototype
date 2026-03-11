@@ -265,8 +265,10 @@ namespace LSS_prototype.Scan_Page
                     CalculateAge(SelectedPatient.BirthDate).ToString()
                 );
 
+                string studyID = date + "0001";
+
                 dm.SetStudy(
-                    date + "0001",
+                    studyID,
                     accessionNumber,
                     date,
                     time,
@@ -286,11 +288,12 @@ namespace LSS_prototype.Scan_Page
                 dm.SetPrivateDataElement(exposure, gain, gamma);
 
                 string path = GenerateSavePath(
-                    SelectedPatient.PatientName,
-                    SelectedPatient.PatientCode.ToString(),
-                    seriesNumber,
-                    instanceIndex
-                );
+                        SelectedPatient.PatientName,
+                        SelectedPatient.PatientCode.ToString(),
+                        studyID,
+                        seriesNumber,
+                        instanceIndex
+                        );
 
                 await dm.SaveImageFile(path, bitmap);
 
@@ -340,19 +343,20 @@ namespace LSS_prototype.Scan_Page
         /// DICOM 파일 저장 경로 생성
         /// 예: (exe 위치)\DICOM\홍길동_1234_12340001_0.dcm
         /// </summary>
-        private string GenerateSavePath(string name, string code, string seriesNumber, int instanceIndex)
+        private string GenerateSavePath(string name, string code, string studyID, string seriesNumber, int instanceIndex)
         {
-           
 
-            string safeCode = $"{name}_{code}";
+
+            string patientFolderName = $"{name}_{code}";
 
             string rootDir = Path.Combine(Common.executablePath, "DICOM");
-            string patientDir = Path.Combine(rootDir, safeCode);
-            string seriesDir = Path.Combine(patientDir, seriesNumber);
+            string patientDir = Path.Combine(rootDir, patientFolderName);
+            string studyDir = Path.Combine(patientDir, studyID);
+            string seriesDir = Path.Combine(studyDir, seriesNumber);
 
             Directory.CreateDirectory(seriesDir);
 
-            string fileName = $"{safeCode}_{seriesNumber}_{instanceIndex}.dcm";
+            string fileName = $"{patientFolderName}_{seriesNumber}_{instanceIndex}.dcm";
             return Path.Combine(seriesDir, fileName);
         }
 

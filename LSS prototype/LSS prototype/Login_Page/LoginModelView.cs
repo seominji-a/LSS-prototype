@@ -140,7 +140,7 @@ namespace LSS_prototype.Login_Page
                 // 1) 로그인 검증 (해시/솔트 + ROLE_CODE + PASSWORD_CHANGED_AT)
                 if (!dbManager.Login_check(UserId, password, out roleCode, out passwordChangedAt, out user_id))
                 {
-                    await CustomMessageWindow.ShowAsync(
+                        CustomMessageWindow.Show(
                         "아이디 또는 비밀번호가 올바르지 않습니다.",
                         CustomMessageWindow.MessageBoxType.AutoClose,
                         1,
@@ -173,7 +173,7 @@ namespace LSS_prototype.Login_Page
                 // 아래 코드를 수정하면됨 ( 0224 박한용 ) 
                 if (!passwordChangedAt.HasValue && user_id == "1")
                 {
-                    await CustomMessageWindow.ShowAsync(
+                        CustomMessageWindow.Show(
                         "최초 로그인입니다.\n비밀번호 변경 페이지로 이동합니다.",
                         CustomMessageWindow.MessageBoxType.AutoClose,
                         3,
@@ -187,7 +187,7 @@ namespace LSS_prototype.Login_Page
 
                     if (result != true)
                     {
-                        await CustomMessageWindow.ShowAsync(
+                            CustomMessageWindow.Show(
                             "비밀번호 변경이 완료되지 않았습니다.",
                             CustomMessageWindow.MessageBoxType.AutoClose,
                             2,
@@ -211,7 +211,7 @@ namespace LSS_prototype.Login_Page
                 string msg = "로그인 성공";
                 if (IsAdminMode) msg = "로그인 성공\n 관리자 화면으로 이동합니다.";
                 
-                await CustomMessageWindow.ShowAsync(
+                   CustomMessageWindow.Show(
                     msg,
                     CustomMessageWindow.MessageBoxType.AutoClose,
                     1,

@@ -3,9 +3,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:local="clr-namespace:LSS_prototype.Common_Module"
              mc:Ignorable="d" d:DesignWidth="1920" d:DesignHeight="1080">
 
     <UserControl.Resources>
+        <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <SolidColorBrush x:Key="Primary"    Color="#173753"/>
         <SolidColorBrush x:Key="Panel"      Color="#1C2B3A"/>
         <SolidColorBrush x:Key="Card"       Color="#243447"/>
@@ -264,7 +266,55 @@
         ══════════════════════════════════════════ -->
         <Grid Grid.Column="0">
             <Border Background="Black">
-                <Image x:Name="CameraPreviewImage" Stretch="Uniform" Source="{Binding PreviewSource}"/>
+                <Image x:Name="CameraPreviewImage"
+               Stretch="Uniform"
+               Source="{Binding PreviewSource}"/>
+            </Border>
+
+            <!-- 좌상단 작은 카메라 상태 -->
+            <Border HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            Margin="16,70,0,0"
+            Padding="10,6"
+            Background="#66000000"
+            CornerRadius="8">
+                <StackPanel Orientation="Horizontal">
+                    <Ellipse Width="10" Height="10" Margin="0,0,8,0">
+                        <Ellipse.Style>
+                            <Style TargetType="Ellipse">
+                                <Setter Property="Fill" Value="Gold"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsCameraReady}" Value="True">
+                                        <Setter Property="Fill" Value="LimeGreen"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsCameraDisconnected}" Value="True">
+                                        <Setter Property="Fill" Value="Red"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Ellipse.Style>
+                    </Ellipse>
+
+                    <TextBlock Text="{Binding CameraStatus}"
+                       Foreground="White"
+                       FontSize="16"
+                       FontWeight="SemiBold"
+                       VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <!-- 중앙 Overlay 상태 표시 -->
+            <Border HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Background="#88000000"
+            CornerRadius="16"
+            Padding="30,18"
+            Visibility="{Binding IsCameraStatusVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock Text="{Binding CameraStatus}"
+                   Foreground="White"
+                   FontSize="28"
+                   FontWeight="Bold"
+                   TextAlignment="Center"/>
             </Border>
 
             <!-- 위아래 2분할 감마 컨트롤 오버레이 -->
@@ -281,8 +331,18 @@
 
             <!-- 좌상단: 환자 정보 -->
             <StackPanel Margin="16,12" VerticalAlignment="Top" HorizontalAlignment="Left">
-                <TextBlock Text="Jung Wooseok(10005)" Foreground="White" FontSize="18" FontWeight="Bold"/>
-                <TextBlock Text="1969-05-22 / F"      Foreground="White" FontSize="16"/>
+                <TextBlock Foreground="White" FontSize="18" FontWeight="Bold">
+                    <Run Text="{Binding SelectedPatient.PatientName}"/>
+                    <Run Text="("/>
+                    <Run Text="{Binding SelectedPatient.PatientCode}"/>
+                    <Run Text=")"/>
+                </TextBlock>
+
+                <TextBlock Foreground="White" FontSize="16">
+                    <Run Text="{Binding SelectedPatient.BirthDate, StringFormat=yyyy-MM-dd}"/>
+                    <Run Text=" / "/>
+                    <Run Text="{Binding SelectedPatient.Sex}"/>
+                </TextBlock>
             </StackPanel>
 
             <!-- 우상단: Gain / Sharpness -->
@@ -310,7 +370,6 @@
                 </Grid>
             </Grid>
         </Grid>
-
         <!-- ══════════════════════════════════════════
              우측 패널
         ══════════════════════════════════════════ -->
@@ -736,7 +795,7 @@
                                     <RowDefinition Height="6"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
-                                <Button Grid.Row="0" Style="{StaticResource DarkBtn}" Command="{Binding ImageScanCommand}">
+                                <Button Grid.Row="0" Style="{StaticResource DarkBtn}" Command="{Binding ImageScanCommand}" IsEnabled="{Binding CanImageScan}">
                                     <TextBlock Text="Image&#10;Scan" Foreground="White" TextAlignment="Center" FontSize="25"/>
                                 </Button>
                                 <Button Grid.Row="2" Style="{StaticResource DarkBtn}" Command="{Binding VideoRecordCommand}">

@@ -118,11 +118,60 @@ namespace LSS_prototype.Scan_Page
             }
         }
 
+        //이미지 스캔 가능 여부 플러그
+        private bool _canImageScan;
+        public bool CanImageScan
+        {
+            get => _canImageScan;
+            set
+            {
+                _canImageScan = value;
+                OnPropertyChanged();
+            }
+        }
+
+        //카메라 상태 플러그
+        private string _cameraStatus = "Camera Initializing...";
+        public string CameraStatus
+        {
+            get => _cameraStatus;
+            set
+            {
+                _cameraStatus = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsCameraStatusVisible));
+                OnPropertyChanged(nameof(IsCameraReady));
+                OnPropertyChanged(nameof(IsCameraDisconnected));
+                OnPropertyChanged(nameof(IsCameraInitializing));
+            }
+        }
+
+        public bool IsCameraStatusVisible =>
+        !string.IsNullOrWhiteSpace(CameraStatus) &&
+        CameraStatus != "Camera Ready";
+
+        public bool IsCameraReady => CameraStatus == "Camera Ready";
+        public bool IsCameraDisconnected => CameraStatus == "Camera Disconnected";
+        public bool IsCameraInitializing => CameraStatus == "Camera Initializing...";
+
         private string _currentStudyId;
         private string _currentSeriesNumber;
+        private int _currentSeriesIndex = 0;
         private int _currentInstanceIndex = 0;
 
         private bool _isFrameReady = false; //프레임 준비 여부 플래그 추가-프레임이 준비되기 전에는 촬영 버튼 방지
+
+        //주사 시간 상태 플러그
+        private string _injectionTime;
+        public string InjectionTime
+        {
+            get => _injectionTime;
+            set
+            {
+                _injectionTime = value;
+                OnPropertyChanged();
+            }
+        }
 
         // ─────────────────────────────────────────────
         // 커맨드
@@ -170,7 +219,13 @@ namespace LSS_prototype.Scan_Page
             _cameraService.CameraDisconnected += OnCameraDisconnected;
             _cameraService.CameraReconnected += OnCameraReconnected;
             //_currentSeriesNumber = GenerateSeriesNumber(SelectedPatient.PatientId.ToString());
-            _currentInstanceIndex = 0;
+            //_currentInstanceIndex = 0;
+
+            //초반에는 프레임 도착 전이므로 이미지 스캔 가능 여부를 false로 고정
+            CanImageScan = false;
+
+            //프레임 도착 전, 카메라 준비 상태 사용자에게 확인 목적-카메라 연결 시작을 의미
+            CameraStatus = "Camera Initializing...";
 
             ConnectCamera();
 
@@ -246,11 +301,11 @@ namespace LSS_prototype.Scan_Page
                 string time = DateTime.Now.ToString("HHmmss");
 
                 // 촬영 세션 동안 고정
-                string seriesNumber = _currentSeriesNumber;
+                //string seriesNumber = _currentSeriesNumber;
 
                 // 촬영할 때마다 1 증가
-                _currentInstanceIndex++;
-                int instanceIndex = _currentInstanceIndex;
+                //_currentInstanceIndex++;
+                //int instanceIndex = _currentInstanceIndex;
 
                 string accessionNumber = (SelectedPatient.Dataset != null)
                     ? SelectedPatient.Dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, "")
@@ -289,6 +344,10 @@ namespace LSS_prototype.Scan_Page
                 }
 
                 String studyID = _currentStudyId;
+                string seriesNumber = _currentSeriesNumber;
+
+                _currentInstanceIndex++;
+                int instanceIndex = _currentInstanceIndex;
 
                 dm.SetStudy(
                     studyID,
@@ -494,10 +553,26 @@ namespace LSS_prototype.Scan_Page
         private void StartNewStudy(string studyId)
         {
             _currentStudyId = studyId;
+            _currentSeriesIndex = 0;
+            StartNewSeries();
         }
+
+        private void StartNewSeries()
+        {
+            _currentSeriesIndex++;
+
+            string patientId = "1";
+            if (SelectedPatient != null)
+                patientId = SelectedPatient.PatientId.ToString();
+
+            _currentSeriesNumber = GenerateSeriesNumber(patientId);
+            _currentInstanceIndex = 0;
+        }
+
         // ─────────────────────────────────────────────
         // 기존 메서드들
         // ─────────────────────────────────────────────
+
 
 
         private void OpenImageComment()
@@ -555,8 +630,17 @@ namespace LSS_prototype.Scan_Page
         private void OnIrisInc() { _cameraService.IrisInc(); IrisValue = _cameraService.IrisCurrentRead(); }
         private void OnIrisDec() { _cameraService.IrisDec(); IrisValue = _cameraService.IrisCurrentRead(); }
 
-        private void OnCameraDisconnected() =>
-            Application.Current?.Dispatcher.Invoke(() => _cameraService.StartTestVideo(TEST_VIDEO_PATH));
+        //프레임 도착 전에 카메라 끊김, 이미지 스캔 불가능
+        private void OnCameraDisconnected()
+        {
+            Application.Current?.Dispatcher.Invoke(() =>
+            {
+                _isFrameReady = false;
+                CanImageScan = false;
+                CameraStatus = "Camera Disconnected";
+                _cameraService.StartTestVideo(TEST_VIDEO_PATH);
+            });
+        }
 
         private void OnCameraReconnected() =>
             Application.Current?.Dispatcher.Invoke(() => Console.WriteLine("> 카메라 재연결 완료"));
@@ -584,11 +668,14 @@ namespace LSS_prototype.Scan_Page
             catch (Exception ex) { Common.WriteLog(ex); }
         }
 
+        //프레임 도착-이미지 스캔에 관한 준비를 모두 마침, 이미지 스캔 가능
         private void OnFrameArrived(WriteableBitmap bitmap)
         {
             if (_disposed) return;
 
             _isFrameReady = true;
+            CanImageScan = true;
+            CameraStatus = "Camera Ready";
 
             Application.Current?.Dispatcher.Invoke(
                 () => PreviewSource = bitmap, DispatcherPriority.Render);

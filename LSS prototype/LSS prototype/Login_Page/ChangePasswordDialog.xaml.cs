@@ -18,13 +18,13 @@ namespace LSS_prototype.Login_Page
             };
         }
 
-        private async void Save_Click(object sender, RoutedEventArgs e)
+        private void Save_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 var vm = DataContext as ChangePasswordModelView;
                 if (vm == null) return;
-                await vm.SaveAsync(NewPasswordBox.Password, ConfirmPasswordBox.Password, LoginIdBox.Text);
+                vm.Save(NewPasswordBox.Password, ConfirmPasswordBox.Password);
             }
             catch (Exception ex)
             {

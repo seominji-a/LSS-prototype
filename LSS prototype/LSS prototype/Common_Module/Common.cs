@@ -89,6 +89,37 @@ namespace LSS_prototype
         }
 
 
+        public static void ForceLogout()
+        {
+            try
+            {
+                // 1. 타이머 정지 (세션 만료 체크 중단)
+                App.ActivityMonitor.Stop(); // 
+
+                // 2. 토큰 초기화
+                AuthToken.SignOut();
+
+                // 3. 세션 완전 종료 (열린 창 모두 닫기)
+                SessionStateManager.ClearSession();
+
+                // 4. 로그인 창 호출
+                var login = new Login_Page.Login();
+                login.Show();
+
+                // 5. 나머지 창 모두 닫기
+                foreach (Window window in Application.Current.Windows.OfType<Window>().ToList())
+                {
+                    if (!(window is Login_Page.Login))
+                        window.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
+
+
 
         public static void ExcuteExit()
         {
@@ -366,7 +397,7 @@ namespace LSS_prototype
         public const string SEARCH_USERID_NAME = "SELECT USER_ID, USER_NAME, LOGIN_ID, USER_ROLE, ROLE_CODE FROM USER WHERE USER_NAME LIKE @keyword OR LOGIN_ID LIKE @keyword ORDER BY USER_ID ASC";
         public const string INSERT_ADD_USER = "INSERT INTO USER(LOGIN_ID, PASSWORD_HASH, PASSWORD_SALT, USER_NAME, USER_ROLE, DEVICE_ID, ROLE_CODE)" +
                                                  " VALUES (@loginId, @hash, @salt, @userName, @userRole, @device_id, @role_code)";
-        public const string DELETE_USER = "DELETE FROM USER WHERE USER_ID = @user_id";
+        public const string DELETE_USER ="DELETE FROM USER WHERE USER_ID = @user_id  AND (ROLE_CODE != 'A' OR (SELECT COUNT(*) FROM USER WHERE ROLE_CODE = 'A') >= 2)";
         public const string DELEGATE_USER = "UPDATE USER SET ROLE_CODE = 'A' WHERE USER_ID = @user_id";                                                          // 관리자 권한 위임
         public const string DISMISS_USER = "UPDATE USER SET ROLE_CODE = 'U' WHERE USER_ID = @user_id AND (SELECT COUNT(*) FROM USER WHERE ROLE_CODE = 'A') >= 2"; // 관리자 권한 해임 (관리자 2명 이상일 때만)
 
@@ -374,7 +405,8 @@ namespace LSS_prototype
         // ChangePasswordDialog  -  DB_Manager.User.cs
         // ================================================
         public const string PASSWORD_EDIT = "UPDATE USER SET password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @loginId";
-        public const string CREDENTIAL_EDIT = "UPDATE USER SET login_id = @newId, password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @oldId"; // 최초 로그인 시 ID+PW 동시 변경
+        public const string CREDENTIAL_EDIT_WITH_ROLE = "UPDATE USER SET login_id = @newId, password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate, USER_ROLE = @role WHERE login_id = @oldId"; // 최초 로그인 시 ID+PW+Role 동시 변경
+        public const string CREDENTIAL_EDIT= "UPDATE USER SET login_id = @newId, password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @oldId"; // 관리자가 USER 비밀번호 및 ID 변경 쿼리 
         public const string ADMIN_UPDATE = "UPDATE USER SET password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate, login_id = @logiId WHERE login_id = @loginId";
 
         // ================================================

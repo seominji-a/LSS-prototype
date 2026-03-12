@@ -27,6 +27,7 @@ namespace LSS_prototype
         public static readonly string DB_INIT_PATH = Path.Combine(executablePath, "DB", "db_init.sql");
         public static readonly string DB_SEED_PATH = Path.Combine(executablePath, "DB", "seed.sql");
         public static string CurrentUserId = string.Empty;            // 현재 로그인한 ID 
+        public static string MwlDescriptionFilter = string.Empty;       // 현재 MWL FILTER 값 
 
 
         public const int DB_VERSION = 45; // DB Version 
@@ -434,6 +435,7 @@ namespace LSS_prototype
         public const string UPDATE_HOSPITAL = "UPDATE PACS_SET SET HOSPITAL_NAME=@HospitalName";
         public const string UPDATE_CSTORE = "UPDATE PACS_SET SET CSTORE_AET=@CStoreAET, CSTORE_IP=@CStoreIP, CSTORE_PORT=@CStorePort, CSTORE_MY_AET=@CStoreMyAET";
         public const string UPDATE_MWL = "UPDATE PACS_SET SET MWL_AET=@MwlAET, MWL_IP=@MwlIP, MWL_PORT=@MwlPort, MWL_MY_AET=@MwlMyAET";
+        public const string UPDATE_MWL_FILTER = "UPDATE PACS_SET SET MWL_DESCRIPTION_FILTER = @MwlDescriptionFilter";
     }
 }
 

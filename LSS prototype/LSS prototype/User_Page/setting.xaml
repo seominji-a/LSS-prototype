@@ -150,14 +150,23 @@
         <Grid Margin="32,24,32,24">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <!-- 0 : 타이틀 -->
                 <RowDefinition Height="12"/>
+                <!-- 1 : 간격 -->
                 <RowDefinition Height="Auto"/>
+                <!-- 2 : Hospital Name + MWL Filter -->
                 <RowDefinition Height="12"/>
+                <!-- 3 : 간격 -->
                 <RowDefinition Height="1"/>
+                <!-- 4 : 구분선 -->
                 <RowDefinition Height="14"/>
+                <!-- 5 : 간격 -->
                 <RowDefinition Height="*"/>
+                <!-- 6 : C-STORE / MWL -->
                 <RowDefinition Height="12"/>
+                <!-- 7 : 간격 -->
                 <RowDefinition Height="Auto"/>
+                <!-- 8 : 버튼 -->
             </Grid.RowDefinitions>
 
             <!-- ── 타이틀 ── -->
@@ -179,15 +188,30 @@
                 </Button>
             </Grid>
 
-            <!-- ── Hospital Name ── -->
+            <!-- ── Hospital Name + MWL Filter (같은 행) ── -->
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
+                    <!-- Hospital Name 레이블 -->
                     <ColumnDefinition Width="12"/>
                     <ColumnDefinition Width="240"/>
+                    <!-- Hospital Name 입력 -->
                     <ColumnDefinition Width="10"/>
                     <ColumnDefinition Width="Auto"/>
+                    <!-- Hospital Save 버튼 -->
+                    <ColumnDefinition Width="32"/>
+                    <!-- 두 섹션 간격 -->
+                    <ColumnDefinition Width="Auto"/>
+                    <!-- MWL Filter 레이블 -->
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="240"/>
+                    <!-- MWL Filter 입력 -->
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <!-- MWL Filter Save 버튼 -->
                 </Grid.ColumnDefinitions>
+
+                <!-- Hospital Name -->
                 <TextBlock Grid.Column="0" Text="Hospital Name"
                            Foreground="{StaticResource Inactive}"
                            FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
@@ -196,6 +220,16 @@
                 <Button Grid.Column="4" Content="Save"
                         Style="{StaticResource SaveBtn}"
                         Command="{Binding SaveHospitalCommand}"/>
+
+                <!-- MWL Filter -->
+                <TextBlock Grid.Column="6" Text="MWL Filter"
+                           Foreground="{StaticResource Inactive}"
+                           FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <TextBox Grid.Column="8" Style="{StaticResource InputBox}"
+                         Text="{Binding MwlDescriptionFilter, UpdateSourceTrigger=PropertyChanged}"/>
+                <Button Grid.Column="10" Content="Save"
+                        Style="{StaticResource SaveBtn}"
+                        Command="{Binding SaveMwlFilterCommand}"/>
             </Grid>
 
             <!-- ── 구분선 ── -->

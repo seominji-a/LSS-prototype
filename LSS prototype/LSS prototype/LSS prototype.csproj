@@ -221,6 +221,7 @@
     </ApplicationDefinition>
     <Compile Include="Auth\SessionActivityMonitor.cs" />
     <Compile Include="Auth\SessionStateManager.cs" />
+    <Compile Include="Common_Module\BoolToVisibilityConverter.cs" />
     <Compile Include="Common_Module\CameraService.cs" />
     <Compile Include="Common_Module\CameraService.Lens.cs" />
     <Compile Include="Common_Module\Common.cs" />
@@ -508,6 +509,7 @@
     </Content>
     <None Include="Scan_Page\Scandatatotal.md" />
     <None Include="Scan_Page\ScanFlow.md" />
+    <None Include="Scan_Page\ScanTable.md" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

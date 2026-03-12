@@ -69,13 +69,13 @@ INSERT INTO CAMERA_DEFAULT_SET
 )
 VALUES
 (
-    0.6,   -- EXPOSURE_TIME  (0.2s ~ 1s) 샘플값
-    10.0,   -- GAIN           (3dB ~ 45dB) 샘플값
-    0.8,    -- GAMMA          (0.3 ~ 1) 샘플값 
-    5927,   -- FOCUS          (3545 ~ 8310, Step 100) → 중간값
-    328,    -- IRIS           (0 ~ 656,    Step 50)  → 중간값
-    2903,   -- ZOOM           (1138 ~ 4669, Step 100) → 중간값
-    1       -- FILTER         (0=OFF, 1=ON)
+    100011,     -- EXPOSURE_TIME
+    10.0,       -- GAIN           
+    0.8,        -- GAMMA          
+    5927,       -- FOCUS          
+    328,        -- IRIS           
+    2903,       -- ZOOM           
+    1           -- FILTER         
 );
 
 -- ================================================

@@ -75,7 +75,8 @@
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="ListBoxItem"> <!-- 카드 선택 시, 색상 바뀌게 하는 부분 -->
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <!-- 카드 선택 시, 색상 바뀌게 하는 부분 -->
                         <Border x:Name="Outer" CornerRadius="16" BorderThickness="3" BorderBrush="Transparent" Padding="2">
                             <Border x:Name="Inner" Background="{StaticResource Surface}" BorderBrush="{StaticResource Border}"
                                     BorderThickness="1.5" CornerRadius="14" Padding="22,18">
@@ -323,11 +324,19 @@
                                     </StackPanel>
 
                                     <!-- EMR / LOCAL 배지 -->
-                                        <Border x:Name="SourceBadge" CornerRadius="6" BorderThickness="1" Padding="12,5"
-                                                        HorizontalAlignment="Right" VerticalAlignment="Top"
-                                                        Background="#DCFCE7" BorderBrush="#86EFAC">
-                                            <TextBlock x:Name="TxtSourceLabel" Text="EMR" FontSize="21" FontWeight="SemiBold" Foreground="#15803D"/>
-                                        </Border>
+                                    <Border x:Name="SourceBadge" CornerRadius="6" BorderThickness="1" Padding="12,5"
+                                            HorizontalAlignment="Right" VerticalAlignment="Top"
+                                            Background="#DCFCE7" BorderBrush="#86EFAC">
+                                        <TextBlock x:Name="TxtSourceLabel" Text="EMR" FontSize="21" FontWeight="SemiBold" Foreground="#15803D"/>
+                                    </Border>
+
+                                    <!-- Description - 우측 하단 -->
+                                    <TextBlock x:Name="TxtDescription"
+                                               Text="{Binding RequestedProcedureDescription}"
+                                               HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                               FontSize="17" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextMid}"
+                                               Margin="0,0,4,4"/>
                                 </Grid>
                                 <DataTemplate.Triggers>
 
@@ -348,9 +357,10 @@
                                     </DataTrigger>
 
                                     <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                                        <Setter TargetName="TxtName" Property="Foreground" Value="White"/>
-                                        <Setter TargetName="TxtCode" Property="Foreground" Value="#CBD5E1"/>
-                                        <Setter TargetName="TxtInfo" Property="Foreground" Value="#94A3B8"/>
+                                        <Setter TargetName="TxtName"        Property="Foreground" Value="White"/>
+                                        <Setter TargetName="TxtCode"        Property="Foreground" Value="#CBD5E1"/>
+                                        <Setter TargetName="TxtInfo"        Property="Foreground" Value="#94A3B8"/>
+                                        <Setter TargetName="TxtDescription" Property="Foreground" Value="White"/>
                                     </DataTrigger>
                                 </DataTemplate.Triggers>
                             </DataTemplate>
@@ -371,7 +381,8 @@
                 <Border Background="#132E43" BorderBrush="#244A66" BorderThickness="1"
                         CornerRadius="12" Padding="14,12" Margin="0,0,0,20" Cursor="Hand"
                         MouseLeftButtonUp="SelectedPatientBorder_Click">
-                    <StackPanel> <!-- 선택된값이 자동으로 우측상단카드에 binding 된다 별도 비하인드 뷰모델코드 X-->
+                    <StackPanel>
+                        <!-- 선택된값이 자동으로 우측상단카드에 binding 된다 별도 비하인드 뷰모델코드 X-->
                         <TextBlock Text="Selected Patient" Foreground="#BBD0E1" FontSize="13" Margin="0,0,0,6"/>
                         <TextBlock Text="{Binding SelectedPatient.PatientName}" Foreground="White"
                                    FontSize="18" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>

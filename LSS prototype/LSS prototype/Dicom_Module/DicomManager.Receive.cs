@@ -17,13 +17,11 @@ namespace LSS_prototype.Dicom_Module
         /// 반환된 PatientModel의 AccessionNumber 유무로 EMR/LOCAL을 구분합니다.
         ///   AccessionNumber != "" → EMR 환자 (IsEmrPatient = true)
         ///   AccessionNumber == "" → LOCAL 환자 (IsEmrPatient = false)
+        ///
+        /// ★ descriptionFilter 가 비어있으면 전체 조회
+        /// ★ descriptionFilter 에 값이 있으면 해당 값과 일치하는 환자만 반환
         /// </summary>
-        /// 
-
-       
-
-        public async Task<List<PatientModel>> GetWorklistPatientsAsync(
-            string sourceAET, string targetIP, int targetPort, string targetAET)
+        public async Task<List<PatientModel>> GetWorklistPatientsAsync(string sourceAET, string targetIP, int targetPort, string targetAET)  // 기본값 ICG - 비우면 전체 조회
         {
             var result = new List<PatientModel>();
 
@@ -34,7 +32,16 @@ namespace LSS_prototype.Dicom_Module
             request.OnResponseReceived += (_, res) =>
             {
                 if (res.Status == DicomStatus.Pending && res.Dataset != null)
-                    result.Add(ParsePatientModel(res.Dataset));
+                {
+                    var patient = ParsePatientModel(res.Dataset);
+
+                    // 필터값 비어있으면 전체, 값 있으면 일치하는 환자만 추가
+                    if (!string.IsNullOrEmpty(Common.MwlDescriptionFilter) &&
+                        !patient.RequestedProcedureDescription.Contains(Common.MwlDescriptionFilter))
+                        return;
+
+                    result.Add(patient);
+                }
             };
 
             // DICOM 클라이언트 생성 및 요청 전송
@@ -63,6 +70,7 @@ namespace LSS_prototype.Dicom_Module
             {
                 Dataset = new DicomDataset
                 {
+                    { DicomTag.SpecificCharacterSet,          ""  }, // 인코딩 정보 반환 요청
                     { DicomTag.PatientName,                   "*" }, // (0010,0010) 전체 검색
                     { DicomTag.PatientID,                     "*" }, // (0010,0020) 전체 검색
                     { DicomTag.StudyInstanceUID,              ""  }, // (0020,000D) 반환 요청
@@ -85,7 +93,6 @@ namespace LSS_prototype.Dicom_Module
         /// Dataset 필드:
         ///   Save_Click에서 DicomManager(HID, Serial, Dataset) 생성자에 전달하여
         ///   MWL 원본 태그(AccessionNumber, StudyInstanceUID 등)를 보존하기 위해 보관.
-        ///   JSON 직렬화 시에는 [JsonIgnore] 처리 필요.
         /// </summary>
         private static PatientModel ParsePatientModel(DicomDataset ds)
         {
@@ -100,7 +107,8 @@ namespace LSS_prototype.Dicom_Module
             {
                 PatientCode = int.TryParse(rawId, out int code) ? code : 0,
 
-                PatientName = ds.GetSingleValueOrDefault(DicomTag.PatientName, "")
+                // ★ 선배 코드 방식 - 바이트 직접 꺼내서 EUC-KR 디코딩 (한글 깨짐 방지)
+                PatientName = DecodeEucKr(ds, DicomTag.PatientName)
                                 .Replace("^", " "),           // "홍^길동" → "홍 길동"
 
                 BirthDate = DateTime.TryParseExact(
@@ -125,7 +133,28 @@ namespace LSS_prototype.Dicom_Module
                 // EMR: MWL 원본 태그 전체 보관 → 저장 시 AccessionNumber 등 서버값 유지
                 // LOCAL: null (빈 데이터셋으로 새로 생성)
                 Dataset = isEmr ? ds : null,
+
+                // ★ 선배 코드 방식 - 바이트 직접 꺼내서 EUC-KR 디코딩 (한글 깨짐 방지)
+                RequestedProcedureDescription = DecodeEucKr(ds, DicomTag.RequestedProcedureDescription),
             };
+        }
+
+        /// <summary>
+        /// DICOM 태그 값을 바이트로 직접 꺼내서 EUC-KR 디코딩
+        /// fo-dicom이 문자열로 꺼내면 이미 깨진 상태라 바이트 직접 접근 필요
+        /// </summary>
+        private static string DecodeEucKr(DicomDataset dataset, DicomTag tag)
+        {
+            var bytes = dataset.GetDicomItem<DicomElement>(tag)?.Buffer?.Data;
+            if (bytes == null || bytes.Length == 0) return "";
+
+            // 0x80 미만 = ASCII 범위 → 그냥 ASCII로 디코딩
+            if (bytes.All(b => b < 0x80))
+                return Encoding.ASCII.GetString(bytes).Trim();
+
+            // 0x80 이상 바이트 있으면 EUC-KR로 디코딩
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            return Encoding.GetEncoding("EUC-KR").GetString(bytes).Trim();
         }
     }
 }

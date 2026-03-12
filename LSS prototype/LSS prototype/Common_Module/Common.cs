@@ -27,6 +27,7 @@ namespace LSS_prototype
         public static readonly string DB_INIT_PATH = Path.Combine(executablePath, "DB", "db_init.sql");
         public static readonly string DB_SEED_PATH = Path.Combine(executablePath, "DB", "seed.sql");
         public static string CurrentUserId = string.Empty;            // 현재 로그인한 ID 
+        public static string MwlDescriptionFilter = string.Empty;       // 현재 MWL FILTER 값 
 
 
         public const int DB_VERSION = 45; // DB Version 
@@ -62,6 +63,37 @@ namespace LSS_prototype
 
                 if (result != CustomMessageWindow.MessageBoxResult.Yes) return;
 
+                // 1. 타이머 정지 (세션 만료 체크 중단)
+                App.ActivityMonitor.Stop(); // 
+
+                // 2. 토큰 초기화
+                AuthToken.SignOut();
+
+                // 3. 세션 완전 종료 (열린 창 모두 닫기)
+                SessionStateManager.ClearSession();
+
+                // 4. 로그인 창 호출
+                var login = new Login_Page.Login();
+                login.Show();
+
+                // 5. 나머지 창 모두 닫기
+                foreach (Window window in Application.Current.Windows.OfType<Window>().ToList())
+                {
+                    if (!(window is Login_Page.Login))
+                        window.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
+
+
+        public static void ForceLogout()
+        {
+            try
+            {
                 // 1. 타이머 정지 (세션 만료 체크 중단)
                 App.ActivityMonitor.Stop(); // 
 
@@ -347,43 +379,65 @@ namespace LSS_prototype
     /// </summary>
     public static class Query
     {
-        public const string INSERT_DB_VERSION = "INSERT INTO DB_VERSION(version) VALUES (@version)"; // DB VERSION INSERT QUERY 
-        public const string SELECT_VERSION = "SELECT version FROM DB_VERSION"; // DB 버전 SELECT QUERY
-        public const string LOGIN_HASH_CHECK = "SELECT PASSWORD_HASH, PASSWORD_SALT,ROLE_CODE, PASSWORD_CHANGED_AT, USER_ID FROM USER WHERE LOGIN_ID = @loginId"; // 로그인 시 해싱및 솔트값 확인 쿼리문
-        public const string INSERT_PATIENT = "INSERT INTO PATIENT (PATIENT_NAME,PATIENT_CODE, BIRTH_DATE, SEX ) VALUES (@PatientName, @PatientCode, @BirthDate, @Sex)";
-        public const string SELECT_PATIENT_LIST = "SELECT * FROM PATIENT";
-        public const string INSERT_ADD_USER = "INSERT INTO USER(LOGIN_ID, PASSWORD_HASH,PASSWORD_SALT, USER_NAME, USER_ROLE, DEVICE_ID, ROLE_CODE)" +
-                                              " VALUES (@loginId, @hash, @salt, @userName, @userRole, @device_id, @role_code)"; // 사용자 추가
-        
-        public const string EDIT_PATIENT = "UPDATE PATIENT SET PATIENT_NAME = @PatientName, PATIENT_CODE= @PatientCode, BIRTH_DATE = @BirthDate, SEX = @Sex WHERE PATIENT_ID = @Patient_id";
-        public const string SELECT_PATIENTLIST = "SELECT * FROM PATIENT ORDER BY REG_DATE DESC"; // 최신순 데이터 
+        // ================================================
+        // DB 버전 관리  -  DB_Manager.cs
+        // ================================================
+        public const string INSERT_DB_VERSION = "INSERT INTO DB_VERSION(version) VALUES (@version)";
+        public const string SELECT_VERSION = "SELECT version FROM DB_VERSION";
+
+        // ================================================
+        // Login_Page  -  DB_Manager.User.cs / Login_Page
+        // ================================================
+        public const string LOGIN_HASH_CHECK = "SELECT PASSWORD_HASH, PASSWORD_SALT, ROLE_CODE, PASSWORD_CHANGED_AT, USER_ID FROM USER WHERE LOGIN_ID = @loginId";
+        public const string ADMIN_ID_SEARCH = "SELECT LOGIN_ID FROM USER WHERE ROLE_CODE='A'"; // 관리자 모드 체크박스 노출 여부 판단용
+
+        // ================================================
+        // User_Page  -  DB_Manager.User.cs
+        // ================================================
+        public const string SELECT_USERLIST = "SELECT USER_ID, USER_NAME, LOGIN_ID, USER_ROLE, ROLE_CODE FROM USER ORDER BY USER_ID ASC";
+        public const string SEARCH_USERID_NAME = "SELECT USER_ID, USER_NAME, LOGIN_ID, USER_ROLE, ROLE_CODE FROM USER WHERE USER_NAME LIKE @keyword OR LOGIN_ID LIKE @keyword ORDER BY USER_ID ASC";
+        public const string INSERT_ADD_USER = "INSERT INTO USER(LOGIN_ID, PASSWORD_HASH, PASSWORD_SALT, USER_NAME, USER_ROLE, DEVICE_ID, ROLE_CODE)" +
+                                                 " VALUES (@loginId, @hash, @salt, @userName, @userRole, @device_id, @role_code)";
+        public const string DELETE_USER ="DELETE FROM USER WHERE USER_ID = @user_id  AND (ROLE_CODE != 'A' OR (SELECT COUNT(*) FROM USER WHERE ROLE_CODE = 'A') >= 2)";
+        public const string DELEGATE_USER = "UPDATE USER SET ROLE_CODE = 'A' WHERE USER_ID = @user_id";                                                          // 관리자 권한 위임
+        public const string DISMISS_USER = "UPDATE USER SET ROLE_CODE = 'U' WHERE USER_ID = @user_id AND (SELECT COUNT(*) FROM USER WHERE ROLE_CODE = 'A') >= 2"; // 관리자 권한 해임 (관리자 2명 이상일 때만)
+
+        // ================================================
+        // ChangePasswordDialog  -  DB_Manager.User.cs
+        // ================================================
+        public const string PASSWORD_EDIT = "UPDATE USER SET password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @loginId";
+        public const string CREDENTIAL_EDIT_WITH_ROLE = "UPDATE USER SET login_id = @newId, password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate, USER_ROLE = @role WHERE login_id = @oldId"; // 최초 로그인 시 ID+PW+Role 동시 변경
+        public const string CREDENTIAL_EDIT= "UPDATE USER SET login_id = @newId, password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @oldId"; // 관리자가 USER 비밀번호 및 ID 변경 쿼리 
+        public const string ADMIN_UPDATE = "UPDATE USER SET password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate, login_id = @logiId WHERE login_id = @loginId";
+
+        // ================================================
+        // Patient_Page  -  DB_Manager.Patient.cs
+        // ================================================
+        public const string SELECT_PATIENTLIST = "SELECT * FROM PATIENT ORDER BY REG_DATE DESC";
+        public const string SEARCH_PATIENT = "SELECT PATIENT_ID, PATIENT_CODE, PATIENT_NAME, BIRTH_DATE, SEX, REG_DATE FROM PATIENT WHERE PATIENT_NAME LIKE @keyword OR PATIENT_CODE LIKE @keyword ORDER BY PATIENT_ID ASC";
+        public const string INSERT_PATIENT = "INSERT INTO PATIENT (PATIENT_NAME, PATIENT_CODE, BIRTH_DATE, SEX) VALUES (@PatientName, @PatientCode, @BirthDate, @Sex)";
+        public const string EDIT_PATIENT = "UPDATE PATIENT SET PATIENT_NAME = @PatientName, PATIENT_CODE = @PatientCode, BIRTH_DATE = @BirthDate, SEX = @Sex WHERE PATIENT_ID = @Patient_id";
         public const string DELETE_PATIENT = "DELETE FROM PATIENT WHERE PATIENT_ID = @Patient_id";
-        public const string SELECT_USERLIST = "SELECT USER_ID, USER_NAME, LOGIN_ID, USER_ROLE, ROLE_CODE FROM USER ORDER BY USER_ID ASC"; // 유저조회 쿼리문 
-        public const string ADMIN_ID_SEARCH = "SELECT LOGIN_ID FROM USER WHERE ROLE_CODE='A'"; // "A" 즉-> 관리자 권한을 가진 ID 조회 
-        public const string PATIENT_CODE_SEARCH = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode";
-        public const string PATIENT_CODE_SEARCHSELF = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND PATIENT_ID <> @Patient_id";
-        public const string PASSWORD_EDIT = @"UPDATE USER SET password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @loginId";// 비밀번호변경 쿼리문 
-        public const string ADMIN_UPDATE = @"UPDATE USER SET password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate, login_id = @logiId WHERE login_id = @loginId";// 어드민 로그인 정보 수정 쿼리문 
-        public const string CREDENTIAL_EDIT = @"UPDATE USER SET login_id = @newId, password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @oldId";
-        public const string SEARCH_USERID_NAME = @" SELECT USER_ID, USER_NAME, LOGIN_ID, USER_ROLE, ROLE_CODE FROM USER WHERE  USER_NAME LIKE @keyword OR  LOGIN_ID  LIKE @keyword ORDER BY USER_ID ASC";
-        public const string SEARCH_PATIENT = @" SELECT PATIENT_ID, PATIENT_CODE, PATIENT_NAME, BIRTH_DATE, SEX, REG_DATE FROM PATIENT WHERE PATIENT_NAME LIKE @keyword OR PATIENT_CODE LIKE @keyword ORDER BY PATIENT_ID ASC";
-        public const string DELETE_USER = @"DELETE FROM USER WHERE USER_ID = @user_id";
+        public const string PATIENT_CODE_SEARCH = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode";                                                  // 환자 코드 중복 체크
+        public const string PATIENT_CODE_SEARCHSELF = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND PATIENT_ID <> @Patient_id";                   // 수정 시 자기 자신 제외 중복 체크
 
-        //사용자 관리자 권한 위임, 해임 QEURY
-        public const string DELEGATE_USER = @"UPDATE USER SET ROLE_CODE ='A' WHERE USER_ID = @user_id";
-        public const string DISMISS_USER = "UPDATE USER SET ROLE_CODE = 'U' WHERE USER_ID = @user_id AND (SELECT COUNT(*) FROM USER WHERE ROLE_CODE = 'A') >= 2";
+        // ================================================
+        // User_Page > Default (카메라 기본값)  -  DB_Manager.Set.cs
+        // ================================================
+        public const string SELECT_DEFAULT = "SELECT EXPOSURE_TIME, GAIN, GAMMA, FOCUS, IRIS, ZOOM, FILTER FROM CAMERA_DEFAULT_SET";
+        public const string UPDATE_DEFAULT = "UPDATE CAMERA_DEFAULT_SET SET EXPOSURE_TIME=@ExposureTime, GAIN=@Gain, GAMMA=@Gamma," +
+                                             " FOCUS=@Focus, IRIS=@Iris, ZOOM=@Zoom, FILTER=@Filter";
 
-        // 카메라 기본값 QEURY
-        public const string SELECT_DEFAULT = "SELECT EXPOSURE_TIME, GAIN, GAMMA, FOCUS, IRIS, ZOOM, FILTER FROM CAMERA_DEFAULT_SET"; // 기본값 로드 
-        public const string UPDATE_DEFAULT ="UPDATE CAMERA_DEFAULT_SET SET EXPOSURE_TIME=@ExposureTime, GAIN=@Gain, GAMMA=@Gamma," + //기본값 변경 
-            " FOCUS=@Focus, IRIS=@Iris, ZOOM=@Zoom, FILTER=@Filter";
-
-        //PACS 셋팅  QEURY 
-        public const string SELECT_PACS ="SELECT * FROM PACS_SET LIMIT 1";
-        public const string UPDATE_HOSPITAL ="UPDATE PACS_SET SET HOSPITAL_NAME=@HospitalName";
-        public const string UPDATE_CSTORE ="UPDATE PACS_SET SET CSTORE_AET=@CStoreAET, CSTORE_IP=@CStoreIP, CSTORE_PORT=@CStorePort, CSTORE_MY_AET=@CStoreMyAET";
-        public const string UPDATE_MWL ="UPDATE PACS_SET SET MWL_AET=@MwlAET, MWL_IP=@MwlIP, MWL_PORT=@MwlPort, MWL_MY_AET=@MwlMyAET";
+        // ================================================
+        // User_Page > Setting (PACS 설정)  -  DB_Manager.Set.cs
+        // ================================================
+        public const string SELECT_PACS = "SELECT * FROM PACS_SET LIMIT 1";
+        public const string UPDATE_HOSPITAL = "UPDATE PACS_SET SET HOSPITAL_NAME=@HospitalName";
+        public const string UPDATE_CSTORE = "UPDATE PACS_SET SET CSTORE_AET=@CStoreAET, CSTORE_IP=@CStoreIP, CSTORE_PORT=@CStorePort, CSTORE_MY_AET=@CStoreMyAET";
+        public const string UPDATE_MWL = "UPDATE PACS_SET SET MWL_AET=@MwlAET, MWL_IP=@MwlIP, MWL_PORT=@MwlPort, MWL_MY_AET=@MwlMyAET";
+        public const string UPDATE_MWL_FILTER = "UPDATE PACS_SET SET MWL_DESCRIPTION_FILTER = @MwlDescriptionFilter";
     }
+}
 
     /// <summary>
     /// 버튼 중복 클릭 및 페이지 중복실행 막는 클래스 
@@ -482,4 +536,3 @@ namespace LSS_prototype
     }
 
 
-}

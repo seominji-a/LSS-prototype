@@ -227,6 +227,9 @@ namespace LSS_prototype.Login_Page
                     shell.NavigateTo(new Patient());
 
                 Common.CurrentUserId = UserId;
+                var pacsSet = new DB_Manager().GetPacsSet();
+                Common.MwlDescriptionFilter = pacsSet?.MwlDescriptionFilter ?? "";
+
                 App.ActivityMonitor.Start(shell); // ← 세션 관리 기능은 테스트때 잠시 주석 
                 CloseLoginWindow();
             }

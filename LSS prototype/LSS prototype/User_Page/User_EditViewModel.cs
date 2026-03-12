@@ -66,25 +66,19 @@ namespace LSS_prototype.User_Page
                 // 4. DB 업데이트 ( 경우의수 2가지 )
                 // 4-1. Master가 아닌 관리자 계정이 수정하는 경우 → 비밀번호만 변경
                 // 4-2. Master 계정이 수정하는 경우 → ID + 비밀번호 변경 가능
-                string masterId = Environment.GetEnvironmentVariable("MASTER_ID", EnvironmentVariableTarget.Machine);
-                bool isMaster = Common.CurrentUserId == masterId;
 
                 var db = new DB_Manager();
 
                 bool success;
 
-                if (isMaster) // 최고권한을 가진 ID 일 때 
+                if (CanEditId) // 최고권한을 가진 ID 일 때 ( Master ) 
                     success = db.UpdateCredential(OriginalLoginId, LoginId, newPassword);  // 기존ID, 새ID, 새PW
                 else
                     success = db.UpdatePassword(OriginalLoginId, newPassword);             // 기존ID, 새PW
 
                 if (success)
                 {
-                    string msg = isMaster
-                        ? "관리자 권한 로그인정보가 \n변경되었습니다."
-                        : "비밀번호가 변경되었습니다.";
-
-                    CustomMessageWindow.Show(msg,
+                    CustomMessageWindow.Show("사용자 정보가 변경되었습니다.",
                         CustomMessageWindow.MessageBoxType.AutoClose, 1,
                         CustomMessageWindow.MessageIconType.Info);
 

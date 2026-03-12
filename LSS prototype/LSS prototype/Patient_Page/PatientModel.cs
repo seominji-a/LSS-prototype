@@ -32,5 +32,8 @@ namespace LSS_prototype.Patient_Page
         public PatientSource Source { get; set; }
 
         public FellowOakDicom.DicomDataset Dataset { get; set; }
+
+        public string RequestedProcedureDescription { get; set; }
+
     }
 }

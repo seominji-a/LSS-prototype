@@ -203,7 +203,8 @@ namespace LSS_prototype.DB_CRUD
         }
 
 
-        //ADMIN 최초 로그인 후 ID.PW 변경 시 호출되는 함수 
+
+        // 비밀번호 변경함수 오버로딩 ( 사용자 관리화면에서 ADMIN 다른 아이디를 수정할 때 ) 
         public bool UpdateCredential(string oldId, string newId, string newPassword)
         {
             string passwordSalt = GenerateSalt();
@@ -225,6 +226,33 @@ namespace LSS_prototype.DB_CRUD
                 }
             }
         }
+
+
+        
+        //ADMIN 최초 로그인 후 ID.PW 변경 시 호출되는 함수 
+        public bool UpdateCredential(string oldId, string newId, string newPassword, string role)
+        {
+            string passwordSalt = GenerateSalt();
+            string passwordHash = GenerateHash(newPassword, passwordSalt);
+
+            using (var conn = new SQLiteConnection("Data Source=" + Common.DB_PATH))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(conn))
+                {
+                    cmd.CommandText = Query.CREDENTIAL_EDIT_WITH_ROLE;
+                    cmd.Parameters.AddWithValue("@oldId", oldId);
+                    cmd.Parameters.AddWithValue("@newId", newId);
+                    cmd.Parameters.AddWithValue("@hash", passwordHash);
+                    cmd.Parameters.AddWithValue("@salt", passwordSalt);
+                    cmd.Parameters.AddWithValue("@role", role);
+                    cmd.Parameters.AddWithValue("@password_changedDate", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                    int result = cmd.ExecuteNonQuery();
+                    return result == 1;
+                }
+            }
+        }
+
 
         public bool DelegateUser(int user_id)
         {

@@ -158,16 +158,14 @@ namespace LSS_prototype.User_Page
                     return;
                 }
 
-                if (SelectedUser.UserRole == "ADMIN")
-                {
-                    CustomMessageWindow.Show("최초로 설정된 관리자\n계정은 해임 불가합니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Info);
-                    return;
-                }
+
+                string msg = SelectedUser.LoginId == Common.CurrentUserId
+                     ? $"자신({SelectedUser.LoginId})의 관리자 권한을\n해임하시겠습니까?\n로그인 페이지로 이동합니다."
+                     : $"{SelectedUser.UserName} 사용자의 관리자 권한을\n해임하시겠습니까?";
+
 
                 var result = CustomMessageWindow.Show(
-                        $"{SelectedUser.UserName} 사용자에게 관리자 권한을\n해임하시겠습니까?",
+                        msg,
                         CustomMessageWindow.MessageBoxType.YesNo,
                         0,
                         CustomMessageWindow.MessageIconType.Info);
@@ -179,9 +177,12 @@ namespace LSS_prototype.User_Page
                     if (success)
                     {
                         CustomMessageWindow.Show($"{SelectedUser.UserName} 관리자 해임",
-                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageBoxType.AutoClose, 2,
                             CustomMessageWindow.MessageIconType.Info);
-                        LoadUsers();
+                        if (SelectedUser.LoginId == Common.CurrentUserId)
+                            Common.ForceLogout();
+                        else
+                            LoadUsers();
                     }
                     else
                     {
@@ -216,15 +217,6 @@ namespace LSS_prototype.User_Page
 
                 bool isMaster = Common.CurrentUserId == masterId; 
                 
-
-                if (!isMaster && SelectedUser.UserRole.ToString() == "ADMIN") // 최고권한일땐, 관리자계정도 수정가능 
-                {
-                    CustomMessageWindow.Show("최초 설정된 관리자계정은 변경 불가능합니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                        CustomMessageWindow.MessageIconType.Warning);
-                    return;
-                }
-
 
                 var vm = new User_EditViewModel(SelectedUser, isMaster);
                 var result = _dialogService.ShowDialog(vm);
@@ -326,20 +318,12 @@ namespace LSS_prototype.User_Page
                     return;
                 }
 
-                if (SelectedUser.UserRole.ToString() == "ADMIN")
-                {
-                    CustomMessageWindow.Show("최초 설정된 관리자계정은 삭제 불가능합니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                        CustomMessageWindow.MessageIconType.Warning);
-                    return;
-                }
+                string msg = SelectedUser.LoginId == Common.CurrentUserId
+                    ? $"자신({SelectedUser.LoginId})을 정말 삭제하시겠습니까?\n되돌릴 수 없는 명령입니다.\n로그인 페이지로 이동합니다."
+                    : $"{SelectedUser.UserName} 사용자를 정말 삭제하시겠습니까?\n되돌릴 수 없는 명령입니다.";
 
+                var result = CustomMessageWindow.Show(msg, CustomMessageWindow.MessageBoxType.YesNo, 0, CustomMessageWindow.MessageIconType.Info);
 
-                var result = CustomMessageWindow.Show(
-                    $"{SelectedUser.UserName} 사용자를 정말 삭제하시겠습니까?\n되돌릴 수 없는 명령입니다.",
-                    CustomMessageWindow.MessageBoxType.YesNo,
-                    0,
-                    CustomMessageWindow.MessageIconType.Warning);
 
                 if (result == CustomMessageWindow.MessageBoxResult.Yes)
                 {
@@ -348,10 +332,20 @@ namespace LSS_prototype.User_Page
 
                     if (success)
                     {
-                        CustomMessageWindow.Show("삭제되었습니다.",
-                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.Show($"{SelectedUser.UserName} 삭제",
+                            CustomMessageWindow.MessageBoxType.AutoClose, 2,
                             CustomMessageWindow.MessageIconType.Info);
-                        LoadUsers();
+
+                        if (SelectedUser.LoginId == Common.CurrentUserId)
+                            Common.ForceLogout();
+                        else
+                            LoadUsers();
+                    }
+                    else
+                    {
+                        CustomMessageWindow.Show("최소 1명의 관리자는 유지되어야 합니다.",
+                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageIconType.Warning);
                     }
                 }
             }

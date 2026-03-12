@@ -1,4 +1,4 @@
-﻿using FellowOakDicom;
+using FellowOakDicom;
 using LSS_prototype.Common_Module;
 using LSS_prototype.DB_CRUD;
 using LSS_prototype.Dicom_Module;

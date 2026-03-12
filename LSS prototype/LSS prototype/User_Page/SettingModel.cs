@@ -22,5 +22,6 @@ namespace LSS_prototype.User_Page
         public string MwlIP { get; set; }
         public int MwlPort { get; set; }
         public string MwlMyAET { get; set; }
+        public string MwlDescriptionFilter { get; set; }
     }
 }

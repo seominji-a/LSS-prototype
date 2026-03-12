@@ -68,7 +68,7 @@ namespace LSS_prototype.User_Page
                 return;
             }
 
-            //3. 검증 함수 ( 테스트 기간동안은 잠시 주석 ) 
+            //3. 검증 함수 
             string error = DB_Manager.ValidatePassword(password);
             if (error != null)
             {
@@ -95,12 +95,15 @@ namespace LSS_prototype.User_Page
             }
             catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Constraint)
             {
-                Common.WriteLog(ex);
+                CustomMessageWindow.Show("이미 사용중인 ID입니다.",
+                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    CustomMessageWindow.MessageIconType.Warning);
             }
             catch (Exception ex)
             {
                 Common.WriteLog(ex);
             }
+
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

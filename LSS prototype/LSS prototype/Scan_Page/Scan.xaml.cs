@@ -27,7 +27,7 @@ namespace LSS_prototype.Scan_Page
         public Scan(PatientModel selectedPatient, string seriesNumber = null, int instanceIndex = 0)
         {
             InitializeComponent();       
-            DataContext = new ScanViewModel(selectedPatient, seriesNumber, instanceIndex);
+            DataContext = new ScanViewModel(selectedPatient, seriesNumber);
             Unloaded += (s, e) => (DataContext as ScanViewModel)?.Dispose();
         }
 

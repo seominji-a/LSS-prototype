@@ -283,7 +283,17 @@ namespace LSS_prototype.ImageComment_Page
         // ═══════════════════════════════════════════
         private void Back_Click(object sender, RoutedEventArgs e)
         {
-            try { MainPage.Instance.NavigateTo(new Scan_Page.Scan(_patient, _seriesNumber, _instanceIndex)); }
+            try
+            {
+                // 드로잉이 있으면 저장 여부 확인 
+                if (_isDirty)
+                {
+                    bool save = VM.ConfirmSaveDrawing();
+                    if (save) VM.SaveIsf(DrawingCanvas.Strokes);
+                }
+
+                MainPage.Instance.NavigateTo(new Scan_Page.Scan(_patient, _seriesNumber, _instanceIndex));
+            }
             catch (Exception ex) { Common.WriteLog(ex); }
         }
     }

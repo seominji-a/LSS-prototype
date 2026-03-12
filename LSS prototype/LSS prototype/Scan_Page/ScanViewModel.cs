@@ -227,6 +227,8 @@ namespace LSS_prototype.Scan_Page
             //프레임 도착 전, 카메라 준비 상태 사용자에게 확인 목적-카메라 연결 시작을 의미
             CameraStatus = "Camera Initializing...";
 
+            //Scan 진입 시 주사시간 확인
+            //InitializeInjectionInfo();
             ConnectCamera();
 
             ZoomIncCommand = new RelayCommand(OnZoomInc);
@@ -429,9 +431,13 @@ namespace LSS_prototype.Scan_Page
         {
             string patientFolderName = $"{name}_{code}";
 
+            // studyID 앞 8자리 = yyyyMMdd
+            string studyDateFolder = studyID.Substring(0, 8);
+
             string rootDir = Path.Combine(Common.executablePath, "DICOM");
             string patientDir = Path.Combine(rootDir, patientFolderName);
-            string studyDir = Path.Combine(patientDir, studyID);
+            string dateDir = Path.Combine(patientDir, studyDateFolder);
+            string studyDir = Path.Combine(dateDir, studyID);
             string seriesDir = Path.Combine(studyDir, seriesNumber);
 
             Directory.CreateDirectory(seriesDir);
@@ -470,7 +476,14 @@ namespace LSS_prototype.Scan_Page
 
             string today = DateTime.Now.ToString("yyyyMMdd");
 
-            foreach (string dir in Directory.GetDirectories(patientDir))
+            // 새 구조:
+            // DICOM / 환자폴더 / yyyyMMdd / studyID
+            string todayDir = Path.Combine(patientDir, today);
+
+            if (!Directory.Exists(todayDir))
+                return result;
+
+            foreach (string dir in Directory.GetDirectories(todayDir))
             {
                 string folderName = Path.GetFileName(dir);
 
@@ -739,6 +752,8 @@ namespace LSS_prototype.Scan_Page
 
         private void NavigateToPatient() =>
             MainPage.Instance.NavigateTo(new Patient_Page.Patient());
+
+
 
         // ─────────────────────────────────────────────
         // Dispose

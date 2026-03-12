@@ -69,7 +69,7 @@ namespace LSS_prototype.Dicom_Module
                     { DicomTag.StudyDate,                     ""  }, // (0008,0020) 반환 요청
                     { DicomTag.PatientBirthDate,              ""  }, // (0010,0030) 반환 요청
                     { DicomTag.PatientSex,                    ""  }, // (0010,0040) 반환 요청
-                    { DicomTag.AccessionNumber,               ""  }, // (0008,0050) 반환 요청 ★ EMR/LOCAL 구분 기준
+                    { DicomTag.AccessionNumber,               ""  }, // (0008,0050) 반환 요청 EMR/LOCAL 구분 기준
                     { DicomTag.RequestedProcedureDescription, ""  }, // (0032,1060) 반환 요청
                 }
             };
@@ -78,11 +78,11 @@ namespace LSS_prototype.Dicom_Module
         /// <summary>
         /// C-FIND 응답 Dataset을 PatientModel로 변환합니다.
         ///
-        /// ★ EMR/LOCAL 구분 기준:
+        /// EMR/LOCAL 구분 기준:
         ///   AccessionNumber != "" → EMR 환자 (병원 RIS 접수번호 존재)
         ///   AccessionNumber == "" → LOCAL 환자 (접수번호 없음)
         ///
-        /// ★ Dataset 필드:
+        /// Dataset 필드:
         ///   Save_Click에서 DicomManager(HID, Serial, Dataset) 생성자에 전달하여
         ///   MWL 원본 태그(AccessionNumber, StudyInstanceUID 등)를 보존하기 위해 보관.
         ///   JSON 직렬화 시에는 [JsonIgnore] 처리 필요.
@@ -112,7 +112,7 @@ namespace LSS_prototype.Dicom_Module
 
                 Sex = ds.GetSingleValueOrDefault(DicomTag.PatientSex, ""),
 
-                // ★ EMR/LOCAL 구분의 핵심 컬럼
+                // EMR/LOCAL 구분의 핵심 컬럼
                 AccessionNumber = accNum,                     // EMR: RIS 접수번호 / LOCAL: ""
 
                 // 화면 표시용 (DB 저장 안 함)
@@ -121,7 +121,7 @@ namespace LSS_prototype.Dicom_Module
                                ? PatientSource.EmrImported
                                : PatientSource.Local,
 
-                // ★ Save_Click에서 DicomManager(HID, Serial, Dataset) 생성자에 전달용
+                // Save_Click에서 DicomManager(HID, Serial, Dataset) 생성자에 전달용
                 // EMR: MWL 원본 태그 전체 보관 → 저장 시 AccessionNumber 등 서버값 유지
                 // LOCAL: null (빈 데이터셋으로 새로 생성)
                 Dataset = isEmr ? ds : null,

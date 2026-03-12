@@ -155,7 +155,8 @@ namespace LSS_prototype.Scan_Page
         public bool IsCameraInitializing => CameraStatus == "Camera Initializing...";
 
         private string _currentStudyId;
-        private string _currentSeriesNumber;
+        // DICOM용 숫자 시리즈 번호는 _currentSeriesIndex 사용
+        private string _currentSeriesFolderName;
         private int _currentSeriesIndex = 0;
         private int _currentInstanceIndex = 0;
 
@@ -201,13 +202,16 @@ namespace LSS_prototype.Scan_Page
         public ICommand ImageCommentCommand { get; }
 
 
-        public ScanViewModel(PatientModel selectedPatient, string seriesNumber = null)
+        public ScanViewModel(PatientModel selectedPatient, string seriesFolderName = null)
         {
             SelectedPatient = selectedPatient;
-            _currentSeriesNumber = seriesNumber?? GenerateSeriesNumber(SelectedPatient.PatientId.ToString());
+
+            // 코멘트/리뷰에서 다시 돌아왔을 때 기존 폴더명 유지
+            _currentSeriesFolderName = seriesFolderName;
             // 시리얼 넘버가없으면 새로생성, 있으면 그대로 사용( 코멘트나 리뷰페이지에서 넘어온 경우 ) 
-            // 위 코드추가한이유 -> 커멘트 페이지에서 -> 다시 scan으로 넘어왔을때, 기존 시리얼넘버값을 그대로 유지하기위해 
-            
+            // seriesNumber가 있으면 그대로 유지
+            //seriesNumber가 없으면 나중에 StartNewStudy() → StartNewSeries()에서 생성
+
             NavigatePatientCommand = new RelayCommand(NavigateToPatient);
             LogoutCommand = new RelayCommand(Common.ExecuteLogout);
             ExitCommand = new RelayCommand(Common.ExcuteExit);
@@ -342,11 +346,27 @@ namespace LSS_prototype.Scan_Page
                         SelectedPatient.PatientCode.ToString()
                     );
 
-                    StartNewStudy(studyId);
+                    bool exists = IsExistingStudy(
+                        SelectedPatient.PatientName,
+                        SelectedPatient.PatientCode.ToString(),
+                        studyId
+                    );
+
+                    if (exists)
+                        ResumeStudy(studyId);
+                    else
+                        StartNewStudy(studyId);
                 }
 
                 String studyID = _currentStudyId;
-                string seriesNumber = _currentSeriesNumber;
+                // 폴더명 없으면 새 시리즈 생성
+                if (string.IsNullOrEmpty(_currentSeriesFolderName))
+                {
+                    StartNewSeries();
+                }
+
+                string dicomSeriesNumber = _currentSeriesIndex.ToString();
+                string seriesFolderName = _currentSeriesFolderName;
 
                 _currentInstanceIndex++;
                 int instanceIndex = _currentInstanceIndex;
@@ -362,20 +382,20 @@ namespace LSS_prototype.Scan_Page
                 );
 
                 dm.SetSeries(
-                    seriesNumber,
+                    dicomSeriesNumber,
                     "",
                     date,
                     time
                 );
 
-                dm.SetContent(seriesNumber, date, time, instanceIndex.ToString());
+                dm.SetContent(dicomSeriesNumber, date, time, instanceIndex.ToString());
                 dm.SetPrivateDataElement(exposure, gain, gamma);
 
                 string path = GenerateSavePath(
                         SelectedPatient.PatientName,
                         SelectedPatient.PatientCode.ToString(),
                         studyID,
-                        seriesNumber,
+                        seriesFolderName,
                         instanceIndex
                         );
 
@@ -406,28 +426,17 @@ namespace LSS_prototype.Scan_Page
         /// <summary>
         /// 시리즈 번호 생성: 환자ID 기반
         /// </summary>
-        private string GenerateSeriesNumber(string patientId)
+        // 폴더명 생성용
+        private string GenerateSeriesFolderName()
         {
-            string numericId = new string(patientId.Where(char.IsDigit).ToArray());
-
-            if (string.IsNullOrWhiteSpace(numericId))
-                numericId = "1";
-
-            if (numericId.Length >= 4)
-                numericId = numericId.Substring(numericId.Length - 4);
-
-            numericId = numericId.TrimStart('0');
-            if (string.IsNullOrEmpty(numericId))
-                numericId = "1";
-
-            return numericId + DateTime.Now.ToString("HHmmss");
+            return $"{_currentStudyId}_{_currentSeriesIndex:D2}";
         }
 
         /// <summary>
         /// DICOM 파일 저장 경로 생성
         /// 예: (exe 위치)\DICOM\홍길동_1234_12340001_0.dcm
         /// </summary>
-        private string GenerateSavePath(string name, string code, string studyID, string seriesNumber, int instanceIndex)
+        private string GenerateSavePath(string name, string code, string studyID, string seriesFolderName, int instanceIndex)
         {
             string patientFolderName = $"{name}_{code}";
 
@@ -438,11 +447,11 @@ namespace LSS_prototype.Scan_Page
             string patientDir = Path.Combine(rootDir, patientFolderName);
             string dateDir = Path.Combine(patientDir, studyDateFolder);
             string studyDir = Path.Combine(dateDir, studyID);
-            string seriesDir = Path.Combine(studyDir, seriesNumber);
+            string seriesDir = Path.Combine(studyDir, seriesFolderName);
 
             Directory.CreateDirectory(seriesDir);
 
-            string fileName = $"{patientFolderName}_{seriesNumber}_{instanceIndex}.dcm";
+            string fileName = $"{patientFolderName}_{seriesFolderName}_{instanceIndex}.dcm";
             return Path.Combine(seriesDir, fileName);
         }
 
@@ -567,18 +576,76 @@ namespace LSS_prototype.Scan_Page
         {
             _currentStudyId = studyId;
             _currentSeriesIndex = 0;
-            StartNewSeries();
+            _currentSeriesFolderName = null;
+            _currentInstanceIndex = 0;
         }
 
+        /// <summary>
+        /// 향후 개발 관련 사항
+        /// colormap 변경, filter 변경, 촬영 모드 변경, 새 촬영 시작에 맞춰 폴더명 변경 필수!
+        /// </summary>
         private void StartNewSeries()
         {
             _currentSeriesIndex++;
+            _currentSeriesFolderName = GenerateSeriesFolderName();
+            _currentInstanceIndex = 0;
+        }
 
-            string patientId = "1";
-            if (SelectedPatient != null)
-                patientId = SelectedPatient.PatientId.ToString();
+        private bool IsExistingStudy(string patientName, string patientCode, string studyId)
+        {
+            string patientFolderName = $"{patientName}_{patientCode}";
+            string studyDateFolder = studyId.Substring(0, 8);
 
-            _currentSeriesNumber = GenerateSeriesNumber(patientId);
+            string rootDir = Path.Combine(Common.executablePath, "DICOM");
+            string studyDir = Path.Combine(rootDir, patientFolderName, studyDateFolder, studyId);
+
+            return Directory.Exists(studyDir);
+        }
+
+        private int GetLastSeriesIndex(string patientName, string patientCode, string studyId)
+        {
+            string patientFolderName = $"{patientName}_{patientCode}";
+            string studyDateFolder = studyId.Substring(0, 8);
+
+            string rootDir = Path.Combine(Common.executablePath, "DICOM");
+            string studyDir = Path.Combine(rootDir, patientFolderName, studyDateFolder, studyId);
+
+            if (!Directory.Exists(studyDir))
+                return 0;
+
+            int maxIndex = 0;
+
+            foreach (string dir in Directory.GetDirectories(studyDir))
+            {
+                string folderName = Path.GetFileName(dir);
+
+                if (!folderName.StartsWith(studyId + "_"))
+                    continue;
+
+                string suffix = folderName.Substring((studyId + "_").Length);
+
+                int idx;
+                if (int.TryParse(suffix, out idx))
+                {
+                    if (idx > maxIndex)
+                        maxIndex = idx;
+                }
+            }
+
+            return maxIndex;
+        }
+
+        private void ResumeStudy(string studyId)
+        {
+            _currentStudyId = studyId;
+
+            _currentSeriesIndex = GetLastSeriesIndex(
+                SelectedPatient.PatientName,
+                SelectedPatient.PatientCode.ToString(),
+                studyId
+            );
+
+            _currentSeriesFolderName = null;
             _currentInstanceIndex = 0;
         }
 
@@ -590,7 +657,7 @@ namespace LSS_prototype.Scan_Page
 
         private void OpenImageComment()
         {
-            MainPage.Instance.NavigateTo(new ImageComment_Page.ImageComment(SelectedPatient, _currentSeriesNumber));
+            MainPage.Instance.NavigateTo(new ImageComment_Page.ImageComment(SelectedPatient, _currentSeriesFolderName));
         }
 
         private void ResetValue()

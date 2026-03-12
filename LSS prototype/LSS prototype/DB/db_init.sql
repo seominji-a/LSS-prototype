@@ -73,17 +73,18 @@ CREATE TABLE CAMERA_DEFAULT_SET (
 -- ================================================
 CREATE TABLE PACS_SET (
     -- 병원 정보
-    HOSPITAL_NAME   TEXT    NOT NULL,
+    HOSPITAL_NAME                   TEXT    NOT NULL,
 
     -- C-STORE
-    CSTORE_AET      TEXT    NOT NULL,
-    CSTORE_IP       TEXT    NOT NULL,
-    CSTORE_PORT     INTEGER NOT NULL,
-    CSTORE_MY_AET   TEXT    NOT NULL,
+    CSTORE_AET                      TEXT    NOT NULL,
+    CSTORE_IP                       TEXT    NOT NULL,
+    CSTORE_PORT                     INTEGER NOT NULL,
+    CSTORE_MY_AET                   TEXT    NOT NULL,
 
     -- MWL
-    MWL_AET         TEXT    NOT NULL,
-    MWL_IP          TEXT    NOT NULL,
-    MWL_PORT        INTEGER NOT NULL,
-    MWL_MY_AET      TEXT    NOT NULL
+    MWL_AET                         TEXT    NOT NULL,
+    MWL_IP                          TEXT    NOT NULL,
+    MWL_PORT                        INTEGER NOT NULL,
+    MWL_MY_AET                      TEXT    NOT NULL,
+     MWL_DESCRIPTION_FILTER         TEXT
 );

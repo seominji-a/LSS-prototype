@@ -18,6 +18,10 @@ namespace LSS_prototype.Common_Module
             if (value is bool)
                 flag = (bool)value;
 
+            // parameter="Inverse" 이면 반전
+            if (parameter is string p && p == "Inverse")
+                flag = !flag;
+
             return flag ? Visibility.Visible : Visibility.Collapsed;
         }
 

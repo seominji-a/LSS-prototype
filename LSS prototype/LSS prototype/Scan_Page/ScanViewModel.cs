@@ -267,6 +267,87 @@ namespace LSS_prototype.Scan_Page
         // DICOM 저장
         // ─────────────────────────────────────────────
 
+        // ═══════════════════════════════════════════
+        //  촬영 전 유효성 검사
+        //  카메라 상태, 프레임 준비 여부, 환자 선택 여부 확인
+        //  문제 있으면 false 반환 + 팝업 표시
+        // ═══════════════════════════════════════════
+        private bool CaptureValidation()
+        {
+            if (SelectedPatient == null)
+            {
+                CustomMessageWindow.Show("환자를 먼저 선택해주세요.",
+                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    CustomMessageWindow.MessageIconType.Warning);
+                return false;
+            }
+
+            if (CameraStatus == "Camera Disconnected")
+            {
+                CustomMessageWindow.Show("카메라가 연결되어 있지 않습니다.",
+                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    CustomMessageWindow.MessageIconType.Warning);
+                return false;
+            }
+
+            if (!_isFrameReady)
+            {
+                CustomMessageWindow.Show("카메라 영상이 \n 아직 준비되지 않았습니다.",
+                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    CustomMessageWindow.MessageIconType.Warning);
+                return false;
+            }
+
+            return true;
+        }
+
+        // ═══════════════════════════════════════════
+        //  StudyID 결정
+        //  _currentStudyId 없으면 → ResolveStudyId() 로 확정
+        //  _currentStudyId 있지만 instanceIndex 가 0 이면
+        //  → Comment/Review 에서 돌아온 경우이므로 마지막 인덱스 복원
+        // ═══════════════════════════════════════════
+        private void EnsureStudyReady()
+        {
+            if (string.IsNullOrEmpty(_currentStudyId))
+            {
+                // 처음 촬영 → StudyID 결정
+                string studyId = ResolveStudyId(
+                    SelectedPatient.PatientName,
+                    SelectedPatient.PatientCode.ToString()
+                );
+
+                bool exists = IsExistingStudy(
+                    SelectedPatient.PatientName,
+                    SelectedPatient.PatientCode.ToString(),
+                    studyId
+                );
+
+                if (exists)
+                    ResumeStudy(studyId);   // 기존 StudyID → 마지막 인덱스 복원 ( 프로그램을 껐다키거나, Comment,Review를 제외한 다른페이지에서 머물렀다 오는 경우 ) 
+                else
+                    StartNewStudy(studyId); // 새 StudyID → 인덱스 0 으로 시작
+            }
+            else if (_currentInstanceIndex == 0) 
+            {
+                // StudyID 는 있지만 인덱스가 0
+                // → Comment/Review 에서 돌아온 경우
+                // → 마지막 인덱스 복원
+                _currentInstanceIndex = GetLastInstanceIndex(
+                    SelectedPatient.PatientName,
+                    SelectedPatient.PatientCode.ToString(),
+                    _currentStudyId
+                );
+                Console.WriteLine($"> instanceIndex 복원: {_currentInstanceIndex}");
+            }
+        }
+
+        // ═══════════════════════════════════════════
+        //  이미지 캡처 및 DICOM 저장
+        //  1) 유효성 검사 (CaptureValidation)
+        //  2) StudyID / instanceIndex 확정 (EnsureStudyReady)
+        //  3) 프레임 캡처 → DICOM 변환 → 저장
+        // ═══════════════════════════════════════════
         private async Task CaptureAndSaveDicomAsync()
         {
             System.Drawing.Bitmap bitmap = null;
@@ -274,32 +355,11 @@ namespace LSS_prototype.Scan_Page
 
             try
             {
-                if (SelectedPatient == null)
-                {
-                    CustomMessageWindow.Show("환자를 먼저 선택해주세요.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
-                    return;
-                }
+                //  유효성 검사
+                if (!CaptureValidation()) return;
 
-                if (CameraStatus == "Camera Disconnected")
-                {
-                    CustomMessageWindow.Show("카메라가 연결되어 있지 않습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
-                    return;
-                }
-
-                if (!_isFrameReady)
-                {
-                    CustomMessageWindow.Show("카메라 영상이 \n 아직 준비되지 않았습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
-                    return;
-                }
-
+                //  프레임 캡처
                 frame = _cameraService.GetCurrentFrame();
-
                 if (frame == null || frame.Empty())
                 {
                     CustomMessageWindow.Show("촬영할 이미지가 없습니다.",
@@ -313,13 +373,6 @@ namespace LSS_prototype.Scan_Page
                 string date = DateTime.Now.ToString("yyyyMMdd");
                 string time = DateTime.Now.ToString("HHmmss");
 
-                // 촬영 세션 동안 고정
-                //string seriesNumber = _currentSeriesNumber;
-
-                // 촬영할 때마다 1 증가
-                //_currentInstanceIndex++;
-                //int instanceIndex = _currentInstanceIndex;
-
                 string accessionNumber = (SelectedPatient.Dataset != null)
                     ? SelectedPatient.Dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, "")
                     : "";
@@ -332,11 +385,18 @@ namespace LSS_prototype.Scan_Page
                 var setting = db.GetPacsSet();
                 string hospName = setting?.HospitalName ?? "";
 
-                string serialNumber = "00000001";
+                //  StudyID / instanceIndex 확정
+                EnsureStudyReady();
 
+                //  instanceIndex 증가
+                _currentInstanceIndex++;
+                int instanceIndex = _currentInstanceIndex;
+
+                //  DicomManager 생성
+                // EMR 환자면 기존 Dataset 유지, LOCAL 환자면 새로 생성
                 DicomManager dm = (SelectedPatient.Dataset == null)
-                    ? new DicomManager(SelectedPatient.PatientId.ToString(), serialNumber)
-                    : new DicomManager(SelectedPatient.PatientId.ToString(), serialNumber, SelectedPatient.Dataset);
+                    ? new DicomManager(SelectedPatient.PatientId.ToString(), "00000001")
+                    : new DicomManager(SelectedPatient.PatientId.ToString(), "00000001", SelectedPatient.Dataset);
 
                 dm.SetPatient(
                     SelectedPatient.PatientCode.ToString(),
@@ -346,59 +406,18 @@ namespace LSS_prototype.Scan_Page
                     CalculateAge(SelectedPatient.BirthDate).ToString()
                 );
 
-                if (string.IsNullOrEmpty(_currentStudyId))
-                {
-                    string studyId = ResolveStudyId(
-                        SelectedPatient.PatientName,
-                        SelectedPatient.PatientCode.ToString()
-                    );
-
-                    bool exists = IsExistingStudy(
-                        SelectedPatient.PatientName,
-                        SelectedPatient.PatientCode.ToString(),
-                        studyId
-                    );
-
-                    if (exists)
-                        ResumeStudy(studyId);
-                    else
-                        StartNewStudy(studyId);
-                }
-
-                String studyID = _currentStudyId;
-                // 폴더명 없으면 새 시리즈 생성
-                _currentInstanceIndex++;
-                int instanceIndex = _currentInstanceIndex;
-
-                string dicomSeriesNumber = "1";
-
-                
-
-                dm.SetStudy(
-                    studyID,
-                    accessionNumber,
-                    date,
-                    time,
-                    "",
-                    hospName,
-                    ""
-                );
-
-                dm.SetSeries(
-                    dicomSeriesNumber,
-                    "",
-                    date,
-                    time
-                );
-
-                dm.SetContent(dicomSeriesNumber, date, time, instanceIndex.ToString());
+                dm.SetStudy(_currentStudyId, accessionNumber, date, time, "", hospName, "");
+                dm.SetSeries("1", "", date, time);
+                dm.SetContent("1", date, time, instanceIndex.ToString());
                 dm.SetPrivateDataElement(exposure, gain, gamma);
 
+                //  경로 생성 및 저장
+                // DICOM/박한용_2634/20250313/202503130001/Image/박한용_2634_202503130001_1.dcm
                 string path = GenerateSavePath(
-                SelectedPatient.PatientName,
-                SelectedPatient.PatientCode.ToString(),
-                studyID,
-                instanceIndex
+                    SelectedPatient.PatientName,
+                    SelectedPatient.PatientCode.ToString(),
+                    _currentStudyId,
+                    instanceIndex
                 );
 
                 await dm.SaveImageFile(path, bitmap);
@@ -416,6 +435,7 @@ namespace LSS_prototype.Scan_Page
             }
             finally
             {
+                // 사용한 리소스 반드시 해제
                 frame?.Dispose();
                 bitmap?.Dispose();
             }
@@ -425,33 +445,41 @@ namespace LSS_prototype.Scan_Page
         // 헬퍼 메서드
         // ─────────────────────────────────────────────
 
-        /// <summary>
-        /// 시리즈 번호 생성: 환자ID 기반
-        /// </summary>
-        // 폴더명 생성용
-        /*private string GenerateSeriesFolderName()
-        {
-            return $"{_currentStudyId}_{_currentSeriesIndex:D2}";
-        }*/
 
-        /// <summary>
-        /// DICOM 파일 저장 경로 생성
-        /// 예: (exe 위치)\DICOM\홍길동_1234_12340001_0.dcm
-        /// </summary>
+        //DICOM/
+        //    └── 박한용_2634/
+        //        └── 20250313/
+        //            └── 202503130001/
+        //                ├── Image/
+        //                │   ├── 박한용_2634_202503130001_1.dcm
+        //                │   └── 박한용_2634_202503130001_2.dcm ← 일반 촬영 
+        //                └── Video/
+        //                    └── 박한용_2634_202503130001_1.dcm  ← 동영상 DCM
+        // 변경 - Image 폴더 추가
         private string GenerateSavePath(string name, string code, string studyID, int instanceIndex)
         {
+            // 환자 폴더명 생성 (예: 박한용_2634)
             string patientFolderName = $"{name}_{code}";
+
+            // StudyID 앞 8자리 = 날짜 폴더명 (예: 202503130001 → 20250313)
             string studyDateFolder = studyID.Substring(0, 8);
 
+            // DICOM 루트 경로 (exe 위치/DICOM)
             string rootDir = Path.Combine(Common.executablePath, "DICOM");
-            string patientDir = Path.Combine(rootDir, patientFolderName);
-            string dateDir = Path.Combine(patientDir, studyDateFolder);
-            string studyDir = Path.Combine(dateDir, studyID);
 
-            Directory.CreateDirectory(studyDir);
+            // 최종 Image 폴더 경로
+            // DICOM/박한용_2634/20250313/202503130001/Image/
+            string imageDir = Path.Combine(rootDir, patientFolderName, studyDateFolder, studyID, "Image");
 
+            // Image 폴더 없으면 자동 생성
+            Directory.CreateDirectory(imageDir);
+
+            // 파일명 생성 (예: 박한용_2634_202503130001_1.dcm)
             string fileName = $"{patientFolderName}_{studyID}_{instanceIndex}.dcm";
-            return Path.Combine(studyDir, fileName);
+
+            // 최종 전체 경로 반환
+            // DICOM/박한용_2634/20250313/202503130001/Image/박한용_2634_202503130001_1.dcm
+            return Path.Combine(imageDir, fileName);
         }
 
         /// <summary>
@@ -583,7 +611,7 @@ namespace LSS_prototype.Scan_Page
             string studyDateFolder = studyId.Substring(0, 8);
 
             string rootDir = Path.Combine(Common.executablePath, "DICOM");
-            string studyDir = Path.Combine(rootDir, patientFolderName, studyDateFolder, studyId);
+            string studyDir = Path.Combine(rootDir, patientFolderName, studyDateFolder, studyId, "Image");
 
             if (!Directory.Exists(studyDir))
                 return 0;
@@ -671,7 +699,8 @@ namespace LSS_prototype.Scan_Page
                     "DICOM",
                     patientFolderName,
                     studyDateFolder,
-                    _currentStudyId
+                    _currentStudyId,
+                    "image"
                 );
 
                 if (!Directory.Exists(studyDir))

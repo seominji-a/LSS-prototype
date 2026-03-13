@@ -20,28 +20,42 @@ namespace LSS_prototype.ImageComment_Page
         //  DICOM 과 ISF 는 동일한 폴더 구조로 관리
         //
         //  DICOM/
-        //  └── 박한용_0225/
-        //      └── 12340001/
-        //          ├── 박한용_0225_12340001_1.dcm
-        //          └── 박한용_0225_12340001_2.dcm
+        //  └── 박한용_2634/
+        //      └── 20250313/
+        //          └── 202503130001/
+        //              └── Image/
+        //                  ├── 박한용_2634_202503130001_1.dcm
+        //                  └── 박한용_2634_202503130001_2.dcm
         //
-        //  ISF/
-        //  └── 박한용_0225/
-        //      └── 12340001/
-        //          ├── 박한용_0225_12340001_1.isf
-        //          └── 박한용_0225_12340001_2.isf
+        //  ISF/( only image comment 이므로 별도의 image video 파일없이 시리즈 번호 밑에 바로 관리 ) 
+        //  └── 박한용_2634/
+        //      └── 20250313/
+        //          └── 202503130001/
+        //                          ├── 박한용_2634_202503130001_1.isf
+        //                          └── 박한용_2634_202503130001_2.isf
         // ═══════════════════════════════════════════
         private string DicomDir => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DICOM");
         private string IsfDir => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ISF");
 
-        // DCM 경로 → ISF 경로 변환
-        // DICOM/박한용_0225/12340001/파일.dcm
-        //   → ISF/박한용_0225/12340001/파일.isf
+        // ═══════════════════════════════════════════
+        //  DCM 경로 → ISF 경로 변환
+        // ═══════════════════════════════════════════
         private string GetIsfPath(string dcmPath)
         {
-            string relative = dcmPath.Substring(DicomDir.Length).TrimStart(Path.DirectorySeparatorChar);
-            string isfRelative = Path.ChangeExtension(relative, ".isf");
-            return Path.Combine(IsfDir, isfRelative);
+            // DCM 에서 파일명만 추출
+            string fileName = Path.GetFileNameWithoutExtension(dcmPath);
+
+            // 환자폴더/날짜폴더/studyId 경로 추출
+            // DICOM/박한용_2634/20250313/202503130001/Image/ 에서
+            // Image 폴더 위로 올라가야 함
+            string studyDir = Path.GetDirectoryName(Path.GetDirectoryName(dcmPath));
+
+            // DICOM 루트 기준 상대경로 계산
+            string relative = studyDir.Substring(DicomDir.Length).TrimStart(Path.DirectorySeparatorChar);
+
+            // ISF 경로 조합
+            // ISF/박한용_2634/20250313/202503130001/파일.isf
+            return Path.Combine(IsfDir, relative, fileName + ".isf");
         }
 
         // ═══════════════════════════════════════════
@@ -95,7 +109,7 @@ namespace LSS_prototype.ImageComment_Page
             set { _commentText = value; OnPropertyChanged(); }
         }
 
-        // ── 선택된 환자 (Patient 화면에서 Imagecomment 화면으로 넘어올 때 설정) ──
+        // 선택된 환자
         private PatientModel _selectedPatient;
         public PatientModel SelectedPatient
         {
@@ -118,14 +132,8 @@ namespace LSS_prototype.ImageComment_Page
         }
 
         // ═══════════════════════════════════════════
-        //  초기화 - 환자 DCM 파일 목록 수집
+        //  초기화 - 현재 StudyID 의 Image 폴더에서 DCM 목록 수집
         //  OnLoaded 에서 호출
-        //  반환값: 파일이 있으면 true, 없으면 false
-        // ═══════════════════════════════════════════
-        // ═══════════════════════════════════════════
-        //  초기화 - 현재 세션 DCM 파일 목록 수집
-        //  seriesNumber: ScanViewModel._currentSeriesNumber
-        //  → 이 세션 폴더만 탐색 (이전 세션 이미지 제외)
         //  반환값: 파일이 있으면 true, 없으면 false
         // ═══════════════════════════════════════════
         public bool Initialize(PatientModel patient, string studyId)
@@ -141,18 +149,22 @@ namespace LSS_prototype.ImageComment_Page
                     return false;
                 }
 
-                // 환자 폴더: DICOM/박한용_0225/검사 날짜/검사번호/
+                // 환자 폴더명 생성 (예: 박한용_2634)
                 string patientFolder = $"{patient.PatientName}_{patient.PatientCode}";
+
+                // StudyID 앞 8자리 = 날짜 폴더 (예: 20250313)
                 string studyDateFolder = studyId.Substring(0, 8);
 
-                // DICOM/환자폴더/yyyyMMdd/studyId
-                string studyDir = Path.Combine(DicomDir, patientFolder, studyDateFolder, studyId);
+                // DCM 탐색 경로
+                // DICOM/박한용_2634/20250313/202503130001/Image/
+                string imageDir = Path.Combine(DicomDir, patientFolder, studyDateFolder, studyId, "Image");
 
-                // ISF 도 동일한 구조로 폴더 미리 생성
-                string isfSeriesDir = Path.Combine(IsfDir, patientFolder, studyDateFolder, studyId);
-                Directory.CreateDirectory(isfSeriesDir);
+                // ISF 폴더 미리 생성
+                // ISF/박한용_2634/20250313/202503130001/Image/
+                string isfDir = Path.Combine(IsfDir, patientFolder, studyDateFolder, studyId);
+                Directory.CreateDirectory(isfDir);
 
-                if (!Directory.Exists(studyDir))
+                if (!Directory.Exists(imageDir))
                 {
                     CustomMessageWindow.Show(
                         "해당 세션의 DICOM 폴더가 없습니다.",
@@ -161,16 +173,16 @@ namespace LSS_prototype.ImageComment_Page
                     return false;
                 }
 
-                // 현재 세션 폴더에서만 DCM 수집 (이전 세션 제외)
-                // DICOM/박한용_0225/yyyyMMdd/12340001/*.dcm
-                //nstance 번호 기준 정렬로 변경
-                _dcmFiles = Directory.EnumerateFiles(studyDir, "*.dcm")
-                      .OrderBy(f =>
-                      {
-                          string name = Path.GetFileNameWithoutExtension(f);
-                          string last = name.Split('_').Last();
-                          return int.TryParse(last, out int n) ? n : int.MaxValue;
-                      })
+                // Image 폴더에서 DCM 수집
+                // 파일명 마지막 숫자(인스턴스 번호) 기준으로 정렬
+                // 예: 박한용_2634_202503130001_1.dcm → 1
+                _dcmFiles = Directory.EnumerateFiles(imageDir, "*.dcm")
+                    .OrderBy(f =>
+                    {
+                        string name = Path.GetFileNameWithoutExtension(f);
+                        string last = name.Split('_').Last();
+                        return int.TryParse(last, out int n) ? n : int.MaxValue;
+                    })
                     .ToList();
 
                 if (_dcmFiles.Count == 0)
@@ -201,8 +213,9 @@ namespace LSS_prototype.ImageComment_Page
         private void LoadPage(int index)
         {
             string dcmPath = _dcmFiles[index];
-            // DCM 경로와 동일한 폴더 구조로 ISF 경로 계산
-            // DICOM/박한용_0225/12340001/파일.dcm → ISF/박한용_0225/12340001/파일.isf
+
+            // DCM 경로 → ISF 경로 자동 계산
+            // DICOM/.../Image/파일.dcm → ISF/.../파일.isf
             string isfPath = GetIsfPath(dcmPath);
 
             // DCM → WriteableBitmap 변환
@@ -241,16 +254,18 @@ namespace LSS_prototype.ImageComment_Page
             try
             {
                 string dcmPath = _dcmFiles[_currentIndex];
-                // DCM 과 동일한 폴더 구조로 ISF 경로 계산
+
+                // DCM 경로 기반으로 ISF 경로 계산
                 string isfPath = GetIsfPath(dcmPath);
 
                 if (strokes == null || strokes.Count == 0)
                 {
+                    // 드로잉 없으면 ISF 파일 삭제 (깔끔하게 유지)
                     if (File.Exists(isfPath)) File.Delete(isfPath);
                     return;
                 }
 
-                // ISF 저장 전 폴더 생성 (세션 폴더가 없을 수 있음)
+                // ISF 저장 전 폴더 생성
                 Directory.CreateDirectory(Path.GetDirectoryName(isfPath));
 
                 using (var fs = File.Create(isfPath))
@@ -280,6 +295,16 @@ namespace LSS_prototype.ImageComment_Page
                 Common.WriteLog(ex);
                 return false;
             }
+        }
+
+        // ═══════════════════════════════════════════
+        //  페이지 이동 가능 여부 확인 (실제 이동 X)
+        //  이동 불가능한 방향에서 저장 팝업 안 뜨게 하기 위해 사용
+        // ═══════════════════════════════════════════
+        public bool CanNavigate(bool goNext)
+        {
+            int targetIndex = goNext ? _currentIndex + 1 : _currentIndex - 1;
+            return targetIndex >= 0 && targetIndex < _dcmFiles.Count;
         }
 
         // ═══════════════════════════════════════════

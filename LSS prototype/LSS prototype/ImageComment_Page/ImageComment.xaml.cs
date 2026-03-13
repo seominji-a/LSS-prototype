@@ -296,7 +296,7 @@ namespace LSS_prototype.ImageComment_Page
                     if (save) VM.SaveIsf(DrawingCanvas.Strokes);
                 }
 
-                MainPage.Instance.NavigateTo(new Scan_Page.Scan(_patient, _studyId));
+                MainPage.Instance.NavigateTo(new Scan(_patient, _studyId));
             }
             catch (Exception ex) { Common.WriteLog(ex); }
         }

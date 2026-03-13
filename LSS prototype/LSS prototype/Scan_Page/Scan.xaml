@@ -271,51 +271,6 @@
                Source="{Binding PreviewSource}"/>
             </Border>
 
-            <!-- 좌상단 작은 카메라 상태 -->
-            <Border HorizontalAlignment="Left"
-            VerticalAlignment="Top"
-            Margin="16,70,0,0"
-            Padding="10,6"
-            Background="#66000000"
-            CornerRadius="8">
-                <StackPanel Orientation="Horizontal">
-                    <Ellipse Width="10" Height="10" Margin="0,0,8,0">
-                        <Ellipse.Style>
-                            <Style TargetType="Ellipse">
-                                <Setter Property="Fill" Value="Gold"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsCameraReady}" Value="True">
-                                        <Setter Property="Fill" Value="LimeGreen"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsCameraDisconnected}" Value="True">
-                                        <Setter Property="Fill" Value="Red"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Ellipse.Style>
-                    </Ellipse>
-
-                    <TextBlock Text="{Binding CameraStatus}"
-                       Foreground="White"
-                       FontSize="16"
-                       FontWeight="SemiBold"
-                       VerticalAlignment="Center"/>
-                </StackPanel>
-            </Border>
-
-            <!-- 중앙 Overlay 상태 표시 -->
-            <Border HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            Background="#88000000"
-            CornerRadius="16"
-            Padding="30,18"
-            Visibility="{Binding IsCameraStatusVisible, Converter={StaticResource BoolToVisibilityConverter}}">
-                <TextBlock Text="{Binding CameraStatus}"
-                   Foreground="White"
-                   FontSize="28"
-                   FontWeight="Bold"
-                   TextAlignment="Center"/>
-            </Border>
 
             <!-- 위아래 2분할 감마 컨트롤 오버레이 -->
             <Grid>

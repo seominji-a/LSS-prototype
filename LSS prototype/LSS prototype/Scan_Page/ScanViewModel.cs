@@ -167,19 +167,9 @@ namespace LSS_prototype.Scan_Page
             {
                 _cameraStatus = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(IsCameraStatusVisible));
-                OnPropertyChanged(nameof(IsCameraReady));
-                OnPropertyChanged(nameof(IsCameraDisconnected));
                 OnPropertyChanged(nameof(IsCameraInitializing));
             }
         }
-
-        public bool IsCameraStatusVisible =>
-            !string.IsNullOrWhiteSpace(CameraStatus) &&
-            CameraStatus != "Camera Ready";
-
-        public bool IsCameraReady => CameraStatus == "Camera Ready";
-        public bool IsCameraDisconnected => CameraStatus == "Camera Disconnected";
         public bool IsCameraInitializing => CameraStatus == "Camera Initializing...";
 
         // ── 주사 시간 ──

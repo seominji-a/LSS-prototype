@@ -392,7 +392,7 @@ namespace LSS_prototype.Common_Module
 
         #endregion
 
-        #region 선명도 계산
+        #region 선명도 계산 및 프레임 계산
 
         // ────────────────────────────────────────────
         // 선명도 계산 함수
@@ -435,6 +435,25 @@ namespace LSS_prototype.Common_Module
             {
                 Common.WriteLog(ex);
                 return 0;
+            }
+        }
+
+        /// <summary>
+        /// SDK를 이용해서 카메라에 있는 FPS값을 직접 가져옴 ( 그래서 인자값없음 헷갈림 주의 )
+        /// </summary>
+        /// <returns></returns>
+        public double GetCurrentFps()
+        {
+            try
+            {
+                if (_managedCameras == null || _managedCameras.Count == 0)
+                    return 30.0;
+
+                return _managedCameras[0].AcquisitionResultingFrameRate.Value;
+            }
+            catch
+            {
+                return 30.0; // 읽기 실패 시 기본값 (카메라 없을 때, 테스트 영상 모드일 때)
             }
         }
 

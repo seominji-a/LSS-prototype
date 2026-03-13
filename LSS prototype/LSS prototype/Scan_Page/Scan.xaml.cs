@@ -24,10 +24,10 @@ namespace LSS_prototype.Scan_Page
         private bool _navOpen = false;
         private bool _settingOpen = false;
 
-        public Scan(PatientModel selectedPatient, string seriesNumber = null, int instanceIndex = 0)
+        public Scan(PatientModel selectedPatient, string studyId = null)
         {
             InitializeComponent();       
-            DataContext = new ScanViewModel(selectedPatient, seriesNumber);
+            DataContext = new ScanViewModel(selectedPatient, studyId);
             Unloaded += (s, e) => (DataContext as ScanViewModel)?.Dispose();
         }
 

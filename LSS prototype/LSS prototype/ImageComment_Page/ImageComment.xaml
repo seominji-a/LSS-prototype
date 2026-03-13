@@ -236,11 +236,20 @@
                 <InkCanvas x:Name="DrawingCanvas" Background="Transparent"/>
 
                 <!-- 환자 정보 -->
-                <StackPanel Margin="16,14" VerticalAlignment="Top" HorizontalAlignment="Left">
-                    <TextBlock x:Name="TxtPatientName" Text="홍길동 (10001)"
-                               Foreground="White" FontSize="18" FontWeight="Bold"/>
-                    <TextBlock x:Name="TxtPatientInfo" Text="1969-05-22 / M"
-                               Foreground="#BBCCE0" FontSize="15"/>
+                <!-- 좌상단: 환자 정보 -->
+                <StackPanel Margin="16,12" VerticalAlignment="Top" HorizontalAlignment="Left">
+                    <TextBlock Foreground="White" FontSize="18" FontWeight="Bold">
+                            <Run Text="{Binding SelectedPatient.PatientName}"/>
+                            <Run Text="("/>
+                            <Run Text="{Binding SelectedPatient.PatientCode}"/>
+                            <Run Text=")"/>
+                    </TextBlock>
+
+                    <TextBlock Foreground="White" FontSize="16">
+                        <Run Text="{Binding SelectedPatient.BirthDate, StringFormat=yyyy-MM-dd}"/>
+                        <Run Text=" / "/>
+                        <Run Text="{Binding SelectedPatient.Sex}"/>
+                    </TextBlock>
                 </StackPanel>
 
                 <!-- 좌/우 10% 터치 영역 안내 오버레이 (None 모드일 때만 표시) -->

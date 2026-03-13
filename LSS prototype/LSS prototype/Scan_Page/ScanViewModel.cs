@@ -202,10 +202,10 @@ namespace LSS_prototype.Scan_Page
         public ICommand ImageCommentCommand { get; }
 
 
-        public ScanViewModel(PatientModel selectedPatient, string seriesFolderName = null)
+        public ScanViewModel(PatientModel selectedPatient, string studyId = null)
         {
             SelectedPatient = selectedPatient;
-
+            _currentStudyId = studyId;
             // 코멘트/리뷰에서 다시 돌아왔을 때 기존 폴더명 유지
             //_currentSeriesFolderName = seriesFolderName;
             // 시리얼 넘버가없으면 새로생성, 있으면 그대로 사용( 코멘트나 리뷰페이지에서 넘어온 경우 ) 
@@ -631,38 +631,7 @@ namespace LSS_prototype.Scan_Page
             return Directory.Exists(studyDir);
         }
 
-        private int GetLastSeriesIndex(string patientName, string patientCode, string studyId)
-        {
-            string patientFolderName = $"{patientName}_{patientCode}";
-            string studyDateFolder = studyId.Substring(0, 8);
-
-            string rootDir = Path.Combine(Common.executablePath, "DICOM");
-            string studyDir = Path.Combine(rootDir, patientFolderName, studyDateFolder, studyId);
-
-            if (!Directory.Exists(studyDir))
-                return 0;
-
-            int maxIndex = 0;
-
-            foreach (string dir in Directory.GetDirectories(studyDir))
-            {
-                string folderName = Path.GetFileName(dir);
-
-                if (!folderName.StartsWith(studyId + "_"))
-                    continue;
-
-                string suffix = folderName.Substring((studyId + "_").Length);
-
-                int idx;
-                if (int.TryParse(suffix, out idx))
-                {
-                    if (idx > maxIndex)
-                        maxIndex = idx;
-                }
-            }
-
-            return maxIndex;
-        }
+        
 
         private void ResumeStudy(string studyId)
         {
@@ -683,7 +652,58 @@ namespace LSS_prototype.Scan_Page
 
         private void OpenImageComment()
         {
-            MainPage.Instance.NavigateTo(new ImageComment_Page.ImageComment(SelectedPatient, _currentStudyId));
+            try
+            {
+                if (string.IsNullOrWhiteSpace(_currentStudyId))
+                {
+                    CustomMessageWindow.Show(
+                        "불러올 촬영 이미지가 없습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                string patientFolderName = $"{SelectedPatient.PatientName}_{SelectedPatient.PatientCode}";
+                string studyDateFolder = _currentStudyId.Substring(0, 8);
+
+                string studyDir = Path.Combine(
+                    Common.executablePath,
+                    "DICOM",
+                    patientFolderName,
+                    studyDateFolder,
+                    _currentStudyId
+                );
+
+                if (!Directory.Exists(studyDir))
+                {
+                    CustomMessageWindow.Show(
+                        "촬영된 이미지가 없습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                bool hasDicom = Directory.EnumerateFiles(studyDir, "*.dcm").Any();
+                if (!hasDicom)
+                {
+                    CustomMessageWindow.Show(
+                        "촬영된 이미지가 없습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                MainPage.Instance.NavigateTo(
+                    new ImageComment_Page.ImageComment(SelectedPatient, _currentStudyId));
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                CustomMessageWindow.Show(
+                    "이미지 코멘트 화면으로 이동할 수 없습니다.",
+                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    CustomMessageWindow.MessageIconType.Warning);
+            }
         }
 
         private void ResetValue()

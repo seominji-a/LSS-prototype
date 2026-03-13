@@ -795,7 +795,7 @@
                                     <RowDefinition Height="6"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
-                                <Button Grid.Row="0" Style="{StaticResource DarkBtn}" Command="{Binding ImageScanCommand}" IsEnabled="{Binding CanImageScan}">
+                                <Button Grid.Row="0" Style="{StaticResource DarkBtn}" Command="{Binding ImageScanCommand}">
                                     <TextBlock Text="Image&#10;Scan" Foreground="White" TextAlignment="Center" FontSize="25"/>
                                 </Button>
                                 <Button Grid.Row="2" Style="{StaticResource DarkBtn}" Command="{Binding VideoRecordCommand}">

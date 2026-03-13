@@ -155,9 +155,9 @@ EMR과 LOCAL에 동일 환자가 존재할 경우
 
 ■ 6. import 데이터 처리 정책
 
-PatientModel.cs
+-PatientModel.cs
 
-=PatientSource 함수
+-PatientSource 함수
 Local 수동 등록 데이터
 EmrImported DICOM EMR
 ImportLocal import 되어진 local 데이터
@@ -231,10 +231,111 @@ UI 반영 (RefreshPatients)
 
 [현재 상황]
 LOCAL dcm 파일에 AccessionNumber = "202503100001" 존재
-→ import 시 EMR로 잘못 분류됨 ❌
+→ import 시 EMR로 잘못 분류됨 
 
 [해결]
 ① 기존 LSIS의 Save_Click 수정 → LOCAL은 AccessionNumber = "" 로 저장
 ② 기존 잘못된 dcm 파일 삭제
 ③ 재촬영 → 재저장 → 재import
-→ LOCAL/EMR 정확히 분류됨 ✅
+→ LOCAL/EMR 정확히 분류됨 
+
+────────────────────────────────────
+작성일: 2026-03-10
+작성자: 서민지
+
+① dcm 이미지 LOCAL은 AccessionNumber = "" 로 저장되게 변경 완료
+
+② 재촬영 → 재저장 → 재import
+AccessionNumber 유무로
+→ LOCAL/E-sync 구분 확인 가능
+
+③ Local 환자 먼저 생성 , import emr환자 중복 자동 덮어쒸움-확인
+
+1. 덮어쒸워지는 거 없애도록 해결
+LOCAL 먼저 생성, E-SYNC 나중에 생성, E-SYNC로 덮어쓰여짐
+E-SYNC 환자 삭제하고 다시 같은 번호로 LOCAL 환자 생성하면 E-SYNC로 인식하는 문제
+
+2. 환자 화면에서 e-sync랑 local로 동일한 환자가 2개 존재해야함
+
+3. 중복 등록 방지 
+
+(문제 상황)
+local에 이미 동일한 환자가 존재하는데
+import로 e-sync 화면에 등록/ emr환자가 당일 촬영헤서 e-sync로 integrated patient 화면에 나중에 등록할 경우
+->동일한 2명의 환자가 integrated patient 화면에 존재
+->병합 과정 필요
+
+(개선 사항)
+1.local 환자 선택 
+2. edit diaglog에서 환자 번호 변경( e-sync환자와 동일한 환자 번호 입력)
+
+3. 병합하시겠습니까?라는 팝업창 
+예- e-sync 로 병합 , 이미지도 같이 묶임
+아니요- 따로 계속 존재 
+
+(문제X 상황)
+import로 e-sync 화면에 등록/ emr환자가 당일 촬영헤서 e-sync로 integrated patient 화면에 이미 등록된 경우
+local 환자를 나중에 생성할 경우에는 동일한 환자가 이미 존재해서 아예 안만들어지도록 처리되고 있는 상황
+->동일한 2명의 환자가 integrated patient 화면에 미존재
+->병합 과정 불필요
+
+■ 문제 발생 원인
+
+1. DB에서 환자 번호 기준으로 같은 환자로 처리 중일 가능성
+ImportPatient()에서 EMR DICOM을 읽어서
+repoInside.AddPatient(patientModel)호출 
+
+-DB_Manager.AddPatient() 내부가 아래 3가지 경우에 해당- 같은 환자번호의 LCCAL 환자 행이 EMR 정보로 덮어써짐
+PatientCode가 UNIQUE / INSERT OR REPLACE / ON CONFLICT(PATIENT_CODE) DO UPDATE
+
+DB 저장 로직이 환자번호를 동일 환자 키로 인식함
+=> LOCAL 환자 미리 생성, 같은 번호의 EMR 촬영본 import, 기존 LOCAL이 EMR 처럼 변경
+
+2. ApplyEmrFlagsFromDicomFolder()가 PatientCode만 보고 EMR로 재판정함
+AccessionNumber도 안 보고, DB에 저장된 구분값도 안 보고, 오직 PatientCode만 확인
+
+(1) 예전에 EMR DICOM 파일이 한번이라도 존재했던 환자번호 존재
+(2) 나중에 EMR 환자 삭제
+(3) 다시 같은 번호로 LOCAL 환자 생성
+(4) DICOM 폴더에 예전 EMR 파일 남아 있으면
+(5) ApplyEmrFlagsFromDicomFolder()가 다시 EMR로 인식
+
+3. E-SYNC 삭제 후 다시 LOCAL 생성하면 EMR로 띄워짐
+DB에서 E-SYNC 환자를 삭제해도, DICOM 폴더에 예전 E-SYNC 파일 존재- 같은 번호는 계속 E-SYNC 취급됨 
+현재 DICOM 폴더에 예전 E-SYNC 파일 존재하지 않아도 생성됨
+==>나중에 E-SYNC환자를 삭제하면, DICOM 폴더에 예전 E-SYNC 파일 삭제 될거니까 문제 없지 않을까?
+
+ApplyEmrFlagsFromDicomFolder(updatedList);
+emrPatientCodes.Contains(p.PatientCode)
+
+■ 향후 개발 관련
+같은 환자 코드여도 LOCAL 환자 1명, E-SYNC 환자 1명 
+->Integrated 화면에서 2개가 따로 존재
+
+*PatientCode로 동일 환자라고 합치지 않는것 권장*
+-확인 사항(중복 허용으로 변경)
+(1)AddPatient()의 sql 존재 여부 판단 -삭제 필요
+INSERT OR REPLACE INTO PATIENT
+ON CONFLICT(PATIENT_CODE) DO UPDATE
+
+(2)테이블 존재 여부 판단-삭제 필요
+PATIENT_CODE UNIQUE 존재할 가능성 높음 ===> 유지하면서 시스템 상으로 환자 코드를 중복 허용하는 방식 고려
+
+-저장 방식
+LOCAL 등록 → 새 row insert
+EMR import → 같은 번호라도 또 새 row insert
+
+*AddPatient()는 항상 insert*
+
+*ApplyEmrFlagsFromDicomFolder()는 제거 및 변경 권장*
+같은 환자번호를 전부 EMR로 덮어버리는 로직 존재
+
+환자 구분은 DICOM 폴더 스캔으로 하지 말고,
+DB에 저장된 값으로만 판단
+=====>우리는 그 반대이므로 반대 방식 유지할 경우 고려
+
+결론
+DB_Manager.AddPatient()에서 PatientCode 중복 허용 ->db가 patientcode를 같은 환자로 보고 덮어쓰고 있을 가능성
+ApplyEmrFlagsFromDicomFolder() 제거 ->같은 번호를 전부 emr로 재분류
+EMR/LOCAL 구분은 DB 컬럼으로 저장하고 읽기
+환자 삭제 후 재생성 시 DICOM 폴더 기반 재판정하지 않기

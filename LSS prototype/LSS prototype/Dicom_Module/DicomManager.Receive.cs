@@ -107,7 +107,7 @@ namespace LSS_prototype.Dicom_Module
             {
                 PatientCode = int.TryParse(rawId, out int code) ? code : 0,
 
-                // ★ 선배 코드 방식 - 바이트 직접 꺼내서 EUC-KR 디코딩 (한글 깨짐 방지)
+                // 선배 코드 방식 - 바이트 직접 꺼내서 EUC-KR 디코딩 (한글 깨짐 방지)
                 PatientName = DecodeEucKr(ds, DicomTag.PatientName)
                                 .Replace("^", " "),           // "홍^길동" → "홍 길동"
 

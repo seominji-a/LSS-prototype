@@ -54,9 +54,14 @@ WorklistItemUIModel에 아래 필드를 추가하여 XAML과 연결합니다.
 (2) TotalStudyCount: int 타입, "누적 검사 횟수" 섹션에 바인딩
 
 (주의사항)
-데이터 정렬: 환자 상세 이력 리스트 출력 시 반드시 StudyDate와 StudyTime 기준 내림차순(DESC) 정렬 적용 확인
-실시간성: 새로운 촬영(Import 또는 Scan)이 완료된 직후 LoadPatients()가 호출되어 통계가 즉시 갱신되는지 확인
-비동기 처리: 환자 수가 많을 경우 COUNT(DISTINCT) 연산이 UI 스레드를 차단하지 않도록 Task.Run 내에서 수행되는지 확인
+1. 데이터 정렬: 환자 상세 이력 리스트 출력 시 반드시 StudyDate와 StudyTime 기준 내림차순(DESC) 정렬 적용 확인
 
-의료 영상 표준의 비즈니스 로직 수립
+마지막 촬영 날짜
+존재- 환자 최신 순 정렬
+존재X- 환자 등록 시점 정렬
+
+2. 실시간성: 새로운 촬영(Import 또는 Scan)이 완료된 직후 LoadPatients()가 호출되어 통계가 즉시 갱신되는지 확인
+3. 비동기 처리: 환자 수가 많을 경우 COUNT(DISTINCT) 연산이 UI 스레드를 차단하지 않도록 Task.Run 내에서 수행되는지 확인
+
+4. 의료 영상 표준의 비즈니스 로직 수립
 날짜가 같더라도 UID가 같으면 1회/ 날짜가 다르더라도 UID가 같으면(자정 촬영) 1회

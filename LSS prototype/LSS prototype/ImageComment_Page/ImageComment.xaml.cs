@@ -1,4 +1,5 @@
 ﻿using LSS_prototype.Patient_Page;
+using LSS_prototype.Scan_Page;
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -32,7 +33,11 @@ namespace LSS_prototype.ImageComment_Page
         private readonly PatientModel _patient;
 
         // 현재 세션 번호 - 이 세션의 이미지만 로드하기 위해 보관
-        private readonly string _seriesNumber;
+        //private readonly string _seriesNumber;
+
+        // 현재 Study ID - 이 Study의 이미지만 로드하기 위해 보관-2026.03.13 변경
+        private readonly string _studyId;
+
 
         //private readonly int _instanceIndex;  // 마지막으로 촬영한 번호 ( 코멘트에서 다시 스캔으로 돌아왔을때 이어서 촬영하기 위해 )
 
@@ -44,15 +49,14 @@ namespace LSS_prototype.ImageComment_Page
         //  selectedPatient 와 seriesNumber 를 함께 받음
         //  → 현재 세션 이미지만 로드하기 위해
         // ═══════════════════════════════════════════
-        public ImageComment(PatientModel selectedPatient, string seriesNumber)
+        public ImageComment(PatientModel selectedPatient, string studyId)
         {
             _patient = selectedPatient;
-            _seriesNumber = seriesNumber;
-           
+            _studyId = studyId;
+
 
             InitializeComponent();
-            DataContext = new ImageCommentViewModel();
-
+            DataContext = new ImageCommentViewModel(selectedPatient, studyId);
             // ViewModel 프로퍼티 변경 감지
             // CurrentImage  변경 → CapturedImage.Source 갱신
             // CurrentStrokes 변경 → DrawingCanvas.Strokes 갱신
@@ -72,7 +76,7 @@ namespace LSS_prototype.ImageComment_Page
             {
                 // patient + seriesNumber 둘 다 넘겨줌
                 // → 현재 세션 폴더만 탐색
-                bool success = VM.Initialize(_patient, _seriesNumber);
+                bool success = VM.Initialize(_patient, _studyId);
                 if (!success) return;
 
                 DrawingCanvas.EditingMode = InkCanvasEditingMode.None;
@@ -292,7 +296,7 @@ namespace LSS_prototype.ImageComment_Page
                     if (save) VM.SaveIsf(DrawingCanvas.Strokes);
                 }
 
-                MainPage.Instance.NavigateTo(new Scan_Page.Scan(_patient, _seriesNumber));
+                MainPage.Instance.NavigateTo(new Scan_Page.Scan(_patient, _studyId));
             }
             catch (Exception ex) { Common.WriteLog(ex); }
         }

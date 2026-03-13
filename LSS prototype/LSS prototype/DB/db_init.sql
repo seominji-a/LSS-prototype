@@ -86,5 +86,5 @@ CREATE TABLE PACS_SET (
     MWL_IP                          TEXT    NOT NULL,
     MWL_PORT                        INTEGER NOT NULL,
     MWL_MY_AET                      TEXT    NOT NULL,
-     MWL_DESCRIPTION_FILTER         TEXT
+    MWL_DESCRIPTION_FILTER         TEXT
 );

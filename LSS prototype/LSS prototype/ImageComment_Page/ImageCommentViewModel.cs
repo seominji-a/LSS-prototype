@@ -95,6 +95,14 @@ namespace LSS_prototype.ImageComment_Page
             set { _commentText = value; OnPropertyChanged(); }
         }
 
+        // ── 선택된 환자 (Patient 화면에서 Imagecomment 화면으로 넘어올 때 설정) ──
+        private PatientModel _selectedPatient;
+        public PatientModel SelectedPatient
+        {
+            get => _selectedPatient;
+            set { _selectedPatient = value; OnPropertyChanged(); }
+        }
+
         // ═══════════════════════════════════════════
         //  커맨드
         // ═══════════════════════════════════════════
@@ -103,8 +111,9 @@ namespace LSS_prototype.ImageComment_Page
         // ═══════════════════════════════════════════
         //  생성자
         // ═══════════════════════════════════════════
-        public ImageCommentViewModel()
+        public ImageCommentViewModel(PatientModel selectedPatient, string studyId = null)
         {
+            SelectedPatient = selectedPatient;
             ImageDeleteCommand = new RelayCommand(_ => ExecuteImageDelete());
         }
 
@@ -119,19 +128,31 @@ namespace LSS_prototype.ImageComment_Page
         //  → 이 세션 폴더만 탐색 (이전 세션 이미지 제외)
         //  반환값: 파일이 있으면 true, 없으면 false
         // ═══════════════════════════════════════════
-        public bool Initialize(PatientModel patient, string seriesNumber)
+        public bool Initialize(PatientModel patient, string studyId)
         {
             try
             {
-                // 환자 폴더: DICOM/박한용_0225/세션번호/
+                if (patient == null || string.IsNullOrWhiteSpace(studyId))
+                {
+                    CustomMessageWindow.Show(
+                        "환자 정보 또는 Study 정보가 올바르지 않습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return false;
+                }
+
+                // 환자 폴더: DICOM/박한용_0225/검사 날짜/검사번호/
                 string patientFolder = $"{patient.PatientName}_{patient.PatientCode}";
-                string seriesDir = Path.Combine(DicomDir, patientFolder, seriesNumber);
+                string studyDateFolder = studyId.Substring(0, 8);
+
+                // DICOM/환자폴더/yyyyMMdd/studyId
+                string studyDir = Path.Combine(DicomDir, patientFolder, studyDateFolder, studyId);
 
                 // ISF 도 동일한 구조로 폴더 미리 생성
-                string isfSeriesDir = Path.Combine(IsfDir, patientFolder, seriesNumber);
+                string isfSeriesDir = Path.Combine(IsfDir, patientFolder, studyDateFolder, studyId);
                 Directory.CreateDirectory(isfSeriesDir);
 
-                if (!Directory.Exists(seriesDir))
+                if (!Directory.Exists(studyDir))
                 {
                     CustomMessageWindow.Show(
                         "해당 세션의 DICOM 폴더가 없습니다.",
@@ -141,9 +162,15 @@ namespace LSS_prototype.ImageComment_Page
                 }
 
                 // 현재 세션 폴더에서만 DCM 수집 (이전 세션 제외)
-                // DICOM/박한용_0225/12340001/*.dcm
-                _dcmFiles = Directory.EnumerateFiles(seriesDir, "*.dcm")
-                    .OrderBy(f => f)
+                // DICOM/박한용_0225/yyyyMMdd/12340001/*.dcm
+                //nstance 번호 기준 정렬로 변경
+                _dcmFiles = Directory.EnumerateFiles(studyDir, "*.dcm")
+                      .OrderBy(f =>
+                      {
+                          string name = Path.GetFileNameWithoutExtension(f);
+                          string last = name.Split('_').Last();
+                          return int.TryParse(last, out int n) ? n : int.MaxValue;
+                      })
                     .ToList();
 
                 if (_dcmFiles.Count == 0)

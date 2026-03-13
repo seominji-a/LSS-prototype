@@ -156,8 +156,8 @@ namespace LSS_prototype.Scan_Page
 
         private string _currentStudyId;
         // DICOM용 숫자 시리즈 번호는 _currentSeriesIndex 사용
-        private string _currentSeriesFolderName;
-        private int _currentSeriesIndex = 0;
+        //private string _currentSeriesFolderName;
+        //private int _currentSeriesIndex = 0;
         private int _currentInstanceIndex = 0;
 
         private bool _isFrameReady = false; //프레임 준비 여부 플래그 추가-프레임이 준비되기 전에는 촬영 버튼 방지
@@ -202,12 +202,12 @@ namespace LSS_prototype.Scan_Page
         public ICommand ImageCommentCommand { get; }
 
 
-        public ScanViewModel(PatientModel selectedPatient, string seriesFolderName = null)
+        public ScanViewModel(PatientModel selectedPatient, string studyId = null)
         {
             SelectedPatient = selectedPatient;
-
+            _currentStudyId = studyId;
             // 코멘트/리뷰에서 다시 돌아왔을 때 기존 폴더명 유지
-            _currentSeriesFolderName = seriesFolderName;
+            //_currentSeriesFolderName = seriesFolderName;
             // 시리얼 넘버가없으면 새로생성, 있으면 그대로 사용( 코멘트나 리뷰페이지에서 넘어온 경우 ) 
             // seriesNumber가 있으면 그대로 유지
             //seriesNumber가 없으면 나중에 StartNewStudy() → StartNewSeries()에서 생성
@@ -282,14 +282,21 @@ namespace LSS_prototype.Scan_Page
                     return;
                 }
 
-                if (!_isFrameReady)
+                if (CameraStatus == "Camera Disconnected")
                 {
-                    CustomMessageWindow.Show("카메라 영상이 아직 준비되지 않았습니다.",
+                    CustomMessageWindow.Show("카메라가 연결되어 있지 않습니다.",
                         CustomMessageWindow.MessageBoxType.AutoClose, 2,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
+                if (!_isFrameReady)
+                {
+                    CustomMessageWindow.Show("카메라 영상이 \n 아직 준비되지 않았습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
 
                 frame = _cameraService.GetCurrentFrame();
 
@@ -360,16 +367,12 @@ namespace LSS_prototype.Scan_Page
 
                 String studyID = _currentStudyId;
                 // 폴더명 없으면 새 시리즈 생성
-                if (string.IsNullOrEmpty(_currentSeriesFolderName))
-                {
-                    StartNewSeries();
-                }
-
-                string dicomSeriesNumber = _currentSeriesIndex.ToString();
-                string seriesFolderName = _currentSeriesFolderName;
-
                 _currentInstanceIndex++;
                 int instanceIndex = _currentInstanceIndex;
+
+                string dicomSeriesNumber = "1";
+
+                
 
                 dm.SetStudy(
                     studyID,
@@ -392,12 +395,11 @@ namespace LSS_prototype.Scan_Page
                 dm.SetPrivateDataElement(exposure, gain, gamma);
 
                 string path = GenerateSavePath(
-                        SelectedPatient.PatientName,
-                        SelectedPatient.PatientCode.ToString(),
-                        studyID,
-                        seriesFolderName,
-                        instanceIndex
-                        );
+                SelectedPatient.PatientName,
+                SelectedPatient.PatientCode.ToString(),
+                studyID,
+                instanceIndex
+                );
 
                 await dm.SaveImageFile(path, bitmap);
 
@@ -427,32 +429,29 @@ namespace LSS_prototype.Scan_Page
         /// 시리즈 번호 생성: 환자ID 기반
         /// </summary>
         // 폴더명 생성용
-        private string GenerateSeriesFolderName()
+        /*private string GenerateSeriesFolderName()
         {
             return $"{_currentStudyId}_{_currentSeriesIndex:D2}";
-        }
+        }*/
 
         /// <summary>
         /// DICOM 파일 저장 경로 생성
         /// 예: (exe 위치)\DICOM\홍길동_1234_12340001_0.dcm
         /// </summary>
-        private string GenerateSavePath(string name, string code, string studyID, string seriesFolderName, int instanceIndex)
+        private string GenerateSavePath(string name, string code, string studyID, int instanceIndex)
         {
             string patientFolderName = $"{name}_{code}";
-
-            // studyID 앞 8자리 = yyyyMMdd
             string studyDateFolder = studyID.Substring(0, 8);
 
             string rootDir = Path.Combine(Common.executablePath, "DICOM");
             string patientDir = Path.Combine(rootDir, patientFolderName);
             string dateDir = Path.Combine(patientDir, studyDateFolder);
             string studyDir = Path.Combine(dateDir, studyID);
-            string seriesDir = Path.Combine(studyDir, seriesFolderName);
 
-            Directory.CreateDirectory(seriesDir);
+            Directory.CreateDirectory(studyDir);
 
-            string fileName = $"{patientFolderName}_{seriesFolderName}_{instanceIndex}.dcm";
-            return Path.Combine(seriesDir, fileName);
+            string fileName = $"{patientFolderName}_{studyID}_{instanceIndex}.dcm";
+            return Path.Combine(studyDir, fileName);
         }
 
         /// <summary>
@@ -559,9 +558,7 @@ namespace LSS_prototype.Scan_Page
 
             var result = CustomMessageWindow.Show(
                 $"오늘 촬영된 이미지가 존재합니다.\n\n" +
-                $"기존 촬영을 이어서 사용하시겠습니까?\n" +
-                $"- 예: {lastStudyId}\n" +
-                $"- 아니오: 새 촬영 {nextStudyId}",
+                $"기존 촬영을 이어서 촬영하시겠습니까?",
                 CustomMessageWindow.MessageBoxType.YesNo,
                 0,
                 CustomMessageWindow.MessageIconType.Info);
@@ -575,34 +572,12 @@ namespace LSS_prototype.Scan_Page
         private void StartNewStudy(string studyId)
         {
             _currentStudyId = studyId;
-            _currentSeriesIndex = 0;
-            _currentSeriesFolderName = null;
+            //_currentSeriesIndex = 0;
+            //_currentSeriesFolderName = null;
             _currentInstanceIndex = 0;
         }
 
-        /// <summary>
-        /// 향후 개발 관련 사항
-        /// colormap 변경, filter 변경, 촬영 모드 변경, 새 촬영 시작에 맞춰 폴더명 변경 필수!
-        /// </summary>
-        private void StartNewSeries()
-        {
-            _currentSeriesIndex++;
-            _currentSeriesFolderName = GenerateSeriesFolderName();
-            _currentInstanceIndex = 0;
-        }
-
-        private bool IsExistingStudy(string patientName, string patientCode, string studyId)
-        {
-            string patientFolderName = $"{patientName}_{patientCode}";
-            string studyDateFolder = studyId.Substring(0, 8);
-
-            string rootDir = Path.Combine(Common.executablePath, "DICOM");
-            string studyDir = Path.Combine(rootDir, patientFolderName, studyDateFolder, studyId);
-
-            return Directory.Exists(studyDir);
-        }
-
-        private int GetLastSeriesIndex(string patientName, string patientCode, string studyId)
+        private int GetLastInstanceIndex(string patientName, string patientCode, string studyId)
         {
             string patientFolderName = $"{patientName}_{patientCode}";
             string studyDateFolder = studyId.Substring(0, 8);
@@ -615,17 +590,17 @@ namespace LSS_prototype.Scan_Page
 
             int maxIndex = 0;
 
-            foreach (string dir in Directory.GetDirectories(studyDir))
+            foreach (string file in Directory.GetFiles(studyDir, "*.dcm"))
             {
-                string folderName = Path.GetFileName(dir);
+                string fileName = Path.GetFileNameWithoutExtension(file);
 
-                if (!folderName.StartsWith(studyId + "_"))
-                    continue;
+                // 예: 홍길동_1234_202503130001_3
+                string[] parts = fileName.Split('_');
+                if (parts.Length == 0) continue;
 
-                string suffix = folderName.Substring((studyId + "_").Length);
+                string lastPart = parts[parts.Length - 1];
 
-                int idx;
-                if (int.TryParse(suffix, out idx))
+                if (int.TryParse(lastPart, out int idx))
                 {
                     if (idx > maxIndex)
                         maxIndex = idx;
@@ -634,19 +609,39 @@ namespace LSS_prototype.Scan_Page
 
             return maxIndex;
         }
+        /// <summary>
+        /// 향후 개발 관련 사항
+        /// colormap 변경, filter 변경, 촬영 모드 변경, 새 촬영 시작에 맞춰 폴더명 변경 필수!
+        /// </summary>
+        /*private void StartNewSeries()
+        {
+            _currentSeriesIndex++;
+            _currentSeriesFolderName = GenerateSeriesFolderName();
+            _currentInstanceIndex = 0;
+        }*/
+
+        private bool IsExistingStudy(string patientName, string patientCode, string studyId)
+        {
+            string patientFolderName = $"{patientName}_{patientCode}";
+            string studyDateFolder = studyId.Substring(0, 8);
+
+            string rootDir = Path.Combine(Common.executablePath, "DICOM");
+            string studyDir = Path.Combine(rootDir, patientFolderName, studyDateFolder, studyId);
+
+            return Directory.Exists(studyDir);
+        }
+
+        
 
         private void ResumeStudy(string studyId)
         {
             _currentStudyId = studyId;
 
-            _currentSeriesIndex = GetLastSeriesIndex(
+            _currentInstanceIndex = GetLastInstanceIndex(
                 SelectedPatient.PatientName,
                 SelectedPatient.PatientCode.ToString(),
                 studyId
             );
-
-            _currentSeriesFolderName = null;
-            _currentInstanceIndex = 0;
         }
 
         // ─────────────────────────────────────────────
@@ -657,7 +652,58 @@ namespace LSS_prototype.Scan_Page
 
         private void OpenImageComment()
         {
-            MainPage.Instance.NavigateTo(new ImageComment_Page.ImageComment(SelectedPatient, _currentSeriesFolderName));
+            try
+            {
+                if (string.IsNullOrWhiteSpace(_currentStudyId))
+                {
+                    CustomMessageWindow.Show(
+                        "불러올 촬영 이미지가 없습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                string patientFolderName = $"{SelectedPatient.PatientName}_{SelectedPatient.PatientCode}";
+                string studyDateFolder = _currentStudyId.Substring(0, 8);
+
+                string studyDir = Path.Combine(
+                    Common.executablePath,
+                    "DICOM",
+                    patientFolderName,
+                    studyDateFolder,
+                    _currentStudyId
+                );
+
+                if (!Directory.Exists(studyDir))
+                {
+                    CustomMessageWindow.Show(
+                        "촬영된 이미지가 없습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                bool hasDicom = Directory.EnumerateFiles(studyDir, "*.dcm").Any();
+                if (!hasDicom)
+                {
+                    CustomMessageWindow.Show(
+                        "촬영된 이미지가 없습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                MainPage.Instance.NavigateTo(
+                    new ImageComment_Page.ImageComment(SelectedPatient, _currentStudyId));
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                CustomMessageWindow.Show(
+                    "이미지 코멘트 화면으로 이동할 수 없습니다.",
+                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    CustomMessageWindow.MessageIconType.Warning);
+            }
         }
 
         private void ResetValue()

@@ -777,13 +777,19 @@
                                         </ControlTemplate>
                                     </Button.Template>
                                 </Button>
-                                <Border Grid.Row="2" Background="#0A1929" CornerRadius="10" ClipToBounds="True">
-                                    <Viewbox Stretch="Uniform">
-                                        <Border Width="400" Height="300">
-                                            <Image x:Name="ThumbImage2" Stretch="UniformToFill"/>
-                                        </Border>
-                                    </Viewbox>
-                                </Border>
+                                <Button Grid.Row="2" Command="{Binding VideoCommand}" BorderThickness="0" Padding="0" Cursor="Hand">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="#0A1929" CornerRadius="10" ClipToBounds="True">
+                                                <Viewbox Stretch="Uniform">
+                                                    <Border Width="400" Height="300">
+                                                        <Image x:Name="ThumbImage2" Stretch="UniformToFill"/>
+                                                    </Border>
+                                                </Viewbox>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
                             </Grid>
 
                             <!-- 우측 버튼 3개 -->
@@ -801,8 +807,33 @@
                                 <Button Grid.Row="2" Style="{StaticResource DarkBtn}" Command="{Binding VideoRecordCommand}">
                                     <TextBlock Text="Video&#10;Record" Foreground="White" TextAlignment="Center" FontSize="25"/>
                                 </Button>
-                                <Button Grid.Row="4" Style="{StaticResource DarkBtn}" Command="{Binding DicomRecordCommand}">
-                                    <TextBlock Text="Dicom&#10;Record" Foreground="White" TextAlignment="Center" FontSize="25"/>
+                                <Button Grid.Row="4" Command="{Binding DicomRecordCommand}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource DarkBtn}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDicomRecording}" Value="True">
+                                                    <Setter Property="Background" Value="#DC2626"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+
+                                    <StackPanel HorizontalAlignment="Center">
+
+                                        <!-- 기본 상태 (녹화 중 아닐 때) -->
+                                        <TextBlock Text="Dicom&#10;Record" Foreground="White" TextAlignment="Center" FontSize="25" Visibility="{Binding IsDicomRecording,
+                       Converter={StaticResource BoolToVisibilityConverter},
+                       ConverterParameter=Inverse}"/>
+
+                                        <!-- 녹화 중일 때 -->
+                                        <TextBlock Text="⏹ Stop" Foreground="White" TextAlignment="Center" FontSize="25" Visibility="{Binding IsDicomRecording,
+                       Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                        <!-- 경과 시간 (녹화 중일 때만) -->
+                                        <TextBlock Text="{Binding RecordingTime}" Foreground="#FF4444" TextAlignment="Center" FontSize="16"
+                                                FontWeight="Bold" Visibility="{Binding IsDicomRecording,
+                       Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    </StackPanel>
                                 </Button>
                             </Grid>
                         </Grid>

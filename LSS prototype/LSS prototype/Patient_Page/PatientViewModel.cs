@@ -289,21 +289,36 @@ namespace LSS_prototype.Patient_Page
                 return;
             }
 
-
-            if(!string.IsNullOrWhiteSpace(SelectedPatient.AccessionNumber))
+            if (!string.IsNullOrWhiteSpace(SelectedPatient.AccessionNumber))
             {
                 CustomMessageWindow.Show("EMR 데이터는 수정이 \n 불가능합니다.",
                         CustomMessageWindow.MessageBoxType.AutoClose, 1,
                         CustomMessageWindow.MessageIconType.Warning);
                 return;
             }
-            var vm = new PatientEditViewModel(_dialogService, SelectedPatient);
+
+            var originalLocal = new PatientModel
+            {
+                PatientId = SelectedPatient.PatientId,
+                PatientCode = SelectedPatient.PatientCode,
+                PatientName = SelectedPatient.PatientName,
+                BirthDate = SelectedPatient.BirthDate,
+                Sex = SelectedPatient.Sex,
+                AccessionNumber = SelectedPatient.AccessionNumber,
+                IsEmrPatient = SelectedPatient.IsEmrPatient,
+                Source = SelectedPatient.Source
+            };
+
+            // 같은 코드의 E-SYNC 존재 여부
+            bool canMergeWithoutEdit = _importedEmrPatients.Any(x => x.PatientCode == SelectedPatient.PatientCode);
+
+            var vm = new PatientEditViewModel(_dialogService, SelectedPatient, canMergeWithoutEdit);
 
             var result = _dialogService.ShowDialog(vm);
 
             if (result == true)
             {
-                LoadPatients();
+                HandleLocalEditConflictAfterSave(originalLocal);
             }
         }
 
@@ -435,7 +450,7 @@ namespace LSS_prototype.Patient_Page
                     if (isEmrImport && localPatient != null)
                     {
                         var result = CustomMessageWindow.Show(
-                            $"환자 번호 {pCode}와 동일한 LOCAL 환자가 존재합니다.\nE-SYNC로 병합하시겠습니까?",
+                            $"번호 {pCode}와 동일한 LOCAL 환자가 존재합니다.\nE-SYNC로 병합하시겠습니까?",
                             CustomMessageWindow.MessageBoxType.YesNo,
                             0,
                             CustomMessageWindow.MessageIconType.Warning);
@@ -1003,6 +1018,133 @@ namespace LSS_prototype.Patient_Page
 
             if (lastEx != null)
                 throw lastEx;
+        }
+
+        //수정 후 E-SYNC 충돌 검사
+        private void HandleLocalEditConflictAfterSave(PatientModel originalLocal)
+        {
+            try
+            {
+                var repo = new DB_Manager();
+
+                // 수정된 LOCAL 환자 다시 조회
+                var updatedLocal = repo.GetAllPatients()
+                    .FirstOrDefault(x => x.PatientId == originalLocal.PatientId);
+
+                if (updatedLocal == null)
+                {
+                    LoadPatients();
+                    return;
+                }
+
+                // 현재 import된 E-SYNC 환자 목록 다시 로드
+                _importedEmrPatients = LoadImportedEmrPatientsFromDicomFolder();
+
+                // 같은 환자번호를 가진 E-SYNC 환자 찾기
+                var matchedEmr = _importedEmrPatients
+                    .FirstOrDefault(x => x.PatientCode == updatedLocal.PatientCode);
+
+                // 없으면 그냥 갱신만
+                if (matchedEmr == null)
+                {
+                    LoadPatients();
+                    return;
+                }
+
+                var popupResult = CustomMessageWindow.Show(
+                    $"번호가 같은 2명의 환자가 존재합니다.\n병합하시겠습니까?",
+                    CustomMessageWindow.MessageBoxType.YesNo,
+                    0,
+                    CustomMessageWindow.MessageIconType.Warning);
+
+                if (popupResult == CustomMessageWindow.MessageBoxResult.Yes)
+                {
+                    MergeEditedLocalToImportedEmr(originalLocal, updatedLocal, matchedEmr);
+                }
+                else
+                {
+                    // 아니오면 그냥 닫고 끝
+                    LoadPatients();
+                }
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                LoadPatients();
+            }
+        }
+
+        //LOCAL → E-SYNC 병합
+        private void MergeEditedLocalToImportedEmr(
+            PatientModel originalLocal,
+            PatientModel updatedLocal,
+            PatientModel importedEmr)
+        {
+            try
+            {
+                string dicomRoot = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DICOM");
+
+                // E-SYNC 기준 폴더
+                string emrTargetFolder = Path.Combine(dicomRoot, $"{importedEmr.PatientName}_{importedEmr.PatientCode}");
+
+                // LOCAL 원래 폴더를 먼저 찾음
+                string localFolder =
+                    FindPatientFolder(originalLocal) ??
+                    FindPatientFolder(updatedLocal);
+
+                if (!Directory.Exists(emrTargetFolder))
+                    Directory.CreateDirectory(emrTargetFolder);
+
+                // LOCAL 폴더가 있으면 E-SYNC 폴더로 복사
+                if (!string.IsNullOrWhiteSpace(localFolder) &&
+                    Directory.Exists(localFolder) &&
+                    !string.Equals(
+                        Path.GetFullPath(localFolder).TrimEnd('\\'),
+                        Path.GetFullPath(emrTargetFolder).TrimEnd('\\'),
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    CopyDirectory(localFolder, emrTargetFolder, overwrite: true);
+
+                    try
+                    {
+                        Directory.Delete(localFolder, true);
+                    }
+                    catch (Exception ex)
+                    {
+                        Common.WriteLog(ex);
+                    }
+                }
+
+                // 병합 후 DICOM 태그를 E-SYNC 기준으로 통일
+                UpdateDicomTagsForMerge(
+                    emrTargetFolder,
+                    importedEmr.PatientName,
+                    importedEmr.PatientCode,
+                    importedEmr.AccessionNumber);
+
+                // 파일명도 E-SYNC 기준으로 통일
+                NormalizeDicomFileNamesRecursively(
+                    emrTargetFolder,
+                    importedEmr.PatientName,
+                    importedEmr.PatientCode);
+
+                // DB에서 LOCAL 환자 삭제
+                var repo = new DB_Manager();
+                repo.DeletePatient(updatedLocal.PatientId);
+
+                CustomMessageWindow.Show(
+                    "E-SYNC 환자로 병합되었습니다.",
+                    CustomMessageWindow.MessageBoxType.AutoClose,
+                    1,
+                    CustomMessageWindow.MessageIconType.Info);
+
+                LoadPatients();
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                LoadPatients();
+            }
         }
     }
 }

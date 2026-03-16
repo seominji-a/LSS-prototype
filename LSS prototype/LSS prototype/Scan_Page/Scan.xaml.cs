@@ -51,7 +51,7 @@ namespace LSS_prototype.Scan_Page
 
 
         private void PatientButton_Click(object sender, RoutedEventArgs e)
-            => MainPage.Instance.NavigateTo(new Patient_Page.Patient());
+            => MainPage.Instance.NavigateTo(new Patient());
 
     }
 }

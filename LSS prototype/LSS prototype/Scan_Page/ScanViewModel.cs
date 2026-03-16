@@ -30,24 +30,36 @@ namespace LSS_prototype.Scan_Page
         // ── 카메라 서비스 ──
         private readonly CameraService _cameraService = new CameraService();
         private bool _disposed = false;
-
-        // ── DICOM 녹화 관련 ──
-        private VideoWriter _videoWriter;            // 영상기록 객체
-        private string _aviSavePath;                 // AVI 최종 저장 경로
-        private bool _isDicomRecording = false;      // 현재 녹화 중인지 여부
-        private CancellationTokenSource _recordCts;  // 녹화 중지 신호
-        private DateTime _recordStartTime;           // 녹화 시작 시간
-        private int _currentVideoIndex = 0;          // 동영상 인스턴스 번호
-        private Task _recordLoopTask;                // RecordLoop Task (중지 시 완료 대기용)
-        private int _lastRecordingSecond = -1;       // UI 경과시간 업데이트 최적화용
+        private static readonly string TEST_VIDEO_PATH = Path.Combine(Common.executablePath, "sample.avi");
+        private readonly ScanModel _img = new ScanModel();
 
         // ── 촬영 관련 ──
         private string _currentStudyId;
         private int _currentInstanceIndex = 0;
         private bool _isFrameReady = false;          // 프레임 준비 전 촬영 방지
 
-        private static readonly string TEST_VIDEO_PATH = Path.Combine(Common.executablePath, "sample.avi");
-        private readonly ScanModel _img = new ScanModel();
+        // ── Dicom Record 녹화 관련 ──
+        private VideoWriter _videoWriter;            // 영상기록 객체
+        private string _aviSavePath;                 // AVI 최종 저장 경로
+        private bool _isDicomRecording = false;      // 현재 녹화 중인지 여부
+        private CancellationTokenSource _recordCts;  // 녹화 중지 신호
+        private DateTime _recordStartTime;           // 녹화 시작 시간
+        private Task _recordLoopTask;                // RecordLoop Task (중지 시 완료 대기용)
+        private int _lastRecordingSecond = -1;       // UI 경과시간 업데이트 최적화용
+
+        // ── AVI Only 녹화 관련 ──
+        private VideoWriter _aviOnlyWriter;
+        private string _aviOnlySavePath;
+        private bool _isVideoRecording = false;
+        private CancellationTokenSource _aviOnlyCts;
+        private Task _aviOnlyLoopTask;
+        private DateTime _aviOnlyStartTime;
+        private int _lastAviOnlySecond = -1;
+
+        // ── 공유 동영상 인덱스 ──
+        // Dicom Record / AVI Only 둘 다 이 인덱스를 공유
+        // VIDEO/ 폴더 기준으로 촬영 순서 보장
+        private int _currentVideoIndex = 0;
 
         #endregion
 
@@ -61,7 +73,7 @@ namespace LSS_prototype.Scan_Page
             set { _selectedPatient = value; OnPropertyChanged(); }
         }
 
-        // ── 녹화 상태 ──
+        // ── Dicom Record 상태 ──
         private bool _isDicomRecordingProp;
         public bool IsDicomRecording
         {
@@ -69,12 +81,28 @@ namespace LSS_prototype.Scan_Page
             set { _isDicomRecordingProp = value; OnPropertyChanged(); }
         }
 
-        // ── 녹화 경과시간 표시 ──
+        // ── Dicom Record 경과시간 ──
         private string _recordingTime = "00:00";
         public string RecordingTime
         {
             get => _recordingTime;
             set { _recordingTime = value; OnPropertyChanged(); }
+        }
+
+        // ── AVI Only 녹화 상태 ──
+        private bool _isVideoRecordingProp;
+        public bool IsVideoRecording
+        {
+            get => _isVideoRecordingProp;
+            set { _isVideoRecordingProp = value; OnPropertyChanged(); }
+        }
+
+        // ── AVI Only 경과시간 ──
+        private string _videoRecordingTime = "00:00";
+        public string VideoRecordingTime
+        {
+            get => _videoRecordingTime;
+            set { _videoRecordingTime = value; OnPropertyChanged(); }
         }
 
         // ── 카메라 미리보기 ──
@@ -207,6 +235,7 @@ namespace LSS_prototype.Scan_Page
         public ICommand ImageScanCommand { get; }
         public ICommand ImageCommentCommand { get; }
         public ICommand DicomRecordCommand { get; }
+        public ICommand VideoRecordCommand { get; }  // AVI Only 녹화
 
         #endregion
 
@@ -231,7 +260,7 @@ namespace LSS_prototype.Scan_Page
             // 초반에는 프레임 도착 전이므로 이미지 스캔 가능 여부를 false로 고정
             CanImageScan = false;
 
-            // 프레임 도착 전, 카메라 준비 상태 사용자에게 확인 목적
+            // 프레임 도착 전 카메라 준비 상태 사용자에게 확인 목적
             CameraStatus = "Camera Initializing...";
 
             ConnectCamera();
@@ -255,11 +284,12 @@ namespace LSS_prototype.Scan_Page
             ImageScanCommand = new RelayCommand(async _ => await CaptureAndSaveDicomAsync());
             ImageCommentCommand = new RelayCommand(OpenImageComment);
             DicomRecordCommand = new RelayCommand(async _ => await ToggleDicomRecord());
+            VideoRecordCommand = new RelayCommand(async _ => await ToggleVideoRecord());
         }
 
         #endregion
 
-        #region 이미지 캡처
+        #region 공통 유효성 검사
 
         // ═══════════════════════════════════════════
         //  촬영 전 유효성 검사
@@ -294,6 +324,10 @@ namespace LSS_prototype.Scan_Page
 
             return true;
         }
+
+        #endregion
+
+        #region 이미지 저장
 
         // ═══════════════════════════════════════════
         //  이미지 캡처 및 DICOM 저장
@@ -366,7 +400,7 @@ namespace LSS_prototype.Scan_Page
 
                 // ⑥ 경로 생성 및 저장
                 // DICOM/박한용_2634/20250313/202503130001/Image/박한용_2634_202503130001_1.dcm
-                string path = GenerateSavePath(
+                string path = GenerateImageSavePath(
                     SelectedPatient.PatientName,
                     SelectedPatient.PatientCode.ToString(),
                     _currentStudyId,
@@ -395,16 +429,8 @@ namespace LSS_prototype.Scan_Page
         }
 
         // ── 이미지 DCM 저장 경로 생성 ──
-        // DICOM/
-        //     └── 박한용_2634/
-        //         └── 20250313/
-        //             └── 202503130001/
-        //                 ├── Image/
-        //                 │   ├── 박한용_2634_202503130001_1.dcm
-        //                 │   └── 박한용_2634_202503130001_2.dcm
-        //                 └── Video/
-        //                     └── 박한용_2634_202503130001_1.dcm
-        private string GenerateSavePath(string name, string code, string studyID, int instanceIndex)
+        // DICOM/박한용_2634/20250313/202503130001/Image/박한용_2634_202503130001_1.dcm
+        private string GenerateImageSavePath(string name, string code, string studyID, int instanceIndex)
         {
             string patientFolderName = $"{name}_{code}";
             string studyDateFolder = studyID.Substring(0, 8);
@@ -417,10 +443,243 @@ namespace LSS_prototype.Scan_Page
 
         #endregion
 
-        #region 동영상 녹화
+        #region 동영상 저장 (AVI Only)
 
         // ═══════════════════════════════════════════
-        //  녹화 토글
+        //  AVI Only 녹화 토글
+        //  Dicom Record 중이면 경고 후 return
+        //  녹화 중이면 → 중지
+        //  녹화 중 아니면 → 유효성 검사 후 시작
+        // ═══════════════════════════════════════════
+        private async Task ToggleVideoRecord()
+        {
+            try
+            {
+                // Dicom Record 촬영 중이면 경고
+                if (_isDicomRecording)
+                {
+                    CustomMessageWindow.Show("DICOM 영상 촬영 중...",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                if (_isVideoRecording)
+                    await StopVideoRecord();
+                else
+                {
+                    if (!CaptureValidation()) return;
+                    StartVideoRecord();
+                }
+            }
+            catch (Exception ex) { Common.WriteLog(ex); }
+        }
+
+        // ═══════════════════════════════════════════
+        //  AVI Only 녹화 시작
+        //  ① StudyID 확정 (GenerateAviOnlyPath 에서 _currentStudyId 사용하므로 먼저)
+        //  ② 프레임 확인
+        //  ③ VideoWriter 초기화 성공 확인 후 VideoIndex 증가
+        //  ④ 녹화 상태 ON
+        //  ⑤ AviOnlyRecordLoop Task 시작
+        //  ⑥ 30초 자동 중지 타이머 (테스트 차 30초, 추후 15분으로 변경 예정)
+        // ═══════════════════════════════════════════
+        private void StartVideoRecord()
+        {
+            try
+            {
+                // ① StudyID 확정 먼저
+                EnsureStudyReady();
+
+                // ② 프레임 확인
+                var frame = _cameraService.GetCurrentFrame();
+                if (frame == null || frame.Empty())
+                {
+                    CustomMessageWindow.Show("카메라 영상이 준비되지 않았습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                double fps = _cameraService.GetCurrentFps();
+
+                // ③ VideoWriter 초기화 먼저 확인
+                // VideoWriter 실패 시 VideoIndex 증가하면 안 되므로 성공 확인 후 증가
+                string tempAviPath = GenerateAviOnlyPath(_currentVideoIndex + 1);
+
+                _aviOnlyWriter = new VideoWriter(
+                    tempAviPath,
+                    FourCC.MJPG,
+                    fps,
+                    new OpenCvSharp.Size(frame.Width, frame.Height)
+                );
+
+                if (!_aviOnlyWriter.IsOpened())
+                {
+                    _aviOnlyWriter?.Dispose();
+                    _aviOnlyWriter = null;
+                    frame.Dispose();
+                    CustomMessageWindow.Show("녹화를 시작할 수 없습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                // VideoWriter 성공 확인 후 VideoIndex 증가
+                _currentVideoIndex++;
+                _aviOnlySavePath = tempAviPath;
+
+                // ④ 녹화 상태 ON
+                _isVideoRecording = true;
+                IsVideoRecording = true;
+                _aviOnlyStartTime = DateTime.Now;
+                _lastAviOnlySecond = -1;
+                _aviOnlyCts = new CancellationTokenSource();
+
+                // ⑤ AviOnlyRecordLoop Task 시작
+                _aviOnlyLoopTask = Task.Run(() => AviOnlyRecordLoop(_aviOnlyCts.Token, fps));
+
+                // ⑥ 자동 중지 타이머 (테스트 차 30초, 추후 15분으로 변경 예정)
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(30), _aviOnlyCts.Token);
+                        await Application.Current.Dispatcher.InvokeAsync(async () =>
+                        {
+                            CustomMessageWindow.Show("30초 녹화 완료. 자동 저장합니다.",
+                                CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                                CustomMessageWindow.MessageIconType.Info);
+                            await StopVideoRecord();
+                        });
+                    }
+                    catch (OperationCanceledException) { }
+                });
+
+                frame.Dispose();
+            }
+            catch (Exception ex) { Common.WriteLog(ex); }
+        }
+
+        // ═══════════════════════════════════════════
+        //  AVI Only 프레임 캡처 루프
+        //  DicomRecord 의 RecordLoop 와 동일한 구조
+        //  목표 간격 - 처리시간 = 남은 시간만 Sleep → 정확한 fps 유지
+        // ═══════════════════════════════════════════
+        private void AviOnlyRecordLoop(CancellationToken ct, double fps)
+        {
+            var targetInterval = TimeSpan.FromMilliseconds(1000.0 / fps);
+
+            while (!ct.IsCancellationRequested)
+            {
+                var frameStart = DateTime.Now;
+
+                try
+                {
+                    var frame = _cameraService.GetCurrentFrame();
+                    if (frame != null && !frame.Empty())
+                    {
+                        _aviOnlyWriter?.Write(frame);
+                        frame.Dispose();
+                    }
+
+                    // 경과시간 UI 업데이트 - 1초마다만
+                    var elapsed = DateTime.Now - _aviOnlyStartTime;
+                    if (elapsed.Seconds != _lastAviOnlySecond)
+                    {
+                        _lastAviOnlySecond = elapsed.Seconds;
+                        Application.Current?.Dispatcher.Invoke(() =>
+                            VideoRecordingTime = elapsed.ToString(@"mm\:ss"));
+                    }
+                }
+                catch (OperationCanceledException) { break; }
+                catch (Exception ex) { Common.WriteLog(ex); break; }
+
+                var frameElapsed = DateTime.Now - frameStart;
+                var remaining = targetInterval - frameElapsed;
+                if (remaining > TimeSpan.Zero)
+                    Thread.Sleep(remaining);
+            }
+        }
+
+        // ═══════════════════════════════════════════
+        //  AVI Only 녹화 중지 + 파일 저장
+        //  ① 중지 신호
+        //  ② AviOnlyRecordLoop 완전 종료 대기
+        //  ③ VideoWriter 닫기 (Release 필수 - 안하면 AVI 파일 손상)
+        //  ④ 파일 존재 확인
+        // ═══════════════════════════════════════════
+        private async Task StopVideoRecord()
+        {
+            if (!_isVideoRecording) return;
+
+            try
+            {
+                // ① 중지 신호
+                _aviOnlyCts?.Cancel();
+                _isVideoRecording = false;
+                IsVideoRecording = false;
+                VideoRecordingTime = "00:00";
+
+                // ② AviOnlyRecordLoop 완전 종료 대기
+                // Cancel() 은 신호만 보낼 뿐 즉시 종료가 아님
+                // RecordLoop 끝나거나 최대 1초 대기
+                if (_aviOnlyLoopTask != null)
+                {
+                    await Task.WhenAny(_aviOnlyLoopTask, Task.Delay(1000));
+                    _aviOnlyLoopTask = null;
+                }
+
+                // ③ VideoWriter 닫기
+                // Release() 필수! 안 하면 AVI 파일 손상
+                _aviOnlyWriter?.Release();
+                _aviOnlyWriter?.Dispose();
+                _aviOnlyWriter = null;
+
+                // ④ 파일 존재 확인
+                // 파일이 없으면 VideoIndex 롤백 (인덱스 낭비 방지)
+                if (string.IsNullOrEmpty(_aviOnlySavePath) || !File.Exists(_aviOnlySavePath))
+                {
+                    _currentVideoIndex--;
+                    CustomMessageWindow.Show("저장된 영상 파일이 없습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                CustomMessageWindow.Show("영상 저장 완료.",
+                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    CustomMessageWindow.MessageIconType.Info);
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                CustomMessageWindow.Show($"영상 저장 실패: {ex.Message}",
+                    CustomMessageWindow.MessageBoxType.AutoClose, 3,
+                    CustomMessageWindow.MessageIconType.Warning);
+            }
+        }
+
+        // ── AVI Only 저장 경로 생성 ──
+        // VIDEO/박한용_2634/20250313/202503130001/박한용_2634_202503130001_1_Avi.avi
+        private string GenerateAviOnlyPath(int index)
+        {
+            string patientFolderName = $"{SelectedPatient.PatientName}_{SelectedPatient.PatientCode}";
+            string studyDateFolder = _currentStudyId.Substring(0, 8);
+            string rootDir = Path.Combine(Common.executablePath, "VIDEO");
+            string videoDir = Path.Combine(rootDir, patientFolderName, studyDateFolder, _currentStudyId);
+            Directory.CreateDirectory(videoDir);
+            string fileName = $"{patientFolderName}_{_currentStudyId}_{index}_Avi.avi";
+            return Path.Combine(videoDir, fileName);
+        }
+
+        #endregion
+
+        #region 동영상 저장 (Dicom Record)
+
+        // ═══════════════════════════════════════════
+        //  Dicom Record 녹화 토글
+        //  AVI Only 녹화 중이면 경고 후 return
         //  녹화 중이면 → 중지
         //  녹화 중 아니면 → 유효성 검사 후 시작
         // ═══════════════════════════════════════════
@@ -428,6 +687,15 @@ namespace LSS_prototype.Scan_Page
         {
             try
             {
+                // AVI Only 촬영 중이면 경고
+                if (_isVideoRecording)
+                {
+                    CustomMessageWindow.Show("AVI 영상 촬영 중...",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
                 if (_isDicomRecording)
                     await StopDicomRecord();
                 else
@@ -440,7 +708,7 @@ namespace LSS_prototype.Scan_Page
         }
 
         // ═══════════════════════════════════════════
-        //  녹화 시작
+        //  Dicom Record 녹화 시작
         //  ① 현재 프레임 확인
         //  ② StudyID 확정
         //  ③ VideoWriter 초기화 성공 확인 후 VideoIndex 증가
@@ -466,19 +734,18 @@ namespace LSS_prototype.Scan_Page
                 EnsureStudyReady();
 
                 // ③ VideoWriter 초기화 먼저 확인
-                // VideoWriter 실패 시 VideoIndex 증가하면 안 되므로
-                // 성공 확인 후 VideoIndex 증가
+                // VideoWriter 실패 시 VideoIndex 증가하면 안 되므로 성공 확인 후 증가
                 double fps = _cameraService.GetCurrentFps();
-                string tempAviPath = GenerateVideoSavePath(
+                string tempAviPath = GenerateDicomAviPath(
                     SelectedPatient.PatientName,
                     SelectedPatient.PatientCode.ToString(),
                     _currentStudyId,
-                    _currentVideoIndex + 1  // 증가될 값 미리 계산
+                    _currentVideoIndex + 1
                 );
 
                 _videoWriter = new VideoWriter(
                     tempAviPath,
-                    FourCC.MJPG,  // 압축 방식 (용량 작고 빠름)
+                    FourCC.MJPG,
                     fps,
                     new OpenCvSharp.Size(frame.Width, frame.Height)
                 );
@@ -505,7 +772,7 @@ namespace LSS_prototype.Scan_Page
                 _lastRecordingSecond = -1;
                 _recordCts = new CancellationTokenSource();
 
-                // ⑤ RecordLoop Task 변수로 저장 (중지 시 완료 대기에 사용)
+                // ⑤ RecordLoop Task 시작
                 _recordLoopTask = Task.Run(() => RecordLoop(_recordCts.Token, fps));
 
                 // ⑥ 1분 자동 중지 타이머
@@ -522,7 +789,7 @@ namespace LSS_prototype.Scan_Page
                             await StopDicomRecord();
                         });
                     }
-                    catch (OperationCanceledException) { } // 수동 중지 시 정상 취소
+                    catch (OperationCanceledException) { }
                 });
 
                 frame.Dispose();
@@ -531,18 +798,16 @@ namespace LSS_prototype.Scan_Page
         }
 
         // ═══════════════════════════════════════════
-        //  프레임 캡처 루프
+        //  Dicom Record 프레임 캡처 루프
         //  Cancel 신호 올 때까지 계속 실행
         //
         //  핵심 아이디어:
         //  프레임 처리 시간이 매번 다르기 때문에
         //  무조건 33ms Sleep 하면 실제 fps가 낮아짐
-        //  해결: 목표간격 - 처리시간 = 남은 시간만 Sleep
-        //       → 항상 정확한 fps 유지
+        //  해결: 목표간격 - 처리시간 = 남은 시간만 Sleep → 정확한 fps 유지
         // ═══════════════════════════════════════════
         private void RecordLoop(CancellationToken ct, double fps)
         {
-            // 목표 간격 계산 (예: 5fps → 200ms, 30fps → 33ms)
             var targetInterval = TimeSpan.FromMilliseconds(1000.0 / fps);
 
             while (!ct.IsCancellationRequested)
@@ -551,12 +816,11 @@ namespace LSS_prototype.Scan_Page
 
                 try
                 {
-                    // 현재 프레임 가져와서 AVI 에 기록
                     var frame = _cameraService.GetCurrentFrame();
                     if (frame != null && !frame.Empty())
                     {
                         _videoWriter?.Write(frame);
-                        frame.Dispose(); // Mat 은 쓰고나서 바로 해제 (안하면 메모리 누수)
+                        frame.Dispose();
                     }
 
                     // 경과시간 UI 업데이트 - 1초마다만 Dispatcher 호출 (UI 스레드 부하 방지)
@@ -571,8 +835,6 @@ namespace LSS_prototype.Scan_Page
                 catch (OperationCanceledException) { break; }
                 catch (Exception ex) { Common.WriteLog(ex); break; }
 
-                // 프레임 처리 시간 빼고 남은 시간만 Sleep
-                // 예) 처리 10ms → 200 - 10 = 190ms Sleep → 실제 간격 200ms 유지
                 var frameElapsed = DateTime.Now - frameStart;
                 var remaining = targetInterval - frameElapsed;
                 if (remaining > TimeSpan.Zero)
@@ -581,12 +843,12 @@ namespace LSS_prototype.Scan_Page
         }
 
         // ═══════════════════════════════════════════
-        //  녹화 중지 + AVI 저장 + DICOM 변환
+        //  Dicom Record 녹화 중지 + AVI 저장 + DICOM 변환
         //  ① 녹화 중지 신호
         //  ② RecordLoop 완전 종료 대기
-        //     → 종료 확인 후 VideoWriter Release 해야 AVI 파일 안전
-        //  ③ VideoWriter 닫기
-        //  ④ AVI → DICOM 변환 저장
+        //  ③ VideoWriter 닫기 (Release 필수 - 안하면 AVI 파일 손상)
+        //  ④ AVI 파일 존재 확인
+        //  ⑤ AVI → DICOM 변환 저장
         // ═══════════════════════════════════════════
         private async Task StopDicomRecord()
         {
@@ -617,6 +879,7 @@ namespace LSS_prototype.Scan_Page
                 _videoWriter = null;
 
                 // ④ AVI 파일 존재 확인
+                // 파일이 없으면 VideoIndex 롤백 (인덱스 낭비 방지)
                 if (string.IsNullOrEmpty(_aviSavePath) || !File.Exists(_aviSavePath))
                 {
                     _currentVideoIndex--;
@@ -642,7 +905,6 @@ namespace LSS_prototype.Scan_Page
                         ? SelectedPatient.Dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, "")
                         : "";
 
-                    // ⑥ DicomManager 생성 (이미지 캡처랑 동일한 패턴)
                     DicomManager dm = (SelectedPatient.Dataset == null)
                         ? new DicomManager(SelectedPatient.PatientId.ToString(), "00000001")
                         : new DicomManager(SelectedPatient.PatientId.ToString(), "00000001", SelectedPatient.Dataset);
@@ -659,16 +921,16 @@ namespace LSS_prototype.Scan_Page
                     dm.SetSeries("1", "", date, time);
                     dm.SetContentVideo("1", date, time);
 
-                    // ⑦ DCM 저장 경로 생성
-                    // DICOM/박한용_2634/20250313/202503130001/Video/박한용_2634_202503130001_1.dcm
-                    string dcmPath = GenerateDcmVideoSavePath(
+                    // DCM 저장 경로 생성
+                    // DICOM/박한용_2634/20250313/202503130001/Video/박한용_2634_202503130001_1_Dicom.dcm
+                    string dcmPath = GenerateDicomVideoPath(
                         SelectedPatient.PatientName,
                         SelectedPatient.PatientCode.ToString(),
                         _currentStudyId,
                         _currentVideoIndex
                     );
 
-                    // ⑧ AVI → DICOM 변환 저장
+                    // AVI → DICOM 변환 저장
                     dm.SaveVideoFile(dcmPath, _aviSavePath);
                 });
 
@@ -680,37 +942,47 @@ namespace LSS_prototype.Scan_Page
             }
             catch (Exception ex)
             {
-                LoadingWindow.End(); // 에러 나도 반드시 로딩창 닫기
+                LoadingWindow.End();
                 Common.WriteLog(ex);
                 CustomMessageWindow.Show($"동영상 저장 실패: {ex.Message}",
                     CustomMessageWindow.MessageBoxType.AutoClose, 3,
                     CustomMessageWindow.MessageIconType.Warning);
             }
+            finally
+            {
+                if (_videoWriter != null)
+                {
+                    _videoWriter.Release(); // AVI 파일 헤더를 닫고 저장 완료
+                    _videoWriter.Dispose();
+                    _videoWriter = null;
+                }
+                RecordingTime = "00:00";
+            }
         }
 
-        // ── AVI 저장 경로 생성 ──
-        // VIDEO/박한용_2634/20250313/202503130001/박한용_2634_202503130001_1.avi
-        private string GenerateVideoSavePath(string name, string code, string studyID, int videoIndex)
+        // ── Dicom Record AVI 저장 경로 생성 ──
+        // VIDEO/박한용_2634/20250313/202503130001/박한용_2634_202503130001_1_Dicom.avi
+        private string GenerateDicomAviPath(string name, string code, string studyID, int videoIndex)
         {
             string patientFolderName = $"{name}_{code}";
             string studyDateFolder = studyID.Substring(0, 8);
             string rootDir = Path.Combine(Common.executablePath, "VIDEO");
             string videoDir = Path.Combine(rootDir, patientFolderName, studyDateFolder, studyID);
             Directory.CreateDirectory(videoDir);
-            string fileName = $"{patientFolderName}_{studyID}_{videoIndex}.avi";
+            string fileName = $"{patientFolderName}_{studyID}_{videoIndex}_Dicom.avi";
             return Path.Combine(videoDir, fileName);
         }
 
-        // ── 동영상 DCM 저장 경로 생성 ──
-        // DICOM/박한용_2634/20250313/202503130001/Video/박한용_2634_202503130001_1.dcm
-        private string GenerateDcmVideoSavePath(string name, string code, string studyID, int videoIndex)
+        // ── Dicom Record DCM 저장 경로 생성 ──
+        // DICOM/박한용_2634/20250313/202503130001/Video/박한용_2634_202503130001_1_Dicom.dcm
+        private string GenerateDicomVideoPath(string name, string code, string studyID, int videoIndex)
         {
             string patientFolderName = $"{name}_{code}";
             string studyDateFolder = studyID.Substring(0, 8);
             string rootDir = Path.Combine(Common.executablePath, "DICOM");
             string videoDir = Path.Combine(rootDir, patientFolderName, studyDateFolder, studyID, "Video");
             Directory.CreateDirectory(videoDir);
-            string fileName = $"{patientFolderName}_{studyID}_{videoIndex}.dcm";
+            string fileName = $"{patientFolderName}_{studyID}_{videoIndex}_Dicom.dcm";
             return Path.Combine(videoDir, fileName);
         }
 
@@ -760,7 +1032,7 @@ namespace LSS_prototype.Scan_Page
             else
             {
                 // StudyID 있음 → Comment/Review 에서 돌아온 경우
-                // instanceIndex 가 0 이면 마지막 인덱스 복원
+                // 인덱스가 0 이면 마지막 인덱스 복원
                 if (_currentInstanceIndex == 0)
                 {
                     _currentInstanceIndex = GetLastInstanceIndex(
@@ -770,7 +1042,6 @@ namespace LSS_prototype.Scan_Page
                     );
                 }
 
-                // 동영상 인덱스도 동일하게 복원
                 if (_currentVideoIndex == 0)
                 {
                     _currentVideoIndex = GetLastVideoIndex(
@@ -841,7 +1112,6 @@ namespace LSS_prototype.Scan_Page
         {
             var todayStudyIds = GetTodayStudyIds(patientName, patientCode);
 
-            // 오늘 촬영 이력 없으면 무조건 0001
             if (todayStudyIds.Count == 0)
                 return DateTime.Now.ToString("yyyyMMdd") + "0001";
 
@@ -910,25 +1180,36 @@ namespace LSS_prototype.Scan_Page
             return maxIndex;
         }
 
-        /// <summary>Video 폴더에서 마지막 동영상 번호 읽기</summary>
+        /// <summary>
+        /// VIDEO 폴더에서 마지막 동영상 번호 읽기
+        /// Dicom Record(_Dicom.avi) + AVI Only(_Avi.avi) 전체 스캔
+        /// Del_ 파일도 번호에 포함 → 복구 시 인덱스 충돌 방지
+        /// </summary>
         private int GetLastVideoIndex(string patientName, string patientCode, string studyId)
         {
             string patientFolderName = $"{patientName}_{patientCode}";
             string studyDateFolder = studyId.Substring(0, 8);
             string videoDir = Path.Combine(
-                Common.executablePath, "DICOM",
-                patientFolderName, studyDateFolder, studyId, "Video");
+                Common.executablePath, "VIDEO",
+                patientFolderName, studyDateFolder, studyId);
 
             if (!Directory.Exists(videoDir)) return 0;
 
             int maxIndex = 0;
-            foreach (string file in Directory.GetFiles(videoDir, "*.dcm"))
+            foreach (string file in Directory.GetFiles(videoDir, "*.avi"))
             {
                 string fileName = Path.GetFileNameWithoutExtension(file);
+
+                // Del_ 접두사 제거 후 파싱
+                // Del_박한용_2634_202503130001_3_Avi → 박한용_2634_202503130001_3_Avi
+                if (fileName.StartsWith("Del_"))
+                    fileName = fileName.Substring(4);
+
+                // 파일명: 박한용_2634_202503130001_3_Avi
+                //                                  ↑ 뒤에서 두번째가 인덱스
                 string[] parts = fileName.Split('_');
-                if (parts.Length == 0) continue;
-                string lastPart = parts[parts.Length - 1];
-                if (int.TryParse(lastPart, out int idx) && idx > maxIndex)
+                if (parts.Length < 2) continue;
+                if (int.TryParse(parts[parts.Length - 2], out int idx) && idx > maxIndex)
                     maxIndex = idx;
             }
             return maxIndex;
@@ -938,7 +1219,6 @@ namespace LSS_prototype.Scan_Page
 
         #region 페이지 이동
 
-        // ── 이미지 코멘트 페이지 이동 ──
         private void OpenImageComment()
         {
             try
@@ -999,7 +1279,6 @@ namespace LSS_prototype.Scan_Page
 
         #region 카메라 제어
 
-        // ── 카메라 연결 및 초기 설정 ──
         private void ConnectCamera()
         {
             Task.Run(() =>
@@ -1179,11 +1458,17 @@ namespace LSS_prototype.Scan_Page
             if (_disposed) return;
             _disposed = true;
 
-            // 녹화 중이면 중지 신호 + RecordLoop 완료 대기
+            // Dicom Record 녹화 중이면 중지
             _recordCts?.Cancel();
             _recordLoopTask?.Wait(1000);
             _videoWriter?.Release();
             _videoWriter?.Dispose();
+
+            // AVI Only 녹화 중이면 중지
+            _aviOnlyCts?.Cancel();
+            _aviOnlyLoopTask?.Wait(1000);
+            _aviOnlyWriter?.Release();
+            _aviOnlyWriter?.Dispose();
 
             _cameraService.ErrorOccurred -= OnCameraError;
             _cameraService.FrameArrived -= OnFrameArrived;

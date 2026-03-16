@@ -759,8 +759,32 @@
                                 <Button Grid.Row="0" Style="{StaticResource DarkBtn}" Command="{Binding ImageScanCommand}">
                                     <TextBlock Text="Image&#10;Scan" Foreground="White" TextAlignment="Center" FontSize="25"/>
                                 </Button>
-                                <Button Grid.Row="2" Style="{StaticResource DarkBtn}" Command="{Binding VideoRecordCommand}">
-                                    <TextBlock Text="Video&#10;Record" Foreground="White" TextAlignment="Center" FontSize="25"/>
+                                <Button Grid.Row="2" Command="{Binding VideoRecordCommand}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource DarkBtn}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsVideoRecording}" Value="True">
+                                                    <Setter Property="Background" Value="#DC2626"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <!-- 기본 상태 (녹화 중 아닐 때) -->
+                                        <TextBlock Text="Video&#10;Record"
+                   Foreground="White"
+                   TextAlignment="Center"
+                   FontSize="25"
+                   Visibility="{Binding IsVideoRecording,
+                       Converter={StaticResource BoolToVisibilityConverter},
+                       ConverterParameter=Inverse}"/>
+                                        <!-- 녹화 중일 때 -->
+                                        <TextBlock Text="⏹ Stop" Foreground="White" TextAlignment="Center" FontSize="25"
+                                            Visibility="{Binding IsVideoRecording,  Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        <!-- 경과 시간 (녹화 중일 때만) -->
+                                        <TextBlock Text="{Binding VideoRecordingTime}" Foreground="#FF4444" TextAlignment="Center" FontSize="16"
+                                            FontWeight="Bold" Visibility="{Binding IsVideoRecording, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    </StackPanel>
                                 </Button>
                                 <Button Grid.Row="4" Command="{Binding DicomRecordCommand}">
                                     <Button.Style>

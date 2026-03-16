@@ -1,4 +1,5 @@
 using FellowOakDicom;
+using FellowOakDicom.Imaging;
 using LSS_prototype.Common_Module;
 using LSS_prototype.DB_CRUD;
 using LSS_prototype.Dicom_Module;
@@ -208,6 +209,24 @@ namespace LSS_prototype.Scan_Page
             set { _injectionTime = value; OnPropertyChanged(); }
         }
 
+        // ── 썸네일 ──
+        // 이미지 썸네일 (마지막 DCM 첫 프레임)
+        private ImageSource _imageThumbnail;
+        public ImageSource ImageThumbnail
+        {
+            get => _imageThumbnail;
+            private set { _imageThumbnail = value; OnPropertyChanged(); }
+        }
+
+        // 영상 썸네일 (마지막 AVI 첫 프레임)
+        private ImageSource _videoThumbnail;
+        public ImageSource VideoThumbnail
+        {
+            get => _videoThumbnail;
+            private set { _videoThumbnail = value; OnPropertyChanged(); }
+        }
+
+
         #endregion
 
         #region 커맨드
@@ -234,6 +253,7 @@ namespace LSS_prototype.Scan_Page
         public ICommand FilterOffCommand { get; }
         public ICommand ImageScanCommand { get; }
         public ICommand ImageCommentCommand { get; }
+        public ICommand VideoCommentCommand { get; }
         public ICommand DicomRecordCommand { get; }
         public ICommand VideoRecordCommand { get; }  // AVI Only 녹화
 
@@ -283,8 +303,13 @@ namespace LSS_prototype.Scan_Page
             FilterOffCommand = new RelayCommand(OnFilterOff);
             ImageScanCommand = new RelayCommand(async _ => await CaptureAndSaveDicomAsync());
             ImageCommentCommand = new RelayCommand(OpenImageComment);
+            VideoCommentCommand = new RelayCommand(OpenVideoComment);
             DicomRecordCommand = new RelayCommand(async _ => await ToggleDicomRecord());
             VideoRecordCommand = new RelayCommand(async _ => await ToggleVideoRecord());
+
+            // 기존 썸네일 로드
+            _ = RefreshThumbnailsAsync();
+
         }
 
         #endregion
@@ -412,6 +437,8 @@ namespace LSS_prototype.Scan_Page
                 CustomMessageWindow.Show("촬영 및 저장이 완료되었습니다.",
                     CustomMessageWindow.MessageBoxType.AutoClose, 1,
                     CustomMessageWindow.MessageIconType.Info);
+
+                _ = RefreshThumbnailsAsync();   // 썸네일 업데이트 
             }
             catch (Exception ex)
             {
@@ -423,6 +450,7 @@ namespace LSS_prototype.Scan_Page
             finally
             {
                 // 사용한 리소스 반드시 해제
+                
                 frame?.Dispose();
                 bitmap?.Dispose();
             }
@@ -650,6 +678,8 @@ namespace LSS_prototype.Scan_Page
                 CustomMessageWindow.Show("영상 저장 완료.",
                     CustomMessageWindow.MessageBoxType.AutoClose, 2,
                     CustomMessageWindow.MessageIconType.Info);
+
+                _ = RefreshThumbnailsAsync();  // 썸네일 작업 
             }
             catch (Exception ex)
             {
@@ -939,6 +969,8 @@ namespace LSS_prototype.Scan_Page
                 CustomMessageWindow.Show("동영상 저장 완료.",
                     CustomMessageWindow.MessageBoxType.AutoClose, 2,
                     CustomMessageWindow.MessageIconType.Info);
+
+                _ = RefreshThumbnailsAsync();   // 썸네일 업데이트 
             }
             catch (Exception ex)
             {
@@ -957,6 +989,7 @@ namespace LSS_prototype.Scan_Page
                     _videoWriter = null;
                 }
                 RecordingTime = "00:00";
+               
             }
         }
 
@@ -998,41 +1031,74 @@ namespace LSS_prototype.Scan_Page
         // ═══════════════════════════════════════════
         private void EnsureStudyReady()
         {
+            // ═══════════════════════════════════════════
+            //  StudyID 가 없는 경우
+            //  → 사용자가 오늘 처음 촬영 버튼을 누른 상황
+            //  → 오늘 촬영 이력을 확인해서 StudyID 를 결정
+            // ═══════════════════════════════════════════
             if (string.IsNullOrEmpty(_currentStudyId))
             {
-                // 처음 촬영 → StudyID 결정
-                string studyId = ResolveStudyId(
+                // 오늘 촬영 이력 기준으로 StudyID 결정
+                // - 오늘 촬영 이력 없음 → 새 StudyID (yyyyMMdd0001)
+                // - 오늘 촬영 이력 있음 → "이어서 촬영?" 팝업 → 네/아니오 선택
+                string resolvedStudyId = ResolveStudyId(
                     SelectedPatient.PatientName,
                     SelectedPatient.PatientCode.ToString()
                 );
 
-                bool exists = IsExistingStudy(
+                // 결정된 StudyID 의 폴더가 이미 존재하는지 확인
+                // → 존재함 = 이어서 촬영 선택 (기존 StudyID)
+                // → 없음   = 새로 촬영 (새 StudyID 또는 오늘 첫 촬영)
+                bool isExistingStudy = IsExistingStudy(
                     SelectedPatient.PatientName,
                     SelectedPatient.PatientCode.ToString(),
-                    studyId
+                    resolvedStudyId
                 );
 
-                if (exists)
+                if (isExistingStudy)
                 {
-                    // 기존 StudyID → 이미지/동영상 마지막 인덱스 복원
-                    ResumeStudy(studyId);
+                    // ── 이어서 촬영 ──
+                    // 사용자가 "이어서 촬영하시겠습니까?" 에 "네" 를 선택한 경우
+                    // 기존 StudyID 유지 + 마지막 이미지/영상 인덱스 복원
+                    // 예) 오전에 이미지 3장, 영상 2개 찍어뒀다면
+                    //     _currentInstanceIndex = 3, _currentVideoIndex = 2 로 복원
+                    //     → 다음 촬영 시 이미지 4번, 영상 3번부터 이어서 저장
+                    ResumeStudy(resolvedStudyId);
                     _currentVideoIndex = GetLastVideoIndex(
                         SelectedPatient.PatientName,
                         SelectedPatient.PatientCode.ToString(),
-                        studyId
+                        resolvedStudyId
                     );
+
+                    // 기존 파일이 있으므로 썸네일 즉시 로드
+                    _ = RefreshThumbnailsAsync();
                 }
                 else
                 {
-                    // 새 StudyID → 인덱스 0 으로 시작
-                    StartNewStudy(studyId);
+                    // ── 새로 촬영 ──
+                    // 아래 두 가지 경우 모두 해당
+                    // 1) 오늘 이 환자의 촬영 이력이 아예 없는 경우
+                    // 2) "이어서 촬영하시겠습니까?" 에 "아니오" 를 선택한 경우
+                    //    → 마지막 StudyID + 1 의 새 StudyID 로 시작
+                    //    예) 기존 마지막이 202503160001 이면 → 202503160002 로 시작
+                    StartNewStudy(resolvedStudyId);
                     _currentVideoIndex = 0;
+                    // 새 StudyID 라 파일 없음 → 썸네일 로드 불필요
                 }
             }
+            // ═══════════════════════════════════════════
+            //  StudyID 가 이미 있는 경우
+            //  → ImageComment / VideoComment 에서 복귀한 상황
+            //  → StudyID 는 유지, 인덱스만 0 이면 복원
+            //  예) ImageComment 에서 back 버튼 → new Scan(patient, studyId)
+            //      이 때 _currentInstanceIndex, _currentVideoIndex 는 0 으로 초기화됨
+            //      → 폴더 스캔해서 마지막 인덱스 복원
+            // ═══════════════════════════════════════════
             else
             {
-                // StudyID 있음 → Comment/Review 에서 돌아온 경우
-                // 인덱스가 0 이면 마지막 인덱스 복원
+                // 이미지 인덱스 복원
+                // _currentInstanceIndex 가 0 이면 Comment 복귀 후 초기화된 상태
+                // → DICOM/Image/ 폴더 스캔해서 마지막 번호 복원
                 if (_currentInstanceIndex == 0)
                 {
                     _currentInstanceIndex = GetLastInstanceIndex(
@@ -1042,6 +1108,9 @@ namespace LSS_prototype.Scan_Page
                     );
                 }
 
+                // 영상 인덱스 복원
+                // _currentVideoIndex 가 0 이면 Comment 복귀 후 초기화된 상태
+                // → VIDEO/ 폴더 스캔해서 마지막 번호 복원 (Del_ 파일 포함)
                 if (_currentVideoIndex == 0)
                 {
                     _currentVideoIndex = GetLastVideoIndex(
@@ -1272,8 +1341,220 @@ namespace LSS_prototype.Scan_Page
             }
         }
 
+        private void OpenVideoComment()
+        {
+            try
+            {
+                // StudyID 없으면 영상 촬영 자체가 없는 상태
+                if (string.IsNullOrWhiteSpace(_currentStudyId))
+                {
+                    CustomMessageWindow.Show(
+                        "불러올 촬영 영상이 없습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                string patientFolderName = $"{SelectedPatient.PatientName}_{SelectedPatient.PatientCode}";
+                string studyDateFolder = _currentStudyId.Substring(0, 8);
+
+                // IMAGE → VIDEO 폴더로 변경
+                // DICOM/Image/ 대신 VIDEO/ 루트로
+                string videoDir = Path.Combine(
+                    Common.executablePath, "VIDEO",
+                    patientFolderName, studyDateFolder,
+                    _currentStudyId
+                );
+
+                if (!Directory.Exists(videoDir))
+                {
+                    CustomMessageWindow.Show(
+                        "촬영된 영상이 없습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                // Del_ 파일 제외하고 AVI 존재 여부 확인
+                bool hasVideo = Directory.EnumerateFiles(videoDir, "*.avi")
+                    .Any(f => !Path.GetFileName(f).StartsWith("Del_"));
+
+                if (!hasVideo)
+                {
+                    CustomMessageWindow.Show(
+                        "촬영된 영상이 없습니다.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                MainPage.Instance.NavigateTo(
+                    new VideoComment_Page.VideoComment(SelectedPatient, _currentStudyId));
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                CustomMessageWindow.Show(
+                    "영상 코멘트 화면으로 이동할 수 없습니다.",
+                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    CustomMessageWindow.MessageIconType.Warning);
+            }
+        }
+
         private void NavigateToPatient() =>
             MainPage.Instance.NavigateTo(new Patient_Page.Patient());
+
+        #endregion
+
+        #region 썸네일 추출
+        // ═══════════════════════════════════════════
+        //  썸네일 갱신
+        //  StudyID 기준으로 마지막 이미지/영상 파일 첫 프레임 추출
+        //  호출 시점:
+        //    1. EnsureStudyReady() 완료 후
+        //    2. ResumeStudy() 완료 후
+        //    3. 이미지/영상 촬영 완료 후
+        // ═══════════════════════════════════════════
+        public async Task RefreshThumbnailsAsync()
+        {
+            try
+            {
+                if (SelectedPatient == null || string.IsNullOrEmpty(_currentStudyId)) return;
+
+                // 병렬로 동시에 추출 (속도 향상)
+                var imgTask = Task.Run(() => LoadImageThumbnail());
+                var vidTask = Task.Run(() => LoadVideoThumbnail());
+
+                await Task.WhenAll(imgTask, vidTask);
+
+                // UI 스레드에서 프로퍼티 업데이트
+                await App.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    ImageThumbnail = imgTask.Result;
+                    VideoThumbnail = vidTask.Result;
+                });
+            }
+            catch (Exception ex) { Common.WriteLog(ex); }
+        }
+
+        // ── 마지막 DCM 파일 첫 프레임 추출 ──
+        private ImageSource LoadImageThumbnail()
+        {
+            try
+            {
+                string patientFolderName = $"{SelectedPatient.PatientName}_{SelectedPatient.PatientCode}";
+                string imageDir = Path.Combine(
+                    Common.executablePath, "DICOM",
+                    patientFolderName,
+                    _currentStudyId.Substring(0, 8),
+                    _currentStudyId, "Image");
+
+                if (!Directory.Exists(imageDir)) return null;
+
+                string lastFile = Directory.GetFiles(imageDir, "*.dcm")
+                    .Where(f => !Path.GetFileName(f).StartsWith("Del_"))
+                    .OrderBy(f => f)
+                    .LastOrDefault();
+
+                if (lastFile == null) return null;
+
+                // ── ImageComment 와 완전히 동일한 방식 ──
+                // DicomImage.RenderImage() → fo-dicom 이 색상 처리
+                var dicomFile = DicomFile.Open(lastFile);
+                var dicomImage = new DicomImage(dicomFile.Dataset);
+                var rendered = dicomImage.RenderImage();
+                var pixels = rendered.As<byte[]>();
+
+                var bitmap = new WriteableBitmap(
+                    rendered.Width, rendered.Height, 96, 96,
+                    System.Windows.Media.PixelFormats.Bgra32, null);
+
+                bitmap.WritePixels(
+                    new System.Windows.Int32Rect(0, 0, rendered.Width, rendered.Height),
+                    pixels, rendered.Width * 4, 0);
+
+                bitmap.Freeze();
+
+                dicomImage = null;
+                dicomFile = null;
+
+                return bitmap;
+            }
+            catch (Exception ex) { Common.WriteLog(ex); return null; }
+        }
+
+        // ── 마지막 AVI 파일 첫 프레임 추출 ──
+        private ImageSource LoadVideoThumbnail()
+        {
+            try
+            {
+                string patientFolderName = $"{SelectedPatient.PatientName}_{SelectedPatient.PatientCode}";
+                string videoDir = Path.Combine(
+                    Common.executablePath, "VIDEO",
+                    patientFolderName,
+                    _currentStudyId.Substring(0, 8),
+                    _currentStudyId);
+
+                if (!Directory.Exists(videoDir)) return null;
+
+                // Del_ 제외 + 마지막 파일
+                string lastFile = Directory.GetFiles(videoDir, "*.avi")
+                    .Where(f => !Path.GetFileName(f).StartsWith("Del_"))
+                    .OrderBy(f => f)
+                    .LastOrDefault();
+
+                if (lastFile == null) return null;
+
+                // AVI 첫 프레임 추출
+                using (var cap = new VideoCapture(lastFile))
+                {
+                    if (!cap.IsOpened()) return null;
+
+                    using (var frame = new Mat())
+                    {
+                        cap.Read(frame);
+                        if (frame.Empty()) return null;
+
+                        return ConvertMatToBitmapSource(frame);
+                    }
+                }
+            }
+            catch (Exception ex) { Common.WriteLog(ex); return null; }
+        }
+
+        // ── Mat → BitmapSource 변환 (UI 스레드 안전) ──
+        private BitmapSource ConvertMatToBitmapSource(Mat mat)
+        {
+            try
+            {
+                // Mat → byte[] → BitmapSource 직접 변환
+                int width = mat.Width;
+                int height = mat.Height;
+                int channels = mat.Channels();
+                int stride = width * channels;
+
+                byte[] buffer = new byte[height * stride];
+                System.Runtime.InteropServices.Marshal.Copy(
+                    mat.Data, buffer, 0, buffer.Length);
+
+                var pixelFormat = channels == 1
+                    ? System.Windows.Media.PixelFormats.Gray8
+                    : System.Windows.Media.PixelFormats.Bgr24;
+
+                var bitmap = BitmapSource.Create(
+                    width, height,
+                    96, 96,
+                    pixelFormat,
+                    null,
+                    buffer,
+                    stride);
+
+                bitmap.Freeze();
+                return bitmap;
+            }
+            catch (Exception ex) { Common.WriteLog(ex); return null; }
+        }
+
 
         #endregion
 

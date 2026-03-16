@@ -240,7 +240,9 @@
     <Compile Include="ImageComment_Page\ImageComment.xaml.cs">
       <DependentUpon>ImageComment.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ImageComment_Page\ImageCommentViewModel.cs" />
+    <Compile Include="ImageComment_Page\ImageCommentViewModel.cs">
+      <DependentUpon>ImageComment.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ImageReview_Page\ImageReview.xaml.cs">
       <DependentUpon>ImageReview.xaml</DependentUpon>
     </Compile>
@@ -338,6 +340,9 @@
     </Compile>
     <Compile Include="User_Page\User_EditViewModel.cs" />
     <Compile Include="VideoComment_Page\VideoComment.xaml.cs">
+      <DependentUpon>VideoComment.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="VideoComment_Page\VideoCommentViewModel.cs">
       <DependentUpon>VideoComment.xaml</DependentUpon>
     </Compile>
     <Compile Include="VideoReview_Page\VideoReview.xaml.cs">
@@ -456,6 +461,9 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Content Include="sample.avi">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="SLABHIDDevice.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -493,9 +501,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="NodeMapData_MD_VC140_v3_0.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="sample.avi">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="SpinnakerC_v140.dll">

@@ -717,34 +717,33 @@
                                     <RowDefinition Height="6"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
+
+                                <!-- 이미지 썸네일 -->
                                 <Button Grid.Row="0"
-                                        Command="{Binding ImageCommentCommand}"
-                                        BorderThickness="0" Padding="0" Cursor="Hand">
+            Command="{Binding ImageCommentCommand}"
+            BorderThickness="0" Padding="0" Cursor="Hand">
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
                                             <Border Background="#0A1929" CornerRadius="10" ClipToBounds="True">
-                                                <Viewbox Stretch="Uniform">
-                                                    <Border Width="400" Height="300">
-                                                        <Image x:Name="ThumbImage1" Stretch="UniformToFill"/>
-                                                    </Border>
-                                                </Viewbox>
+                                                <Image Source="{Binding ImageThumbnail}" Stretch="Uniform"/>
                                             </Border>
                                         </ControlTemplate>
                                     </Button.Template>
                                 </Button>
-                                <Button Grid.Row="2" Command="{Binding VideoCommand}" BorderThickness="0" Padding="0" Cursor="Hand">
+
+                                <!-- 영상 썸네일 -->
+                                <Button Grid.Row="2"
+            Command="{Binding VideoCommentCommand}"
+            BorderThickness="0" Padding="0" Cursor="Hand">
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
                                             <Border Background="#0A1929" CornerRadius="10" ClipToBounds="True">
-                                                <Viewbox Stretch="Uniform">
-                                                    <Border Width="400" Height="300">
-                                                        <Image x:Name="ThumbImage2" Stretch="UniformToFill"/>
-                                                    </Border>
-                                                </Viewbox>
+                                                <Image Source="{Binding VideoThumbnail}" Stretch="Uniform"/>
                                             </Border>
                                         </ControlTemplate>
                                     </Button.Template>
                                 </Button>
+
                             </Grid>
 
                             <!-- 우측 버튼 3개 -->

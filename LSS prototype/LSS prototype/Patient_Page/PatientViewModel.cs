@@ -639,7 +639,7 @@ namespace LSS_prototype.Patient_Page
                 await Task.Delay(500); // 로딩바 테스트 차 0.5 delay 추후 배포 시 해당코드 삭제
 
                 // TODO: LS / LSS 간 표시 데이터 차이 확인 후 바인딩 필드 정리 필요 0227 박한용
-                _emrPatients = worklistItems;
+                _emrPatients = worklistItems;  
 
                 foreach (var p in _emrPatients)
                 {

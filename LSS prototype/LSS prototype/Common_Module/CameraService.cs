@@ -29,6 +29,26 @@ namespace LSS_prototype.Common_Module
         private Mat _lastFrame = null;
         private readonly object _frameLock = new object(); // ── _lastFrame 스레드 안전 lock ( 화면 멈춤 방지 ) ──
 
+        // ── WriteableBitmap 재사용 (매 프레임 new 방지 → 메모리/GC 절감) ──
+        private WriteableBitmap _reusableBitmap = null;
+        private readonly object _bitmapLock = new object();
+
+        // ── processedData 재사용 (매 프레임 new byte[] 방지) ──
+        private byte[] _processedDataBuffer = null;
+
+        // ── ApplyColorMap 내부 Mat 재사용 (매 프레임 new Mat 방지) ──
+        private Mat _colorSrc3ch = new Mat();
+        private Mat _colorDst = new Mat();
+        private Mat _colorNotImg = new Mat();
+
+        // ── CalcSharpness 내부 Mat 재사용 ──
+        private Mat _sharpGray = new Mat();
+        private Mat _sharpSobelX = new Mat();
+        private Mat _sharpSobelY = new Mat();
+        private Mat _sharpSobelX2 = new Mat();
+        private Mat _sharpSobelY2 = new Mat();
+        private Mat _sharpCombined = new Mat();
+
         // ── 상태 플래그 ──
         private bool _camOpen = false;
         private bool _camConnection = false;
@@ -195,10 +215,10 @@ namespace LSS_prototype.Common_Module
             _reconnectTimer?.Dispose();
             _reconnectTimer = new Timer(_ =>
             {
-              
+
                 if (_disposed) return;
 
-  
+
                 if (_camConnection || _managedSystem == null) return;
 
                 try
@@ -301,16 +321,20 @@ namespace LSS_prototype.Common_Module
                 int height = (int)image.Height;
                 byte[] data = image.ManagedData;
 
-                // Mat 처리는 using 블록 안에서 완전히 끝내고
+                // ── Mat 처리는 using 블록 안에서 완전히 끝내고 ──
                 // byte[] 로 복사해서 using 블록 밖으로 꺼냄
                 byte[] processedData;
                 int stride;
                 bool isColor;
+                int needed = 0;
 
                 using (Mat src = Mat.FromPixelData(height, width, MatType.CV_8UC1, data))
-                using (Mat processed = ApplyColorMap(src))
                 {
-                    // ──  lock 으로 _lastFrame 교체 안전하게 처리 ──
+                    // ApplyColorMap은 내부 필드 Mat(_colorDst)을 직접 반환
+                    // using으로 감싸면 필드를 Dispose해버리므로 일반 참조로 사용
+                    Mat processed = ApplyColorMap(src);
+
+                    // ── lock 으로 _lastFrame 교체 안전하게 처리 ──
                     lock (_frameLock)
                     {
                         _lastFrame?.Dispose();
@@ -319,25 +343,47 @@ namespace LSS_prototype.Common_Module
 
                     stride = (int)processed.Step();
                     isColor = processed.Channels() == 3;
-                    processedData = new byte[height * stride];
-                    Marshal.Copy(processed.Data, processedData, 0, processedData.Length);
+                    needed = height * stride;
+
+                    // 기존 버퍼가 충분히 크면 재사용, 부족할 때만 새로 할당
+                    if (_processedDataBuffer == null || _processedDataBuffer.Length < needed)
+                        _processedDataBuffer = new byte[needed];
+
+                    processedData = _processedDataBuffer;
+                    Marshal.Copy(processed.Data, processedData, 0, needed);
                     double sharpness = CalcSharpness(src);
                     SharpnessUpdated?.Invoke(sharpness);
                 }
 
-                WriteableBitmap bitmap = null;
+                // ── WriteableBitmap 재사용 ──
+                // 매 프레임 new 하지 않고, 크기가 바뀔 때만 새로 생성
+                // 기존: 30fps → 초당 30개 객체 생성 → GC 압박
+                // 개선: 최초 1회 or 해상도 변경 시에만 생성 → 픽셀 데이터만 덮어씀
                 Application.Current?.Dispatcher.Invoke(() =>
                 {
                     var format = isColor ? PixelFormats.Bgr24 : PixelFormats.Gray8;
-                    bitmap = new WriteableBitmap(width, height, 96, 96, format, null);
-                    bitmap.Lock();
-                    Marshal.Copy(processedData, 0, bitmap.BackBuffer, processedData.Length);
-                    bitmap.AddDirtyRect(new Int32Rect(0, 0, width, height));
-                    bitmap.Unlock();
-                    bitmap.Freeze();
+
+                    // 크기 또는 포맷이 달라진 경우에만 새로 생성
+                    lock (_bitmapLock)
+                    {
+                        if (_reusableBitmap == null
+                            || _reusableBitmap.PixelWidth != width
+                            || _reusableBitmap.PixelHeight != height
+                            || _reusableBitmap.Format != format)
+                        {
+                            _reusableBitmap = new WriteableBitmap(width, height, 96, 96, format, null);
+                        }
+
+                        // 새 프레임 픽셀 데이터만 덮어씀 (객체는 그대로)
+                        _reusableBitmap.Lock();
+                        Marshal.Copy(processedData, 0, _reusableBitmap.BackBuffer, needed);
+                        _reusableBitmap.AddDirtyRect(new Int32Rect(0, 0, width, height));
+                        _reusableBitmap.Unlock();
+                        // Freeze 하지 않음 → 재사용 가능
+                    }
                 });
 
-                return bitmap;
+                return _reusableBitmap;
             }
             catch (Exception ex)
             {
@@ -358,30 +404,26 @@ namespace LSS_prototype.Common_Module
         {
             try
             {
-                Mat src3ch = new Mat();
-                Cv2.CvtColor(src, src3ch, ColorConversionCodes.GRAY2BGR);
-
-                Mat dst = new Mat();
+                // _colorSrc3ch, _colorDst, _colorNotImg 은 필드로 재사용
+                // 매 프레임 new Mat() 생성 방지 → GC 압박 감소
+                Cv2.CvtColor(src, _colorSrc3ch, ColorConversionCodes.GRAY2BGR);
 
                 if (ColorMap == "Rainbow")
                 {
-                    Mat notImg = new Mat();
-                    Cv2.BitwiseNot(src3ch, notImg);
-                    Cv2.ApplyColorMap(notImg, dst, ColormapTypes.Rainbow);
-                    notImg.Dispose();
+                    Cv2.BitwiseNot(_colorSrc3ch, _colorNotImg);
+                    Cv2.ApplyColorMap(_colorNotImg, _colorDst, ColormapTypes.Rainbow);
                 }
                 else if (ColorMap == "Invert")
                 {
-                    Cv2.BitwiseNot(src3ch, dst);
+                    Cv2.BitwiseNot(_colorSrc3ch, _colorDst);
                 }
                 else
                 {
                     // Origin 또는 알 수 없는 값 → 원본 그대로 (fallback)
-                    src3ch.CopyTo(dst);
+                    _colorSrc3ch.CopyTo(_colorDst);
                 }
 
-                src3ch.Dispose();
-                return dst;
+                return _colorDst;
             }
             catch (Exception ex)
             {
@@ -406,29 +448,24 @@ namespace LSS_prototype.Common_Module
                 int roiX = src.Width / 2 - roiW / 2;
                 int roiY = src.Height / 2 - roiH / 2;
 
+                // roi 는 src의 부분 참조(헤더만 생성, 픽셀 복사 없음) → using 유지
+                // gray, sobelX, sobelY, sobelX2, sobelY2, combined 는 필드 재사용
                 using (Mat roi = new Mat(src, new OpenCvSharp.Rect(roiX, roiY, roiW, roiH)))
-                using (Mat gray = new Mat())
-                using (Mat sobelX = new Mat())
-                using (Mat sobelY = new Mat())
                 {
                     if (roi.Channels() == 3)
-                        Cv2.CvtColor(roi, gray, ColorConversionCodes.BGR2GRAY);
+                        Cv2.CvtColor(roi, _sharpGray, ColorConversionCodes.BGR2GRAY);
                     else
-                        roi.CopyTo(gray);
+                        roi.CopyTo(_sharpGray);
 
-                    // Tenengrad - Sobel X, Y 계산
-                    Cv2.Sobel(gray, sobelX, MatType.CV_64F, 1, 0);
-                    Cv2.Sobel(gray, sobelY, MatType.CV_64F, 0, 1);
+                    Cv2.Sobel(_sharpGray, _sharpSobelX, MatType.CV_64F, 1, 0);
+                    Cv2.Sobel(_sharpGray, _sharpSobelY, MatType.CV_64F, 0, 1);
 
-                    // 제곱합 계산
-                    Mat sobelX2 = sobelX.Mul(sobelX);
-                    Mat sobelY2 = sobelY.Mul(sobelY);
-                    Scalar sumVal = Cv2.Sum(sobelX2 + sobelY2);
+                    // Mul은 결과를 필드 Mat에 덮어씀 → new 없음
+                    Cv2.Multiply(_sharpSobelX, _sharpSobelX, _sharpSobelX2);
+                    Cv2.Multiply(_sharpSobelY, _sharpSobelY, _sharpSobelY2);
+                    Cv2.Add(_sharpSobelX2, _sharpSobelY2, _sharpCombined);
 
-                    sobelX2.Dispose();
-                    sobelY2.Dispose();
-
-                    return sumVal.Val0;
+                    return Cv2.Sum(_sharpCombined).Val0;
                 }
             }
             catch (Exception ex)
@@ -504,27 +541,40 @@ namespace LSS_prototype.Common_Module
                             int width = frame.Width;
                             int height = frame.Rows;
                             int stride = width * 3; // BGR = 3 bytes
-                            byte[] data = new byte[height * stride];
-                            Marshal.Copy(frame.Data, data, 0, data.Length);
+                            int needed = height * stride;
 
-                            WriteableBitmap bitmap = null;
+                            // _processedDataBuffer 재사용 (ToBitmap과 동일한 방식)
+                            if (_processedDataBuffer == null || _processedDataBuffer.Length < needed)
+                                _processedDataBuffer = new byte[needed];
+                            Marshal.Copy(frame.Data, _processedDataBuffer, 0, needed);
+
+                            // ── WriteableBitmap 재사용 (ToBitmap과 동일한 방식) ──
                             Application.Current?.Dispatcher.Invoke(() =>
                             {
-                                bitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgr24, null);
-                                bitmap.Lock();
-                                Marshal.Copy(data, 0, bitmap.BackBuffer, data.Length);
-                                bitmap.AddDirtyRect(new Int32Rect(0, 0, width, height));
-                                bitmap.Unlock();
-                                bitmap.Freeze();
+                                lock (_bitmapLock)
+                                {
+                                    if (_reusableBitmap == null
+                                        || _reusableBitmap.PixelWidth != width
+                                        || _reusableBitmap.PixelHeight != height)
+                                    {
+                                        _reusableBitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgr24, null);
+                                    }
+
+                                    _reusableBitmap.Lock();
+                                    Marshal.Copy(_processedDataBuffer, 0, _reusableBitmap.BackBuffer, needed);
+                                    _reusableBitmap.AddDirtyRect(new Int32Rect(0, 0, width, height));
+                                    _reusableBitmap.Unlock();
+                                    // Freeze 하지 않음 → 재사용 가능
+                                }
                             });
 
-                            if (bitmap != null)
+                            if (_reusableBitmap != null)
                                 lock (_frameLock)
                                 {
                                     _lastFrame?.Dispose();
                                     _lastFrame = frame.Clone();
                                 }
-                            FrameArrived?.Invoke(bitmap);
+                            FrameArrived?.Invoke(_reusableBitmap);
 
                             Thread.Sleep(delay);
                         }
@@ -553,8 +603,23 @@ namespace LSS_prototype.Common_Module
 
             Disconnect();
             lock (_frameLock) { _lastFrame?.Dispose(); _lastFrame = null; }
+            lock (_bitmapLock) { _reusableBitmap = null; }  // WriteableBitmap은 GC에 맡김 (Dispose 없음)
+
+            // ApplyColorMap 재사용 필드 Mat 해제
+            _colorSrc3ch?.Dispose();
+            _colorDst?.Dispose();
+            _colorNotImg?.Dispose();
+
+            // CalcSharpness 재사용 필드 Mat 해제
+            _sharpGray?.Dispose();
+            _sharpSobelX?.Dispose();
+            _sharpSobelY?.Dispose();
+            _sharpSobelX2?.Dispose();
+            _sharpSobelY2?.Dispose();
+            _sharpCombined?.Dispose();
+
             _managedSystem?.Dispose();
-            _managedSystem = null;  
+            _managedSystem = null;
         }
 
         #endregion

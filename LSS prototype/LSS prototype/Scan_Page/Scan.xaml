@@ -717,34 +717,33 @@
                                     <RowDefinition Height="6"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
+
+                                <!-- 이미지 썸네일 -->
                                 <Button Grid.Row="0"
-                                        Command="{Binding ImageCommentCommand}"
-                                        BorderThickness="0" Padding="0" Cursor="Hand">
+            Command="{Binding ImageCommentCommand}"
+            BorderThickness="0" Padding="0" Cursor="Hand">
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
                                             <Border Background="#0A1929" CornerRadius="10" ClipToBounds="True">
-                                                <Viewbox Stretch="Uniform">
-                                                    <Border Width="400" Height="300">
-                                                        <Image x:Name="ThumbImage1" Stretch="UniformToFill"/>
-                                                    </Border>
-                                                </Viewbox>
+                                                <Image Source="{Binding ImageThumbnail}" Stretch="Uniform"/>
                                             </Border>
                                         </ControlTemplate>
                                     </Button.Template>
                                 </Button>
-                                <Button Grid.Row="2" Command="{Binding VideoCommand}" BorderThickness="0" Padding="0" Cursor="Hand">
+
+                                <!-- 영상 썸네일 -->
+                                <Button Grid.Row="2"
+            Command="{Binding VideoCommentCommand}"
+            BorderThickness="0" Padding="0" Cursor="Hand">
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
                                             <Border Background="#0A1929" CornerRadius="10" ClipToBounds="True">
-                                                <Viewbox Stretch="Uniform">
-                                                    <Border Width="400" Height="300">
-                                                        <Image x:Name="ThumbImage2" Stretch="UniformToFill"/>
-                                                    </Border>
-                                                </Viewbox>
+                                                <Image Source="{Binding VideoThumbnail}" Stretch="Uniform"/>
                                             </Border>
                                         </ControlTemplate>
                                     </Button.Template>
                                 </Button>
+
                             </Grid>
 
                             <!-- 우측 버튼 3개 -->
@@ -759,8 +758,32 @@
                                 <Button Grid.Row="0" Style="{StaticResource DarkBtn}" Command="{Binding ImageScanCommand}">
                                     <TextBlock Text="Image&#10;Scan" Foreground="White" TextAlignment="Center" FontSize="25"/>
                                 </Button>
-                                <Button Grid.Row="2" Style="{StaticResource DarkBtn}" Command="{Binding VideoRecordCommand}">
-                                    <TextBlock Text="Video&#10;Record" Foreground="White" TextAlignment="Center" FontSize="25"/>
+                                <Button Grid.Row="2" Command="{Binding VideoRecordCommand}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource DarkBtn}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsVideoRecording}" Value="True">
+                                                    <Setter Property="Background" Value="#DC2626"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <!-- 기본 상태 (녹화 중 아닐 때) -->
+                                        <TextBlock Text="Video&#10;Record"
+                   Foreground="White"
+                   TextAlignment="Center"
+                   FontSize="25"
+                   Visibility="{Binding IsVideoRecording,
+                       Converter={StaticResource BoolToVisibilityConverter},
+                       ConverterParameter=Inverse}"/>
+                                        <!-- 녹화 중일 때 -->
+                                        <TextBlock Text="⏹ Stop" Foreground="White" TextAlignment="Center" FontSize="25"
+                                            Visibility="{Binding IsVideoRecording,  Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        <!-- 경과 시간 (녹화 중일 때만) -->
+                                        <TextBlock Text="{Binding VideoRecordingTime}" Foreground="#FF4444" TextAlignment="Center" FontSize="16"
+                                            FontWeight="Bold" Visibility="{Binding IsVideoRecording, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    </StackPanel>
                                 </Button>
                                 <Button Grid.Row="4" Command="{Binding DicomRecordCommand}">
                                     <Button.Style>

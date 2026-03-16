@@ -1,58 +1,448 @@
-﻿<Window x:Class="LSS_prototype.VideoComment_Page.VideoComment"
+﻿<UserControl x:Class="LSS_prototype.VideoComment_Page.VideoComment"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:LSS_prototype.VideoComment_Page"
         mc:Ignorable="d"
-               Title="VideoComment" Height="1080" Width="1920"
-        WindowState="Maximized"
-        ResizeMode="NoResize"
-        Topmost="True"
-        WindowStyle="None">
-    <Grid>
-        <Border BorderBrush="Black"
-            BorderThickness="2"
-            Width="1400"
-            Height="1050"
-            Margin="10,0,0,0"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Top"  Grid.RowSpan="3"
-             />
-        <Image Name="CameraPreviewImage" HorizontalAlignment="Left" VerticalAlignment="Top" Width="1400" Height="1050" Margin="10,0,0,0" Grid.RowSpan="3"/>
-        <ComboBox HorizontalAlignment="Left" Margin="1429,135,0,0" VerticalAlignment="Top" Width="476" Height="54"/>
-        <ComboBox HorizontalAlignment="Left" Margin="1429,302,0,0" VerticalAlignment="Top" Width="476" Height="54"/>
-        <Label Content="Position" HorizontalAlignment="Left" Margin="1432,75,0,0" VerticalAlignment="Top" FontSize="36"/>
-        <Label Content="Anatomical Directional" HorizontalAlignment="Left" Margin="1429,240,0,0" VerticalAlignment="Top" FontSize="36"/>
-        <Button Content="EXIT" HorizontalAlignment="Left" Margin="1410,1013,0,0" VerticalAlignment="Top" Height="51" Width="510" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Button Content="RESET" HorizontalAlignment="Left" Margin="1427,928,0,0" VerticalAlignment="Top" Height="67" Width="476" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Button Content="DELETE" HorizontalAlignment="Left" Margin="1427,839,0,0" VerticalAlignment="Top" Height="72" Width="225" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Button Content="SAVE" HorizontalAlignment="Left" Margin="1682,839,0,0" VerticalAlignment="Top" Height="72" Width="221" BorderBrush="#FFDDDDDD" FontSize="25" Background="#FF171616" Foreground="#FFECE5E5">
-            <Button.Resources>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="CornerRadius" Value="10                             "/>
-                </Style>
-            </Button.Resources>
-        </Button>
-        <Rectangle HorizontalAlignment="Left" Height="273" Margin="1427,494,0,0" VerticalAlignment="Top" Width="476" RadiusX="15.54" RadiusY="15.54" Fill="#FFEDEDED"/>
-        <Label Content="Comment" HorizontalAlignment="Left" Margin="1439,435,0,0" VerticalAlignment="Top" FontSize="36"/>
+        Height="1080" Width="1920"
+        Background="#173753"
+        d:DesignWidth="1920" d:DesignHeight="1080">
+
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="Panel"      Color="#1C2B3A"/>
+        <SolidColorBrush x:Key="Card"       Color="#243447"/>
+        <SolidColorBrush x:Key="CardBorder" Color="#2E4460"/>
+        <SolidColorBrush x:Key="ValueBg"    Color="#1A2D3E"/>
+        <SolidColorBrush x:Key="BtnDark"    Color="#2A3F55"/>
+        <SolidColorBrush x:Key="Inactive"   Color="#94A3B8"/>
+        <SolidColorBrush x:Key="Accent"     Color="#3B82F6"/>
+
+        <Style x:Key="BaseBtn" TargetType="Button">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DarkBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
+            <Setter Property="Background" Value="{StaticResource BtnDark}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize"   Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+
+        <!-- 중앙 재생/정지 버튼 (제일 크게) -->
+        <Style x:Key="PlayBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
+            <Setter Property="Background" Value="#3B82F6"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <!-- 1초 전/후 + 배속 버튼 -->
+        <Style x:Key="SeekBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
+            <Setter Property="Background" Value="{StaticResource BtnDark}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <Style x:Key="DangerBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
+            <Setter Property="Background" Value="#7F1D1D"/>
+            <Setter Property="Foreground" Value="#FCA5A5"/>
+            <Setter Property="FontSize"   Value="15"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+
+        <Style x:Key="ExitBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
+            <Setter Property="Background"      Value="#111827"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="FontSize"        Value="20"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Height"          Value="72"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+        </Style>
+
+        <Style x:Key="DarkCombo" TargetType="ComboBox">
+            <Setter Property="Background"      Value="{StaticResource Card}"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource CardBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize"        Value="17"/>
+            <Setter Property="Height"          Value="52"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="36"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Grid.Column="0"
+                                    Content="{TemplateBinding SelectionBoxItem}"
+                                    Margin="14,0,0,0" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="▾"
+                                           Foreground="{StaticResource Inactive}"
+                                           FontSize="14" VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"/>
+                                <Popup x:Name="PART_Popup"
+                                       IsOpen="{TemplateBinding IsDropDownOpen}"
+                                       Placement="Bottom" AllowsTransparency="True">
+                                    <Border Background="{StaticResource Card}"
+                                            BorderBrush="{StaticResource CardBorder}"
+                                            BorderThickness="1" CornerRadius="10"
+                                            MinWidth="{TemplateBinding ActualWidth}">
+                                        <ScrollViewer MaxHeight="220">
+                                            <ItemsPresenter/>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="Foreground"  Value="White"/>
+                        <Setter Property="Background"  Value="{StaticResource Card}"/>
+                        <Setter Property="Padding"     Value="14,10"/>
+                        <Setter Property="FontSize"    Value="16"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter Property="Background" Value="{StaticResource BtnDark}"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SeekSlider" TargetType="Slider">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid>
+                            <Border Height="44" Background="Transparent">
+                                <Grid VerticalAlignment="Center">
+                                    <Border Height="6" CornerRadius="3"
+                                            Background="{StaticResource BtnDark}" Margin="22,0"/>
+                                    <Track x:Name="PART_Track" Margin="0">
+                                        <Track.DecreaseRepeatButton>
+                                            <RepeatButton Command="Slider.DecreaseLarge" Focusable="False">
+                                                <RepeatButton.Template>
+                                                    <ControlTemplate TargetType="RepeatButton">
+                                                        <Border Height="6" CornerRadius="3,0,0,3"
+                                                                Background="{StaticResource Accent}"
+                                                                VerticalAlignment="Center"/>
+                                                    </ControlTemplate>
+                                                </RepeatButton.Template>
+                                            </RepeatButton>
+                                        </Track.DecreaseRepeatButton>
+                                        <Track.IncreaseRepeatButton>
+                                            <RepeatButton Command="Slider.IncreaseLarge" Focusable="False">
+                                                <RepeatButton.Template>
+                                                    <ControlTemplate TargetType="RepeatButton">
+                                                        <Border Background="Transparent"/>
+                                                    </ControlTemplate>
+                                                </RepeatButton.Template>
+                                            </RepeatButton>
+                                        </Track.IncreaseRepeatButton>
+                                        <Track.Thumb>
+                                            <Thumb>
+                                                <Thumb.Template>
+                                                    <ControlTemplate TargetType="Thumb">
+                                                        <Grid Width="36" Height="36">
+                                                            <Ellipse Fill="#40000000" Margin="-2"/>
+                                                            <Ellipse Fill="White"/>
+                                                            <Ellipse Width="12" Height="12"
+                                                                     Fill="{StaticResource Accent}"
+                                                                     HorizontalAlignment="Center"
+                                                                     VerticalAlignment="Center"/>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </Thumb.Template>
+                                            </Thumb>
+                                        </Track.Thumb>
+                                    </Track>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource Panel}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="440"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ══ 좌측: 영상 재생 영역 ══ -->
+        <Border Grid.Column="0" Background="Black"
+                Margin="10,10,5,10" CornerRadius="8" ClipToBounds="True">
+            <Grid>
+
+                <!-- 영상 -->
+                <MediaElement x:Name="VideoPlayer"
+                              LoadedBehavior="Manual"
+                              UnloadedBehavior="Stop"
+                              Stretch="Uniform"
+                              MediaOpened="VideoPlayer_MediaOpened"
+                              MediaEnded="VideoPlayer_MediaEnded"/>
+
+                <!-- 환자 정보 좌상단 -->
+                <StackPanel Margin="16,14" VerticalAlignment="Top" HorizontalAlignment="Left">
+                    <TextBlock Text="{Binding PatientName}"
+                               Foreground="White" FontSize="18" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding PatientInfo}"
+                               Foreground="#BBCCE0" FontSize="15"/>
+                </StackPanel>
+
+
+
+                <!-- ── 하단 컨트롤 오버레이 ── -->
+                <Border VerticalAlignment="Bottom"
+                        Background="#CC1C2B3A"
+                        CornerRadius="0,0,8,8"
+                        Padding="16,10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <!-- Seek + 시간 -->
+                            <RowDefinition Height="8"/>
+                            <RowDefinition Height="70"/>
+                            <!-- 컨트롤 한 줄 -->
+                        </Grid.RowDefinitions>
+
+                        <!-- Seek 슬라이더 + 시간 한 줄 -->
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" x:Name="TxtCurrentTime" Text="00:00"
+                                       Foreground="White" FontSize="15" FontWeight="Bold"
+                                       FontFamily="Courier New" VerticalAlignment="Center"
+                                       Margin="0,0,10,0"/>
+                            <Slider Grid.Column="1" x:Name="SliderSeek"
+                                    Style="{StaticResource SeekSlider}"
+                                    Minimum="0" Maximum="100" Value="0"
+                                    IsMoveToPointEnabled="True"
+                                    PreviewMouseDown="SliderSeek_PreviewMouseDown"
+                                    PreviewMouseUp="SliderSeek_PreviewMouseUp"
+                                    ValueChanged="SliderSeek_ValueChanged"/>
+                            <TextBlock Grid.Column="2" x:Name="TxtTotalTime" Text="00:00"
+                                       Foreground="{StaticResource Inactive}" FontSize="15"
+                                       FontFamily="Courier New" VerticalAlignment="Center"
+                                       Margin="10,0,0,0"/>
+                        </Grid>
+
+                        <!-- ── 컨트롤 한 줄 ── -->
+                        <Grid Grid.Row="2">
+
+                            <!-- 배속 표시: 절대 좌측 고정 -->
+                            <Border HorizontalAlignment="Left" VerticalAlignment="Center"
+                                    Background="{StaticResource ValueBg}"
+                                    CornerRadius="8" Padding="14,0" Height="44">
+                                <TextBlock Text="{Binding SpeedLabel}"
+                                           Foreground="{Binding SpeedLabelColor}"
+                                           FontSize="16" FontWeight="Bold"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Border>
+
+                            <!-- 버튼 그룹: 정중앙 고정 -->
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center">
+
+                                <!-- 🐢 느리게 -->
+                                <Button Style="{StaticResource SeekBtn}"
+                                        Width="70" Height="70" Margin="0,0,8,0"
+                                        Command="{Binding SlowerCommand}">
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="🐢" FontSize="22" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="느리게" FontSize="10"
+                                                   Foreground="{StaticResource Inactive}"
+                                                   HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <!-- 1초 전 -->
+                                <Button Style="{StaticResource SeekBtn}"
+                                        Width="70" Height="70" Margin="0,0,8,0"
+                                        Command="{Binding SeekBackCommand}">
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="⏮" FontSize="22" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="1초" FontSize="10"
+                                                   Foreground="{StaticResource Inactive}"
+                                                   HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <!-- ▶ / ⏸ 재생정지 (중앙 제일 크게) -->
+                                <Button Style="{StaticResource PlayBtn}"
+                                        Width="100" Height="70"
+                                        Command="{Binding PlayPauseCommand}">
+                                    <TextBlock Text="{Binding PlayPauseIcon}"
+                                               FontSize="36"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                </Button>
+
+                                <!-- 1초 후 -->
+                                <Button Style="{StaticResource SeekBtn}"
+                                        Width="70" Height="70" Margin="8,0,0,0"
+                                        Command="{Binding SeekForwardCommand}">
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="⏭" FontSize="22" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="1초" FontSize="10"
+                                                   Foreground="{StaticResource Inactive}"
+                                                   HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <!-- 🐇 1x 복귀 -->
+                                <Button Style="{StaticResource SeekBtn}"
+                                        Width="70" Height="70" Margin="8,0,0,0"
+                                        Command="{Binding FasterCommand}">
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="🐇" FontSize="22" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="빠르게" FontSize="10"
+                                                   Foreground="{StaticResource Inactive}"
+                                                   HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Button>
+
+                            </StackPanel>
+                        </Grid>
+
+                    </Grid>
+                </Border>
+
+            </Grid>
+        </Border>
+
+        <!-- ══ 우측 패널 ══ -->
+        <Grid Grid.Column="1" Margin="5,10,10,10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="12"/>
+                <RowDefinition Height="90"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Background="{StaticResource Card}" CornerRadius="12">
+                <Grid Margin="16,18,16,16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <!-- R0:  Position 라벨 -->
+                        <RowDefinition Height="8"/>
+                        <RowDefinition Height="52"/>
+                        <!-- R2:  Position 콤보 -->
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="Auto"/>
+                        <!-- R4:  Anatomical 라벨 -->
+                        <RowDefinition Height="8"/>
+                        <RowDefinition Height="52"/>
+                        <!-- R6:  Anatomical 콤보 -->
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="Auto"/>
+                        <!-- R8:  Comment 라벨 -->
+                        <RowDefinition Height="8"/>
+                        <RowDefinition Height="*"/>
+                        <!-- R10: Comment 입력 -->
+                        <RowDefinition Height="14"/>
+                        <RowDefinition Height="66"/>
+                        <!-- R12: VIDEO DELETE -->
+                        <RowDefinition Height="10"/>
+                        <RowDefinition Height="66"/>
+                        <!-- R14: Comment Save -->
+                    </Grid.RowDefinitions>
+
+                    <!-- Position -->
+                    <TextBlock Grid.Row="0" Text="Position"
+                               Foreground="White" FontSize="18" FontWeight="Bold"/>
+                    <ComboBox Grid.Row="2" Style="{StaticResource DarkCombo}"
+                              SelectedItem="{Binding SelectedPosition}">
+                        <ComboBoxItem>Left</ComboBoxItem>
+                        <ComboBoxItem>Right</ComboBoxItem>
+                        <ComboBoxItem>Top</ComboBoxItem>
+                        <ComboBoxItem>Bottom</ComboBoxItem>
+                    </ComboBox>
+
+                    <!-- Anatomical -->
+                    <TextBlock Grid.Row="4" Text="Anatomical Directional"
+                               Foreground="White" FontSize="18" FontWeight="Bold"/>
+                    <ComboBox Grid.Row="6" Style="{StaticResource DarkCombo}"
+                              SelectedItem="{Binding SelectedAnatomical}">
+                        <ComboBoxItem>Anterior</ComboBoxItem>
+                        <ComboBoxItem>Posterior</ComboBoxItem>
+                        <ComboBoxItem>Lateral</ComboBoxItem>
+                        <ComboBoxItem>Medial</ComboBoxItem>
+                    </ComboBox>
+
+                    <!-- Comment -->
+                    <TextBlock Grid.Row="8" Text="Comment"
+                               Foreground="White" FontSize="18" FontWeight="Bold"/>
+                    <Border Grid.Row="10" Background="{StaticResource ValueBg}"
+                            BorderBrush="{StaticResource CardBorder}"
+                            BorderThickness="1" CornerRadius="10">
+                        <TextBox Background="Transparent" BorderThickness="0"
+                                 Foreground="White" FontSize="15"
+                                 AcceptsReturn="True" TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto"
+                                 Padding="12,10" CaretBrush="White"
+                                 Text="{Binding CommentText, UpdateSourceTrigger=PropertyChanged}"/>
+                    </Border>
+
+                    <!-- VIDEO DELETE -->
+                    <Button Grid.Row="12"
+                            Content="VIDEO DELETE"
+                            Style="{StaticResource DangerBtn}"
+                            Command="{Binding VideoDeleteCommand}"/>
+
+                    <!-- Comment Save -->
+                    <Button Grid.Row="14"
+                            Content="Comment Save"
+                            Style="{StaticResource DarkBtn}"
+                            Command="{Binding CommentSaveCommand}"/>
+
+                </Grid>
+            </Border>
+
+            <!-- BACK + EXIT -->
+            <Grid Grid.Row="2" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="2*"/>
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" Style="{StaticResource ExitBtn}"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                        Margin="0,0,4,0"
+                        Command="{Binding NavigateBackCommand}">
+                    <TextBlock Text="⬅︎" FontSize="40" HorizontalAlignment="Center"/>
+                </Button>
+                <Button Grid.Column="1" Content="EXIT"
+                        Style="{StaticResource ExitBtn}"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                        Margin="4,0,0,0"
+                        Command="{Binding ExitCommand}"/>
+            </Grid>
+        </Grid>
     </Grid>
-</Window>
+</UserControl>

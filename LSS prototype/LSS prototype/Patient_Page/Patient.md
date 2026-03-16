@@ -341,6 +341,9 @@ EMR/LOCAL 구분은 DB 컬럼으로 저장하고 읽기
 환자 삭제 후 재생성 시 DICOM 폴더 기반 재판정하지 않기
 
 ────────────────────────────────────
+작성일: 2026-03-16
+작성자: 서민지
+
 import/local 병합
 
 local이 먼저 존재, emr 환자 촬영 / import emr 실행 경우
@@ -368,3 +371,23 @@ Image
 -내부 PatientName 태그: 여전히 조현우일 수도 있음
 
 =>뷰어나 리스트에서 표시 이름도 완전히 통일하고 싶으면 DICOM 태그까지 수정
+
+(현재 사항)
+LOCAL 환자 정보는 DB에서만 관리
+E-SYNC 여부는 DICOM 파일의 AccessionNumber로 판단
+화면에서 LOCAL은 항상 AccessionNumber = ""
+E-SYNC는 _importedEmrPatients에서만 표시
+
+(문제)
+병합될 경우, local 파일
+그냥 복사만 되고 dicom 태그는 그대로
+=>파일명만 e-sync처럼 보여도 내부 AccessionNumber는 공백 
+
+폴더/파일명-E-SYNC 기준으로 통일
+LOCAL에서 가져운 .dcm 내부 태그는 그대로
+내부 AccessionNumber는 여전히 빈 값
+
+(향후 계획)
+병합 시점에 local 쪽 dicom 파일도 같은 AccessionNumber를 가짐
+병합 직후 Dicom 태그를 수정하는 메서드 필요
+

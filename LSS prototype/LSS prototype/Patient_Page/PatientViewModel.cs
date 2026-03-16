@@ -465,11 +465,17 @@ namespace LSS_prototype.Patient_Page
                                     }
                                 }
 
+                                // import된 E-SYNC 파일도 병합
                                 CopyDirectory(sourcePatientFolder, emrTargetFolder, overwrite: true);
+
+                                // 병합된 전체 파일의 DICOM 태그를 E-SYNC 기준으로 통일
+                                UpdateDicomTagsForMerge(emrTargetFolder, pName, pCode, pAccess);
+
+                                // import된 E-SYNC 파일도 병합
                                 NormalizeDicomFileNamesRecursively(emrTargetFolder, pName, pCode);
                             });
 
-                            // 병합했으므로 LOCAL 삭제
+                            // 병합했으므로 LOCAL DB 삭제
                             repo.DeletePatient(localPatient.PatientId);
                         }
                         else
@@ -788,9 +794,6 @@ namespace LSS_prototype.Patient_Page
             return list;
         }
 
-       
-
-        
 
         private void CopyDirectory(string sourceDir, string targetDir, bool overwrite)
         {
@@ -839,6 +842,7 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
+        //파일 이름 정리
         private void NormalizeDicomFileNames(string folder, string patientName, int patientCode)
         {
             try
@@ -852,7 +856,7 @@ namespace LSS_prototype.Patient_Page
 
                 // 폴더 구조 예:
                 // DICOM/환자명_번호/20260316/202603160001/Image
-                // studyId = 202603160001
+                // Parent = 202603160001
                 string studyId = new DirectoryInfo(folder).Parent?.Name ?? "000000000000";
 
                 int index = 1;
@@ -875,7 +879,7 @@ namespace LSS_prototype.Patient_Page
                         newPath = Path.Combine(folder, newName);
                     }
 
-                    File.Move(file, newPath);
+                    SafeMoveFile(file, newPath);
                     index++;
                 }
             }
@@ -907,6 +911,98 @@ namespace LSS_prototype.Patient_Page
             {
                 Common.WriteLog(ex);
             }
+        }
+
+        //병합할 때, lcoal에 관한 다이콤 태그 수정
+        private void UpdateDicomTagsForMerge(string rootFolder, string patientName, int patientCode, string accessionNumber)
+        {
+            try
+            {
+                if (!Directory.Exists(rootFolder))
+                    return;
+
+                var dcmFiles = Directory.GetFiles(rootFolder, "*.dcm", SearchOption.AllDirectories);
+
+                foreach (var file in dcmFiles)
+                {
+                    try
+                    {
+                        // 메모리로 읽어서 파일 잠금 최소화
+                        var dicomFile = DicomFile.Open(file, FileReadOption.ReadAll);
+                        var ds = dicomFile.Dataset;
+
+                        ds.AddOrUpdate(DicomTag.PatientName, patientName);
+                        ds.AddOrUpdate(DicomTag.PatientID, patientCode.ToString());
+                        ds.AddOrUpdate(DicomTag.AccessionNumber, accessionNumber);
+
+                        string tempFile = file + ".tmp";
+
+                        // temp 파일로 먼저 저장
+                        dicomFile.Save(tempFile);
+
+                        // 원본 교체
+                        SafeDeleteFile(file);
+                        SafeMoveFile(tempFile, file);
+                    }
+                    catch (Exception ex)
+                    {
+                        Common.WriteLog(ex);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
+
+        private void SafeMoveFile(string sourcePath, string destPath)
+        {
+            Exception lastEx = null;
+
+            for (int i = 0; i < 10; i++)
+            {
+                try
+                {
+                    if (File.Exists(destPath))
+                        File.Delete(destPath);
+
+                    File.Move(sourcePath, destPath);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    lastEx = ex;
+                    Thread.Sleep(100);
+                }
+            }
+
+            if (lastEx != null)
+                throw lastEx;
+        }
+
+        private void SafeDeleteFile(string filePath)
+        {
+            Exception lastEx = null;
+
+            for (int i = 0; i < 10; i++)
+            {
+                try
+                {
+                    if (File.Exists(filePath))
+                        File.Delete(filePath);
+
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    lastEx = ex;
+                    Thread.Sleep(100);
+                }
+            }
+
+            if (lastEx != null)
+                throw lastEx;
         }
     }
 }

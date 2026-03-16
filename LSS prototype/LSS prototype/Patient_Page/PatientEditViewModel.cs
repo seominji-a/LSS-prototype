@@ -67,6 +67,19 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
+        //
+        private bool _canMergeWithoutEdit;
+        public bool CanMergeWithoutEdit
+        {
+            get => _canMergeWithoutEdit;
+            set
+            {
+                _canMergeWithoutEdit = value;
+                OnPropertyChanged();
+                EditCommand?.RaiseCanExecuteChanged();
+            }
+        }
+
         private DateTime? _birthDate;
         public DateTime? BirthDate
         {
@@ -114,7 +127,7 @@ namespace LSS_prototype.Patient_Page
 
         public Action<bool?> CloseAction { get; set; }
 
-        public PatientEditViewModel(IDialogService dialogService, PatientModel selected)
+        public PatientEditViewModel(IDialogService dialogService, PatientModel selected, bool canMergeWithoutEdit = false)
         {
             _dialogService = dialogService;
 
@@ -132,6 +145,7 @@ namespace LSS_prototype.Patient_Page
 
             IsDobConfirmed = true;
             IsCodeConfirmed = true;
+            CanMergeWithoutEdit = canMergeWithoutEdit;
 
             EditCommand = new RelayCommand(UpdatePatient, CanEditPatient);
             CancelCommand = new RelayCommand(Cancel);
@@ -159,7 +173,7 @@ namespace LSS_prototype.Patient_Page
 
         private bool CanEditPatient()
         {
-            return IsValid() && IsDirty() && IsDobConfirmed && IsCodeConfirmed;
+            return IsValid() && (IsDirty() || CanMergeWithoutEdit) && IsDobConfirmed && IsCodeConfirmed;
         }
 
         private void UpdatePatient()
@@ -168,29 +182,38 @@ namespace LSS_prototype.Patient_Page
             {
                 var repo = new DB_Manager();
 
-                if (repo.ExistsPatientCodeExceptSelf(this.PatientCode.Value, this.Patient_id))
+                // 실제 변경사항이 있을 때만 DB 업데이트
+                if (IsDirty())
                 {
-                    CustomMessageWindow.Show("이미 사용 중인 환자 번호입니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
-                    return;
+                    if (repo.ExistsPatientCodeExceptSelf(this.PatientCode.Value, this.Patient_id))
+                    {
+                        CustomMessageWindow.Show("이미 사용 중인 환자 번호입니다.",
+                            CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                            CustomMessageWindow.MessageIconType.Warning);
+                        return;
+                    }
+
+                    var model = new PatientModel
+                    {
+                        PatientId = this.Patient_id,
+                        PatientCode = this.PatientCode.Value,
+                        PatientName = this.PatientName,
+                        BirthDate = this.BirthDate.Value,
+                        Sex = this.Sex
+                    };
+
+                    if (repo.UpdatePatient(model))
+                    {
+                        CustomMessageWindow.Show("수정되었습니다.",
+                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageIconType.Info);
+
+                        CloseAction?.Invoke(true);
+                    }
                 }
-
-                var model = new PatientModel
+                else if (CanMergeWithoutEdit)
                 {
-                    PatientId = this.Patient_id,
-                    PatientCode = this.PatientCode.Value,
-                    PatientName = this.PatientName,
-                    BirthDate = this.BirthDate.Value,
-                    Sex = this.Sex
-                };
-
-                if (repo.UpdatePatient(model))
-                {
-                    CustomMessageWindow.Show("수정되었습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                        CustomMessageWindow.MessageIconType.Info);
-
+                    // 수정 없이 병합만 진행할 수 있도록 true 반환
                     CloseAction?.Invoke(true);
                 }
             }

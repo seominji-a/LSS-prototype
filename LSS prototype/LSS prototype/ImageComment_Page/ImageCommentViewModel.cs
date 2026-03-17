@@ -10,6 +10,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using LSS_prototype.DB_CRUD;
 
 namespace LSS_prototype.ImageComment_Page
 {
@@ -36,6 +37,10 @@ namespace LSS_prototype.ImageComment_Page
         // ═══════════════════════════════════════════
         private string DicomDir => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DICOM");
         private string IsfDir => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ISF");
+
+        // ── 화면 이동 요청 이벤트 ──
+        // 파일이 모두 삭제됐을 때 코드비하인드한테 Scan 화면으로 이동하라고 신호 보냄
+        public event Action RequestNavigateToScan;
 
         // ═══════════════════════════════════════════
         //  DCM 경로 → ISF 경로 변환
@@ -128,7 +133,7 @@ namespace LSS_prototype.ImageComment_Page
         public ImageCommentViewModel(PatientModel selectedPatient, string studyId = null)
         {
             SelectedPatient = selectedPatient;
-            ImageDeleteCommand = new RelayCommand(_ => ExecuteImageDelete());
+            ImageDeleteCommand = new RelayCommand(_ =>ExecuteImageDelete());
         }
 
         // ═══════════════════════════════════════════
@@ -177,18 +182,19 @@ namespace LSS_prototype.ImageComment_Page
                 // 파일명 마지막 숫자(인스턴스 번호) 기준으로 정렬
                 // 예: 박한용_2634_202503130001_1.dcm → 1
                 _dcmFiles = Directory.EnumerateFiles(imageDir, "*.dcm")
-                    .OrderBy(f =>
-                    {
-                        string name = Path.GetFileNameWithoutExtension(f);
-                        string last = name.Split('_').Last();
-                        return int.TryParse(last, out int n) ? n : int.MaxValue;
-                    })
-                    .ToList();
+                        .Where(f => !Path.GetFileName(f).StartsWith("Del_"))  // 삭제된 del 파일은 읽지않음. 
+                        .OrderBy(f =>
+                        {
+                            string name = Path.GetFileNameWithoutExtension(f);
+                            string last = name.Split('_').Last();
+                            return int.TryParse(last, out int n) ? n : int.MaxValue;
+                        })
+                        .ToList();
 
                 if (_dcmFiles.Count == 0)
                 {
                     CustomMessageWindow.Show(
-                        "해당 환자의 DICOM 파일이 없습니다.",
+                        "저장된 이미지가 없습니다.",
                         CustomMessageWindow.MessageBoxType.AutoClose, 2,
                         CustomMessageWindow.MessageIconType.Warning);
                     return false;
@@ -248,25 +254,32 @@ namespace LSS_prototype.ImageComment_Page
         //  ISF 저장
         //  코드비하인드에서 현재 StrokeCollection 을 넘겨줌
         //  드로잉 없으면 ISF 파일 삭제 (깔끔하게 유지)
+        //  추가된 부분: canvasWidth, canvasHeight 파라미터
+        //               strokes.AddPropertyData() 로 ISF 안에 크기 저장 ( 복구창에서 정확한 ISF 좌표 얻기위해 추가 0317  박한용 ) 
         // ═══════════════════════════════════════════
-        public void SaveIsf(StrokeCollection strokes)
+
+        public void SaveIsf(StrokeCollection strokes, double canvasWidth, double canvasHeight)
         {
             try
             {
                 string dcmPath = _dcmFiles[_currentIndex];
-
-                // DCM 경로 기반으로 ISF 경로 계산
                 string isfPath = GetIsfPath(dcmPath);
 
                 if (strokes == null || strokes.Count == 0)
                 {
-                    // 드로잉 없으면 ISF 파일 삭제 (깔끔하게 유지)
                     if (File.Exists(isfPath)) File.Delete(isfPath);
                     return;
                 }
 
-                // ISF 저장 전 폴더 생성
                 Directory.CreateDirectory(Path.GetDirectoryName(isfPath));
+
+                // ★ 추가 - ISF 안에 캔버스 크기 저장
+                // 고정 GUID 로 width / height 를 ExtendedProperties 에 넣음
+                // Recovery 에서 로드 시 이 값으로 스케일 변환
+                var guidWidth = new Guid("A1B2C3D4-0001-0002-0003-000000000001");
+                var guidHeight = new Guid("A1B2C3D4-0001-0002-0003-000000000002");
+                strokes.AddPropertyData(guidWidth, canvasWidth.ToString());
+                strokes.AddPropertyData(guidHeight, canvasHeight.ToString());
 
                 using (var fs = File.Create(isfPath))
                     strokes.Save(fs);
@@ -339,32 +352,76 @@ namespace LSS_prototype.ImageComment_Page
             }
         }
 
-        // ═══════════════════════════════════════════
-        //  이미지 삭제
-        //  확인 팝업 → Yes 시 삭제 진행
-        //  반환값: 삭제 확정 여부 (코드비하인드에서 View 정리)
-        // ═══════════════════════════════════════════
-        private bool ExecuteImageDelete()
+        private void ExecuteImageDelete()
         {
             try
             {
+                // ── 삭제 확인 팝업 ──
+                // Yes 가 아니면 아무것도 하지 않고 false 반환
                 var result = CustomMessageWindow.Show(
                     "이미지를 삭제하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo,
                     icon: CustomMessageWindow.MessageIconType.Warning);
 
-                if (result != CustomMessageWindow.MessageBoxResult.Yes) return false;
+                if (result != CustomMessageWindow.MessageBoxResult.Yes) return ;
 
-                // TODO: DB 레코드 삭제
-                // TODO: DICOM 파일 삭제
-                // TODO: ISF 파일 삭제
+                // ── 현재 보고 있는 DCM 파일 경로 ──
+                string dcmPath = _dcmFiles[_currentIndex];
 
-                return true;
+                // ── DCM 파일명 앞에 Del_ 붙이기 ──
+                // File.Move = 실제 삭제 아님, 파일명만 변경
+                // 예) 박한용_001.dcm → Del_박한용_001.dcm
+                string dcmDir = Path.GetDirectoryName(dcmPath);
+                string dcmFileName = Path.GetFileName(dcmPath);
+                string newDcmPath = Path.Combine(dcmDir, "Del_" + dcmFileName);
+                File.Move(dcmPath, newDcmPath);
+
+                // ── ISF 파일명 앞에 Del_ 붙이기 ──
+                // ISF 는 드로잉 안 했으면 파일 없을 수 있으므로 존재 여부 확인
+                string isfPath = GetIsfPath(dcmPath);
+                if (File.Exists(isfPath))
+                {
+                    string isfDir = Path.GetDirectoryName(isfPath);
+                    string isfFileName = Path.GetFileName(isfPath);
+                    string newIsfPath = Path.Combine(isfDir, "Del_" + isfFileName);
+                    File.Move(isfPath, newIsfPath);
+                }
+
+                // ── DB INSERT ──
+                // Del_ 붙은 새 경로(newDcmPath) 로 저장
+                // 복구 시 이 경로를 보고 파일 찾아서 Del_ 제거
+                var db = new DB_Manager();
+                db.InsertImageDeleteLog(newDcmPath, SelectedPatient.PatientCode, SelectedPatient.PatientName);
+
+                // ── 목록에서도 제거 ──
+                _dcmFiles.RemoveAt(_currentIndex);
+
+                // ── 남은 파일 없음 → Scan 화면 복귀 신호 ──
+                // 코드비하인드에서 true 받으면 NavigateTo(Scan) 실행
+                if (_dcmFiles.Count == 0)
+                {
+                    CustomMessageWindow.Show(
+                            "저장된 이미지가 존재하지 않아\nScan 화면으로 이동합니다.",
+                            CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                            CustomMessageWindow.MessageIconType.Info);
+                    RequestNavigateToScan?.Invoke();
+                    return;
+                }
+                    
+
+                // ── 남은 파일 있음 → 다음 or 이전 페이지 로드 ──
+                // 마지막 사진 삭제 시 → 인덱스 초과 방지 위해 한 칸 앞으로
+                // 그 외 → 인덱스 그대로 유지 → 자동으로 다음 사진이 됨
+                //
+                // 예) 3장 중 1번(index=0) 삭제 → Min(0, 1) = 0 → 다음 사진
+                //     3장 중 2번(index=1) 삭제 → Min(1, 1) = 1 → 다음 사진
+                //     3장 중 3번(index=2) 삭제 → Min(2, 1) = 1 → 이전 사진
+                _currentIndex = Math.Min(_currentIndex, _dcmFiles.Count - 1);
+                LoadPage(_currentIndex);
             }
             catch (Exception ex)
             {
                 Common.WriteLog(ex);
-                return false;
             }
         }
 

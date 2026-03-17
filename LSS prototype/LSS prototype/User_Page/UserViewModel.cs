@@ -27,11 +27,27 @@ namespace LSS_prototype.User_Page
         public ICommand DismissCommand { get; }
         public ICommand LogoutCommand { get; }
         public ICommand ExitCommand { get; }
+        public ICommand RecoveryCommand { get; }
 
 
 
         private readonly SearchDebouncer _searchDebouncer;
         private readonly IDialogService _dialogService;
+
+        // 환경변수의 MASTER_ID 와 현재 로그인 ID 비교
+        // 일치하면 RECOVERY 버튼 표시
+        public Visibility IsRecoveryVisible
+        {
+            get
+            {
+                string masterId = Environment.GetEnvironmentVariable(
+                    "MASTER_ID", EnvironmentVariableTarget.Machine);
+                /*return Common.CurrentUserId == masterId
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;*/// 테스트 후 이 주석 풀어주기 ( MASTER 만 리커버리창 진입 가능 ) 
+                return Visibility.Visible;
+            }
+        }
 
         private string _searchText;
 
@@ -87,6 +103,8 @@ namespace LSS_prototype.User_Page
             ExitCommand = new RelayCommand(Common.ExcuteExit);
 
             _searchDebouncer = new SearchDebouncer(ExecuteSearch, delayMs: 500);
+
+            RecoveryCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new Recovery()));
 
             LoadUsers();
         }

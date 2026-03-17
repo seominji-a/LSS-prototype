@@ -1318,7 +1318,7 @@ namespace LSS_prototype.Scan_Page
                     return;
                 }
 
-                bool hasDicom = Directory.EnumerateFiles(imageDir, "*.dcm").Any();
+                bool hasDicom = Directory.EnumerateFiles(imageDir, "*.dcm").Any(f => !Path.GetFileName(f).StartsWith("Del_"));
                 if (!hasDicom)
                 {
                     CustomMessageWindow.Show(
@@ -1359,7 +1359,6 @@ namespace LSS_prototype.Scan_Page
                 string studyDateFolder = _currentStudyId.Substring(0, 8);
 
                 // IMAGE → VIDEO 폴더로 변경
-                // DICOM/Image/ 대신 VIDEO/ 루트로
                 string videoDir = Path.Combine(
                     Common.executablePath, "VIDEO",
                     patientFolderName, studyDateFolder,
@@ -1388,8 +1387,7 @@ namespace LSS_prototype.Scan_Page
                     return;
                 }
 
-                MainPage.Instance.NavigateTo(
-                    new VideoComment_Page.VideoComment(SelectedPatient, _currentStudyId));
+                MainPage.Instance.NavigateTo(new VideoComment_Page.VideoComment(SelectedPatient, _currentStudyId));
             }
             catch (Exception ex)
             {

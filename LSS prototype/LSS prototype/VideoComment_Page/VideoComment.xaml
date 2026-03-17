@@ -211,9 +211,9 @@
                     <TextBlock Text="{Binding PatientInfo}"
                                Foreground="#BBCCE0" FontSize="15"/>
                 </StackPanel>
-
-
-
+                <!-- Video Type 우상단 -->
+                <TextBlock Margin="16,14" VerticalAlignment="Top" HorizontalAlignment="Right" Text="{Binding VideoType, Mode=OneWay}" Foreground="White" FontSize="18" FontWeight="Bold"/>
+                
                 <!-- ── 하단 컨트롤 오버레이 ── -->
                 <Border VerticalAlignment="Bottom"
                         Background="#CC1C2B3A"

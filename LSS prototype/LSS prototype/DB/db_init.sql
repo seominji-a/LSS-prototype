@@ -88,3 +88,34 @@ CREATE TABLE PACS_SET (
     MWL_MY_AET                      TEXT    NOT NULL,
     MWL_DESCRIPTION_FILTER         TEXT
 );
+
+-- ================================================
+-- DELETE_LOG TABLE ( 2026.03.17 생성자 : 박한용 )
+-- 삭제된 파일 이력 관리 테이블
+--
+-- FILE_TYPE 종류
+--   IMAGE        : 이미지 촬영 파일 (.dcm)
+--   DICOM_VIDEO  : DICOM 영상 촬영 파일 (.avi + .dcm 한 쌍)
+--   NORMAL_VIDEO : 일반 영상 촬영 파일 (.avi 단독)
+--
+-- 경로 사용 규칙
+--   IMAGE        → IMAGE_PATH = dcm경로  / AVI_PATH = NULL      / DICOM_PATH = NULL
+--   NORMAL_VIDEO → IMAGE_PATH = NULL     / AVI_PATH = avi경로   / DICOM_PATH = NULL
+--   DICOM_VIDEO  → IMAGE_PATH = NULL     / AVI_PATH = avi경로   / DICOM_PATH = dcm경로
+--
+-- IS_RECOVERED : 복구 여부 Y / N  (기본값 N)
+-- RECOVERED_AT : 복구한 시간      (복구 안했으면 NULL)
+-- ================================================
+CREATE TABLE DELETE_LOG (
+    DELETE_ID       INTEGER  PRIMARY KEY AUTOINCREMENT,
+    DELETED_BY      TEXT     NOT NULL,
+    DELETED_AT      DATETIME NOT NULL DEFAULT (datetime('now', 'localtime')),
+    FILE_TYPE       TEXT     NOT NULL,
+    IMAGE_PATH      TEXT     NULL,
+    AVI_PATH        TEXT     NULL,
+    DICOM_PATH      TEXT     NULL,
+    PATIENT_CODE    INTEGER  NOT NULL,
+    PATIENT_NAME    TEXT     NOT NULL,
+    IS_RECOVERED    TEXT     NOT NULL DEFAULT 'N',
+    RECOVERED_AT    DATETIME NULL
+);

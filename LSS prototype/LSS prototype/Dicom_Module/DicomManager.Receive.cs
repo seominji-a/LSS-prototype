@@ -133,6 +133,7 @@ namespace LSS_prototype.Dicom_Module
                 // LOCAL: null (빈 데이터셋으로 새로 생성)
                 Dataset = isEmr ? ds : null,
 
+                // 선배 코드 방식 - 바이트 직접 꺼내서 EUC-KR 디코딩 (한글 깨짐 방지)
                 // LS 코드 방식 - 바이트 직접 꺼내서 EUC-KR 디코딩 (한글 깨짐 방지)
                 RequestedProcedureDescription = DecodeEucKr(ds, DicomTag.RequestedProcedureDescription),
             };

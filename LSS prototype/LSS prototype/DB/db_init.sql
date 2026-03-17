@@ -43,17 +43,44 @@ CREATE TABLE IF NOT EXISTS USER
 
 -- ================================================
 -- Patient TABLE ( 2026.02.09 생성자 : 서민지 )
+-- Patient TABLE ( 2026.03.17 수정일 : 서민지 )
 -- ================================================
 CREATE TABLE IF NOT EXISTS PATIENT (
     PATIENT_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-    PATIENT_CODE INTEGER NOT NULL UNIQUE,
+    PATIENT_CODE INTEGER NOT NULL,
     PATIENT_NAME VARCHAR(50) NOT NULL,
     BIRTH_DATE DATE NOT NULL,
     SEX CHAR(1) NOT NULL,
-    REG_DATE TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    REG_DATE TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    LASTSHOOTDATE DATE,
+    SHOTNUM INTEGER NOT NULL DEFAULT 0,
+
+    --문자열 보다 enum/코드화
+    SOURCE_TYPE INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS STUDY (
+    STUDY_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    PATIENT_ID INTEGER NOT NULL,
+    STUDY_INSTANCE_UID   VARCHAR(128) NOT NULL UNIQUE,
+    
+    -- 실제 촬영이 일어난 시간(의료 이벤트 시간)
+    --DICOM 기준;STUDYDATE +STUDYTIME
+    --PACS/EMR 기준 시간
+    --환자가 촬영된 시점
+    SCAN_DATE            TIMESTAMP,
 
+    ICG_INJECTION_TIME   TIMESTAMP,
+    ACCESSION_NUMBER     VARCHAR(50),
+
+    --DB에 데이터가 저장된 시간(시스템 이벤트 시간)
+    --로컬 DB INSERT 시간
+    --IMPORT 시점/SYNC 시점
+    CREATED_AT           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (PATIENT_ID) 
+    REFERENCES PATIENT (PATIENT_ID)
+);
 -- ================================================
 -- DEFAULT_SET TABLE ( 2026.02.27 생성자 : 박한용 )
 -- 관리자 페이지 -> 카메라 기본 셋팅값 변경 관련 테이블

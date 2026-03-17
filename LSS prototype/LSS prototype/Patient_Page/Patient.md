@@ -422,3 +422,28 @@ dcm.frame 갯수
 -Dicom.avi 와 Dicom.dcm 은 같은 인덱스로 1쌍
 -DICOM 이름 생성 기준은 영상 쪽 Dicom 인덱스여야 함
 -DICOM 독립 정렬이 아니라 VIDEO 기준 동기화가 맞음
+
+1. LOCAL 환자 선택
+2. EditDialog 열림
+3. 생년월일/성별 같은 E-SYNC 후보가 있으면 안내 표시
+예:Cho^Hyunwoo / 10012
+4. 사용자가 LOCAL 환자 번호를 10012로 수정
+5. 저장
+6. HandleLocalEditConflictAfterSave()가 같은 번호의 E-SYNC를 찾음
+7. 병합 여부 팝업
+8. 확인 시 E-SYNC 기준으로 통합
+
+
+────────────────────────────────────
+작성일: 2026-03-18
+작성자: 서민지
+
+1. 환자 테이블에 마지막 촬영 일자, 촬영 횟수, esync/local인지 상태값 칼럼 추가, patient code에 unique 삭제
+
+1. 2. e-sync 가 추가될 때, patient db에 e-sync에 대한 데이터 추가 
+-scan 화면에서 촬영이 한번이라도 완료 되었을 때 patient db에 데이터 추가
+-import 되었을 때 patient db에 추가
+
+3. e-sync가 삭제 될 때, db에 e-sync에 대한 데이터 삭제
+
+4. 병합 되었을 때-> patient db에는 e-sync 데이터만 존재

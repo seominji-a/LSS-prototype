@@ -340,16 +340,24 @@
                                 </Grid>
                                 <DataTemplate.Triggers>
 
-                                    <!-- ImportLocal => LOCAL (파란색) -->
-                                    <DataTrigger Binding="{Binding Source}" Value="ImportLocal">
+                                    <!-- EMR 화면의 MWL 환자 -->
+                                    <DataTrigger Binding="{Binding Source}" Value="Emr">
+                                        <Setter TargetName="SourceBadge" Property="Background"  Value="#DCFCE7"/>
+                                        <Setter TargetName="SourceBadge" Property="BorderBrush" Value="#86EFAC"/>
+                                        <Setter TargetName="TxtSourceLabel" Property="Foreground" Value="#15803D"/>
+                                        <Setter TargetName="TxtSourceLabel" Property="Text" Value="EMR"/>
+                                    </DataTrigger>
+
+                                    <!-- Integrated 화면의 LOCAL -->
+                                    <DataTrigger Binding="{Binding Source}" Value="Local">
                                         <Setter TargetName="SourceBadge" Property="Background"  Value="#EFF6FF"/>
                                         <Setter TargetName="SourceBadge" Property="BorderBrush" Value="#BFDBFE"/>
                                         <Setter TargetName="TxtSourceLabel" Property="Foreground" Value="#1D4ED8"/>
                                         <Setter TargetName="TxtSourceLabel" Property="Text" Value="LOCAL"/>
                                     </DataTrigger>
 
-                                    <!-- ImportEmr => EMR (초록색) -->
-                                    <DataTrigger Binding="{Binding Source}" Value="ImportEmr">
+                                    <!-- Integrated 화면의 촬영 완료 E-SYNC -->
+                                    <DataTrigger Binding="{Binding Source}" Value="ESync">
                                         <Setter TargetName="SourceBadge" Property="Background"  Value="#DCFCE7"/>
                                         <Setter TargetName="SourceBadge" Property="BorderBrush" Value="#86EFAC"/>
                                         <Setter TargetName="TxtSourceLabel" Property="Foreground" Value="#15803D"/>

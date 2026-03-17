@@ -185,18 +185,22 @@ namespace LSS_prototype.Patient_Page
             try
             {
                 var repo = new DB_Manager();
-                _localPatients = repo.GetAllPatients();
 
-                // DB에서 읽은 건 전부 LOCAL로 간주
+                _localPatients = repo.GetLocalPatients();
                 foreach (var p in _localPatients)
                 {
                     p.IsEmrPatient = false;
-                    p.Source = PatientSource.ImportLocal;
-                    p.AccessionNumber = string.Empty;
+                    p.Source = PatientSource.Local;
+                    if (p.AccessionNumber == null)
+                        p.AccessionNumber = string.Empty;
                 }
 
-                // DICOM 폴더에서 EMR 환자 따로 로드
-                _importedEmrPatients = LoadImportedEmrPatientsFromDicomFolder();
+                _importedEmrPatients = repo.GetEmrPatients();
+                foreach (var p in _importedEmrPatients)
+                {
+                    p.IsEmrPatient = true;
+                    p.Source = PatientSource.ESync;
+                }
 
                 RefreshPatients();
             }
@@ -249,7 +253,8 @@ namespace LSS_prototype.Patient_Page
                             PatientCode = vm.PatientCode.Value,
                             PatientName = vm.PatientName,
                             BirthDate = vm.BirthDate.Value,
-                            Sex = vm.Sex
+                            Sex = vm.Sex,
+                            SourceType = (int)PatientSourceType.Local
                         };
 
 
@@ -389,7 +394,6 @@ namespace LSS_prototype.Patient_Page
                         return;
                     }
 
-                    // 대표 DICOM 1개만 읽어서 환자 정보 파악
                     string firstDcm = Directory.EnumerateFiles(
                         sourcePatientFolder,
                         "*.dcm",
@@ -438,15 +442,11 @@ namespace LSS_prototype.Patient_Page
                     string dicomRoot = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DICOM");
                     Directory.CreateDirectory(dicomRoot);
 
-                    // E-SYNC 기준 폴더명 = import된 EMR 환자 이름/번호 기준
                     string emrTargetFolder = Path.Combine(dicomRoot, $"{pName}_{pCode}");
-                    string finalTargetFolder = emrTargetFolder;
 
                     var repo = new DB_Manager();
                     var localPatient = _localPatients.FirstOrDefault(x => x.PatientCode == pCode);
 
-                    // 1. EMR import + 동일 LOCAL 환자 존재 → 병합 여부 확인
-                    // 1. EMR import + 동일 LOCAL 환자 존재 → 병합 여부 확인
                     if (isEmrImport && localPatient != null)
                     {
                         var result = CustomMessageWindow.Show(
@@ -467,7 +467,6 @@ namespace LSS_prototype.Patient_Page
 
                             await Task.Run(() =>
                             {
-                                // DICOM 병합
                                 if (!string.IsNullOrWhiteSpace(localFolder) &&
                                     Directory.Exists(localFolder) &&
                                     !string.Equals(
@@ -487,27 +486,32 @@ namespace LSS_prototype.Patient_Page
                                     }
                                 }
 
-                                // import된 E-SYNC DICOM 병합
                                 CopyDirectory(sourcePatientFolder, emrTargetFolder, overwrite: true);
 
-                                // DICOM 태그/파일명 정리
                                 UpdateDicomTagsForMerge(emrTargetFolder, pName, pCode, pAccess);
-                                //NormalizeDicomFileNamesRecursively(emrTargetFolder, pName, pCode);
-
-                                // VIDEO 병합 + 파일명 정리-먼저 VIDEO 파일 명을 E-SYNC 기준으로 정리
                                 MergePatientVideoFolder(localVideoFolder, emrVideoTargetFolder, pName, pCode);
-
-                                // VIDEO의 Dicom 인덱스에 맞춰 DICOM 파일명 동기화-VIDEO 안의 _Dicom.avi 인덱스를 읽어서, DICOM 파일명을 그 인덱스에 맞춰 rename
                                 SyncDicomFileNamesWithVideoDicomIndices(emrTargetFolder, emrVideoTargetFolder, pName, pCode);
-
-                                // Image 폴더의 dcm은 E-SYNC 기준 일반 이름으로 정리
                                 NormalizeImageDicomFileNames(emrTargetFolder, pName, pCode);
                             });
 
-                            // 병합했으므로 LOCAL DB 삭제
                             repo.DeletePatient(localPatient.PatientId);
-                        }
 
+                            var emrPatientModel = new PatientModel
+                            {
+                                PatientCode = pCode,
+                                PatientName = pName,
+                                Sex = pSex,
+                                BirthDate = birthDate,
+                                AccessionNumber = pAccess,
+                                IsEmrPatient = true,
+                                Source = PatientSource.ESync,
+                                SourceType = (int)PatientSourceType.ESync,
+                                LastShootDate = null,
+                                ShotNum = 0
+                            };
+
+                            repo.UpsertEmrPatient(emrPatientModel);
+                        }
                         else
                         {
                             CustomMessageWindow.Show(
@@ -536,10 +540,23 @@ namespace LSS_prototype.Patient_Page
                                 NormalizeDicomFileNamesRecursively(emrTargetFolder, pName, pCode);
                             });
 
-                            // LOCAL은 유지, EMR은 폴더 스캔으로만 표시
+                            var emrPatientModel = new PatientModel
+                            {
+                                PatientCode = pCode,
+                                PatientName = pName,
+                                Sex = pSex,
+                                BirthDate = birthDate,
+                                AccessionNumber = pAccess,
+                                IsEmrPatient = true,
+                                Source = PatientSource.ESync,
+                                SourceType = (int)PatientSourceType.ESync,
+                                LastShootDate = null,
+                                ShotNum = 0
+                            };
+
+                            repo.UpsertEmrPatient(emrPatientModel);
                         }
                     }
-                    // 2. EMR import + 같은 LOCAL 없음
                     else if (isEmrImport)
                     {
                         if (Directory.Exists(emrTargetFolder))
@@ -560,9 +577,22 @@ namespace LSS_prototype.Patient_Page
                             NormalizeDicomFileNamesRecursively(emrTargetFolder, pName, pCode);
                         });
 
-                        // 여기서는 DB 저장 절대 하면 안 됨
+                        var emrPatientModel = new PatientModel
+                        {
+                            PatientCode = pCode,
+                            PatientName = pName,
+                            Sex = pSex,
+                            BirthDate = birthDate,
+                            AccessionNumber = pAccess,
+                            IsEmrPatient = true,
+                            Source = PatientSource.ESync,
+                            SourceType = (int)PatientSourceType.ESync,
+                            LastShootDate = null,
+                            ShotNum = 0
+                        };
+
+                        repo.UpsertEmrPatient(emrPatientModel);
                     }
-                    // 3. LOCAL import
                     else
                     {
                         if (localPatient != null)
@@ -602,23 +632,35 @@ namespace LSS_prototype.Patient_Page
                             Sex = pSex,
                             BirthDate = birthDate,
                             AccessionNumber = string.Empty,
-                            Source = PatientSource.ImportLocal,
-                            IsEmrPatient = false
+                            Source = PatientSource.Local,
+                            IsEmrPatient = false,
+                            SourceType = (int)PatientSourceType.Local
                         };
 
                         repo.AddPatient(patientModel);
                     }
 
-                    // 화면 갱신
-                    _localPatients = repo.GetAllPatients();
+                    _localPatients = repo.GetLocalPatients();
                     foreach (var p in _localPatients)
                     {
                         p.IsEmrPatient = false;
-                        p.Source = PatientSource.ImportLocal;
-                        p.AccessionNumber = string.Empty;
+                        p.Source = PatientSource.Local;
+                        if (p.AccessionNumber == null)
+                            p.AccessionNumber = string.Empty;
                     }
 
-                    _importedEmrPatients = LoadImportedEmrPatientsFromDicomFolder();
+                    _importedEmrPatients = repo.GetEmrPatients();
+                    foreach (var p in _importedEmrPatients)
+                    {
+                        p.IsEmrPatient = true;
+                        p.Source = PatientSource.ESync;
+                    }
+
+                    if (isEmrImport)
+                    {
+                        ShowAll = true;
+                    }
+
                     RefreshPatients();
 
                     CustomMessageWindow.Show(
@@ -658,7 +700,7 @@ namespace LSS_prototype.Patient_Page
 
                 foreach (var p in _emrPatients)
                 {
-                    p.Source = PatientSource.EmrImported;
+                    p.Source = PatientSource.Emr;
                     p.IsEmrPatient = true; 
                 }
                 RefreshPatients();
@@ -761,7 +803,7 @@ namespace LSS_prototype.Patient_Page
 
        
 
-        private List<PatientModel> LoadImportedEmrPatientsFromDicomFolder()
+        /*private List<PatientModel> LoadImportedEmrPatientsFromDicomFolder()
         {
             var list = new List<PatientModel>();
             string dicomFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DICOM");
@@ -822,7 +864,7 @@ namespace LSS_prototype.Patient_Page
             }
 
             return list;
-        }
+        }*/
 
 
         private void CopyDirectory(string sourceDir, string targetDir, bool overwrite)
@@ -1132,7 +1174,7 @@ namespace LSS_prototype.Patient_Page
                 }
 
                 // 현재 import된 E-SYNC 환자 목록 다시 로드
-                _importedEmrPatients = LoadImportedEmrPatientsFromDicomFolder();
+                _importedEmrPatients = repo.GetEmrPatients();
 
                 // 같은 환자번호를 가진 E-SYNC 환자 찾기
                 var matchedEmr = _importedEmrPatients

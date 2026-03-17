@@ -398,7 +398,7 @@ namespace LSS_prototype
         public const string SEARCH_USERID_NAME = "SELECT USER_ID, USER_NAME, LOGIN_ID, USER_ROLE, ROLE_CODE FROM USER WHERE USER_NAME LIKE @keyword OR LOGIN_ID LIKE @keyword ORDER BY USER_ID ASC";
         public const string INSERT_ADD_USER = "INSERT INTO USER(LOGIN_ID, PASSWORD_HASH, PASSWORD_SALT, USER_NAME, USER_ROLE, DEVICE_ID, ROLE_CODE)" +
                                                  " VALUES (@loginId, @hash, @salt, @userName, @userRole, @device_id, @role_code)";
-        public const string DELETE_USER ="DELETE FROM USER WHERE USER_ID = @user_id  AND (ROLE_CODE != 'A' OR (SELECT COUNT(*) FROM USER WHERE ROLE_CODE = 'A') >= 2)";
+        public const string DELETE_USER = "DELETE FROM USER WHERE USER_ID = @user_id  AND (ROLE_CODE != 'A' OR (SELECT COUNT(*) FROM USER WHERE ROLE_CODE = 'A') >= 2)";
         public const string DELEGATE_USER = "UPDATE USER SET ROLE_CODE = 'A' WHERE USER_ID = @user_id";                                                          // 관리자 권한 위임
         public const string DISMISS_USER = "UPDATE USER SET ROLE_CODE = 'U' WHERE USER_ID = @user_id AND (SELECT COUNT(*) FROM USER WHERE ROLE_CODE = 'A') >= 2"; // 관리자 권한 해임 (관리자 2명 이상일 때만)
 
@@ -407,7 +407,7 @@ namespace LSS_prototype
         // ================================================
         public const string PASSWORD_EDIT = "UPDATE USER SET password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @loginId";
         public const string CREDENTIAL_EDIT_WITH_ROLE = "UPDATE USER SET login_id = @newId, password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate, USER_ROLE = @role WHERE login_id = @oldId"; // 최초 로그인 시 ID+PW+Role 동시 변경
-        public const string CREDENTIAL_EDIT= "UPDATE USER SET login_id = @newId, password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @oldId"; // 관리자가 USER 비밀번호 및 ID 변경 쿼리 
+        public const string CREDENTIAL_EDIT = "UPDATE USER SET login_id = @newId, password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @oldId"; // 관리자가 USER 비밀번호 및 ID 변경 쿼리 
         public const string ADMIN_UPDATE = "UPDATE USER SET password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate, login_id = @logiId WHERE login_id = @loginId";
 
         // ================================================
@@ -446,6 +446,13 @@ namespace LSS_prototype
         public const string UPDATE_CSTORE = "UPDATE PACS_SET SET CSTORE_AET=@CStoreAET, CSTORE_IP=@CStoreIP, CSTORE_PORT=@CStorePort, CSTORE_MY_AET=@CStoreMyAET";
         public const string UPDATE_MWL = "UPDATE PACS_SET SET MWL_AET=@MwlAET, MWL_IP=@MwlIP, MWL_PORT=@MwlPort, MWL_MY_AET=@MwlMyAET";
         public const string UPDATE_MWL_FILTER = "UPDATE PACS_SET SET MWL_DESCRIPTION_FILTER = @MwlDescriptionFilter";
+
+        // ================================================
+        // Recycle  -  DB_Manager.Recycle.cs
+        // ================================================
+        public const string INSERT_IMAGE_DELETE_LOG ="INSERT INTO DELETE_LOG (DELETED_BY, FILE_TYPE, IMAGE_PATH, PATIENT_CODE, PATIENT_NAME) VALUES (@DeletedBy, @FileType, @ImagePath, @PatientCode, @PatientName)";
+        public const string SELECT_DELETE_LOGS = "SELECT DELETE_ID, DELETED_BY, DELETED_AT, FILE_TYPE, IMAGE_PATH, AVI_PATH, DICOM_PATH, PATIENT_CODE, IS_RECOVERED, RECOVERED_AT, PATIENT_NAME  FROM DELETE_LOG ORDER BY DELETED_AT DESC";
+        public const string UPDATE_RECOVERED ="UPDATE DELETE_LOG SET IS_RECOVERED = 'Y', RECOVERED_AT = datetime('now', 'localtime') WHERE DELETE_ID = @DeleteId";
     }
 }
 
@@ -493,7 +500,7 @@ public class AsyncRelayCommand : ICommand
 /// 마지막 입력으로부터 지정된 딜레이(기본 500ms)가 지난 후에만 콜백을 실행
 /// 작성자 : 박한용
 /// </summary>
-    public class SearchDebouncer : IDisposable
+public class SearchDebouncer : IDisposable
 {
     private readonly Action<string> _callback;  // 디바운싱 후 실행할 검색 콜백
     private readonly int _delayMs;              // 딜레이 (밀리초)
@@ -515,13 +522,15 @@ public class AsyncRelayCommand : ICommand
     public void OnTextChanged(string searchText)
     {
         if (_disposed) return;
+
+        // 기존 타이머 취소 후 재시작 (딜레이 리셋)
         _timer?.Dispose();
         _timer = new Timer(
             _ => _callback(searchText),
             null,
             _delayMs,
-            Timeout.Infinite    // 1회 실행 (반복 없음)
-            );
+            Timeout.Infinite    // 단발성 실행 (반복 없음)
+        );
     }
 
     /// <summary>
@@ -532,12 +541,13 @@ public class AsyncRelayCommand : ICommand
         _timer?.Dispose();
         _timer = null;
     }
+
     public void Dispose()
     {
         if (_disposed) return;
         _disposed = true;
         Cancel();
     }
+
+
 }
-
-

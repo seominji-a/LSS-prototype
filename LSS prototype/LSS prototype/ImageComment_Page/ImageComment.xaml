@@ -344,7 +344,7 @@
                     <Button Grid.Row="12" x:Name="BtnImageDelete"
                             Content="IMAGE DELETE"
                             Style="{StaticResource DangerBtn}"
-                            Command="{Binding DeleteCommand}"/>
+                            Command="{Binding ImageDeleteCommand}"/>
 
                     <!-- BACK + RESET -->
                     <Grid Grid.Row="14">

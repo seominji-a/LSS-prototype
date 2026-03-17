@@ -21,6 +21,9 @@ namespace LSS_prototype.Patient_Page
         public int PatientCode { get; set; }
         public string PatientName { get; set; }
 
+        // 화면 표시용 - ^ 제거 (원본 PatientName은 그대로 유지)
+        public string DisplayName => PatientName?.Replace("^", " ") ?? "";
+
         public DateTime BirthDate { get; set; }
 
         public string Sex { get; set; }

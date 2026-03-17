@@ -439,100 +439,95 @@ namespace LSS_prototype
     }
 }
 
-    /// <summary>
-    /// 버튼 중복 클릭 및 페이지 중복실행 막는 클래스 
-    /// </summary>
-    public class AsyncRelayCommand : ICommand
+/// <summary>
+/// 버튼 중복 클릭 및 페이지 중복실행 막는 클래스 
+/// </summary>
+public class AsyncRelayCommand : ICommand
+{
+    private readonly Func<object, Task> _execute;
+    private bool _isExecuting;
+
+    public AsyncRelayCommand(Func<object, Task> execute)
     {
-        private readonly Func<object, Task> _execute;
-        private bool _isExecuting;
+        _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+    }
 
-        public AsyncRelayCommand(Func<object, Task> execute)
+    public bool CanExecute(object parameter) => true;
+
+    public async void Execute(object parameter)
+    {
+        // 중복터치 방지
+        if (_isExecuting) return;
+
+        _isExecuting = true;
+        try
         {
-            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+            await _execute(parameter);
         }
-
-        public bool CanExecute(object parameter) => true;
-
-        public async void Execute(object parameter)
+        finally
         {
-            // 중복터치 방지
-            if (_isExecuting) return;
-
-            _isExecuting = true;
-            try
-            {
-                await _execute(parameter);
-            }
-            finally
-            {
-                _isExecuting = false;
-            }
-        }
-
-        public event EventHandler CanExecuteChanged
-        {
-            add { }
-            remove { }
+            _isExecuting = false;
         }
     }
 
+    public event EventHandler CanExecuteChanged
+    {
+        add { }
+        remove { }
+    }
+}
 
-    /// <summary>
-    /// 검색 입력에 디바운싱을 적용하는 공용 함수 
-    /// 마지막 입력으로부터 지정된 딜레이(기본 500ms)가 지난 후에만 콜백을 실행
-    /// 작성자 : 박한용
-    /// </summary>
+
+/// <summary>
+/// 검색 입력에 디바운싱을 적용하는 공용 함수 
+/// 마지막 입력으로부터 지정된 딜레이(기본 500ms)가 지난 후에만 콜백을 실행
+/// 작성자 : 박한용
+/// </summary>
     public class SearchDebouncer : IDisposable
+{
+    private readonly Action<string> _callback;  // 디바운싱 후 실행할 검색 콜백
+    private readonly int _delayMs;              // 딜레이 (밀리초)
+    private Timer _timer;
+    private bool _disposed = false;
+
+    /// <param name="callback">딜레이 후 실행할 검색 함수 (검색어를 인자로 받음)</param>
+    /// <param name="delayMs">디바운싱 딜레이 (기본값 500ms)</param>
+    public SearchDebouncer(Action<string> callback, int delayMs = 500)
     {
-        private readonly Action<string> _callback;  // 디바운싱 후 실행할 검색 콜백
-        private readonly int _delayMs;              // 딜레이 (밀리초)
-        private Timer _timer;
-        private bool _disposed = false;
-
-        /// <param name="callback">딜레이 후 실행할 검색 함수 (검색어를 인자로 받음)</param>
-        /// <param name="delayMs">디바운싱 딜레이 (기본값 500ms)</param>
-        public SearchDebouncer(Action<string> callback, int delayMs = 500)
-        {
-            _callback = callback ?? throw new ArgumentNullException(nameof(callback));
-            _delayMs = delayMs;
-        }
-
-        /// <summary>
-        /// 검색어가 변경될 때마다 호출. 타이머를 리셋하여 마지막 호출 기준으로 딜레이를 적용
-        /// </summary>
-        /// <param name="searchText">변경된 검색어</param>
-        public void OnTextChanged(string searchText)
-        {
-            if (_disposed) return;
-
-            // 기존 타이머 취소 후 재시작 (딜레이 리셋)
-            _timer?.Dispose();
-            _timer = new Timer(
-                _ => _callback(searchText),
-                null,
-                _delayMs,
-                Timeout.Infinite    // 단발성 실행 (반복 없음)
-            );
-        }
-
-        /// <summary>
-        /// 진행 중인 디바운싱을 즉시 취소 (예: 창 닫힐 때)
-        /// </summary>
-        public void Cancel()
-        {
-            _timer?.Dispose();
-            _timer = null;
-        }
-
-        public void Dispose()
-        {
-            if (_disposed) return;
-            _disposed = true;
-            Cancel();
-        }
-
-       
+        _callback = callback ?? throw new ArgumentNullException(nameof(callback));
+        _delayMs = delayMs;
     }
+
+    /// <summary>
+    /// 검색어가 변경될 때마다 호출. 타이머를 리셋하여 마지막 호출 기준으로 딜레이를 적용
+    /// </summary>
+    /// <param name="searchText">변경된 검색어</param>
+    public void OnTextChanged(string searchText)
+    {
+        if (_disposed) return;
+        _timer?.Dispose();
+        _timer = new Timer(
+            _ => _callback(searchText),
+            null,
+            _delayMs,
+            Timeout.Infinite    // 1회 실행 (반복 없음)
+            );
+    }
+
+    /// <summary>
+    /// 진행 중인 디바운싱을 즉시 취소 (예: 창 닫힐 때)
+    /// </summary>
+    public void Cancel()
+    {
+        _timer?.Dispose();
+        _timer = null;
+    }
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        Cancel();
+    }
+}
 
 

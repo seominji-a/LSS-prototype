@@ -638,7 +638,7 @@ namespace LSS_prototype.Patient_Page
                 var worklistItems = await dicom.GetWorklistPatientsAsync(pacsSet.MwlMyAET, pacsSet.MwlIP, pacsSet.MwlPort, pacsSet.MwlAET);
                 await Task.Delay(500); // 로딩바 테스트 차 0.5 delay 추후 배포 시 해당코드 삭제
 
-                // TODO: LS / LSS 간 표시 데이터 차이 확인 후 바인딩 필드 정리 필요 0227 박한용
+               
                 _emrPatients = worklistItems;
 
                 foreach (var p in _emrPatients)
@@ -731,7 +731,7 @@ namespace LSS_prototype.Patient_Page
         private bool MatchesKeyword(PatientModel p, string keyword, string kwNoSpace)
         {
             // 이름 공백 제거 버전 ( ParkHan으로 Park Hanyong 검색 )
-            string nameNoSpace = (p.PatientName ?? "").Replace(" ", "");
+            string nameNoSpace = (p.DisplayName ?? "").Replace(" ", "");
 
             return
                 // 이름: 공백제거 후 대소문자 무시

@@ -492,10 +492,16 @@ namespace LSS_prototype.Patient_Page
 
                                 // DICOM 태그/파일명 정리
                                 UpdateDicomTagsForMerge(emrTargetFolder, pName, pCode, pAccess);
-                                NormalizeDicomFileNamesRecursively(emrTargetFolder, pName, pCode);
+                                //NormalizeDicomFileNamesRecursively(emrTargetFolder, pName, pCode);
 
-                                // VIDEO 병합 + 파일명 정리
+                                // VIDEO 병합 + 파일명 정리-먼저 VIDEO 파일 명을 E-SYNC 기준으로 정리
                                 MergePatientVideoFolder(localVideoFolder, emrVideoTargetFolder, pName, pCode);
+
+                                // VIDEO의 Dicom 인덱스에 맞춰 DICOM 파일명 동기화-VIDEO 안의 _Dicom.avi 인덱스를 읽어서, DICOM 파일명을 그 인덱스에 맞춰 rename
+                                SyncDicomFileNamesWithVideoDicomIndices(emrTargetFolder, emrVideoTargetFolder, pName, pCode);
+
+                                // Image 폴더의 dcm은 E-SYNC 기준 일반 이름으로 정리
+                                NormalizeImageDicomFileNames(emrTargetFolder, pName, pCode);
                             });
 
                             // 병합했으므로 LOCAL DB 삭제
@@ -991,6 +997,7 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
+        //일반 import나 fallback , 이미지에 관해서는 병합 후 단순 순번으로 처리
         private void NormalizeDicomFileNamesRecursively(string rootFolder, string patientName, int patientCode)
         {
             try
@@ -1212,10 +1219,16 @@ namespace LSS_prototype.Patient_Page
                 UpdateDicomTagsForMerge(emrTargetFolder,importedEmr.PatientName,importedEmr.PatientCode,importedEmr.AccessionNumber);
 
                 // 파일명도 E-SYNC 기준으로 통일
-                NormalizeDicomFileNamesRecursively(emrTargetFolder,importedEmr.PatientName,importedEmr.PatientCode);
+                //NormalizeDicomFileNamesRecursively(emrTargetFolder,importedEmr.PatientName,importedEmr.PatientCode);
 
                 // VIDEO 병합 추가
                 MergePatientVideoFolder(localVideoFolder,emrVideoTargetFolder,importedEmr.PatientName,importedEmr.PatientCode);
+
+                // VIDEO의 Dicom 인덱스에 맞춰 DICOM 파일명 동기화
+                SyncDicomFileNamesWithVideoDicomIndices(emrTargetFolder,emrVideoTargetFolder,importedEmr.PatientName,importedEmr.PatientCode);
+
+                // Image 폴더의 dcm은 E-SYNC 기준 일반 이름으로 정리
+                NormalizeImageDicomFileNames(emrTargetFolder, importedEmr.PatientName, importedEmr.PatientCode);
 
                 // DB에서 LOCAL 환자 삭제
                 var repo = new DB_Manager();
@@ -1351,6 +1364,333 @@ namespace LSS_prototype.Patient_Page
             {
                 Common.WriteLog(ex);
                 return string.Empty;
+            }
+        }
+
+        //DICOM 이름을 VIDEO 인덱스에 맞추는 메서드
+        private void SyncDicomFileNamesWithVideoDicomIndices(string dicomPatientRoot,string videoPatientRoot,string patientName,int patientCode)
+        {
+            try
+            {
+                if (!Directory.Exists(dicomPatientRoot) || !Directory.Exists(videoPatientRoot))
+                    return;
+
+                // DICOM 쪽에서도 "Video" 폴더만 대상
+                var dicomVideoDirs = Directory.GetDirectories(dicomPatientRoot, "*", SearchOption.AllDirectories)
+                    .Where(dir =>
+                        string.Equals(
+                            new DirectoryInfo(dir).Name,
+                            "Video",
+                            StringComparison.OrdinalIgnoreCase) &&
+                        Directory.GetFiles(dir, "*.dcm").Any())
+                    .ToList();
+
+                foreach (var dicomDir in dicomVideoDirs)
+                {
+                    string studyId = GetStudyIdFromDicomFolder(dicomDir);
+                    if (string.IsNullOrWhiteSpace(studyId))
+                        continue;
+
+                    string matchingVideoDir = FindVideoStudyFolder(videoPatientRoot, studyId);
+                    if (string.IsNullOrWhiteSpace(matchingVideoDir))
+                        continue;
+
+                    RenameDicomFilesByVideoIndices(dicomDir, matchingVideoDir, patientName, patientCode, studyId);
+                }
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
+
+        private string GetStudyIdFromDicomFolder(string dicomFolder)
+        {
+            try
+            {
+                var dirInfo = new DirectoryInfo(dicomFolder);
+
+                // 예:
+                // DICOM/환자/20260317/202603170001/Video
+                // DICOM/환자/20260317/202603170001/Image
+                // Parent = 202603170001
+                string folderName = dirInfo.Name;
+                string parentName = dirInfo.Parent?.Name ?? string.Empty;
+
+                if (Regex.IsMatch(folderName, @"^\d{8,}$"))
+                    return folderName;
+
+                if (Regex.IsMatch(parentName, @"^\d{8,}$"))
+                    return parentName;
+
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                return string.Empty;
+            }
+        }
+        private string FindVideoStudyFolder(string videoPatientRoot, string studyId)
+        {
+            try
+            {
+                return Directory.GetDirectories(videoPatientRoot, "*", SearchOption.AllDirectories)
+                    .FirstOrDefault(dir =>
+                        string.Equals(
+                            new DirectoryInfo(dir).Name,
+                            studyId,
+                            StringComparison.OrdinalIgnoreCase));
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                return null;
+            }
+        }
+        private void RenameDicomFilesByVideoIndices(string dicomDir,string videoDir,string patientName,int patientCode,string studyId)
+        {
+            try
+            {
+                var dicomFiles = Directory.GetFiles(dicomDir, "*.dcm")
+                    .OrderBy(f => f)
+                    .ToList();
+
+                if (dicomFiles.Count == 0)
+                    return;
+
+                var dicomVideoFiles = Directory.GetFiles(videoDir)
+                    .Where(IsDicomVideoFile)
+                    .OrderBy(f => ExtractIndexFromMergedFileName(f))
+                    .ThenBy(f => f)
+                    .ToList();
+
+                if (dicomVideoFiles.Count == 0)
+                {
+                    // video 쪽 Dicom avi가 없으면 기존 방식으로 fallback
+                    NormalizeDicomFileNamesWithDicomSuffix(dicomDir, patientName, patientCode, studyId);
+                    return;
+                }
+
+                var targetIndices = dicomVideoFiles
+                    .Select(ExtractIndexFromMergedFileName)
+                    .Where(i => i > 0)
+                    .Distinct()
+                    .OrderBy(i => i)
+                    .ToList();
+
+                if (targetIndices.Count == 0)
+                {
+                    NormalizeDicomFileNamesWithDicomSuffix(dicomDir, patientName, patientCode, studyId);
+                    return;
+                }
+
+                // dcm 파일 수와 video-dicom 인덱스 수가 다를 수 있으므로 가능한 만큼만 매핑
+                int pairCount = Math.Min(dicomFiles.Count, targetIndices.Count);
+
+                // 1단계: temp 이름으로 먼저 변경
+                var tempMappings = new List<(string TempPath, int TargetIndex)>();
+
+                for (int i = 0; i < pairCount; i++)
+                {
+                    string source = dicomFiles[i];
+                    string tempPath = source + ".renametmp";
+
+                    SafeMoveFile(source, tempPath);
+                    tempMappings.Add((tempPath, targetIndices[i]));
+                }
+
+                // 남는 dcm 파일은 뒤 번호로 이어서 부여
+                // 정상 데이터에서는 Dicom.Avi개수와 대응되는 .dcm 개수가 같기 때문에 남는 인덱스 계산
+                // 예외 상황 대비용-rename 터질 경우 방지 목적
+                // dcm 파일이 더 많을 경우/VIDEO 파일 일부 누락/병합 중 중복/잔여 파일 발생/이전 테스트 파일 폴더에 남아 있음
+                int nextIndex = 2;
+                if (targetIndices.Any())
+                {
+                    int maxIndex = targetIndices.Max();
+                    nextIndex = (maxIndex % 2 == 0) ? maxIndex + 2 : maxIndex + 1;
+                }
+
+                for (int i = pairCount; i < dicomFiles.Count; i++)
+                {
+                    string source = dicomFiles[i];
+                    string tempPath = source + ".renametmp";
+
+                    SafeMoveFile(source, tempPath);
+                    tempMappings.Add((tempPath, nextIndex));
+                    nextIndex += 2; // Dicom 쌍 기준이면 2,4,6... 구조 유지
+                }
+
+                // 2단계: 최종 이름으로 변경
+                foreach (var item in tempMappings)
+                {
+                    string finalName = $"{patientName}_{patientCode}_{studyId}_{item.TargetIndex}_Dicom.dcm";
+                    string finalPath = Path.Combine(dicomDir, finalName);
+
+                    if (File.Exists(finalPath))
+                        SafeDeleteFile(finalPath);
+
+                    SafeMoveFile(item.TempPath, finalPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
+        //DICOM fallback 정리 함수-VIDEO에서 DICOM.avi 인덱스를 찾지 못했을 경우, 파일명에 Dicom.dcm 유지 --> 필요한지 고려
+        private void NormalizeDicomFileNamesWithDicomSuffix(string folder, string patientName, int patientCode, string studyId)
+        {
+            try
+            {
+                var files = Directory.GetFiles(folder, "*.dcm")
+                    .OrderBy(f => f)
+                    .ToList();
+
+                if (files.Count == 0)
+                    return;
+
+                var tempFiles = new List<string>();
+
+                foreach (var file in files)
+                {
+                    string tempPath = file + ".renametmp";
+                    SafeMoveFile(file, tempPath);
+                    tempFiles.Add(tempPath);
+                }
+
+                int index = 2; // Dicom 쪽은 짝 인덱스 기준 시작
+                foreach (var tempFile in tempFiles)
+                {
+                    string newName = $"{patientName}_{patientCode}_{studyId}_{index}_Dicom.dcm";
+                    string newPath = Path.Combine(folder, newName);
+
+                    while (File.Exists(newPath))
+                    {
+                        index += 2;
+                        newName = $"{patientName}_{patientCode}_{studyId}_{index}_Dicom.dcm";
+                        newPath = Path.Combine(folder, newName);
+                    }
+
+                    SafeMoveFile(tempFile, newPath);
+                    index += 2;
+                }
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
+
+        //VIDEO가 DICOM 파일인지 판단하는 함수
+        private bool IsDicomVideoFile(string filePath)
+        {
+            try
+            {
+                string name = Path.GetFileNameWithoutExtension(filePath);
+                return Regex.IsMatch(name, @"_Dicom$", RegexOptions.IgnoreCase);
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                return false;
+            }
+        }
+
+        //병합된 파일명에서 인덱스 추출 함수-> DICOM.AVI의 인덱스를 추출,
+        //병합 후 DICOM이름 단순 순번이 아닌 VIDEO DICOM 인덱스 종속
+        private int ExtractIndexFromMergedFileName(string filePath)
+        {
+            try
+            {
+                string name = Path.GetFileNameWithoutExtension(filePath);
+
+                var match = Regex.Match(name, @"_(\d+)_(Avi|AVI|Dicom|DICOM)$", RegexOptions.IgnoreCase);
+                if (match.Success && int.TryParse(match.Groups[1].Value, out int index))
+                    return index;
+
+                return -1;
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                return -1;
+            }
+        }
+
+        private void NormalizeImageDicomFileNames(string dicomPatientRoot, string patientName, int patientCode)
+        {
+            try
+            {
+                if (!Directory.Exists(dicomPatientRoot))
+                    return;
+
+                var imageDirs = Directory.GetDirectories(dicomPatientRoot, "*", SearchOption.AllDirectories)
+                    .Where(dir =>
+                        string.Equals(
+                            new DirectoryInfo(dir).Name,
+                            "Image",
+                            StringComparison.OrdinalIgnoreCase) &&
+                        Directory.GetFiles(dir, "*.dcm").Any())
+                    .ToList();
+
+                foreach (var imageDir in imageDirs)
+                {
+                    string studyId = GetStudyIdFromDicomFolder(imageDir);
+                    if (string.IsNullOrWhiteSpace(studyId))
+                        continue;
+
+                    RenameImageDicomFiles(imageDir, patientName, patientCode, studyId);
+                }
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
+
+        private void RenameImageDicomFiles(string imageDir, string patientName, int patientCode, string studyId)
+        {
+            try
+            {
+                var files = Directory.GetFiles(imageDir, "*.dcm")
+                    .OrderBy(f => f)
+                    .ToList();
+
+                if (files.Count == 0)
+                    return;
+
+                var tempFiles = new List<string>();
+
+                // 1단계: temp로 피신
+                foreach (var file in files)
+                {
+                    string tempPath = file + ".renametmp";
+                    SafeMoveFile(file, tempPath);
+                    tempFiles.Add(tempPath);
+                }
+
+                // 2단계: E-SYNC 기준 이름으로 재부여
+                int index = 1;
+                foreach (var tempFile in tempFiles)
+                {
+                    string newName = $"{patientName}_{patientCode}_{studyId}_{index}.dcm";
+                    string newPath = Path.Combine(imageDir, newName);
+
+                    while (File.Exists(newPath))
+                    {
+                        index++;
+                        newName = $"{patientName}_{patientCode}_{studyId}_{index}.dcm";
+                        newPath = Path.Combine(imageDir, newName);
+                    }
+
+                    SafeMoveFile(tempFile, newPath);
+                    index++;
+                }
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
             }
         }
     }

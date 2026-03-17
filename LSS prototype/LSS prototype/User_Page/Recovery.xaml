@@ -192,7 +192,7 @@
 
         <!-- ── Cell DataTemplate ── -->
         <DataTemplate x:Key="PatientNameCell">
-            <TextBlock Text="{Binding PatientName}" FontSize="15" FontWeight="Bold" Margin="12,0"
+            <TextBlock Text="{Binding DisplayName}" FontSize="15" FontWeight="Bold" Margin="12,0"
                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListViewItem}}"
                        VerticalAlignment="Center"/>
         </DataTemplate>

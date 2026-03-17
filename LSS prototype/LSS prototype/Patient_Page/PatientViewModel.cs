@@ -450,7 +450,7 @@ namespace LSS_prototype.Patient_Page
                     if (isEmrImport && localPatient != null)
                     {
                         var result = CustomMessageWindow.Show(
-                            $"번호 {pCode}와 동일한 LOCAL 환자가 존재합니다.\nE-SYNC로 병합하시겠습니까?",
+                            $"번호: {pCode}, 이름: {pName} \n 생년월일: {pBirthStr}, 성별: {pSex} \n \n 동일한 LOCAL 환자가 존재합니다.\n 병합하시겠습니까?",
                             CustomMessageWindow.MessageBoxType.YesNo,
                             0,
                             CustomMessageWindow.MessageIconType.Warning);
@@ -459,8 +459,15 @@ namespace LSS_prototype.Patient_Page
                         {
                             string localFolder = FindPatientFolder(localPatient);
 
+                            string videoRoot = GetVideoRootPath();
+                            Directory.CreateDirectory(videoRoot);
+
+                            string localVideoFolder = FindPatientVideoFolder(localPatient);
+                            string emrVideoTargetFolder = Path.Combine(videoRoot, $"{pName}_{pCode}");
+
                             await Task.Run(() =>
                             {
+                                // DICOM 병합
                                 if (!string.IsNullOrWhiteSpace(localFolder) &&
                                     Directory.Exists(localFolder) &&
                                     !string.Equals(
@@ -480,19 +487,21 @@ namespace LSS_prototype.Patient_Page
                                     }
                                 }
 
-                                // import된 E-SYNC 파일도 병합
+                                // import된 E-SYNC DICOM 병합
                                 CopyDirectory(sourcePatientFolder, emrTargetFolder, overwrite: true);
 
-                                // 병합된 전체 파일의 DICOM 태그를 E-SYNC 기준으로 통일
+                                // DICOM 태그/파일명 정리
                                 UpdateDicomTagsForMerge(emrTargetFolder, pName, pCode, pAccess);
-
-                                // import된 E-SYNC 파일도 병합
                                 NormalizeDicomFileNamesRecursively(emrTargetFolder, pName, pCode);
+
+                                // VIDEO 병합 + 파일명 정리
+                                MergePatientVideoFolder(localVideoFolder, emrVideoTargetFolder, pName, pCode);
                             });
 
                             // 병합했으므로 LOCAL DB 삭제
                             repo.DeletePatient(localPatient.PatientId);
                         }
+
                         else
                         {
                             CustomMessageWindow.Show(
@@ -857,6 +866,84 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
+        private string GetDicomRootPath()
+        {
+            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DICOM");
+        }
+
+        private string GetVideoRootPath()
+        {
+            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "VIDEO");
+        }
+
+        private string FindPatientFolderByRoot(PatientModel patient, string rootPath)
+        {
+            try
+            {
+                if (!Directory.Exists(rootPath))
+                    return null;
+
+                string expectedFolderName = $"{patient.PatientName}_{patient.PatientCode}";
+                string directPath = Path.Combine(rootPath, expectedFolderName);
+
+                if (Directory.Exists(directPath))
+                    return directPath;
+
+                return Directory.GetDirectories(rootPath)
+                    .FirstOrDefault(x =>
+                        string.Equals(
+                            Path.GetFileName(x),
+                            expectedFolderName,
+                            StringComparison.OrdinalIgnoreCase));
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                return null;
+            }
+        }
+
+        private string FindPatientVideoFolder(PatientModel patient)
+        {
+            return FindPatientFolderByRoot(patient, GetVideoRootPath());
+        }
+
+        private void MergePatientVideoFolder(string sourceVideoFolder, string targetVideoFolder, string patientName,int patientCode)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(sourceVideoFolder) || !Directory.Exists(sourceVideoFolder))
+                    return;
+
+                Directory.CreateDirectory(targetVideoFolder);
+
+                if (!string.Equals(
+                        Path.GetFullPath(sourceVideoFolder).TrimEnd('\\'),
+                        Path.GetFullPath(targetVideoFolder).TrimEnd('\\'),
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    CopyDirectory(sourceVideoFolder, targetVideoFolder, overwrite: true);
+
+                    try
+                    {
+                        Directory.Delete(sourceVideoFolder, true);
+                    }
+                    catch (Exception ex)
+                    {
+                        Common.WriteLog(ex);
+                    }
+                }
+
+                // 복사/병합 후 파일명 정리
+                NormalizeVideoFileNamesRecursively(targetVideoFolder, patientName, patientCode);
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
+
+
         //파일 이름 정리
         private void NormalizeDicomFileNames(string folder, string patientName, int patientCode)
         {
@@ -1075,27 +1162,33 @@ namespace LSS_prototype.Patient_Page
         }
 
         //LOCAL → E-SYNC 병합
-        private void MergeEditedLocalToImportedEmr(
-            PatientModel originalLocal,
-            PatientModel updatedLocal,
-            PatientModel importedEmr)
+        private void MergeEditedLocalToImportedEmr(PatientModel originalLocal, PatientModel updatedLocal, PatientModel importedEmr)
         {
             try
             {
-                string dicomRoot = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DICOM");
+                string dicomRoot = GetDicomRootPath();
+                string videoRoot = GetVideoRootPath();
 
                 // E-SYNC 기준 폴더
                 string emrTargetFolder = Path.Combine(dicomRoot, $"{importedEmr.PatientName}_{importedEmr.PatientCode}");
+                string emrVideoTargetFolder = Path.Combine(videoRoot, $"{importedEmr.PatientName}_{importedEmr.PatientCode}");
 
                 // LOCAL 원래 폴더를 먼저 찾음
                 string localFolder =
                     FindPatientFolder(originalLocal) ??
                     FindPatientFolder(updatedLocal);
 
+                string localVideoFolder =
+                    FindPatientVideoFolder(originalLocal) ??
+                    FindPatientVideoFolder(updatedLocal);
+
                 if (!Directory.Exists(emrTargetFolder))
                     Directory.CreateDirectory(emrTargetFolder);
 
-                // LOCAL 폴더가 있으면 E-SYNC 폴더로 복사
+                if (!Directory.Exists(emrVideoTargetFolder))
+                    Directory.CreateDirectory(emrVideoTargetFolder);
+
+                // LOCAL DICOM 폴더가 있으면 E-SYNC DICOM 폴더로 복사
                 if (!string.IsNullOrWhiteSpace(localFolder) &&
                     Directory.Exists(localFolder) &&
                     !string.Equals(
@@ -1116,17 +1209,13 @@ namespace LSS_prototype.Patient_Page
                 }
 
                 // 병합 후 DICOM 태그를 E-SYNC 기준으로 통일
-                UpdateDicomTagsForMerge(
-                    emrTargetFolder,
-                    importedEmr.PatientName,
-                    importedEmr.PatientCode,
-                    importedEmr.AccessionNumber);
+                UpdateDicomTagsForMerge(emrTargetFolder,importedEmr.PatientName,importedEmr.PatientCode,importedEmr.AccessionNumber);
 
                 // 파일명도 E-SYNC 기준으로 통일
-                NormalizeDicomFileNamesRecursively(
-                    emrTargetFolder,
-                    importedEmr.PatientName,
-                    importedEmr.PatientCode);
+                NormalizeDicomFileNamesRecursively(emrTargetFolder,importedEmr.PatientName,importedEmr.PatientCode);
+
+                // VIDEO 병합 추가
+                MergePatientVideoFolder(localVideoFolder,emrVideoTargetFolder,importedEmr.PatientName,importedEmr.PatientCode);
 
                 // DB에서 LOCAL 환자 삭제
                 var repo = new DB_Manager();
@@ -1144,6 +1233,124 @@ namespace LSS_prototype.Patient_Page
             {
                 Common.WriteLog(ex);
                 LoadPatients();
+            }
+        }
+
+        private void NormalizeVideoFileNames(string folder, string patientName, int patientCode)
+        {
+            try
+            {
+                var videoExtensions = new[] { ".avi", ".mp4", ".mov", ".wmv", ".mpeg", ".mpg" };
+
+                var files = Directory.GetFiles(folder)
+                    .Where(f => videoExtensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase))
+                    .OrderBy(f => f)
+                    .ToList();
+
+                if (files.Count == 0)
+                    return;
+
+                // 구조 예:
+                // VIDEO/환자명_번호/20260317/202603170001/*.avi
+                string folderName = new DirectoryInfo(folder).Name;
+                string parentName = new DirectoryInfo(folder).Parent?.Name ?? folderName;
+
+                string studyId = Regex.IsMatch(folderName, @"^\d{8,}$")
+                    ? folderName
+                    : parentName;
+
+                int index = 1;
+
+                foreach (var file in files)
+                {
+                    string ext = Path.GetExtension(file);
+
+                    // 원본 파일명에서 _Avi / _Dicom 유지
+                    string typeSuffix = ExtractVideoTypeSuffix(file);
+
+                    string newName = $"{patientName}_{patientCode}_{studyId}_{index}{typeSuffix}{ext}";
+                    string newPath = Path.Combine(folder, newName);
+
+                    if (string.Equals(file, newPath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        index++;
+                        continue;
+                    }
+
+                    while (File.Exists(newPath))
+                    {
+                        index++;
+                        newName = $"{patientName}_{patientCode}_{studyId}_{index}{ext}";
+                        newPath = Path.Combine(folder, newName);
+                    }
+
+                    SafeMoveFile(file, newPath);
+                    index++;
+                }
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
+
+        private void NormalizeVideoFileNamesRecursively(string rootFolder, string patientName, int patientCode)
+        {
+            try
+            {
+                if (!Directory.Exists(rootFolder))
+                    return;
+
+                var videoExtensions = new[] { ".avi", ".mp4", ".mov", ".wmv", ".mpeg", ".mpg" };
+
+                var allDirs = Directory.GetDirectories(rootFolder, "*", SearchOption.AllDirectories)
+                    .Prepend(rootFolder);
+
+                foreach (var dir in allDirs)
+                {
+                    bool hasVideo = Directory.GetFiles(dir)
+                        .Any(f => videoExtensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase));
+
+                    if (hasVideo)
+                    {
+                        NormalizeVideoFileNames(dir, patientName, patientCode);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
+
+        //병합해도 video 타입 표시는 유지 ->DICOM.avi/AVI.avi
+        private string ExtractVideoTypeSuffix(string filePath)
+        {
+            try
+            {
+                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
+
+                // 파일명 끝부분이 _Avi 또는 _Dicom 형태면 유지
+                var match = Regex.Match(fileNameWithoutExt, @"_(Avi|AVI|Dicom|DICOM)$", RegexOptions.IgnoreCase);
+
+                if (!match.Success)
+                    return string.Empty;
+
+                string value = match.Groups[1].Value;
+
+                // 표기 통일하고 싶으면 여기서 고정
+                if (value.Equals("avi", StringComparison.OrdinalIgnoreCase))
+                    return "_Avi";
+
+                if (value.Equals("dicom", StringComparison.OrdinalIgnoreCase))
+                    return "_Dicom";
+
+                return "_" + value;
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                return string.Empty;
             }
         }
     }

@@ -89,7 +89,7 @@ namespace LSS_prototype.VideoComment_Page
         }
 
         // 환자 이름 + 코드
-        public string PatientName => $"{_patient.PatientName} ({_patient.PatientCode})";
+        public string PatientName => $"{_patient.DisplayName} ({_patient.PatientCode})";
 
         // 환자 생년월일 + 성별
         public string PatientInfo => $"{_patient.BirthDate:yyyy-MM-dd} / {_patient.Sex}";
@@ -262,7 +262,7 @@ namespace LSS_prototype.VideoComment_Page
                         CustomMessageWindow.MessageIconType.Info);
                     return false;
                 }
-                  
+
 
                 _currentIndex--;
                 UpdateCurrentFile();
@@ -284,10 +284,10 @@ namespace LSS_prototype.VideoComment_Page
                     CustomMessageWindow.Show("마지막 영상입니다.",
                         CustomMessageWindow.MessageBoxType.AutoClose, 1,
                         CustomMessageWindow.MessageIconType.Info);
-                    return false;   
+                    return false;
                 }
 
-                   
+
 
                 _currentIndex++;
                 UpdateCurrentFile();
@@ -344,6 +344,7 @@ namespace LSS_prototype.VideoComment_Page
                 File.Move(currentFile, deletedPath);
 
                 // TODO: DELETE_TB INSERT
+                // TODO : DICOM 비디오 삭제 시, AVI 쪽만 DEL 이 아니라, DICOM/VIDEO 안에있는 같은 이름을 찾아서, DEL_ 명시해줘야함. (0317 기준 미구현 ) 
 
                 _videoFiles.RemoveAt(_currentIndex);
 

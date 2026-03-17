@@ -30,7 +30,7 @@ namespace LSS_prototype.Dicom_Module
         public DicomManager(string id, string serialnumber, DicomDataset sourceDataset)
         {
             dataset = new DicomDataset();
-            videoDataset = dataset;
+            videoDataset = new DicomDataset();  // dataset과 별도 객체 → SetVideo의 dataset.AddOrUpdate(videoDataset) 충돌 방지
 
             if (sourceDataset != null)
             {

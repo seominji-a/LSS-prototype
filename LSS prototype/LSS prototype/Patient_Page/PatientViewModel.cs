@@ -740,7 +740,7 @@ namespace LSS_prototype.Patient_Page
         private bool MatchesKeyword(PatientModel p, string keyword, string kwNoSpace)
         {
             // 이름 공백 제거 버전 ( ParkHan으로 Park Hanyong 검색 )
-            string nameNoSpace = (p.PatientName ?? "").Replace(" ", "");
+            string nameNoSpace = (p.DisplayName ?? "").Replace(" ", "");
 
             return
                 // 이름: 공백제거 후 대소문자 무시

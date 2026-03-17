@@ -287,7 +287,7 @@
             <!-- 좌상단: 환자 정보 -->
             <StackPanel Margin="16,12" VerticalAlignment="Top" HorizontalAlignment="Left">
                 <TextBlock Foreground="White" FontSize="18" FontWeight="Bold">
-                    <Run Text="{Binding SelectedPatient.PatientName}"/>
+                    <Run Text="{Binding SelectedPatient.DisplayName, Mode=OneWay}"/>
                     <Run Text="("/>
                     <Run Text="{Binding SelectedPatient.PatientCode}"/>
                     <Run Text=")"/>

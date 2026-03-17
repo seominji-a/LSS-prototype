@@ -61,6 +61,7 @@ namespace LSS_prototype.ImageComment_Page
             // CurrentImage  변경 → CapturedImage.Source 갱신
             // CurrentStrokes 변경 → DrawingCanvas.Strokes 갱신
             VM.PropertyChanged += OnViewModelPropertyChanged;
+            VM.RequestNavigateToScan += () =>  MainPage.Instance.NavigateTo(new Scan(_patient, _studyId)); // 1장있는데, 삭제 후 파일없을때 scan화면으로 이동 
 
             Loaded += (s, e) => OnLoaded();
         }
@@ -143,7 +144,7 @@ namespace LSS_prototype.ImageComment_Page
                 if (_isDirty)
                 {
                     bool save = VM.ConfirmSaveDrawing();
-                    if (save) VM.SaveIsf(DrawingCanvas.Strokes);
+                    if (save) VM.SaveIsf(DrawingCanvas.Strokes, DrawingCanvas.ActualWidth, DrawingCanvas.ActualHeight);
                 }
 
                 // 페이지 이동 성공 시 펜 모드 해제
@@ -293,7 +294,7 @@ namespace LSS_prototype.ImageComment_Page
                 if (_isDirty)
                 {
                     bool save = VM.ConfirmSaveDrawing();
-                    if (save) VM.SaveIsf(DrawingCanvas.Strokes);
+                    if (save) VM.SaveIsf(DrawingCanvas.Strokes, DrawingCanvas.ActualWidth, DrawingCanvas.ActualHeight);
                 }
 
                 MainPage.Instance.NavigateTo(new Scan(_patient, _studyId));

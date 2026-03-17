@@ -72,20 +72,23 @@ namespace LSS_prototype.VideoComment_Page
             private set { _currentVideoPath = value; OnPropertyChanged(); }
         }
 
-        // 현재 파일명 표시 (우상단)
+        // 현재 파일명
         private string _currentFileName;
         public string CurrentFileName
         {
             get => _currentFileName;
-            private set { _currentFileName = value; OnPropertyChanged(); }
-        }
+            private set
+            {
+                _currentFileName = value;
+                OnPropertyChanged();
 
-        // 파일 카운터 표시 "2 / 5"
-        private string _fileCounter;
-        public string FileCounter
-        {
-            get => _fileCounter;
-            private set { _fileCounter = value; OnPropertyChanged(); }
+                // 파일명에 "Dicom" 포함 여부로 타입 결정
+                // 예) park_1234_001_Dicom.avi → "Dicom Video"
+                // 예) park_1234_001_Avi.avi  → "Normal Video"
+                VideoType = value != null && value.Contains("Dicom")
+                    ? "DICOM VIDEO"
+                    : "AVI VIDEO";
+            }
         }
 
         // 환자 이름 + 코드
@@ -150,6 +153,14 @@ namespace LSS_prototype.VideoComment_Page
         {
             get => _playPauseIcon;
             set { _playPauseIcon = value; OnPropertyChanged(); }
+        }
+
+        // 영상 타입 표시 ("Normal Video" or "Dicom Video")
+        private string _videoType;
+        public string VideoType
+        {
+            get => _videoType;
+            private set { _videoType = value; OnPropertyChanged(); }
         }
 
         // ═══════════════════════════════════════════
@@ -310,7 +321,6 @@ namespace LSS_prototype.VideoComment_Page
 
             CurrentVideoPath = _videoFiles[_currentIndex];
             CurrentFileName = Path.GetFileNameWithoutExtension(_videoFiles[_currentIndex]);
-            FileCounter = $"{_currentIndex + 1} / {_videoFiles.Count}";
         }
 
         // ═══════════════════════════════════════════
@@ -351,7 +361,6 @@ namespace LSS_prototype.VideoComment_Page
                 if (_videoFiles.Count == 0)
                 {
                     CurrentFileName = "";
-                    FileCounter = "0 / 0";
                     return;
                 }
 

@@ -231,6 +231,7 @@
     </Compile>
     <Compile Include="Common_Module\RelayCommand.cs" />
     <Compile Include="DB_CRUD\DB_Manager.cs" />
+    <Compile Include="DB_CRUD\DB_Manager.Recycle.cs" />
     <Compile Include="Dicom_Module\DicomManager.Receive.cs" />
     <Compile Include="DB_CRUD\DB_Manager.Patient.cs" />
     <Compile Include="DB_CRUD\DB_Manager.Set.cs" />
@@ -318,6 +319,11 @@
     <Compile Include="User_Page\DefaultViewModel.cs">
       <DependentUpon>Default.xaml</DependentUpon>
     </Compile>
+    <Compile Include="User_Page\Recovery.xaml.cs">
+      <DependentUpon>Recovery.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="User_Page\RecoveryModel.cs" />
+    <Compile Include="User_Page\RecoveryViewModel.cs" />
     <Compile Include="User_Page\setting.xaml.cs">
       <DependentUpon>setting.xaml</DependentUpon>
     </Compile>
@@ -408,6 +414,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="User_Page\Recovery.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="User_Page\setting.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -462,6 +472,9 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Content Include="DB\db_init.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="sample.avi">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -533,9 +546,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="DB\db_init.sql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="DB\seed.sql">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

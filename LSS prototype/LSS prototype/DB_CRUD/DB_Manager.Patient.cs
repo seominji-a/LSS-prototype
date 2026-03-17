@@ -23,6 +23,7 @@ namespace LSS_prototype.DB_CRUD
                     cmd.Parameters.AddWithValue("@PatientCode", patient.PatientCode);
                     cmd.Parameters.AddWithValue("@BirthDate", patient.BirthDate);
                     cmd.Parameters.AddWithValue("@Sex", patient.Sex);
+                    cmd.Parameters.AddWithValue("@SourceType", patient.SourceType);
                     return cmd.ExecuteNonQuery() > 0;
                 }
             }
@@ -32,31 +33,21 @@ namespace LSS_prototype.DB_CRUD
         #region [ 환자 로드 담당부 ]
         public List<PatientModel> GetAllPatients()
         {
-            // 리스트 생성 시에도 PatientModel을 사용합니다.
             List<PatientModel> list = new List<PatientModel>();
 
             using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
             {
                 conn.Open();
                 using (var cmd = new SQLiteCommand(Query.SELECT_PATIENTLIST, conn))
+                using (var reader = cmd.ExecuteReader())
                 {
-                    using (var reader = cmd.ExecuteReader())
+                    while (reader.Read())
                     {
-                        while (reader.Read())
-                        {
-                            // 'Patient' 창 객체가 아닌 'PatientModel' 데이터 객체를 생성합니다.
-                            list.Add(new PatientModel
-                            {
-                                PatientId = Convert.ToInt32(reader["PATIENT_ID"]),
-                                PatientCode = Convert.ToInt32(reader["PATIENT_CODE"]),
-                                PatientName = reader["PATIENT_NAME"].ToString(),
-                                BirthDate = Convert.ToDateTime(reader["BIRTH_DATE"]),
-                                Sex = reader["SEX"].ToString()
-                            });
-                        }
+                        list.Add(MapPatient(reader));
                     }
                 }
             }
+
             return list;
         }
         #endregion
@@ -152,16 +143,7 @@ namespace LSS_prototype.DB_CRUD
                     {
                         while (reader.Read())
                         {
-                            list.Add(new PatientModel
-                            {
-                                // 쿼리에서 SELECT 한 컬럼명과 정확히 일치해야 합니다.
-                                PatientId = reader["PATIENT_ID"] != DBNull.Value ? Convert.ToInt32(reader["PATIENT_ID"]) : 0,
-                                PatientCode = reader["PATIENT_CODE"] != DBNull.Value ? Convert.ToInt32(reader["PATIENT_CODE"]) : 0,
-                                PatientName = reader["PATIENT_NAME"]?.ToString() ?? "",
-                                BirthDate = reader["BIRTH_DATE"] != DBNull.Value ? Convert.ToDateTime(reader["BIRTH_DATE"]) : DateTime.MinValue,
-                                Sex = reader["SEX"]?.ToString() ?? "",
-                                Reg_Date = reader["REG_DATE"] != DBNull.Value ? Convert.ToDateTime(reader["REG_DATE"]) : DateTime.Now
-                            });
+                            list.Add(MapPatient(reader));
                         }
                     }
                 }
@@ -169,5 +151,122 @@ namespace LSS_prototype.DB_CRUD
             return list;
         }
         #endregion
+
+        private PatientModel MapPatient(SQLiteDataReader reader)
+        {
+            return new PatientModel
+            {
+                PatientId = reader["PATIENT_ID"] != DBNull.Value ? Convert.ToInt32(reader["PATIENT_ID"]) : 0,
+                PatientCode = reader["PATIENT_CODE"] != DBNull.Value ? Convert.ToInt32(reader["PATIENT_CODE"]) : 0,
+                PatientName = reader["PATIENT_NAME"]?.ToString() ?? "",
+                BirthDate = reader["BIRTH_DATE"] != DBNull.Value ? Convert.ToDateTime(reader["BIRTH_DATE"]) : DateTime.MinValue,
+                Sex = reader["SEX"]?.ToString() ?? "",
+                Reg_Date = reader["REG_DATE"] != DBNull.Value ? Convert.ToDateTime(reader["REG_DATE"]) : DateTime.Now,
+                SourceType = reader["SOURCE_TYPE"] != DBNull.Value ? Convert.ToInt32(reader["SOURCE_TYPE"]) : 0,
+                LastShootDate = reader["LASTSHOOTDATE"] != DBNull.Value
+                    ? Convert.ToDateTime(reader["LASTSHOOTDATE"])
+                    : (DateTime?)null,
+                ShotNum = reader["SHOTNUM"] != DBNull.Value
+                    ? Convert.ToInt32(reader["SHOTNUM"])
+                    : 0
+            };
+        }
+
+        public List<PatientModel> GetLocalPatients()
+        {
+            var list = new List<PatientModel>();
+
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.SELECT_LOCAL_PATIENTLIST, conn))
+                {
+                    cmd.Parameters.AddWithValue("@SourceType", 0); // LOCAL
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            list.Add(MapPatient(reader));
+                        }
+                    }
+                }
+            }
+
+            return list;
+        }
+
+        public List<PatientModel> GetEmrPatients()
+        {
+            var list = new List<PatientModel>();
+
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.SELECT_EMR_PATIENTLIST, conn))
+                {
+                    cmd.Parameters.AddWithValue("@SourceType", 1); // EMR / E-SYNC
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            list.Add(MapPatient(reader));
+                        }
+                    }
+                }
+            }
+
+            return list;
+        }
+
+        public bool UpsertEmrPatient(PatientModel patient)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+
+                using (var checkCmd = new SQLiteCommand(Query.SELECT_PATIENT_BY_CODE_AND_SOURCE, conn))
+                {
+                    checkCmd.Parameters.AddWithValue("@PatientCode", patient.PatientCode);
+                    checkCmd.Parameters.AddWithValue("@SourceType", patient.SourceType);
+
+                    var exists = checkCmd.ExecuteScalar();
+
+                    if (exists != null)
+                    {
+                        using (var updateCmd = new SQLiteCommand(Query.UPDATE_EMR_PATIENT, conn))
+                        {
+                            updateCmd.Parameters.AddWithValue("@PatientCode", patient.PatientCode);
+                            updateCmd.Parameters.AddWithValue("@PatientName", patient.PatientName);
+                            updateCmd.Parameters.AddWithValue("@BirthDate", patient.BirthDate);
+                            updateCmd.Parameters.AddWithValue("@Sex", patient.Sex);
+                            updateCmd.Parameters.AddWithValue("@LastShootDate", patient.LastShootDate);
+                            updateCmd.Parameters.AddWithValue("@ShotNum", patient.ShotNum);
+                            updateCmd.Parameters.AddWithValue("@SourceType", patient.SourceType);
+
+                            return updateCmd.ExecuteNonQuery() > 0;
+                        }
+                    }
+                    else
+                    {
+                        using (var insertCmd = new SQLiteCommand(Query.INSERT_EMR_PATIENT, conn))
+                        {
+                            insertCmd.Parameters.AddWithValue("@PatientCode", patient.PatientCode);
+                            insertCmd.Parameters.AddWithValue("@PatientName", patient.PatientName);
+                            insertCmd.Parameters.AddWithValue("@BirthDate", patient.BirthDate);
+                            insertCmd.Parameters.AddWithValue("@Sex", patient.Sex);
+                            insertCmd.Parameters.AddWithValue("@SourceType", patient.SourceType);
+                            insertCmd.Parameters.AddWithValue("@LastShootDate", patient.LastShootDate);
+                            insertCmd.Parameters.AddWithValue("@ShotNum", patient.ShotNum);
+
+                            return insertCmd.ExecuteNonQuery() > 0;
+                        }
+                    }
+                }
+            }
+        }
+
+
     }
 }

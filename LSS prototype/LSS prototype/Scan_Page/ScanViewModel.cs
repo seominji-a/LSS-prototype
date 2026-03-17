@@ -434,6 +434,8 @@ namespace LSS_prototype.Scan_Page
 
                 await dm.SaveImageFile(path, bitmap);
 
+                UpdatePatientAfterScan();
+
                 CustomMessageWindow.Show("촬영 및 저장이 완료되었습니다.",
                     CustomMessageWindow.MessageBoxType.AutoClose, 1,
                     CustomMessageWindow.MessageIconType.Info);
@@ -962,6 +964,7 @@ namespace LSS_prototype.Scan_Page
 
                     // AVI → DICOM 변환 저장
                     dm.SaveVideoFile(dcmPath, _aviSavePath);
+                    UpdatePatientAfterScan();
                 });
 
                 LoadingWindow.End();
@@ -1284,6 +1287,27 @@ namespace LSS_prototype.Scan_Page
             return maxIndex;
         }
 
+        private void UpdatePatientAfterScan()
+        {
+            try
+            {
+                var repo = new DB_Manager();
+
+                DateTime now = DateTime.Now;
+
+                SelectedPatient.ShotNum += 1;
+                SelectedPatient.LastShootDate = now;
+                SelectedPatient.SourceType = (int)PatientSource.ESync;
+                SelectedPatient.Source = PatientSource.ESync;
+                SelectedPatient.IsEmrPatient = true;
+
+                repo.UpsertEmrPatient(SelectedPatient); 
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
         #endregion
 
         #region 페이지 이동

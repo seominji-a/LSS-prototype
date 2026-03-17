@@ -30,7 +30,7 @@ namespace LSS_prototype
         public static string MwlDescriptionFilter = string.Empty;       // 현재 MWL FILTER 값 
 
 
-        public const int DB_VERSION = 46; // DB Version 
+        public const int DB_VERSION = 50; // DB Version 
 
         // ===== OTP 기능  =====
         public static bool VerifyMasterOtp(string inputId, string inputOtp)
@@ -414,13 +414,23 @@ namespace LSS_prototype
         // Patient_Page  -  DB_Manager.Patient.cs
         // ================================================
         public const string SELECT_PATIENTLIST = "SELECT * FROM PATIENT ORDER BY REG_DATE DESC";
-        public const string SEARCH_PATIENT = "SELECT PATIENT_ID, PATIENT_CODE, PATIENT_NAME, BIRTH_DATE, SEX, REG_DATE FROM PATIENT WHERE PATIENT_NAME LIKE @keyword OR PATIENT_CODE LIKE @keyword ORDER BY PATIENT_ID ASC";
-        public const string INSERT_PATIENT = "INSERT INTO PATIENT (PATIENT_NAME, PATIENT_CODE, BIRTH_DATE, SEX) VALUES (@PatientName, @PatientCode, @BirthDate, @Sex)";
+        public const string SEARCH_PATIENT = "SELECT PATIENT_ID, PATIENT_CODE, PATIENT_NAME, BIRTH_DATE, SEX, REG_DATE, SOURCE_TYPE, LASTSHOOTDATE, SHOTNUM FROM PATIENT WHERE PATIENT_NAME LIKE @keyword OR PATIENT_CODE LIKE @keyword ORDER BY PATIENT_ID ASC";
+        //public const string INSERT_PATIENT = "INSERT INTO PATIENT (PATIENT_NAME, PATIENT_CODE, BIRTH_DATE, SEX) VALUES (@PatientName, @PatientCode, @BirthDate, @Sex)";
+        public const string INSERT_PATIENT = "INSERT INTO PATIENT (PATIENT_NAME, PATIENT_CODE, BIRTH_DATE, SEX, SOURCE_TYPE) VALUES (@PatientName, @PatientCode, @BirthDate, @Sex, @SourceType)";
         public const string EDIT_PATIENT = "UPDATE PATIENT SET PATIENT_NAME = @PatientName, PATIENT_CODE = @PatientCode, BIRTH_DATE = @BirthDate, SEX = @Sex WHERE PATIENT_ID = @Patient_id";
         public const string DELETE_PATIENT = "DELETE FROM PATIENT WHERE PATIENT_ID = @Patient_id";
         public const string PATIENT_CODE_SEARCH = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode";                                                  // 환자 코드 중복 체크
         public const string PATIENT_CODE_SEARCHSELF = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND PATIENT_ID <> @Patient_id";                   // 수정 시 자기 자신 제외 중복 체크
 
+        public const string SELECT_LOCAL_PATIENTLIST ="SELECT * FROM PATIENT WHERE SOURCE_TYPE = @SourceType ORDER BY REG_DATE DESC";
+
+        public const string SELECT_EMR_PATIENTLIST ="SELECT * FROM PATIENT WHERE SOURCE_TYPE = @SourceType ORDER BY REG_DATE DESC";
+
+        public const string SELECT_PATIENT_BY_CODE_AND_SOURCE ="SELECT PATIENT_ID FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND SOURCE_TYPE = @SourceType LIMIT 1";
+
+        public const string INSERT_EMR_PATIENT = @"INSERT INTO PATIENT(PATIENT_CODE, PATIENT_NAME, BIRTH_DATE, SEX, SOURCE_TYPE, LASTSHOOTDATE, SHOTNUM) VALUES(@PatientCode, @PatientName, @BirthDate, @Sex, @SourceType, @LastShootDate, @ShotNum)";
+
+        public const string UPDATE_EMR_PATIENT = @"UPDATE PATIENT SET PATIENT_NAME = @PatientName, BIRTH_DATE = @BirthDate, SEX = @Sex, LASTSHOOTDATE = @LastShootDate, SHOTNUM = @ShotNum, SOURCE_TYPE = @SourceType WHERE PATIENT_CODE = @PatientCode AND SOURCE_TYPE = @SourceType";
         // ================================================
         // User_Page > Default (카메라 기본값)  -  DB_Manager.Set.cs
         // ================================================

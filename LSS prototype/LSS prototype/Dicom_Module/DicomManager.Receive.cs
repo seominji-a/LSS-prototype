@@ -124,9 +124,9 @@ namespace LSS_prototype.Dicom_Module
 
                 // 화면 표시용 (DB 저장 안 함)
                 IsEmrPatient = isEmr,
-                Source = isEmr
-                               ? PatientSource.EmrImported
-                               : PatientSource.Local,
+
+                //MWL 환자는 E-SYNC가 아닌 촬영 후보이고, E-SYNC는 촬영 완료 후 DB 저장 시점에만 된다.
+                Source = PatientSource.Local,
 
                 // Save_Click에서 DicomManager(HID, Serial, Dataset) 생성자에 전달용
                 // EMR: MWL 원본 태그 전체 보관 → 저장 시 AccessionNumber 등 서버값 유지

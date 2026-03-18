@@ -102,6 +102,7 @@ namespace LSS_prototype.VideoComment_Page
                             else
                             {
                                 VideoPlayer.Play();
+                                VideoPlayer.SpeedRatio = VM.CurrentSpeedRatio; // 배속적용
                                 _isPlaying = true;
                                 VM.PlayPauseIcon = "⏸";
                                 _timer.Start();
@@ -275,6 +276,7 @@ namespace LSS_prototype.VideoComment_Page
         {
             _isDraggingSeek = true;
         }
+
 
         private void SliderSeek_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {

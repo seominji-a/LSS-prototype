@@ -27,6 +27,9 @@
         <SolidColorBrush x:Key="TextMuted"   Color="#94A3B8"/>
         <SolidColorBrush x:Key="Panel"       Color="#0F2637"/>
         <SolidColorBrush x:Key="Accent"      Color="#3B82F6"/>
+        <SolidColorBrush x:Key="BtnDark"     Color="#2A3F55"/>
+        <SolidColorBrush x:Key="ValueBg"     Color="#1A2D3E"/>
+        <SolidColorBrush x:Key="Inactive"    Color="#94A3B8"/>
 
         <!-- ── NavBtn ── -->
         <Style x:Key="NavBtn" TargetType="Button">
@@ -192,7 +195,7 @@
 
         <!-- ── Cell DataTemplate ── -->
         <DataTemplate x:Key="PatientNameCell">
-            <TextBlock Text="{Binding DisplayName}" FontSize="15" FontWeight="Bold" Margin="12,0"
+            <TextBlock Text="{Binding PatientName}" FontSize="15" FontWeight="Bold" Margin="12,0"
                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListViewItem}}"
                        VerticalAlignment="Center"/>
         </DataTemplate>
@@ -226,6 +229,81 @@
                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListViewItem}}"
                        VerticalAlignment="Center"/>
         </DataTemplate>
+
+
+        <!-- ── SeekSlider (VideoComment 완전 동일) ── -->
+        <Style x:Key="SeekSlider" TargetType="Slider">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid>
+                            <Border Height="44" Background="Transparent">
+                                <Grid VerticalAlignment="Center">
+                                    <Border Height="6" CornerRadius="3"
+                                            Background="{StaticResource BtnDark}" Margin="22,0"/>
+                                    <Track x:Name="PART_Track" Margin="0">
+                                        <Track.DecreaseRepeatButton>
+                                            <RepeatButton Command="Slider.DecreaseLarge" Focusable="False">
+                                                <RepeatButton.Template>
+                                                    <ControlTemplate TargetType="RepeatButton">
+                                                        <Border Height="6" CornerRadius="3,0,0,3"
+                                                                Background="{StaticResource Accent}"
+                                                                VerticalAlignment="Center"/>
+                                                    </ControlTemplate>
+                                                </RepeatButton.Template>
+                                            </RepeatButton>
+                                        </Track.DecreaseRepeatButton>
+                                        <Track.IncreaseRepeatButton>
+                                            <RepeatButton Command="Slider.IncreaseLarge" Focusable="False">
+                                                <RepeatButton.Template>
+                                                    <ControlTemplate TargetType="RepeatButton">
+                                                        <Border Background="Transparent"/>
+                                                    </ControlTemplate>
+                                                </RepeatButton.Template>
+                                            </RepeatButton>
+                                        </Track.IncreaseRepeatButton>
+                                        <Track.Thumb>
+                                            <Thumb>
+                                                <Thumb.Template>
+                                                    <ControlTemplate TargetType="Thumb">
+                                                        <Grid Width="36" Height="36">
+                                                            <Ellipse Fill="#40000000" Margin="-2"/>
+                                                            <Ellipse Fill="White"/>
+                                                            <Ellipse Width="12" Height="12"
+                                                                     Fill="{StaticResource Accent}"
+                                                                     HorizontalAlignment="Center"
+                                                                     VerticalAlignment="Center"/>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </Thumb.Template>
+                                            </Thumb>
+                                        </Track.Thumb>
+                                    </Track>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── PlayBtn (VideoComment 완전 동일) ── -->
+        <Style x:Key="PlayBtn" TargetType="Button">
+            <Setter Property="Background"      Value="{StaticResource Accent}"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
     </UserControl.Resources>
 
@@ -324,9 +402,11 @@
                         <ColumnDefinition Width="3*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- 뷰어 -->
-                    <Border Grid.Column="0" Background="#0F1923" CornerRadius="12" ClipToBounds="True">
+                    <!-- 뷰어 (VideoComment 동일 스타일) -->
+                    <Border Grid.Column="0" Background="Black" CornerRadius="8" ClipToBounds="True">
                         <Grid>
+
+                            <!-- 선택 전 안내 -->
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
                                         Visibility="{Binding IsViewerEmpty, Converter={StaticResource BoolToVisibilityConverter}}">
                                 <TextBlock Text="행을 선택하면 미리보기가 표시됩니다"
@@ -334,33 +414,107 @@
                                            HorizontalAlignment="Center"/>
                             </StackPanel>
 
+                            <!-- 이미지 뷰어 -->
                             <Image Source="{Binding PreviewImageSource}" Stretch="Uniform"
                                    Visibility="{Binding IsImageVisible, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                            <!-- ★ ISF 오버레이 (읽기 전용 - ImageComment 동일 구조) -->
+                            <!-- ISF 오버레이 (읽기 전용) -->
                             <InkCanvas x:Name="PreviewDrawingCanvas"
-                                 Background="Transparent"
-                                 IsHitTestVisible="False"
-                                 EditingMode="None"
-                                 Visibility="{Binding IsImageVisible, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                       Background="Transparent"
+                                       IsHitTestVisible="False"
+                                       EditingMode="None"
+                                       Visibility="{Binding IsImageVisible, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
+                            <!-- ★ 파일타입 좌상단 (이미지/영상 공통) -->
+                            <StackPanel Margin="16,14"
+                                        VerticalAlignment="Top" HorizontalAlignment="Left"
+                                        Visibility="{Binding IsViewerEmpty, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}">
+                                <TextBlock Text="{Binding SelectedFilePath}"
+                                           Foreground="White" FontSize="15" FontWeight="Bold"
+                                           TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding SelectedFileType}"
+                                           Foreground="#BBCCE0" FontSize="15"/>
+                            </StackPanel>
+
+                            <!-- 영상 뷰어 -->
                             <MediaElement x:Name="PreviewVideo"
                                           LoadedBehavior="Manual" UnloadedBehavior="Stop"
                                           Stretch="Uniform"
+                                          ScrubbingEnabled="True"
                                           Visibility="{Binding IsVideoVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                                          MediaOpened="PreviewVideo_MediaOpened"/>
+                                          MediaOpened="PreviewVideo_MediaOpened"
+                                          MediaEnded="PreviewVideo_MediaEnded"/>
 
+                            <!-- ── 하단 컨트롤 오버레이 (VideoComment 완전 동일 구조) ── -->
                             <Border VerticalAlignment="Bottom"
-                                    Background="#CC0F1923" CornerRadius="0,0,12,12" Padding="14,10"
-                                    Visibility="{Binding IsViewerEmpty, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}">
-                                <StackPanel>
-                                    <TextBlock Text="{Binding SelectedFilePath}"
-                                               Foreground="#94A3B8" FontSize="11"
-                                               TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Text="{Binding SelectedFileType}"
-                                               FontSize="13" FontWeight="Bold" Foreground="#378ADD"/>
-                                </StackPanel>
+                                    Background="#CC1C2B3A"
+                                    CornerRadius="0,0,8,8"
+                                    Padding="16,10"
+                                    Visibility="{Binding IsVideoVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <!-- Seek + 시간 -->
+                                        <RowDefinition Height="8"/>
+                                        <RowDefinition Height="70"/>
+                                        <!-- 컨트롤 한 줄 -->
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Seek 슬라이더 + 시간 한 줄 (VideoComment 동일) -->
+                                    <Grid Grid.Row="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" x:Name="TxtCurrentTime" Text="00:00"
+                                                   Foreground="White" FontSize="15" FontWeight="Bold"
+                                                   FontFamily="Courier New" VerticalAlignment="Center"
+                                                   Margin="0,0,10,0"/>
+                                        <Slider Grid.Column="1" x:Name="SliderSeek"
+                                                Style="{StaticResource SeekSlider}"
+                                                Minimum="0" Maximum="100" Value="0"
+                                                IsMoveToPointEnabled="True"
+                                                PreviewMouseDown="PreviewSlider_MouseDown"
+                                                PreviewMouseUp="PreviewSlider_MouseUp"
+                                                ValueChanged="PreviewSlider_ValueChanged"/>
+                                        <TextBlock Grid.Column="2" x:Name="TxtTotalTime" Text="00:00"
+                                                   Foreground="#94A3B8" FontSize="15"
+                                                   FontFamily="Courier New" VerticalAlignment="Center"
+                                                   Margin="10,0,0,0"/>
+                                    </Grid>
+
+                                    <!-- ── 컨트롤 한 줄 (VideoComment 동일 구조) ── -->
+                                    <Grid Grid.Row="2">
+
+                                        <!-- 배속 표시: 좌측 고정 (x2 고정) -->
+                                        <Border HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                Background="#1A2D3E"
+                                                CornerRadius="8" Padding="14,0" Height="44">
+                                            <TextBlock x:Name="TxtSpeedLabel"
+                                                       Text="x2" Foreground="White"
+                                                       FontSize="16" FontWeight="Bold"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                        </Border>
+
+                                        <!-- 재생/정지 버튼: 정중앙 고정 -->
+                                        <Button x:Name="BtnPlayPause"
+                                                Style="{StaticResource PlayBtn}"
+                                                Width="100" Height="70"
+                                                HorizontalAlignment="Center"
+                                                Click="BtnPlayPause_Click">
+                                            <TextBlock x:Name="TxtPlayPauseIcon"
+                                                       Text="⏸" FontSize="36"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                        </Button>
+
+                                    </Grid>
+
+                                </Grid>
                             </Border>
+
                         </Grid>
                     </Border>
 
@@ -459,15 +613,15 @@
                                 Margin="0,8,0,0" HorizontalAlignment="Center"/>
                     </StackPanel>
 
-         
+
 
                     <!-- 복구 버튼 -->
                     <Button Style="{StaticResource RecoverBtn}"
                             Content="복구"
                             Command="{Binding RecoverCommand}"
                             Margin="0,0,0,0"/>
-                    
-                     <!-- 복구 버튼 -->
+
+                    <!-- 복구 버튼 -->
                     <Button Style="{StaticResource RecoverBtn}"
                             Background="Red"
                             Content="즉시 삭제"

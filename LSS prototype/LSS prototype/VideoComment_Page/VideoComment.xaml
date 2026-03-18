@@ -201,6 +201,7 @@
                               LoadedBehavior="Manual"
                               UnloadedBehavior="Stop"
                               Stretch="Uniform"
+                              ScrubbingEnabled="True"
                               MediaOpened="VideoPlayer_MediaOpened"
                               MediaEnded="VideoPlayer_MediaEnded"/>
 

@@ -298,6 +298,8 @@ namespace LSS_prototype.User_Page
                 // 만료된 항목 → 파일 없음 → 미리보기 불가
                 if (_selectedLog.IsExpired) return;
 
+                if (_selectedLog.IsRecovered == "Y") return; // 이미 복구된 항목도 미리보기 불가 
+
                 // 1초 대기 (빠른 클릭 시 취소됨)
                 await Task.Delay(PREVIEW_DELAY, ct);
 
@@ -565,6 +567,31 @@ namespace LSS_prototype.User_Page
                 // ── 여기까지 왔으면 모든 파일 복구 성공 → DB 업데이트 ──
                 var db = new DB_Manager();
                 db.UpdateRecovered(_selectedLog.DeleteId);
+
+                switch (_selectedLog.FileType)
+                {
+                    case "IMAGE":
+                        Common.WriteSessionLog(
+                            $"[IMAGE RECOVER] User:{Common.CurrentUserId} " +
+                            $"Patient:{_selectedLog.PatientName}({_selectedLog.PatientCode}) " +
+                            $"File:{_selectedLog.ImagePath}");
+                        break;
+
+                    case "NORMAL_VIDEO":
+                        Common.WriteSessionLog(
+                            $"[NORMAL VIDEO RECOVER] User:{Common.CurrentUserId} " +
+                            $"Patient:{_selectedLog.PatientName}({_selectedLog.PatientCode}) " +
+                            $"AVI:{_selectedLog.AviPath}");
+                        break;
+
+                    case "DICOM_VIDEO":
+                        Common.WriteSessionLog(
+                            $"[DICOM VIDEO RECOVER] User:{Common.CurrentUserId} " +
+                            $"Patient:{_selectedLog.PatientName}({_selectedLog.PatientCode}) " +
+                            $"AVI:{_selectedLog.AviPath} DCM:{_selectedLog.DicomPath}");
+                        break;
+                }
+
 
                 CustomMessageWindow.Show("복구가 완료되었습니다.",
                     CustomMessageWindow.MessageBoxType.AutoClose, 2,

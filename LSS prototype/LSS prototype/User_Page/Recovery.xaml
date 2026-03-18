@@ -183,6 +183,12 @@
                                 <Setter Property="Cursor"  Value="Arrow"/>
                                 <Setter Property="Opacity" Value="0.6"/>
                             </DataTrigger>
+                            <DataTrigger Binding="{Binding IsForceDeleted}" Value="Y">
+                                <Setter TargetName="RowBorder" Property="Background"  Value="#40E24B4A"/>
+                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="#80E24B4A"/>
+                                <Setter Property="Cursor"  Value="Arrow"/>
+                                <Setter Property="Opacity" Value="0.85"/>
+                            </DataTrigger>
                             <DataTrigger Binding="{Binding IsRecovered}" Value="Y">
                                 <Setter Property="Opacity" Value="0.5"/>
                                 <Setter Property="Cursor"  Value="Arrow"/>
@@ -194,8 +200,46 @@
         </Style>
 
         <!-- ── Cell DataTemplate ── -->
+
+        <!-- ★ 체크박스 셀 -->
+        <!-- ★ 체크박스 셀 - 터치 친화적으로 크게 -->
+        <DataTemplate x:Key="CheckBoxCell">
+            <CheckBox IsChecked="{Binding IsChecked, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsCheckable}"
+                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                      Cursor="Hand" Width="48" Height="48">
+                <CheckBox.Template>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Border x:Name="Bd"
+                                Width="32" Height="32"
+                                CornerRadius="6"
+                                BorderThickness="2"
+                                BorderBrush="#94A3B8"
+                                Background="White">
+                            <TextBlock x:Name="Chk"
+                                       Text="&#x2713;"
+                                       FontSize="20" FontWeight="Bold"
+                                       Foreground="White"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Visibility="Collapsed"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd"  Property="Background"  Value="#3B82F6"/>
+                                <Setter TargetName="Bd"  Property="BorderBrush" Value="#3B82F6"/>
+                                <Setter TargetName="Chk" Property="Visibility"  Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#3B82F6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </CheckBox.Template>
+            </CheckBox>
+        </DataTemplate>
+
         <DataTemplate x:Key="PatientNameCell">
-            <TextBlock Text="{Binding PatientName}" FontSize="15" FontWeight="Bold" Margin="12,0"
+            <TextBlock Text="{Binding DisplayName}" FontSize="15" FontWeight="Bold" Margin="12,0"
                        Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListViewItem}}"
                        VerticalAlignment="Center"/>
         </DataTemplate>
@@ -548,8 +592,12 @@
 
                         <ListView.View>
                             <GridView AllowsColumnReorder="False">
-                                <GridViewColumn Header="환자명"      Width="160"
+                                <!-- ★ 체크박스 컬럼 -->
+                                <GridViewColumn Header="" Width="52"
                                                 HeaderContainerStyle="{StaticResource ColHeaderFirst}"
+                                                CellTemplate="{StaticResource CheckBoxCell}"/>
+                                <GridViewColumn Header="환자명"      Width="160"
+                                                HeaderContainerStyle="{StaticResource ColHeader}"
                                                 CellTemplate="{StaticResource PatientNameCell}"/>
                                 <GridViewColumn Header="환자코드"    Width="110"
                                                 HeaderContainerStyle="{StaticResource ColHeader}"

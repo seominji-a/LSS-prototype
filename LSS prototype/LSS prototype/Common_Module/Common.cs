@@ -30,7 +30,7 @@ namespace LSS_prototype
         public static string MwlDescriptionFilter = string.Empty;       // 현재 MWL FILTER 값 
 
 
-        public const int DB_VERSION = 53; // DB Version 
+        public const int DB_VERSION = 55; // DB Version 
 
         // ===== OTP 기능  =====
         public static bool VerifyMasterOtp(string inputId, string inputOtp)
@@ -455,8 +455,9 @@ namespace LSS_prototype
         public const string INSERT_IMAGE_DELETE_LOG ="INSERT INTO DELETE_LOG (DELETED_BY, FILE_TYPE, IMAGE_PATH, PATIENT_CODE, PATIENT_NAME) VALUES (@DeletedBy, @FileType, @ImagePath, @PatientCode, @PatientName)";
         public const string INSERT_NORMAL_VIDEO_DELETE_LOG = "INSERT INTO DELETE_LOG (DELETED_BY, FILE_TYPE, AVI_PATH, PATIENT_CODE, PATIENT_NAME) VALUES (@DeletedBy, @FileType, @AviPath, @PatientCode, @PatientName)";
         public const string INSERT_DICOM_VIDEO_DELETE_LOG = "INSERT INTO DELETE_LOG (DELETED_BY, FILE_TYPE, AVI_PATH, DICOM_PATH, PATIENT_CODE, PATIENT_NAME)  VALUES (@DeletedBy, @FileType, @AviPath, @DicomPath, @PatientCode, @PatientName)";
-        public const string SELECT_DELETE_LOGS = "SELECT DELETE_ID, DELETED_BY, DELETED_AT, FILE_TYPE, IMAGE_PATH, AVI_PATH, DICOM_PATH, PATIENT_CODE, IS_RECOVERED, RECOVERED_AT, PATIENT_NAME  FROM DELETE_LOG ORDER BY DELETED_AT DESC";
+        public const string SELECT_DELETE_LOGS = "SELECT DELETE_ID, DELETED_BY, DELETED_AT, FILE_TYPE, IMAGE_PATH, AVI_PATH, DICOM_PATH, PATIENT_CODE, IS_RECOVERED, RECOVERED_AT, PATIENT_NAME, IS_FORCE_DELETED FROM DELETE_LOG ORDER BY DELETED_AT DESC";
         public const string UPDATE_RECOVERED ="UPDATE DELETE_LOG SET IS_RECOVERED = 'Y', RECOVERED_AT = datetime('now', 'localtime') WHERE DELETE_ID = @DeleteId";
+        public const string UPDATE_FORCE_DELETED = "UPDATE DELETE_LOG SET IS_FORCE_DELETED = 'Y', FORCE_DELETED_AT = datetime('now', 'localtime'), FORCE_DELETED_BY = @ForceDeletedBy WHERE DELETE_ID = @DeleteId";
     }
 }
 

@@ -19,21 +19,26 @@ namespace LSS_prototype.User_Page
     class RecoveryViewModel : INotifyPropertyChanged
     {
         // ── 상수 ──
-        private const int EXPIRE_HOURS = 72;   // 72시간 후 만료 ( 병원마다 정해진 값을 직접 수정해줘야함.  0317 박한용)
+        private const int EXPIRE_HOURS = 72;   // 72시간 후 만료 (병원마다 직접 수정)
         private const int PREVIEW_DELAY = 1000; // 미리보기 딜레이 1초 (무분별한 클릭 방지)
 
         // ── DB 원본 데이터 ──
         private List<RecoveryModel> _allLogs = new List<RecoveryModel>();
 
         // ── 미리보기 딜레이용 취소 토큰 ──
-        // 행을 빠르게 여러 번 클릭할 때 이전 작업을 취소하여 렉 방지
+        // 행을 빠르게 여러 번 클릭할 때 이전 작업 취소 → 렉 방지
         private CancellationTokenSource _previewCts;
 
         #region 바인딩 프로퍼티
+
+        // ── ISF 이미지 크기 (스케일 변환용) ──
         public double PreviewImageWidth { get; private set; }
         public double PreviewImageHeight { get; private set; }
 
-        // ISF 드로잉 데이터 (ImageComment 와 동일한 방식)
+        // ── 검색 딜레이용 취소 토큰 ──
+        private CancellationTokenSource _searchCts;
+
+        // ── ISF 드로잉 데이터 ──
         // ISF 없으면 빈 StrokeCollection → InkCanvas 에 아무것도 안 그려짐
         private StrokeCollection _currentStrokes;
         public StrokeCollection CurrentStrokes
@@ -57,7 +62,8 @@ namespace LSS_prototype.User_Page
         }
 
         // ── 선택된 행 ──
-        // 값이 바뀌면 1초 후 미리보기 로드 시작
+        // 행 클릭 = 미리보기 트리거 (체크박스와 독립)
+        // 체크박스 = 복구/강제삭제 작업 대상 선택 (행 선택과 독립)
         private RecoveryModel _selectedLog;
         public RecoveryModel SelectedLog
         {
@@ -66,7 +72,6 @@ namespace LSS_prototype.User_Page
             {
                 _selectedLog = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(CanRecover));
 
                 // 이전 미리보기 작업 취소 후 새로 시작
                 _previewCts?.Cancel();
@@ -88,18 +93,20 @@ namespace LSS_prototype.User_Page
         public string SearchText
         {
             get => _searchText;
-            set { _searchText = value; OnPropertyChanged(); ApplyFilter(); }
+            set
+            {
+                _searchText = value;
+                OnPropertyChanged();
+
+                // 즉시 호출 → 0.5초 딜레이 후 호출로 변경
+                // 빠르게 타이핑 시 이전 작업 취소 → 마지막 입력 후 0.5초 뒤 실행
+                _searchCts?.Cancel();
+                _searchCts = new CancellationTokenSource();
+                _ = ApplyFilterWithDelayAsync(_searchCts.Token);
+            }
         }
 
-        // ── 복구 버튼 활성화 조건 ──
-        // 행 선택 + 만료 안됨 + 아직 복구 안됨
-        public bool CanRecover =>
-            _selectedLog != null &&
-            !_selectedLog.IsExpired &&
-            _selectedLog.IsRecovered == "N";
-
         // ── 뷰어 상태 ──
-        // 선택 전 or 만료 항목 → 안내 텍스트 표시
         private bool _isViewerEmpty = true;
         public bool IsViewerEmpty
         {
@@ -107,7 +114,7 @@ namespace LSS_prototype.User_Page
             set { _isViewerEmpty = value; OnPropertyChanged(); }
         }
 
-        // IMAGE 타입 선택 시 Image 컨트롤 표시
+        // IMAGE 타입 선택 시 이미지 뷰어 표시
         private bool _isImageVisible;
         public bool IsImageVisible
         {
@@ -124,8 +131,6 @@ namespace LSS_prototype.User_Page
         }
 
         // ── 뷰어 데이터 ──
-
-        // DCM 렌더링 결과 (IMAGE 타입)
         private WriteableBitmap _previewImageSource;
         public WriteableBitmap PreviewImageSource
         {
@@ -133,7 +138,7 @@ namespace LSS_prototype.User_Page
             set { _previewImageSource = value; OnPropertyChanged(); }
         }
 
-        // AVI 파일 경로 (VIDEO 타입) - xaml.cs 에서 감지해서 자동 재생
+        // AVI 파일 경로 - xaml.cs 에서 PropertyChanged 감지 → MediaElement 재생
         private string _previewVideoPath;
         public string PreviewVideoPath
         {
@@ -141,7 +146,7 @@ namespace LSS_prototype.User_Page
             set { _previewVideoPath = value; OnPropertyChanged(); }
         }
 
-        // 뷰어 하단 파일 경로 표시
+        // 뷰어 상단에 표시되는 파일 경로
         private string _selectedFilePath;
         public string SelectedFilePath
         {
@@ -149,7 +154,7 @@ namespace LSS_prototype.User_Page
             set { _selectedFilePath = value; OnPropertyChanged(); }
         }
 
-        // 뷰어 하단 파일 타입 표시
+        // 뷰어 상단에 표시되는 파일 타입
         private string _selectedFileType;
         public string SelectedFileType
         {
@@ -157,8 +162,7 @@ namespace LSS_prototype.User_Page
             set { _selectedFileType = value; OnPropertyChanged(); }
         }
 
-        // - ISF 저장 당시 캔버스 크기
-        // Recovery XAML단에서 에서 스케일 변환 시 사용
+        // ISF 저장 당시 캔버스 크기 - Recovery.xaml.cs 스케일 변환 시 사용
         public double OriginalCanvasWidth { get; private set; }
         public double OriginalCanvasHeight { get; private set; }
 
@@ -168,8 +172,8 @@ namespace LSS_prototype.User_Page
 
         public ICommand NavigateBackCommand { get; }
         public ICommand ExitCommand { get; }
-        public ICommand RecoverCommand { get; }
-        public ICommand ForceDeleteCommand { get; }
+        public ICommand RecoverCommand { get; }   // 체크된 항목 복구
+        public ICommand ForceDeleteCommand { get; }   // 체크된 항목 완전 삭제
 
         #endregion
 
@@ -181,7 +185,6 @@ namespace LSS_prototype.User_Page
                 MainPage.Instance.NavigateTo(new User()));
 
             ExitCommand = new RelayCommand(Common.ExcuteExit);
-
             RecoverCommand = new RelayCommand(_ => ExecuteRecover());
             ForceDeleteCommand = new RelayCommand(_ => ExecuteForceDelete());
 
@@ -194,8 +197,14 @@ namespace LSS_prototype.User_Page
         #region 데이터 로드
 
         // ═══════════════════════════════════════════
-        //  DB에서 DELETE_LOG 전체 읽어오기
-        //  읽어온 후 RemainText / IsExpired 계산해서 각 항목에 채워줌
+        //  LoadLogs()
+        //  DB 에서 DELETE_LOG 전체 읽어오기
+        //
+        //  처리 순서:
+        //  1. DELETED_AT 기준으로 만료 여부 / 남은 시간 계산
+        //  2. 복구완료 / 강제삭제 항목은 RemainText 별도 표시
+        //  3. 모든 항목 IsChecked = false 초기화
+        //     → 복구/강제삭제 완료 후 LoadLogs() 재호출 시 체크 자동 해제
         // ═══════════════════════════════════════════
         private void LoadLogs()
         {
@@ -206,7 +215,7 @@ namespace LSS_prototype.User_Page
 
                 foreach (var log in logs)
                 {
-                    // DELETED_AT 기준으로 만료까지 남은 시간 계산
+                    // 만료까지 남은 시간 계산
                     if (DateTime.TryParse(log.DeletedAt, out DateTime deletedAt))
                     {
                         DateTime expireAt = deletedAt.AddHours(EXPIRE_HOURS);
@@ -224,9 +233,12 @@ namespace LSS_prototype.User_Page
                         }
                     }
 
-                    // 이미 복구된 항목은 별도 표시
-                    if (log.IsRecovered == "Y")
-                        log.RemainText = "복구처리";
+                    // 복구완료 / 강제삭제 항목은 RemainText 덮어씀
+                    if (log.IsRecovered == "Y") log.RemainText = "복구처리";
+                    if (log.IsForceDeleted == "Y") log.RemainText = "강제삭제";
+
+                    // 체크박스 전체 초기화
+                    log.IsChecked = false;
                 }
 
                 _allLogs = logs;
@@ -240,8 +252,29 @@ namespace LSS_prototype.User_Page
         #region 필터 / 검색
 
         // ═══════════════════════════════════════════
+        //  ApplyFilterWithDelayAsync()
+        //  검색어 입력 후 0.5초 딜레이 후 필터 적용
+        //  타이핑 중 취소 → 마지막 입력 후 0.5초 뒤 실행
+        //  데이터가 많아져도 불필요한 검색 반복 방지
+        // ═══════════════════════════════════════════
+        private async Task ApplyFilterWithDelayAsync(CancellationToken ct)
+        {
+            try
+            {
+                await Task.Delay(500, ct);
+                if (ct.IsCancellationRequested) return;
+                ApplyFilter();
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex) { Common.WriteLog(ex); }
+
+        }
+
+        // ═══════════════════════════════════════════
+        //  ApplyFilter()
         //  FILE_TYPE 필터 + 검색어 적용
-        //  Patient.xaml 과 동일한 검색 조건
+        //
+        //  검색 조건:
         //  - 공백 무시 (parkhanyong → park hanyong 검색 가능)
         //  - 대소문자 무시
         //  - 환자코드 검색 가능
@@ -282,110 +315,49 @@ namespace LSS_prototype.User_Page
         #region 미리보기
 
         // ═══════════════════════════════════════════
-        //  행 선택 시 미리보기 로드 (1초 딜레이)
-        //  1초 안에 다른 행 클릭하면 이전 작업 취소 → 렉 방지
-        //  만료된 항목은 파일이 실제 삭제됐으므로 미리보기 불가
+        //  LoadPreviewAsync()
+        //  행 클릭 시 미리보기 로드 (1초 딜레이)
+        //
+        //  미리보기 불가 조건:
+        //  - 만료된 항목 (파일이 실제로 없음)
+        //  - 복구완료 항목
+        //  - 강제삭제 항목 (파일이 완전 삭제됨)
+        //
+        //  1초 딜레이 이유:
+        //  빠르게 여러 행을 클릭할 때 이전 작업을 취소하여 렉 방지
         // ═══════════════════════════════════════════
         private async Task LoadPreviewAsync(CancellationToken ct)
         {
             try
             {
-                // 뷰어 초기화 (이전 미리보기 제거)
                 ResetViewer();
 
                 if (_selectedLog == null) return;
-
-                // 만료된 항목 → 파일 없음 → 미리보기 불가
                 if (_selectedLog.IsExpired) return;
+                if (_selectedLog.IsRecovered == "Y") return;
+                if (_selectedLog.IsForceDeleted == "Y") return;
 
-                if (_selectedLog.IsRecovered == "Y") return; // 이미 복구된 항목도 미리보기 불가 
-
-                // 1초 대기 (빠른 클릭 시 취소됨)
                 await Task.Delay(PREVIEW_DELAY, ct);
-
                 if (ct.IsCancellationRequested) return;
 
-                // FileType 기준 분기
                 switch (_selectedLog.FileType)
                 {
                     case "IMAGE":
-                        // DCM 파일을 열어서 WriteableBitmap 으로 렌더링
                         await LoadDicomPreviewAsync(_selectedLog.ImagePath, ct);
                         break;
-
                     case "DICOM_VIDEO":
                     case "NORMAL_VIDEO":
-                        // AVI 경로를 MediaElement 에 연결
                         LoadVideoPreview(_selectedLog.AviPath);
                         break;
                 }
             }
-            catch (OperationCanceledException) { } // 취소는 정상 흐름이므로 무시
+            catch (OperationCanceledException) { }
             catch (Exception ex) { Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
-        //  ISF 파일 로드 → CurrentStrokes 에 세팅
-        //
-        //  ISF 경로 계산 방식은 ImageCommentViewModel.GetIsfPath() 와 동일
-        //  DCM 경로 기준으로 DICOM → ISF 폴더로 변환
-        //
-        //  파일 없음 → 빈 StrokeCollection (InkCanvas 에 아무것도 안 그려짐)
-        //  파일 있음 → StrokeCollection 로드 → InkCanvas 오버레이
-        //
-        //  ★ 에러 발생 시 빈 StrokeCollection 으로 fallback
-        //    절대 이미지 미리보기 자체를 막으면 안 됨
-        // ═══════════════════════════════════════════
-        private void LoadIsfStrokes(string dcmPath)
-        {
-            try
-            {
-                string dicomDir = Path.Combine(Common.executablePath, "DICOM");
-                string isfDir = Path.Combine(Common.executablePath, "ISF");
-
-                string fileName = Path.GetFileNameWithoutExtension(dcmPath);
-                string studyDir = Path.GetDirectoryName(Path.GetDirectoryName(dcmPath));
-                string relative = studyDir.Substring(dicomDir.Length)
-                                          .TrimStart(Path.DirectorySeparatorChar);
-                string isfPath = Path.Combine(isfDir, relative, fileName + ".isf");
-
-                if (!File.Exists(isfPath))
-                {
-                    CurrentStrokes = new StrokeCollection();
-                    return;
-                }
-
-                StrokeCollection strokes;
-                using (var fs = File.OpenRead(isfPath))
-                    strokes = new StrokeCollection(fs);
-
-                // ★ 추가 - ISF 안에 저장된 캔버스 크기 읽기
-                var guidWidth = new Guid("A1B2C3D4-0001-0002-0003-000000000001");
-                var guidHeight = new Guid("A1B2C3D4-0001-0002-0003-000000000002");
-
-                // 크기 정보가 있으면 가져오고 없으면 fallback 값 사용
-                double originalWidth = strokes.ContainsPropertyData(guidWidth)
-                    ? double.Parse(strokes.GetPropertyData(guidWidth).ToString()) : 1465;
-                double originalHeight = strokes.ContainsPropertyData(guidHeight)
-                    ? double.Parse(strokes.GetPropertyData(guidHeight).ToString()) : 1060;
-
-                // ★ 추가 - 원본 크기 정보를 ViewModel 에 저장
-                // Recovery.xaml.cs 에서 스케일 변환 시 사용
-                OriginalCanvasWidth = originalWidth;
-                OriginalCanvasHeight = originalHeight;
-
-                CurrentStrokes = strokes;
-            }
-            catch (Exception ex)
-            {
-                Common.WriteLog(ex);
-                CurrentStrokes = new StrokeCollection();
-            }
-        }
-
-        // ═══════════════════════════════════════════
-        //  뷰어 초기화
-        //  행 선택 바뀔 때마다 기존 미리보기 제거
+        //  ResetViewer()
+        //  행 선택이 바뀔 때마다 기존 미리보기 초기화
         // ═══════════════════════════════════════════
         private void ResetViewer()
         {
@@ -403,12 +375,13 @@ namespace LSS_prototype.User_Page
         }
 
         // ═══════════════════════════════════════════
+        //  LoadDicomPreviewAsync()
         //  DCM 파일 → WriteableBitmap 렌더링
-        //  ScanViewModel.LoadImageThumbnail() 과 동일한 방식 재사용
-        //  fo-dicom 의 DicomImage.RenderImage() 로 픽셀 추출
+        //
+        //  fo-dicom DicomImage.RenderImage() 로 픽셀 추출
         //  렌더링은 무거우므로 백그라운드 스레드에서 처리
         //  WriteableBitmap 생성은 반드시 UI 스레드(Dispatcher)에서
-        //  ISF 있으면 CurrentStrokes 에 로드 → InkCanvas 오버레이
+        //  ISF 파일 있으면 CurrentStrokes 에 로드 → InkCanvas 오버레이
         // ═══════════════════════════════════════════
         private async Task LoadDicomPreviewAsync(string dcmPath, CancellationToken ct)
         {
@@ -442,10 +415,8 @@ namespace LSS_prototype.User_Page
 
                 if (ct.IsCancellationRequested) return;
 
-                // ★ bitmap 생성 완료 후 여기서 크기 저장
                 PreviewImageWidth = bitmap.PixelWidth;
                 PreviewImageHeight = bitmap.PixelHeight;
-
                 SelectedFilePath = dcmPath;
                 SelectedFileType = "IMAGE";
                 PreviewImageSource = bitmap;
@@ -459,9 +430,10 @@ namespace LSS_prototype.User_Page
         }
 
         // ═══════════════════════════════════════════
-        //  AVI 경로 → MediaElement 에 연결
-        //  경로를 PreviewVideoPath 에 세팅하면
-        //  xaml.cs 의 PropertyChanged 감지 → MediaElement.Source 변경 + 자동 재생
+        //  LoadVideoPreview()
+        //  AVI 경로 → PreviewVideoPath 에 세팅
+        //  xaml.cs 의 PropertyChanged 감지
+        //  → MediaElement.Source 변경 + 자동 재생
         // ═══════════════════════════════════════════
         private void LoadVideoPreview(string aviPath)
         {
@@ -478,209 +450,210 @@ namespace LSS_prototype.User_Page
             catch (Exception ex) { Common.WriteLog(ex); }
         }
 
+        // ═══════════════════════════════════════════
+        //  LoadIsfStrokes()
+        //  DCM 경로 기준으로 ISF 파일 경로 계산 후 로드
+        //  ISF 파일 없으면 빈 StrokeCollection (드로잉 안 한 경우)
+        //  에러 발생 시 빈 StrokeCollection 으로 fallback
+        //  → 절대 이미지 미리보기 자체를 막으면 안 됨
+        // ═══════════════════════════════════════════
+        private void LoadIsfStrokes(string dcmPath)
+        {
+            try
+            {
+                string dicomDir = Path.Combine(Common.executablePath, "DICOM");
+                string isfDir = Path.Combine(Common.executablePath, "ISF");
+
+                string fileName = Path.GetFileNameWithoutExtension(dcmPath);
+                string studyDir = Path.GetDirectoryName(Path.GetDirectoryName(dcmPath));
+                string relative = studyDir.Substring(dicomDir.Length)
+                                          .TrimStart(Path.DirectorySeparatorChar);
+                string isfPath = Path.Combine(isfDir, relative, fileName + ".isf");
+
+                if (!File.Exists(isfPath))
+                {
+                    CurrentStrokes = new StrokeCollection();
+                    return;
+                }
+
+                StrokeCollection strokes;
+                using (var fs = File.OpenRead(isfPath))
+                    strokes = new StrokeCollection(fs);
+
+                // ISF 안에 저장된 캔버스 크기 읽기 (스케일 변환용)
+                var guidWidth = new Guid("A1B2C3D4-0001-0002-0003-000000000001");
+                var guidHeight = new Guid("A1B2C3D4-0001-0002-0003-000000000002");
+
+                OriginalCanvasWidth = strokes.ContainsPropertyData(guidWidth)
+                    ? double.Parse(strokes.GetPropertyData(guidWidth).ToString()) : 1465;
+                OriginalCanvasHeight = strokes.ContainsPropertyData(guidHeight)
+                    ? double.Parse(strokes.GetPropertyData(guidHeight).ToString()) : 1060;
+
+                CurrentStrokes = strokes;
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                CurrentStrokes = new StrokeCollection();
+            }
+        }
+
         #endregion
 
         #region 복구 실행
 
         // ═══════════════════════════════════════════
-        //  복구 실행
-        //  파일 시스템 트랜잭션 패턴
-        //  DB 트랜잭션과 달리 파일 시스템은 자동 롤백이 없음
-        //  그래서 성공한 파일 목록을 직접 기억했다가
-        //  중간에 실패하면 성공했던 파일들을 원래대로 되돌림
+        //  ExecuteRecover()
+        //  체크된 항목들을 복구 (Del_ 제거 → 원래 파일명 복원)
         //
-        //  예) DICOM_VIDEO 복구 시
-        //      ① AVI 복구 성공 → renamedFiles 에 기록
-        //      ② DCM 복구 실패 → Exception 발생
-        //      ③ catch 에서 renamedFiles 순회
-        //      ④ 성공했던 AVI → 다시 Del_ 로 되돌림
-        //      → 원래 상태 복원 완료
+        //  IsCheckable 프로퍼티로 만료/복구완료/강제삭제 항목은
+        //  체크박스 자체가 비활성화되어 있으므로
+        //  별도 유효성 검사 없이 체크된 항목만 처리
+        //
+        //  각 항목은 독립적으로 처리
+        //  → 한 항목 실패 시 그 항목만 롤백, 나머지는 계속 진행
         // ═══════════════════════════════════════════
         private void ExecuteRecover()
         {
-            // 성공적으로 이름을 바꾼 파일들을 순서대로 기록
-            // (From = Del_ 붙은 원본 경로, To = Del_ 제거된 복구 경로)
-            // 롤백 시 To → From 으로 되돌림
-            var renamedFiles = new List<(string From, string To)>();
-
             try
             {
-                // ── 행 선택 여부 확인 ──
-                if (_selectedLog == null)
+                // 체크된 항목 수집
+                var targets = FilteredLogs?
+                    .Where(x => x.IsChecked)
+                    .ToList();
+
+                if (targets == null || targets.Count == 0)
                 {
-                    CustomMessageWindow.Show("복구할 항목을 선택해주세요.",
+                    CustomMessageWindow.Show(
+                        "복구할 항목을 선택해주세요.",
                         CustomMessageWindow.MessageBoxType.AutoClose, 2,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
-                // ── 만료 확인 ──
-                // 만료된 항목은 파일이 실제로 삭제됐으므로 복구 불가
-                if (_selectedLog.IsExpired)
-                {
-                    CustomMessageWindow.Show("이미 만료기한이 지나 삭제 처리가 되었습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
-                    return;
-                }
-
-                // ── 이미 복구된 항목 확인 ──
-                if (_selectedLog.IsRecovered == "Y")
-                {
-                    CustomMessageWindow.Show("이미 복구된 항목입니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Info);
-                    return;
-                }
-
-                // ── 복구 확인 팝업 ──
-                var result = CustomMessageWindow.Show(
-                    $"{_selectedLog.DisplayName} 환자의\n{_selectedLog.FileType} 파일을 복구하시겠습니까?",
+                // 확인 팝업
+                var confirm = CustomMessageWindow.Show(
+                    $"{targets.Count}개 항목을 복구하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo,
                     icon: CustomMessageWindow.MessageIconType.Info);
 
-                if (result != CustomMessageWindow.MessageBoxResult.Yes) return;
+                if (confirm != CustomMessageWindow.MessageBoxResult.Yes) return;
 
-                // ── FileType 기준으로 복구할 파일 분기 ──
-                switch (_selectedLog.FileType)
-                {
-                    case "IMAGE":
-                        // DCM 파일 복구
-                        RestoreFile(_selectedLog.ImagePath, renamedFiles);
-                        // ISF 파일 복구 (드로잉 없으면 파일 자체가 없을 수 있음 → 내부에서 처리)
-                        RestoreIsfFile(_selectedLog.ImagePath, renamedFiles);
-                        break;
-
-                    case "DICOM_VIDEO":
-                        // AVI + DCM 한 쌍 복구
-                        // ★ 둘 중 하나라도 실패하면 catch 에서 둘 다 롤백
-                        RestoreFile(_selectedLog.AviPath, renamedFiles);
-                        RestoreFile(_selectedLog.DicomPath, renamedFiles);
-                        break;
-
-                    case "NORMAL_VIDEO":
-                        // AVI 단독 복구
-                        RestoreFile(_selectedLog.AviPath, renamedFiles);
-                        break;
-                }
-
-                // ── 여기까지 왔으면 모든 파일 복구 성공 → DB 업데이트 ──
                 var db = new DB_Manager();
-                db.UpdateRecovered(_selectedLog.DeleteId);
 
-                switch (_selectedLog.FileType)
+                foreach (var log in targets)
                 {
-                    case "IMAGE":
-                        Common.WriteSessionLog(
-                            $"[IMAGE RECOVER] User:{Common.CurrentUserId} " +
-                            $"Patient:{_selectedLog.PatientName}({_selectedLog.PatientCode}) " +
-                            $"File:{_selectedLog.ImagePath}");
-                        break;
+                    // 항목별 독립적인 renamedFiles
+                    // 실패 시 이 항목만 롤백
+                    var renamedFiles = new List<(string From, string To)>();
 
-                    case "NORMAL_VIDEO":
-                        Common.WriteSessionLog(
-                            $"[NORMAL VIDEO RECOVER] User:{Common.CurrentUserId} " +
-                            $"Patient:{_selectedLog.PatientName}({_selectedLog.PatientCode}) " +
-                            $"AVI:{_selectedLog.AviPath}");
-                        break;
+                    try
+                    {
+                        switch (log.FileType)
+                        {
+                            case "IMAGE":
+                                RestoreFile(log.ImagePath, renamedFiles);
+                                RestoreIsfFile(log.ImagePath, renamedFiles);
+                                break;
+                            case "DICOM_VIDEO":
+                                RestoreFile(log.AviPath, renamedFiles);
+                                RestoreFile(log.DicomPath, renamedFiles);
+                                break;
+                            case "NORMAL_VIDEO":
+                                RestoreFile(log.AviPath, renamedFiles);
+                                break;
+                        }
 
-                    case "DICOM_VIDEO":
-                        Common.WriteSessionLog(
-                            $"[DICOM VIDEO RECOVER] User:{Common.CurrentUserId} " +
-                            $"Patient:{_selectedLog.PatientName}({_selectedLog.PatientCode}) " +
-                            $"AVI:{_selectedLog.AviPath} DCM:{_selectedLog.DicomPath}");
-                        break;
+                        // 파일 복구 성공 → DB UPDATE
+                        db.UpdateRecovered(log.DeleteId);
+
+                        // 세션 로그
+                        switch (log.FileType)
+                        {
+                            case "IMAGE":
+                                Common.WriteSessionLog(
+                                    $"[IMAGE RECOVER] User:{Common.CurrentUserId} " +
+                                    $"Patient:{log.PatientName}({log.PatientCode}) " +
+                                    $"File:{log.ImagePath}");
+                                break;
+                            case "NORMAL_VIDEO":
+                                Common.WriteSessionLog(
+                                    $"[NORMAL VIDEO RECOVER] User:{Common.CurrentUserId} " +
+                                    $"Patient:{log.PatientName}({log.PatientCode}) " +
+                                    $"AVI:{log.AviPath}");
+                                break;
+                            case "DICOM_VIDEO":
+                                Common.WriteSessionLog(
+                                    $"[DICOM VIDEO RECOVER] User:{Common.CurrentUserId} " +
+                                    $"Patient:{log.PatientName}({log.PatientCode}) " +
+                                    $"AVI:{log.AviPath} DCM:{log.DicomPath}");
+                                break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Common.WriteLog(ex);
+
+                        // 이 항목만 롤백 (성공했던 파일 → 다시 Del_ 로 되돌림)
+                        foreach (var (from, to) in Enumerable.Reverse(renamedFiles))
+                        {
+                            try { if (File.Exists(to)) File.Move(to, from); }
+                            catch (Exception rollbackEx) { Common.WriteLog(rollbackEx); }
+                        }
+                    }
                 }
 
-
-                CustomMessageWindow.Show("복구가 완료되었습니다.",
+                CustomMessageWindow.Show(
+                    "복구가 완료되었습니다.",
                     CustomMessageWindow.MessageBoxType.AutoClose, 2,
                     CustomMessageWindow.MessageIconType.Info);
 
-                // ── 목록 갱신 ──
+                // LoadLogs() 에서 IsChecked = false 초기화 + 목록 갱신
                 LoadLogs();
             }
-            catch (Exception ex)
-            {
-                Common.WriteLog(ex);
-
-                // ── 롤백 ──
-                // 파일 복구 도중 실패했으므로
-                // 성공했던 파일들을 다시 Del_ 이름으로 되돌림
-                // renamedFiles 를 역순으로 순회 (나중에 바꾼 것부터 되돌리는 게 안전)
-                foreach (var (from, to) in Enumerable.Reverse(renamedFiles))
-                {
-                    try
-                    {
-                        // to = 복구된 경로 (Del_ 없음)
-                        // from = 원본 경로 (Del_ 있음)
-                        // 복구된 파일이 실제로 존재할 때만 되돌림
-                        if (File.Exists(to))
-                            File.Move(to, from);
-                    }
-                    catch (Exception rollbackEx)
-                    {
-                        // 롤백도 실패한 경우 → 로그만 남기고 계속 진행
-                        // (다른 파일 롤백은 계속 시도해야 함)
-                        Common.WriteLog(rollbackEx);
-                    }
-                }
-
-                CustomMessageWindow.Show("복구 중 오류가 발생하여 취소되었습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 3,
-                    CustomMessageWindow.MessageIconType.Warning);
-            }
+            catch (Exception ex) { Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
+        //  RestoreFile()
         //  파일명에서 Del_ 제거 (단일 파일 복구)
+        //  Del_박한용_001.dcm → 박한용_001.dcm
         //
-        //  동작 방식
-        //  Del_박한용_001.dcm → 박한용_001.dcm 으로 파일명 변경
-        //  File.Move = 실제 삭제/생성 아님, 이름만 바꿈
-        //
-        //  renamedFiles 에 기록하는 이유
-        //  복구 도중 실패 시 롤백을 위해
-        //  성공한 파일의 (원본경로, 복구경로) 쌍을 기억해둠
+        //  renamedFiles 에 기록하는 이유:
+        //  복구 도중 실패 시 성공한 파일들을 다시 Del_ 로 되돌리기 위해
         //
         //  파일이 없거나 Del_ 로 시작하지 않으면 그냥 패스
-        //  (ISF 처럼 없을 수도 있는 파일도 이 함수로 처리 가능)
+        //  → ISF 처럼 없을 수도 있는 파일도 안전하게 처리
         // ═══════════════════════════════════════════
         private void RestoreFile(string filePath, List<(string From, string To)> renamedFiles)
         {
             try
             {
-                // 경로가 비어있거나 파일이 없으면 패스
                 if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) return;
 
                 string dir = Path.GetDirectoryName(filePath);
                 string fileName = Path.GetFileName(filePath);
 
-                // Del_ 로 시작하지 않으면 이미 복구된 상태이므로 패스
                 if (!fileName.StartsWith("Del_")) return;
 
-                // "Del_" 4글자 제거 → 복구된 파일명
-                // 예) Del_박한용_001.dcm → 박한용_001.dcm
-                string restoredName = fileName.Substring(4);
+                string restoredName = fileName.Substring(4); // "Del_" 4글자 제거
                 string restoredPath = Path.Combine(dir, restoredName);
 
-                // 파일명 변경 (이름 바꾸기 = Move)
                 File.Move(filePath, restoredPath);
-
-                // ★ 성공한 경우에만 renamedFiles 에 기록
-                // From = Del_ 붙은 원본, To = Del_ 제거된 복구본
-                // 롤백 시 To → From 방향으로 되돌림
                 renamedFiles.Add((filePath, restoredPath));
             }
             catch (Exception ex)
             {
-                // 이 예외를 catch 하지 않고 위로 던짐
-                // → ExecuteRecover 의 catch 에서 롤백 처리
                 Common.WriteLog(ex);
-                throw;
+                throw; // ExecuteRecover 의 catch 에서 롤백 처리
             }
         }
 
+        // ═══════════════════════════════════════════
+        //  RestoreIsfFile()
+        //  DCM 경로 기준으로 ISF 경로 계산 후 복구
+        //  ISF 가 없으면 드로잉 안 한 것 → 그냥 패스
+        // ═══════════════════════════════════════════
         private void RestoreIsfFile(string dcmPath, List<(string From, string To)> renamedFiles)
         {
             try
@@ -690,17 +663,13 @@ namespace LSS_prototype.User_Page
                 string dicomDir = Path.Combine(Common.executablePath, "DICOM");
                 string isfDir = Path.Combine(Common.executablePath, "ISF");
 
-                // DCM 파일명에서 Del_ 제거한 이름으로 ISF 경로 계산
                 string fileName = Path.GetFileNameWithoutExtension(dcmPath);
                 string cleanName = fileName.StartsWith("Del_") ? fileName.Substring(4) : fileName;
                 string studyDir = Path.GetDirectoryName(Path.GetDirectoryName(dcmPath));
-                string relative = studyDir.Substring(dicomDir.Length).TrimStart(Path.DirectorySeparatorChar);
+                string relative = studyDir.Substring(dicomDir.Length)
+                                           .TrimStart(Path.DirectorySeparatorChar);
 
-                // Del_ 붙은 ISF 경로
                 string isfPath = Path.Combine(isfDir, relative, "Del_" + cleanName + ".isf");
-
-                // ISF 가 없으면 드로잉 안 한 것 → 패스
-                // RestoreFile 내부에서도 File.Exists 체크하므로 그냥 넘겨도 됨
                 RestoreFile(isfPath, renamedFiles);
             }
             catch (Exception ex)
@@ -710,13 +679,132 @@ namespace LSS_prototype.User_Page
             }
         }
 
-
         #endregion
 
         #region 강제 삭제
+
+        // ═══════════════════════════════════════════
+        //  ExecuteForceDelete()
+        //  체크된 항목들을 완전 삭제 (File.Delete - 복구 불가)
+        //
+        //  IsCheckable 프로퍼티로 만료/복구완료/강제삭제 항목은
+        //  체크박스 자체가 비활성화되어 있으므로
+        //  별도 유효성 검사 없이 체크된 항목만 처리
+        //
+        //  파일 삭제 실패 시 로그만 남기고 다음 항목으로 진행
+        //  → 파일이 이미 없는 경우에도 DB 는 강제삭제 처리
+        // ═══════════════════════════════════════════
         private void ExecuteForceDelete()
         {
-            return;
+            try
+            {
+                // 체크된 항목 수집
+                var targets = FilteredLogs?
+                    .Where(x => x.IsChecked)
+                    .ToList();
+
+                if (targets == null || targets.Count == 0)
+                {
+                    CustomMessageWindow.Show(
+                        "즉시 삭제할 항목을 선택해주세요.",
+                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                // 확인 팝업 (강조 경고)
+                var confirm = CustomMessageWindow.Show(
+                    $"선택한 {targets.Count}개 항목을 완전 삭제하시겠습니까?\n\n삭제된 파일은 복구할 수 없습니다.",
+                    CustomMessageWindow.MessageBoxType.YesNo,
+                    icon: CustomMessageWindow.MessageIconType.Warning);
+
+                if (confirm != CustomMessageWindow.MessageBoxResult.Yes) return;
+
+                var db = new DB_Manager();
+
+                foreach (var log in targets)
+                {
+                    try
+                    {
+                        // FileType 기준으로 관련 파일 전부 완전 삭제
+                        switch (log.FileType)
+                        {
+                            case "IMAGE":
+                                DeleteFileIfExists(log.ImagePath); // DCM 삭제
+                                DeleteIsfFile(log.ImagePath);      // ISF 삭제
+                                break;
+                            case "NORMAL_VIDEO":
+                                DeleteFileIfExists(log.AviPath);   // AVI 삭제
+                                break;
+                            case "DICOM_VIDEO":
+                                DeleteFileIfExists(log.AviPath);   // AVI 삭제
+                                DeleteFileIfExists(log.DicomPath); // DCM 삭제
+                                break;
+                        }
+
+                        // 파일 삭제 완료 → DB UPDATE (IS_FORCE_DELETED = Y)
+                        db.UpdateForceDeleted(log.DeleteId);
+
+                        // 세션 로그
+                        Common.WriteSessionLog(
+                            $"[FORCE DELETE] User:{Common.CurrentUserId} " +
+                            $"Patient:{log.PatientName}({log.PatientCode}) " +
+                            $"Type:{log.FileType} DeleteId:{log.DeleteId}");
+                    }
+                    catch (Exception ex)
+                    {
+                        // 실패해도 로그만 남기고 다음 항목 계속 진행
+                        Common.WriteLog(ex);
+                    }
+                }
+
+                CustomMessageWindow.Show(
+                    "완전 삭제가 완료되었습니다.",
+                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    CustomMessageWindow.MessageIconType.Info);
+
+                // LoadLogs() 에서 IsChecked = false 초기화 + 목록 갱신
+                LoadLogs();
+            }
+            catch (Exception ex) { Common.WriteLog(ex); }
+        }
+
+        // ═══════════════════════════════════════════
+        //  DeleteFileIfExists()
+        //  파일 존재 시 완전 삭제 (휴지통 아님)
+        //  경로가 비어있거나 파일이 없으면 그냥 패스
+        // ═══════════════════════════════════════════
+        private void DeleteFileIfExists(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath)) return;
+            if (!File.Exists(filePath)) return;
+            File.Delete(filePath);
+        }
+
+        // ═══════════════════════════════════════════
+        //  DeleteIsfFile()
+        //  DCM 경로 기준으로 ISF 경로 계산 후 삭제
+        //  ISF 파일이 없으면 그냥 패스 (드로잉 안 한 경우)
+        // ═══════════════════════════════════════════
+        private void DeleteIsfFile(string dcmPath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(dcmPath)) return;
+
+                string dicomDir = Path.Combine(Common.executablePath, "DICOM");
+                string isfDir = Path.Combine(Common.executablePath, "ISF");
+
+                string fileName = Path.GetFileNameWithoutExtension(dcmPath);
+                string cleanName = fileName.StartsWith("Del_") ? fileName.Substring(4) : fileName;
+                string studyDir = Path.GetDirectoryName(Path.GetDirectoryName(dcmPath));
+                string relative = studyDir.Substring(dicomDir.Length)
+                                           .TrimStart(Path.DirectorySeparatorChar);
+
+                string isfPath = Path.Combine(isfDir, relative, "Del_" + cleanName + ".isf");
+                DeleteFileIfExists(isfPath);
+            }
+            catch (Exception ex) { Common.WriteLog(ex); }
         }
 
         #endregion

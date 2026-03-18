@@ -105,6 +105,7 @@ namespace LSS_prototype.User_Page
             {
                 PreviewVideo.Position = TimeSpan.Zero;
                 PreviewVideo.Play();
+                PreviewVideo.SpeedRatio = 2.0;  
                 SliderSeek.Value = 0;
                 TxtCurrentTime.Text = "00:00";
             }
@@ -149,6 +150,7 @@ namespace LSS_prototype.User_Page
                 else
                 {
                     PreviewVideo.Play();
+                    PreviewVideo.SpeedRatio = 2.0;  
                     _isPlaying = true;
                     TxtPlayPauseIcon.Text = "⏸";
                     _timer.Start();

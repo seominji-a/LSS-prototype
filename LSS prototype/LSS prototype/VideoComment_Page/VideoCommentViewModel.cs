@@ -85,6 +85,14 @@ namespace LSS_prototype.VideoComment_Page
             }
         }
 
+        // 현재 몇 번째 / 전체 몇 개 (Del_ 제외 목록 기준)
+        private string _pageIndicator;
+        public string PageIndicator
+        {
+            get => _pageIndicator;
+            private set { _pageIndicator = value; OnPropertyChanged(); }
+        }
+
         public string PatientName => $"{_patient.DisplayName} ({_patient.PatientCode})";
         public string PatientInfo => $"{_patient.BirthDate:yyyy-MM-dd} / {_patient.Sex}";
 
@@ -231,7 +239,7 @@ namespace LSS_prototype.VideoComment_Page
                     return false;
                 }
 
-                _currentIndex = 0;
+                _currentIndex = _videoFiles.Count - 1;
                 UpdateCurrentFile();
                 return true;
             }
@@ -296,6 +304,7 @@ namespace LSS_prototype.VideoComment_Page
 
             CurrentVideoPath = _videoFiles[_currentIndex];
             CurrentFileName = Path.GetFileNameWithoutExtension(_videoFiles[_currentIndex]);
+            PageIndicator = $"{_currentIndex + 1:D2}/{_videoFiles.Count:D2}";
         }
 
         #endregion

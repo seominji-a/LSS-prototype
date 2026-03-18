@@ -22,6 +22,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
+
 namespace LSS_prototype.Scan_Page
 {
     public class ScanViewModel : INotifyPropertyChanged, IDisposable
@@ -1297,11 +1298,23 @@ namespace LSS_prototype.Scan_Page
 
                 SelectedPatient.ShotNum += 1;
                 SelectedPatient.LastShootDate = now;
-                SelectedPatient.SourceType = (int)PatientSource.ESync;
+
+                // DB 저장용 enum 사용
+                SelectedPatient.SourceType = (int)PatientSourceType.ESync;
+
+                // 화면 표시용 상태
                 SelectedPatient.Source = PatientSource.ESync;
                 SelectedPatient.IsEmrPatient = true;
 
-                repo.UpsertEmrPatient(SelectedPatient); 
+                // EMR 환자라면 accession number를 Dataset에서 보정
+                if (string.IsNullOrWhiteSpace(SelectedPatient.AccessionNumber) &&
+                    SelectedPatient.Dataset != null)
+                {
+                    SelectedPatient.AccessionNumber =
+                        SelectedPatient.Dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, "");
+                }
+
+                repo.UpsertEmrPatient(SelectedPatient);
             }
             catch (Exception ex)
             {

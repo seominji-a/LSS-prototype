@@ -284,6 +284,38 @@ namespace LSS_prototype.DB_CRUD
             }
         }
 
+        public PatientModel GetPatientByCodeAndSource(int patientCode, int sourceType)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+
+                using (var cmd = new SQLiteCommand(Query.SELECT_PATIENT_CODE_SOURCE, conn))
+                {
+                    cmd.Parameters.AddWithValue("@PatientCode", patientCode);
+                    cmd.Parameters.AddWithValue("@SourceType", sourceType);
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            return new PatientModel
+                            {
+                                PatientId = Convert.ToInt32(reader["PATIENT_ID"]),
+                                PatientCode = Convert.ToInt32(reader["PATIENT_CODE"]),
+                                PatientName = reader["PATIENT_NAME"].ToString(),
+                                BirthDate = DateTime.Parse(reader["BIRTH_DATE"].ToString()),
+                                Sex = reader["SEX"].ToString(),
+                                LastShootDate = reader["LASTSHOOTDATE"] == DBNull.Value? (DateTime?)null: DateTime.Parse(reader["LASTSHOOTDATE"].ToString()),
+                                ShotNum = Convert.ToInt32(reader["SHOTNUM"]),
+                                SourceType = Convert.ToInt32(reader["SOURCE_TYPE"])
+                            };
+                        }
+                    }
+                }
+            }
+            return null;
+        }
 
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace LSS_prototype.Patient_Page
 {
@@ -52,6 +53,11 @@ namespace LSS_prototype.Patient_Page
         public FellowOakDicom.DicomDataset Dataset { get; set; }
 
         public string RequestedProcedureDescription { get; set; }
+
+        public List<string> DcmFiles { get; set; } = new List<string>();
+        public List<string> AviFiles { get; set; } = new List<string>();
+
+        public HashSet<string> StudyIds { get; set; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     }
 }

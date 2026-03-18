@@ -449,7 +449,7 @@ dcm.frame 갯수
 4. 병합 되었을 때-> patient db에는 e-sync 데이터만 존재
 
 ────────────────────────────────────
-작성일: 2026-03-18
+작성일: 2026-03-17
 작성자: 서민지
 
 (향후 계획)
@@ -458,20 +458,283 @@ scan에서 sourcetype을 고려해야함
 
 //마지막 촬영 일자-시분초까지만 저장
 
-중복된 데이터 관련
+1.현재, DICOM, VIDEO 파일 별도 존재 
+IMPORT 할경우, 둘다 반영되게 변경해야함
+
+2. import된 데이터 관련해서 마지막 촬영일자랑 총촬영 횟수도 같이 저장
+
+3. 병합처리할 경우
+-lastshootDate 비교처리 해서, 제일 마지막에 촬영할 것으로 변경
+-shootnum은 서로 합쳐져서 표시되어야함
+
+4. 중복된 데이터 관련
 edit dialog 처리-환자 번호, 생년월일, 성별 같아야지만 중복이라 판단하게 변경
-import된 데이터 관련해서 마지막 촬영일자랑 총촬영 횟수도 같이 저장
 
 
-마지막 촬영 일자, 총촬영 횟수-일자로 통일 => 환자 카드에 로드
+5. 마지막 촬영 일자, 총촬영 횟수-일자로 통일 => 환자 카드에 로드
 
+6. 영상 관련 마지막 촬영 일자-> dcm.frame 마지막으로 저장된 날짜? 시간을 가지고 와서 뛰워주기
 
-
-영상 관련 마지막 촬영 일자-> dcm.frame 마지막으로 저장된 날짜? 시간을 가지고 와서 뛰워주기
-
-
-
-외부에서 촬영한 환자 데이터 import
+7. 외부에서 촬영한 환자 데이터 import
 dcm.frame 갯수
 1개-이미지 판단
 1개 이상-비디오 판단
+
+//avi는 모두 import 되지 않게 적용
+
+import 파일은 .dcm만 찾도록
+
+import할 경우 dicom.dcm (멀티 프레임)이 존재하면 Dicom.avi를 생성해주는 코드 들고와서 적용하기
+
+────────────────────────────────────
+작성일: 2026-03-18
+작성자: 서민지
+
+(현재)파일명 규칙에 의존하고 있음
+-외부 데이터 import에서 금방 깨짐 
+(별도 처리를 생각해 봤었는데, 공통되게 해야한다고 판단되어 변경 필요)
+
+외부 import는 내부 규칙과 다름
+_Dicom, _Avi, 환자명_번호_study_index가 존재하지 않음
+=>이름 차이 존재, 확장자만 .dcm, avi인 경우 존재
+
+(결론) frame 수로 이미지인지 영상인지 판단
+파일명 기반 분류는 보조수단/실제 파일 내용 기반으로 분류 진행
+
+.dcm: 열어서 멀티 프레임인지 단일 프레임인지 판단
+.avi: 열어서 프레임 수로 판단
+Dicom.dcm <-> Dicom.avi 는 파일명보다 영상 속성 기반 매칭이 우선
+일반 이미지 .dcm과 일반 영상 .avi는 별도 처리 가능
+
+(문제사항의 경우) 
+파일명을 신뢰하기 어려움
+=>프레임 수/DICOM 태그/ 재생 가능 여부로 판단
+
+IMG0001.dcm → 사실 단일 이미지
+US_CINE_01.dcm → 사실 멀티프레임 영상 DICOM
+capture01.avi → 일반 AVI
+study_video.avi → DICOM 변환용 원본 AVI일 수도 있음
+movie_final.avi → 그냥 별도 저장용 AVI일 수도 있음
+
+(향후 계획)
+1. .dcm 분리
+
+(1)이미지 DICOM
+-단일 프레임
+-NumberOfFrames 없음 또는 1
+-Image 폴더로
+
+(2)비디오 DICOM
+-멀티프레임
+-NumberofFrames > 1
+-Video 폴더로
+
+//핵심
+.dcm은 _Dicom.dcm 같은 이름이 없어도
+멀티프레임이면 Video DICOM으로 판단
+
+
+2. .avi 분리 ->,avi는 기본적으로 VIDEO 자산으로 분류 후, DICOM과 매칭 시도
+
+(1)일반 AVI
+-단독 AVI
+-대응되는 DICOM Video 없음
+-_Avi_avi로 취급 가능
+
+(2)DICOM 대응 AVI
+-같은 study 내 멀티프레임 DICOM과 길이/프레임 수/해상도가 유사
+-_DICOM.avi로 취급 가능
+
+//핵심
+.avi는 파일명보다 DICOM video와 짝을 이룰 수 있는지로 _Dicom_avi 를 판단해야함
+
+
+3. Dicom.dcm, Dicom.avi가 한쌍이 존재하도록 가져올 때 문제사항
+
+-Dicom.dcm만 있고 대응 AVI가 없을 수 있음
+-avi만 있고 대응 Dicom.dcm이 없을 수 있음
+-둘 다 있는데 개수가 다를 수 있음
+
+=>가능하면 쌍으로 매칭하고, 안 되면 단독 자산으로 수용
+(Dicom.dcm과 Dicom.avi는 “반드시 한 쌍”이라고 강제하면 안 됨)
+만약에 한쌍이 존재하지 않으면, import할 때 "import 불가합니다"라고 팝업을 뛰우는게 맞는지? --->물어보기
+
+
+(향후 진행 과정) -파일을 내용 기준으로 분류해서 원하는 폴더로 재배치한 뒤,  이름 정리
+1. 파일 스캔
+가져온 폴더 전체에서 모두 수집
+.dcm
+.avi
+
+2. .dcm 분석:.dcm은 frame 수뿐 아니라 DICOM 태그도 같이 보는 게 더 안전함
+PatientName
+PatientID
+StudyInstanceUID 또는 StudyDate/StudyID
+NumberOfFrames
+Rows/Columns
+SOPClassUID
+
+//분류
+NumberOfFrames 
+> 1 → video DICOM
+아니면 image DICOM
+
+3. .avi 분석
+frame count
+fps
+width/height
+duration
+
+4. 매칭
+video DICOM과 AVI를 같은 study 안에서 매칭(점수 기반) -매칭 실패 시에도 각각 보존해야 함
+
+같은 환자
+같은 study date 또는 study id
+width/height 유사
+frame count 유사
+duration 유사
+생성 시각 유사
+
+5. 저장
+(1) DICOM
+
+.dcm => NumberOfFrames 기반으로 Image / Video 분류
+
+단일프레임 .dcm → Image
+멀티프레임 .dcm → Video
+
+(2)VIDEO
+
+.avi
+=>일단 VIDEO에 저장
+=>video DICOM과 매칭되면 _Dicom.avi, 아니면 _Avi.avi
+
+매칭된 .avi → _Dicom.avi
+매칭 실패한 .avi → _Avi.avi
+
+(반영 사항)-모든 환자의 dcm/avi가 섞여 있어도 dcm 기준으로 환자를 나누고 import
+ImportPatient()가 이제 단일 환자 기준이 아니라 여러 환자 기준으로 동작함
+
+BuildPatientImportGroups()가 PatientName + PatientID 기준으로 환자 묶음 생성
+
+AssignAviFilesToPatientGroups()가 StudyID로 AVI 연결
+
+ImportPatientFilesToStructuredFolders()가 환자별로 파일을 구조화해서 넣음
+
+
+//AVI는 파일명/경로에서 StudyID를 찾을 수 있고, 그 StudyID가 어떤 환자의 DCM에서 이미 발견된 경우에만 자동 연결 가능
+
+AVI 경로나 파일명에서 202603180001 같은 값을 찾고,
+그걸 가진 환자 그룹이 정확히 1개일 때만 붙여
+
+(자동 연결 가능한 상황)
+AVI 파일명/경로에 studyId 있음
+그 studyId가 DCM 쪽 그룹 중 한 환자에만 존재
+
+(동작 과정)
+.dcm은 환자 식별용 기준 파일
+.avi는 보조 파일
+.avi 단독 import 불가
+.avi는 StudyID가 명확할 때만 자동 연결
+연결 안 된 .avi는 건너뛰고 개수만 알려주기
+
+---------------------------------------------------------------
+
+(현재 문제 사항)
+일반 AVI 자체에는 환자명, 환자번호, accession, study_id 같은 DICOM 메타데이터가 존재하지 않음
+=> 완전히 섞인 AVI를 “자동으로 정확히” 환자에 붙이는 건 원천적으로 한계
+
+(결론)
+완전히 섞여 있는 외부 .avi를 파일명도 못 믿고, study_id도 없고, 
+메타데이터도 없는 상태에서 정확하게 자동 분류하는 방법은 없음
+
+
+(해결 방안)
+1. .dcm 으로 환자/스터디를 먼저 확정
+.avi 는 아래 규칙으로만 연결
+-같은 폴더에 있었던 파일
+-같은 시간대에 생성된 파일
+-같은 개수/순서의 멀티프레임 DICOM과 대응
+3. 확신이 없으면 연결하지 않음 ->미연결 AVI
+
+(현재) 모든 환자 파일을 한 폴더에 섞어서 선택 
+
+(고려) 
+
+1. 폴더 구조 기반 매칭
+
+환자A/
+  a1.dcm
+  a2.dcm
+  x1.avi
+
+환자B/
+  b1.dcm
+  b2.dcm
+  y1.avi
+
+(방식)
+같은 상위 폴더에 있는 .dcm 들로 환자 식별
+폴더 안의 .avi를 그 환자에게 귀속 가능
+
+
+2. 촬영시간 기반 근사 매칭 (보장 없음)
+
+DICOM의 태그
+-StudyDate
+-StudyTime
+-SeriesDate
+-SeriesTime
+-AcquisitionDateTime
+-ContentDate/Time
+
+AVI는 파일시스템 기준으로 확인 가능
+-생성 시간
+-수정 시간
+
+(방식)
+멀티프레임 DICOM들의 촬영 시각을 추출
+AVI의 생성/수정 시각과 가장 가까운 DICOM study에 연결
+시간 차가 너무 크면 연결 안 함
+
+예:
+-DICOM study 시각: 10:27
+-AVI 파일 수정 시각: 10:27~10:28
+-같은 환자의 DICOM이 그 시간대면 연결
+
+
+3. DICOM 개수와 AVI 개수로 순서 매칭
+어떤 환자의 study 안에 멀티프레임 DICOM이 2개
+같은 시간대/같은 묶음의 AVI가 2개
+
+정렬 순서대로(반대로 규칙화)
+첫 번째 AVI → _Avi
+두 번째 AVI → _Dicom
+
+(핵심)AVI가 어느 환자/study 소속인지 알아야함
+
+(추천 방식)
+.dcm 은 무조건 자동 import
+.avi 는 다음 우선순위로만 연결
+-같은 폴더
+-시간 근접
+-멀티프레임 DICOM 개수 대응
+=>애매하면 연결하지 않고 팝업 표시
+
+1. DICOM만으로 환자 그룹 생성
+2. AVI는 시간 기반 보조 매칭
+3. 확실하지 않은 AVI는 미연결 처리
+4. UI에서 미연결 AVI 별도 표시
+
+
+(운영 안정성)
+지금 당장은 .avi 자동 매칭을 완전 자동으로 믿지 말고
+DICOM만 자동 import
+AVI는
+-같은 폴더일 때만 연결하거나
+-선택한 환자에 수동 추가
+-import 후 수동 매칭 UI 제공
+
+---------------------------------------------------------------
+
+

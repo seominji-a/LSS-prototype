@@ -16,7 +16,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using Forms = System.Windows.Forms;
 
 using LSS_prototype.Auth;
 using System.Threading;
@@ -371,313 +370,197 @@ namespace LSS_prototype.Patient_Page
 
         private async void ImportPatient()
         {
-            using (var dialog = new Forms.FolderBrowserDialog())
+            var dialog = new OpenFileDialog
             {
-                dialog.Description = "가져올 환자 폴더를 선택하세요";
+                Title = "가져올 DICOM / AVI 파일을 선택하세요",
+                Filter = "DICOM / AVI Files|*.dcm;*.avi",
+                Multiselect = true
+            };
 
-                if (dialog.ShowDialog() != Forms.DialogResult.OK)
-                    return;
+            if (dialog.ShowDialog() != true)
+                return;
 
-                string sourcePatientFolder = dialog.SelectedPath;
+            string[] selectedFiles = dialog.FileNames;
 
-                try
+            try
+            {
+                if (selectedFiles == null || selectedFiles.Length == 0)
                 {
-                    string sourceFolderName = Path.GetFileName(sourcePatientFolder);
-
-                    if (string.IsNullOrWhiteSpace(sourceFolderName) || !sourceFolderName.Contains("_"))
-                    {
-                        CustomMessageWindow.Show(
-                            "환자 폴더 형식이 올바르지 않습니다.\n'환자이름_환자번호' 폴더를 선택해주세요.",
-                            CustomMessageWindow.MessageBoxType.Ok,
-                            0,
-                            CustomMessageWindow.MessageIconType.Warning);
-                        return;
-                    }
-
-                    string firstDcm = Directory.EnumerateFiles(
-                        sourcePatientFolder,
-                        "*.dcm",
-                        SearchOption.AllDirectories).FirstOrDefault();
-
-                    if (string.IsNullOrEmpty(firstDcm))
-                    {
-                        CustomMessageWindow.Show(
-                            "선택한 폴더 안에 DICOM 파일이 없습니다.",
-                            CustomMessageWindow.MessageBoxType.Ok,
-                            0,
-                            CustomMessageWindow.MessageIconType.Warning);
-                        return;
-                    }
-
-                    var dcm = DicomFile.Open(firstDcm);
-
-                    string pBirthStr = dcm.Dataset.GetSingleValueOrDefault(DicomTag.PatientBirthDate, "19000101");
-                    string pName = dcm.Dataset.GetSingleValueOrDefault(DicomTag.PatientName, "Unknown Name");
-                    string pSex = dcm.Dataset.GetSingleValueOrDefault(DicomTag.PatientSex, "U");
-                    string pCodeStr = dcm.Dataset.GetSingleValueOrDefault(DicomTag.PatientID, "0");
-                    string pAccess = dcm.Dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, string.Empty);
-
-                    if (!DateTime.TryParseExact(
-                            pBirthStr,
-                            "yyyyMMdd",
-                            System.Globalization.CultureInfo.InvariantCulture,
-                            System.Globalization.DateTimeStyles.None,
-                            out DateTime birthDate))
-                    {
-                        birthDate = new DateTime(1900, 1, 1);
-                    }
-
-                    if (!int.TryParse(pCodeStr, out int pCode))
-                    {
-                        CustomMessageWindow.Show(
-                            "환자 번호를 읽을 수 없습니다.",
-                            CustomMessageWindow.MessageBoxType.Ok,
-                            0,
-                            CustomMessageWindow.MessageIconType.Warning);
-                        return;
-                    }
-
-                    bool isEmrImport = !string.IsNullOrWhiteSpace(pAccess);
-
-                    string dicomRoot = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DICOM");
-                    Directory.CreateDirectory(dicomRoot);
-
-                    string emrTargetFolder = Path.Combine(dicomRoot, $"{pName}_{pCode}");
-
-                    var repo = new DB_Manager();
-                    var localPatient = _localPatients.FirstOrDefault(x => x.PatientCode == pCode);
-
-                    if (isEmrImport && localPatient != null)
-                    {
-                        var result = CustomMessageWindow.Show(
-                            $"번호: {pCode}, 이름: {pName} \n 생년월일: {pBirthStr}, 성별: {pSex} \n \n 동일한 LOCAL 환자가 존재합니다.\n 병합하시겠습니까?",
-                            CustomMessageWindow.MessageBoxType.YesNo,
-                            0,
-                            CustomMessageWindow.MessageIconType.Warning);
-
-                        if (result == CustomMessageWindow.MessageBoxResult.Yes)
-                        {
-                            string localFolder = FindPatientFolder(localPatient);
-
-                            string videoRoot = GetVideoRootPath();
-                            Directory.CreateDirectory(videoRoot);
-
-                            string localVideoFolder = FindPatientVideoFolder(localPatient);
-                            string emrVideoTargetFolder = Path.Combine(videoRoot, $"{pName}_{pCode}");
-
-                            await Task.Run(() =>
-                            {
-                                if (!string.IsNullOrWhiteSpace(localFolder) &&
-                                    Directory.Exists(localFolder) &&
-                                    !string.Equals(
-                                        Path.GetFullPath(localFolder).TrimEnd('\\'),
-                                        Path.GetFullPath(emrTargetFolder).TrimEnd('\\'),
-                                        StringComparison.OrdinalIgnoreCase))
-                                {
-                                    CopyDirectory(localFolder, emrTargetFolder, overwrite: true);
-
-                                    try
-                                    {
-                                        Directory.Delete(localFolder, true);
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Common.WriteLog(ex);
-                                    }
-                                }
-
-                                CopyDirectory(sourcePatientFolder, emrTargetFolder, overwrite: true);
-
-                                UpdateDicomTagsForMerge(emrTargetFolder, pName, pCode, pAccess);
-                                MergePatientVideoFolder(localVideoFolder, emrVideoTargetFolder, pName, pCode);
-                                SyncDicomFileNamesWithVideoDicomIndices(emrTargetFolder, emrVideoTargetFolder, pName, pCode);
-                                NormalizeImageDicomFileNames(emrTargetFolder, pName, pCode);
-                            });
-
-                            repo.DeletePatient(localPatient.PatientId);
-
-                            var emrPatientModel = new PatientModel
-                            {
-                                PatientCode = pCode,
-                                PatientName = pName,
-                                Sex = pSex,
-                                BirthDate = birthDate,
-                                AccessionNumber = pAccess,
-                                IsEmrPatient = true,
-                                Source = PatientSource.ESync,
-                                SourceType = (int)PatientSourceType.ESync,
-                                LastShootDate = null,
-                                ShotNum = 0
-                            };
-
-                            repo.UpsertEmrPatient(emrPatientModel);
-                        }
-                        else
-                        {
-                            CustomMessageWindow.Show(
-                                "LOCAL 환자의 환자 번호를 반드시 수정하여 병합해주십시오.",
-                                CustomMessageWindow.MessageBoxType.Ok,
-                                0,
-                                CustomMessageWindow.MessageIconType.Warning);
-
-                            emrTargetFolder = Path.Combine(dicomRoot, $"{pName}_{pCode}");
-
-                            if (Directory.Exists(emrTargetFolder))
-                            {
-                                var overwrite = CustomMessageWindow.Show(
-                                    $"동일한 E-SYNC 폴더가 이미 존재합니다.\n덮어쓰시겠습니까?",
-                                    CustomMessageWindow.MessageBoxType.YesNo,
-                                    0,
-                                    CustomMessageWindow.MessageIconType.Warning);
-
-                                if (overwrite != CustomMessageWindow.MessageBoxResult.Yes)
-                                    return;
-                            }
-
-                            await Task.Run(() =>
-                            {
-                                CopyDirectory(sourcePatientFolder, emrTargetFolder, overwrite: true);
-                                NormalizeDicomFileNamesRecursively(emrTargetFolder, pName, pCode);
-                            });
-
-                            var emrPatientModel = new PatientModel
-                            {
-                                PatientCode = pCode,
-                                PatientName = pName,
-                                Sex = pSex,
-                                BirthDate = birthDate,
-                                AccessionNumber = pAccess,
-                                IsEmrPatient = true,
-                                Source = PatientSource.ESync,
-                                SourceType = (int)PatientSourceType.ESync,
-                                LastShootDate = null,
-                                ShotNum = 0
-                            };
-
-                            repo.UpsertEmrPatient(emrPatientModel);
-                        }
-                    }
-                    else if (isEmrImport)
-                    {
-                        if (Directory.Exists(emrTargetFolder))
-                        {
-                            var overwrite = CustomMessageWindow.Show(
-                                $"동일한 E-SYNC 폴더가 이미 존재합니다.\n덮어쓰시겠습니까?",
-                                CustomMessageWindow.MessageBoxType.YesNo,
-                                0,
-                                CustomMessageWindow.MessageIconType.Warning);
-
-                            if (overwrite != CustomMessageWindow.MessageBoxResult.Yes)
-                                return;
-                        }
-
-                        await Task.Run(() =>
-                        {
-                            CopyDirectory(sourcePatientFolder, emrTargetFolder, overwrite: true);
-                            NormalizeDicomFileNamesRecursively(emrTargetFolder, pName, pCode);
-                        });
-
-                        var emrPatientModel = new PatientModel
-                        {
-                            PatientCode = pCode,
-                            PatientName = pName,
-                            Sex = pSex,
-                            BirthDate = birthDate,
-                            AccessionNumber = pAccess,
-                            IsEmrPatient = true,
-                            Source = PatientSource.ESync,
-                            SourceType = (int)PatientSourceType.ESync,
-                            LastShootDate = null,
-                            ShotNum = 0
-                        };
-
-                        repo.UpsertEmrPatient(emrPatientModel);
-                    }
-                    else
-                    {
-                        if (localPatient != null)
-                        {
-                            CustomMessageWindow.Show(
-                                $"동일한 환자 번호({pCode})의 LOCAL 환자가 이미 존재합니다.",
-                                CustomMessageWindow.MessageBoxType.Ok,
-                                0,
-                                CustomMessageWindow.MessageIconType.Warning);
-                            return;
-                        }
-
-                        string localTargetFolder = Path.Combine(dicomRoot, $"{pName}_{pCode}");
-
-                        if (Directory.Exists(localTargetFolder))
-                        {
-                            var overwrite = CustomMessageWindow.Show(
-                                $"동일한 환자 폴더가 이미 존재합니다.\n덮어쓰시겠습니까?",
-                                CustomMessageWindow.MessageBoxType.YesNo,
-                                0,
-                                CustomMessageWindow.MessageIconType.Warning);
-
-                            if (overwrite != CustomMessageWindow.MessageBoxResult.Yes)
-                                return;
-                        }
-
-                        await Task.Run(() =>
-                        {
-                            CopyDirectory(sourcePatientFolder, localTargetFolder, overwrite: true);
-                            NormalizeDicomFileNamesRecursively(localTargetFolder, pName, pCode);
-                        });
-
-                        var patientModel = new PatientModel
-                        {
-                            PatientCode = pCode,
-                            PatientName = pName,
-                            Sex = pSex,
-                            BirthDate = birthDate,
-                            AccessionNumber = string.Empty,
-                            Source = PatientSource.Local,
-                            IsEmrPatient = false,
-                            SourceType = (int)PatientSourceType.Local
-                        };
-
-                        repo.AddPatient(patientModel);
-                    }
-
-                    _localPatients = repo.GetLocalPatients();
-                    foreach (var p in _localPatients)
-                    {
-                        p.IsEmrPatient = false;
-                        p.Source = PatientSource.Local;
-                        if (p.AccessionNumber == null)
-                            p.AccessionNumber = string.Empty;
-                    }
-
-                    _importedEmrPatients = repo.GetEmrPatients();
-                    foreach (var p in _importedEmrPatients)
-                    {
-                        p.IsEmrPatient = true;
-                        p.Source = PatientSource.ESync;
-                    }
-
-                    if (isEmrImport)
-                    {
-                        ShowAll = true;
-                    }
-
-                    RefreshPatients();
-
                     CustomMessageWindow.Show(
-                        "환자 폴더 임포트가 완료되었습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose,
-                        1,
-                        CustomMessageWindow.MessageIconType.Info);
-                }
-                catch (Exception ex)
-                {
-                    Common.WriteLog(ex);
-                    CustomMessageWindow.Show(
-                        $"오류 발생: {ex.Message}",
+                        "가져올 파일을 선택해주세요.",
                         CustomMessageWindow.MessageBoxType.Ok,
                         0,
-                        CustomMessageWindow.MessageIconType.Danger);
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
                 }
+
+                var supportedFiles = selectedFiles
+                    .Where(f =>
+                        File.Exists(f) &&
+                        (
+                            Path.GetExtension(f).Equals(".dcm", StringComparison.OrdinalIgnoreCase) ||
+                            Path.GetExtension(f).Equals(".avi", StringComparison.OrdinalIgnoreCase)
+                        ))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (supportedFiles.Count == 0)
+                {
+                    CustomMessageWindow.Show(
+                        "지원되는 파일(.dcm, .avi)을 선택해주세요.",
+                        CustomMessageWindow.MessageBoxType.Ok,
+                        0,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                var dcmFiles = supportedFiles
+                    .Where(f => Path.GetExtension(f).Equals(".dcm", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                var aviFiles = supportedFiles
+                    .Where(f => Path.GetExtension(f).Equals(".avi", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (dcmFiles.Count == 0)
+                {
+                    CustomMessageWindow.Show(
+                        "AVI만으로는 환자 정보를 식별할 수 없습니다.\n최소 1개 이상의 DICOM(.dcm) 파일과 함께 선택해주세요.",
+                        CustomMessageWindow.MessageBoxType.Ok,
+                        0,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                var repo = new DB_Manager();
+
+                // DCM 기준 환자 그룹 생성
+                var patientGroups = BuildPatientImportGroups(dcmFiles);
+
+                if (patientGroups.Count == 0)
+                {
+                    CustomMessageWindow.Show(
+                        "가져올 수 있는 DICOM 환자 정보가 없습니다.",
+                        CustomMessageWindow.MessageBoxType.Ok,
+                        0,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
+                // AVI를 StudyID 기준으로 각 환자 그룹에 최대한 배정
+                AssignAviFilesToPatientGroups(patientGroups, aviFiles);
+
+                int importedPatientCount = 0;
+                int skippedAviCount = aviFiles.Count - patientGroups.Sum(g => g.AviFiles.Count);
+
+                await Task.Run(() =>
+                {
+                    foreach (var group in patientGroups)
+                    {
+                        try
+                        {
+                            var localPatient = _localPatients.FirstOrDefault(x => x.PatientCode == group.PatientCode);
+
+                            var allGroupFiles = group.DcmFiles.Concat(group.AviFiles).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+
+                            if (!string.IsNullOrWhiteSpace(group.AccessionNumber))
+                            {
+                                ImportPatientFilesToStructuredFolders(
+                                    allGroupFiles,
+                                    group.PatientName,
+                                    group.PatientCode,
+                                    group.AccessionNumber);
+
+                                var emrPatientModel = new PatientModel
+                                {
+                                    PatientCode = group.PatientCode,
+                                    PatientName = group.PatientName,
+                                    Sex = group.Sex,
+                                    BirthDate = group.BirthDate,
+                                    AccessionNumber = group.AccessionNumber,
+                                    IsEmrPatient = true,
+                                    Source = PatientSource.ESync,
+                                    SourceType = (int)PatientSourceType.ESync,
+                                    LastShootDate = null,
+                                    ShotNum = 0
+                                };
+
+                                repo.UpsertEmrPatient(emrPatientModel);
+
+                                
+                            }
+                            else
+                            {
+                                if (localPatient == null)
+                                {
+                                    var patientModel = new PatientModel
+                                    {
+                                        PatientCode = group.PatientCode,
+                                        PatientName = group.PatientName,
+                                        Sex = group.Sex,
+                                        BirthDate = group.BirthDate,
+                                        AccessionNumber = string.Empty,
+                                        Source = PatientSource.Local,
+                                        IsEmrPatient = false,
+                                        SourceType = (int)PatientSourceType.Local
+                                    };
+
+                                    repo.AddPatient(patientModel);
+                                }
+
+                                ImportPatientFilesToStructuredFolders(
+                                    allGroupFiles,
+                                    group.PatientName,
+                                    group.PatientCode,
+                                    string.Empty);
+                            }
+
+                            importedPatientCount++;
+                        }
+                        catch (Exception ex)
+                        {
+                            Common.WriteLog(ex);
+                        }
+                    }
+                });
+
+                _localPatients = repo.GetLocalPatients();
+                foreach (var p in _localPatients)
+                {
+                    p.IsEmrPatient = false;
+                    p.Source = PatientSource.Local;
+                    if (p.AccessionNumber == null)
+                        p.AccessionNumber = string.Empty;
+                }
+
+                _importedEmrPatients = repo.GetEmrPatients();
+                foreach (var p in _importedEmrPatients)
+                {
+                    p.IsEmrPatient = true;
+                    p.Source = PatientSource.ESync;
+                }
+
+                ShowAll = true;
+                RefreshPatients();
+
+                string message = $"환자 파일 임포트가 완료되었습니다.\n가져온 환자 수: {importedPatientCount}";
+                if (skippedAviCount > 0)
+                    message += $"\n연결되지 않은 AVI: {skippedAviCount}개";
+
+                CustomMessageWindow.Show(
+                    message,
+                    CustomMessageWindow.MessageBoxType.Ok,
+                    0,
+                    CustomMessageWindow.MessageIconType.Info);
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                CustomMessageWindow.Show(
+                    $"오류 발생: {ex.Message}",
+                    CustomMessageWindow.MessageBoxType.Ok,
+                    0,
+                    CustomMessageWindow.MessageIconType.Danger);
             }
         }
 
@@ -1735,5 +1618,416 @@ namespace LSS_prototype.Patient_Page
                 Common.WriteLog(ex);
             }
         }
+
+        //DICOM이 멀티프레임(비디오)인지 판별
+        private bool IsMultiFrameDicom(string filePath)
+        {
+            try
+            {
+                var dicomFile = DicomFile.Open(filePath, FileReadOption.ReadAll);
+                int frames = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.NumberOfFrames, 1);
+                return frames > 1;
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                return false;
+            }
+        }
+
+        //파일명/경로/DICOM 태그에서 StudyID 추출
+        private string ResolveStudyIdForImport(string filePath, DicomFile dicomFile = null, string fallbackStudyId = null)
+        {
+            try
+            {
+                // 1. 파일명/경로에 12자리 StudyID 있으면 우선 사용
+                string full = filePath.Replace("\\", "/");
+                var match = Regex.Match(full, @"(\d{12})");
+                if (match.Success)
+                    return match.Groups[1].Value;
+
+                // 2. DICOM 태그의 StudyID 사용
+                if (dicomFile != null)
+                {
+                    string studyId = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.StudyID, "");
+                    if (!string.IsNullOrWhiteSpace(studyId) && Regex.IsMatch(studyId, @"^\d{12}$"))
+                        return studyId;
+
+                    string studyDate = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.StudyDate, "");
+                    if (!string.IsNullOrWhiteSpace(studyDate) && Regex.IsMatch(studyDate, @"^\d{8}$"))
+                        return studyDate + "0001";
+                }
+
+                // 3. fallback
+                if (!string.IsNullOrWhiteSpace(fallbackStudyId))
+                    return fallbackStudyId;
+
+                return DateTime.Now.ToString("yyyyMMdd") + "0001";
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                return DateTime.Now.ToString("yyyyMMdd") + "0001";
+            }
+        }
+
+        //AVI 파일을 import용 임시 이름으로 복사
+        private void CopyFileWithUniqueName(string sourcePath, string targetDir, string extension)
+        {
+            Directory.CreateDirectory(targetDir);
+
+            string tempName = $"__import__{Guid.NewGuid():N}{extension}";
+            string destPath = Path.Combine(targetDir, tempName);
+
+            File.Copy(sourcePath, destPath, true);
+        }
+
+        //import 파일들을 원하는 구조로 재배치
+        private void ImportPatientFilesToStructuredFolders(string[] sourceFiles, string patientName, int patientCode, string accessionNumber)
+        {
+            try
+            {
+                string patientFolderName = $"{patientName}_{patientCode}";
+                string dicomRoot = GetDicomRootPath();
+                string videoRoot = GetVideoRootPath();
+
+                Directory.CreateDirectory(dicomRoot);
+                Directory.CreateDirectory(videoRoot);
+
+                var allFiles = sourceFiles
+                    .Where(f =>
+                        File.Exists(f) &&
+                        (
+                            Path.GetExtension(f).Equals(".dcm", StringComparison.OrdinalIgnoreCase) ||
+                            Path.GetExtension(f).Equals(".avi", StringComparison.OrdinalIgnoreCase)
+                        ))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (allFiles.Count == 0)
+                    return;
+
+                var discoveredStudyIds = new List<string>();
+
+                // 1. DCM 파일 분류
+                foreach (var file in allFiles.Where(f => Path.GetExtension(f).Equals(".dcm", StringComparison.OrdinalIgnoreCase)))
+                {
+                    try
+                    {
+                        var dicomFile = DicomFile.Open(file, FileReadOption.ReadAll);
+
+                        string filePatientName = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.PatientName, "");
+                        string filePatientId = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.PatientID, "");
+
+                        // 선택한 대표 환자와 다른 파일은 제외
+                        if (!string.Equals(filePatientName, patientName, StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        if (filePatientId != patientCode.ToString())
+                            continue;
+
+                        string studyId = ResolveStudyIdForImport(file, dicomFile);
+                        if (string.IsNullOrWhiteSpace(studyId))
+                            studyId = DateTime.Now.ToString("yyyyMMdd") + "0001";
+
+                        if (!discoveredStudyIds.Contains(studyId))
+                            discoveredStudyIds.Add(studyId);
+
+                        string studyDate = studyId.Substring(0, 8);
+
+                        if (IsMultiFrameDicom(file))
+                        {
+                            // 멀티프레임 DICOM => DICOM/.../Video/..._Dicom.dcm 대상
+                            string dicomVideoDir = Path.Combine(
+                                dicomRoot,
+                                patientFolderName,
+                                studyDate,
+                                studyId,
+                                "Video");
+
+                            CopyFileWithUniqueName(file, dicomVideoDir, ".dcm");
+                        }
+                        else
+                        {
+                            // 싱글프레임 DICOM => DICOM/.../Image/...dcm 대상
+                            string imageDir = Path.Combine(
+                                dicomRoot,
+                                patientFolderName,
+                                studyDate,
+                                studyId,
+                                "Image");
+
+                            CopyFileWithUniqueName(file, imageDir, ".dcm");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Common.WriteLog(ex);
+                    }
+                }
+
+                // 2. AVI 파일 분류
+                // AVI는 메타정보가 약하므로:
+                // - 파일명/경로에 studyId 있으면 사용
+                // - 없으면 첫 번째 발견 studyId 사용
+                // - 그것도 없으면 오늘 날짜 0001 사용
+                string fallbackStudyId = discoveredStudyIds.FirstOrDefault() ?? DateTime.Now.ToString("yyyyMMdd") + "0001";
+
+                foreach (var file in allFiles.Where(f => Path.GetExtension(f).Equals(".avi", StringComparison.OrdinalIgnoreCase)))
+                {
+                    try
+                    {
+                        string studyId = ResolveStudyIdForImport(file, null, fallbackStudyId);
+                        if (string.IsNullOrWhiteSpace(studyId))
+                            studyId = fallbackStudyId;
+
+                        if (!discoveredStudyIds.Contains(studyId))
+                            discoveredStudyIds.Add(studyId);
+
+                        string studyDate = studyId.Substring(0, 8);
+
+                        string videoDir = Path.Combine(
+                            videoRoot,
+                            patientFolderName,
+                            studyDate,
+                            studyId);
+
+                        CopyFileWithUniqueName(file, videoDir, ".avi");
+                    }
+                    catch (Exception ex)
+                    {
+                        Common.WriteLog(ex);
+                    }
+                }
+
+                // 3. DICOM 태그 보정
+                string dicomPatientRoot = Path.Combine(dicomRoot, patientFolderName);
+                string videoPatientRoot = Path.Combine(videoRoot, patientFolderName);
+
+                if (Directory.Exists(dicomPatientRoot))
+                {
+                    UpdateDicomTagsForMerge(dicomPatientRoot, patientName, patientCode, accessionNumber);
+                }
+
+                // 4. 파일명 정리
+                foreach (var studyId in discoveredStudyIds.Distinct().OrderBy(x => x))
+                {
+                    try
+                    {
+                        string studyDate = studyId.Substring(0, 8);
+
+                        string imageDir = Path.Combine(dicomPatientRoot, studyDate, studyId, "Image");
+                        string dicomVideoDir = Path.Combine(dicomPatientRoot, studyDate, studyId, "Video");
+                        string videoDir = Path.Combine(videoPatientRoot, studyDate, studyId);
+
+                        // Image DCM 정리
+                        if (Directory.Exists(imageDir))
+                        {
+                            RenameImageDicomFiles(imageDir, patientName, patientCode, studyId);
+                        }
+
+                        // Video AVI 정리
+                        if (Directory.Exists(videoDir))
+                        {
+                            int dicomVideoCount = 0;
+
+                            if (Directory.Exists(dicomVideoDir))
+                            {
+                                dicomVideoCount = Directory.GetFiles(dicomVideoDir, "*.dcm").Length;
+                            }
+
+                            RenameImportedVideoFiles(videoDir, patientName, patientCode, studyId, dicomVideoCount);
+                        }
+
+                        // Video DCM 정리 (Dicom.avi 인덱스에 맞춤)
+                        if (Directory.Exists(dicomVideoDir) && Directory.Exists(videoDir))
+                        {
+                            RenameDicomFilesByVideoIndices(dicomVideoDir, videoDir, patientName, patientCode, studyId);
+                        }
+                        else if (Directory.Exists(dicomVideoDir))
+                        {
+                            NormalizeDicomFileNamesWithDicomSuffix(dicomVideoDir, patientName, patientCode, studyId);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Common.WriteLog(ex);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                throw;
+            }
+        }
+
+        //AVI를 _Avi / _Dicom 구조로 정리
+        //멀티프레임 DICOM 개수만큼 AVI를 _Dicom.avi로 매칭하고, 나머지는 _Avi.avi로 매칭
+        private void RenameImportedVideoFiles(string videoDir, string patientName, int patientCode, string studyId, int dicomVideoCount)
+        {
+            try
+            {
+                var aviFiles = Directory.GetFiles(videoDir, "*.avi")
+                    .OrderBy(f => File.GetLastWriteTime(f))
+                    .ThenBy(f => f)
+                    .ToList();
+
+                if (aviFiles.Count == 0)
+                    return;
+
+                var tempFiles = new List<string>();
+
+                foreach (var file in aviFiles)
+                {
+                    string tempPath = file + ".renametmp";
+                    SafeMoveFile(file, tempPath);
+                    tempFiles.Add(tempPath);
+                }
+
+                // 앞쪽 dicomVideoCount개는 _Dicom, 나머지는 _Avi
+                var dicomTargets = tempFiles.Take(Math.Min(dicomVideoCount, tempFiles.Count)).ToList();
+                var aviTargets = tempFiles.Skip(Math.Min(dicomVideoCount, tempFiles.Count)).ToList();
+
+                int aviIndex = 1;
+                foreach (var tempFile in aviTargets)
+                {
+                    while (aviIndex % 2 == 0) aviIndex++;
+
+                    string newName = $"{patientName}_{patientCode}_{studyId}_{aviIndex}_Avi.avi";
+                    string newPath = Path.Combine(videoDir, newName);
+
+                    while (File.Exists(newPath))
+                    {
+                        aviIndex += 2;
+                        newName = $"{patientName}_{patientCode}_{studyId}_{aviIndex}_Avi.avi";
+                        newPath = Path.Combine(videoDir, newName);
+                    }
+
+                    SafeMoveFile(tempFile, newPath);
+                    aviIndex += 2;
+                }
+
+                int dicomIndex = 2;
+                foreach (var tempFile in dicomTargets)
+                {
+                    while (dicomIndex % 2 != 0) dicomIndex++;
+
+                    string newName = $"{patientName}_{patientCode}_{studyId}_{dicomIndex}_Dicom.avi";
+                    string newPath = Path.Combine(videoDir, newName);
+
+                    while (File.Exists(newPath))
+                    {
+                        dicomIndex += 2;
+                        newName = $"{patientName}_{patientCode}_{studyId}_{dicomIndex}_Dicom.avi";
+                        newPath = Path.Combine(videoDir, newName);
+                    }
+
+                    SafeMoveFile(tempFile, newPath);
+                    dicomIndex += 2;
+                }
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+            }
+        }
+
+        private List<PatientModel> BuildPatientImportGroups(List<string> dcmFiles)
+        {
+            var groups = new Dictionary<string, PatientModel>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var file in dcmFiles)
+            {
+                try
+                {
+                    var dicomFile = DicomFile.Open(file, FileReadOption.ReadAll);
+
+                    string patientName = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.PatientName, "").Trim();
+                    string patientIdText = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.PatientID, "").Trim();
+                    string sex = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.PatientSex, "U").Trim();
+                    string accession = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, "").Trim();
+                    string birthText = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.PatientBirthDate, "19000101").Trim();
+
+                    if (string.IsNullOrWhiteSpace(patientName))
+                        patientName = "Unknown Name";
+
+                    if (!int.TryParse(patientIdText, out int patientCode))
+                        continue;
+
+                    DateTime birthDate;
+                    if (!DateTime.TryParseExact(
+                            birthText,
+                            "yyyyMMdd",
+                            System.Globalization.CultureInfo.InvariantCulture,
+                            System.Globalization.DateTimeStyles.None,
+                            out birthDate))
+                    {
+                        birthDate = new DateTime(1900, 1, 1);
+                    }
+
+                    string key = patientName + "|" + patientCode;
+
+                    if (!groups.ContainsKey(key))
+                    {
+                        groups[key] = new PatientModel
+                        {
+                            PatientName = patientName,
+                            PatientCode = patientCode,
+                            Sex = sex,
+                            BirthDate = birthDate,
+                            AccessionNumber = accession,
+                            IsEmrPatient = !string.IsNullOrWhiteSpace(accession),
+                            Source = !string.IsNullOrWhiteSpace(accession)
+                                ? PatientSource.ESync
+                                : PatientSource.Local,
+                            SourceType = !string.IsNullOrWhiteSpace(accession)
+                                ? (int)PatientSourceType.ESync
+                                : (int)PatientSourceType.Local
+                        };
+                    }
+
+                    groups[key].DcmFiles.Add(file);
+
+                    string studyId = ResolveStudyIdForImport(file, dicomFile);
+                    if (!string.IsNullOrWhiteSpace(studyId))
+                        groups[key].StudyIds.Add(studyId);
+                }
+                catch (Exception ex)
+                {
+                    Common.WriteLog(ex);
+                }
+            }
+
+            return groups.Values.ToList();
+        }
+
+        private void AssignAviFilesToPatientGroups(List<PatientModel> groups, List<string> aviFiles)
+        {
+            foreach (var aviFile in aviFiles)
+            {
+                try
+                {
+                    string studyId = ResolveStudyIdForImport(aviFile, null, null);
+                    if (string.IsNullOrWhiteSpace(studyId))
+                        continue;
+
+                    var matchedGroups = groups
+                        .Where(g => g.StudyIds.Contains(studyId))
+                        .ToList();
+
+                    // 같은 StudyID를 가진 환자가 정확히 1명일 때만 AVI 연결
+                    if (matchedGroups.Count == 1)
+                    {
+                        matchedGroups[0].AviFiles.Add(aviFile);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Common.WriteLog(ex);
+                }
+            }
+        }
+
     }
 }

@@ -30,7 +30,7 @@ namespace LSS_prototype
         public static string MwlDescriptionFilter = string.Empty;       // 현재 MWL FILTER 값 
 
 
-        public const int DB_VERSION = 51; // DB Version 
+        public const int DB_VERSION = 52; // DB Version 
 
         // ===== OTP 기능  =====
         public static bool VerifyMasterOtp(string inputId, string inputOtp)
@@ -431,6 +431,8 @@ namespace LSS_prototype
         public const string INSERT_EMR_PATIENT = @"INSERT INTO PATIENT(PATIENT_CODE, PATIENT_NAME, BIRTH_DATE, SEX, SOURCE_TYPE, LASTSHOOTDATE, SHOTNUM) VALUES(@PatientCode, @PatientName, @BirthDate, @Sex, @SourceType, @LastShootDate, @ShotNum)";
 
         public const string UPDATE_EMR_PATIENT = @"UPDATE PATIENT SET PATIENT_NAME = @PatientName, BIRTH_DATE = @BirthDate, SEX = @Sex, LASTSHOOTDATE = @LastShootDate, SHOTNUM = @ShotNum, SOURCE_TYPE = @SourceType WHERE PATIENT_CODE = @PatientCode AND SOURCE_TYPE = @SourceType";
+
+        public const string UPDATE_LOCAL_PATIENT_AFTER_SCAN = @"UPDATE PATIENT SET LASTSHOOTDATE = @LastShootDate, SHOTNUM = @ShotNum WHERE PATIENT_ID = @PatientId AND SOURCE_TYPE = 0";
         // ================================================
         // User_Page > Default (카메라 기본값)  -  DB_Manager.Set.cs
         // ================================================

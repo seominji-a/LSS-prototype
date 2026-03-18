@@ -338,7 +338,7 @@ namespace LSS_prototype.Common_Module
                     lock (_frameLock)
                     {
                         _lastFrame?.Dispose();
-                        _lastFrame = src.Clone();
+                        _lastFrame = processed.Clone();
                     }
 
                     stride = (int)processed.Step();

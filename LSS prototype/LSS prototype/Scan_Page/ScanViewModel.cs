@@ -662,7 +662,7 @@ namespace LSS_prototype.Scan_Page
                 }
 
                 // ③ VideoWriter 닫기
-                // Release() 필수! 안 하면 AVI 파일 손상
+              
                 _aviOnlyWriter?.Release();
                 _aviOnlyWriter?.Dispose();
                 _aviOnlyWriter = null;

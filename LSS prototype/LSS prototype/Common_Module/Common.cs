@@ -433,6 +433,8 @@ namespace LSS_prototype
         public const string UPDATE_EMR_PATIENT = @"UPDATE PATIENT SET PATIENT_NAME = @PatientName, BIRTH_DATE = @BirthDate, SEX = @Sex, LASTSHOOTDATE = @LastShootDate, SHOTNUM = @ShotNum, SOURCE_TYPE = @SourceType WHERE PATIENT_CODE = @PatientCode AND SOURCE_TYPE = @SourceType";
 
         public const string UPDATE_LOCAL_PATIENT_AFTER_SCAN = @"UPDATE PATIENT SET LASTSHOOTDATE = @LastShootDate, SHOTNUM = @ShotNum WHERE PATIENT_ID = @PatientId AND SOURCE_TYPE = 0";
+
+        public const string SELECT_PATIENT_CODE_SOURCE = @"SELECT * FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND SOURCE_TYPE = @SourceType";
         // ================================================
         // User_Page > Default (카메라 기본값)  -  DB_Manager.Set.cs
         // ================================================

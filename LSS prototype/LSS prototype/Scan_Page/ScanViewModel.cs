@@ -1317,18 +1317,31 @@ namespace LSS_prototype.Scan_Page
                 if (SelectedPatient.Source == PatientSource.Emr ||
                     SelectedPatient.Source == PatientSource.ESync)
                 {
-                    if (string.IsNullOrWhiteSpace(SelectedPatient.AccessionNumber) &&
-                        SelectedPatient.Dataset != null)
+
+                    // 핵심: E-SYNC row 가져오기
+                    var esyncPatient = repo.GetPatientByCodeAndSource(
+                        SelectedPatient.PatientCode,
+                        (int)PatientSourceType.ESync
+                    );
+
+                    // 없으면 기존 로직 (INSERT)
+                    if (esyncPatient == null)
                     {
-                        SelectedPatient.AccessionNumber =
-                            SelectedPatient.Dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, "");
+                        SelectedPatient.SourceType = (int)PatientSourceType.ESync;
+                        SelectedPatient.Source = PatientSource.ESync;
+                        SelectedPatient.IsEmrPatient = true;
+
+                        repo.UpsertEmrPatient(SelectedPatient);
+                    }
+                    else
+                    {
+                        // 기존 E-SYNC row 기준으로 업데이트
+                        esyncPatient.ShotNum += 1;
+                        esyncPatient.LastShootDate = SelectedPatient.LastShootDate;
+
+                        repo.UpsertEmrPatient(esyncPatient);
                     }
 
-                    SelectedPatient.SourceType = (int)PatientSourceType.ESync;
-                    SelectedPatient.Source = PatientSource.ESync;
-                    SelectedPatient.IsEmrPatient = true;
-
-                    repo.UpsertEmrPatient(SelectedPatient);
                     return;
                 }
 

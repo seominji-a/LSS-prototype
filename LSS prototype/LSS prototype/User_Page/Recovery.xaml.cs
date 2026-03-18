@@ -157,32 +157,6 @@ namespace LSS_prototype.User_Page
             catch (Exception ex) { Common.WriteLog(ex); }
         }
 
-        // 1초 전
-        private void BtnSeekBack_Click(object sender, System.Windows.RoutedEventArgs e)
-        {
-            try
-            {
-                if (PreviewVideo.Source == null) return;
-                var target = PreviewVideo.Position - TimeSpan.FromSeconds(1);
-                PreviewVideo.Position = target < TimeSpan.Zero ? TimeSpan.Zero : target;
-            }
-            catch (Exception ex) { Common.WriteLog(ex); }
-        }
-
-        // 1초 후
-        private void BtnSeekForward_Click(object sender, System.Windows.RoutedEventArgs e)
-        {
-            try
-            {
-                if (PreviewVideo.Source == null) return;
-                if (!PreviewVideo.NaturalDuration.HasTimeSpan) return;
-                var total = PreviewVideo.NaturalDuration.TimeSpan;
-                var target = PreviewVideo.Position + TimeSpan.FromSeconds(1);
-                PreviewVideo.Position = target > total ? total : target;
-            }
-            catch (Exception ex) { Common.WriteLog(ex); }
-        }
-
         // ═══════════════════════════════════════════
         //  Seek 슬라이더
         // ═══════════════════════════════════════════

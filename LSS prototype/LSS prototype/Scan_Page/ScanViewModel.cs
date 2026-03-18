@@ -1297,15 +1297,13 @@ namespace LSS_prototype.Scan_Page
                 DateTime now = DateTime.Now;
 
                 SelectedPatient.ShotNum += 1;
-                // 밀리초 제거
                 SelectedPatient.LastShootDate = new DateTime(
                     now.Year, now.Month, now.Day,
                     now.Hour, now.Minute, now.Second
                 );
 
-                // LOCAL 환자는 기존 row만 업데이트
-                if (SelectedPatient.Source == PatientSource.Local ||
-                    SelectedPatient.SourceType == (int)PatientSourceType.Local)
+                // 1. LOCAL 환자 -> 기존 row만 갱신
+                if (SelectedPatient.Source == PatientSource.Local)
                 {
                     SelectedPatient.SourceType = (int)PatientSourceType.Local;
                     SelectedPatient.Source = PatientSource.Local;
@@ -1315,20 +1313,28 @@ namespace LSS_prototype.Scan_Page
                     return;
                 }
 
-                // EMR 환자는 촬영 후 E-SYNC로 저장
-                if (string.IsNullOrWhiteSpace(SelectedPatient.AccessionNumber) &&
-                    SelectedPatient.Dataset != null)
+                // 2. EMR 환자 -> 촬영 후 E-SYNC로 저장
+                if (SelectedPatient.Source == PatientSource.Emr ||
+                    SelectedPatient.Source == PatientSource.ESync)
                 {
-                    SelectedPatient.AccessionNumber =
-                        SelectedPatient.Dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, "");
+                    if (string.IsNullOrWhiteSpace(SelectedPatient.AccessionNumber) &&
+                        SelectedPatient.Dataset != null)
+                    {
+                        SelectedPatient.AccessionNumber =
+                            SelectedPatient.Dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, "");
+                    }
+
+                    SelectedPatient.SourceType = (int)PatientSourceType.ESync;
+                    SelectedPatient.Source = PatientSource.ESync;
+                    SelectedPatient.IsEmrPatient = true;
+
+                    repo.UpsertEmrPatient(SelectedPatient);
+                    return;
                 }
 
-                SelectedPatient.SourceType = (int)PatientSourceType.ESync;
-                SelectedPatient.Source = PatientSource.ESync;
-                SelectedPatient.IsEmrPatient = true;
-
-
-                repo.UpsertEmrPatient(SelectedPatient);
+                // 혹시 분류되지 않는 경우 로그 남김
+                Common.WriteSessionLog(
+                    $"UpdatePatientAfterScan: 알 수 없는 환자 Source={SelectedPatient.Source}, SourceType={SelectedPatient.SourceType}");
             }
             catch (Exception ex)
             {

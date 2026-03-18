@@ -30,7 +30,7 @@ namespace LSS_prototype
         public static string MwlDescriptionFilter = string.Empty;       // 현재 MWL FILTER 값 
 
 
-        public const int DB_VERSION = 52; // DB Version 
+        public const int DB_VERSION = 53; // DB Version 
 
         // ===== OTP 기능  =====
         public static bool VerifyMasterOtp(string inputId, string inputOtp)

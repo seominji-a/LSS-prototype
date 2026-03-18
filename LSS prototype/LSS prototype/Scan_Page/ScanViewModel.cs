@@ -1130,26 +1130,101 @@ namespace LSS_prototype.Scan_Page
         private List<string> GetTodayStudyIds(string patientName, string patientCode)
         {
             string patientFolderName = $"{patientName}_{patientCode}";
-            string patientDir = Path.Combine(Common.executablePath, "DICOM", patientFolderName);
-            var result = new List<string>();
-
-            if (!Directory.Exists(patientDir)) return result;
-
             string today = DateTime.Now.ToString("yyyyMMdd");
-            string todayDir = Path.Combine(patientDir, today);
+            var result = new HashSet<string>();
 
-            if (!Directory.Exists(todayDir)) return result;
+            // ── DICOM 폴더 탐색 ──
+            string dicomTodayDir = Path.Combine(
+                Common.executablePath, "DICOM", patientFolderName, today);
 
-            foreach (string dir in Directory.GetDirectories(todayDir))
+            if (Directory.Exists(dicomTodayDir))
             {
-                string folderName = Path.GetFileName(dir);
-                // 형식: yyyyMMdd0001 (12자리)
-                if (folderName.StartsWith(today) && folderName.Length == 12)
-                    result.Add(folderName);
+                foreach (string dir in Directory.GetDirectories(dicomTodayDir))
+                {
+                    string folderName = Path.GetFileName(dir);
+                    if (folderName.StartsWith(today) && folderName.Length == 12)
+                    {
+                        // ★ 추가 - 유효한 파일 있을 때만 목록에 추가
+                        if (HasValidFiles(folderName, patientFolderName))
+                            result.Add(folderName);
+                    }
+                }
             }
 
-            result.Sort();
-            return result;
+            // ── VIDEO 폴더도 탐색 ──
+            string videoTodayDir = Path.Combine(
+                Common.executablePath, "VIDEO", patientFolderName, today);
+
+            if (Directory.Exists(videoTodayDir))
+            {
+                foreach (string dir in Directory.GetDirectories(videoTodayDir))
+                {
+                    string folderName = Path.GetFileName(dir);
+                    if (folderName.StartsWith(today) && folderName.Length == 12)
+                    {
+                        // ★ 추가 - 유효한 파일 있을 때만 목록에 추가
+                        if (HasValidFiles(folderName, patientFolderName))
+                            result.Add(folderName);
+                    }
+                }
+            }
+
+            var list = result.ToList();
+            list.Sort();
+            return list;
+        }
+
+        // ═══════════════════════════════════════════
+        //  StudyID 폴더 안에 유효한 파일이 하나라도 있는지 확인
+        //
+        //  호출 시점:
+        //  GetTodayStudyIds() 에서 StudyID 목록 만들 때
+        //  폴더가 있어도 파일이 전부 Del_ 이면 없는 것으로 판단
+        //
+        //  체크하는 폴더 3곳:
+        //  ① DICOM/환자폴더/날짜/StudyID/Image  → 이미지 촬영 파일 (.dcm)
+        //  ② DICOM/환자폴더/날짜/StudyID/Video  → DICOM 영상 파일 (.dcm)
+        //  ③ VIDEO/환자폴더/날짜/StudyID        → AVI Only 파일 (.avi)
+        //
+        //  셋 중 하나라도 Del_ 아닌 파일이 있으면 → true (유효한 StudyID)
+        //  셋 다 없거나 전부 Del_ 이면 → false (새 StudyID 로 시작)
+        // ═══════════════════════════════════════════
+        private bool HasValidFiles(string studyId, string patientFolderName)
+        {
+            string today = studyId.Substring(0, 8);
+
+            // ① 이미지 촬영 파일 체크
+            // 이미지 캡처를 했다면 여기에 .dcm 파일이 있음
+            string imageDir = Path.Combine(Common.executablePath, "DICOM",
+                patientFolderName, today, studyId, "Image");
+
+            if (Directory.Exists(imageDir) &&
+                Directory.GetFiles(imageDir, "*.dcm")
+                         .Any(f => !Path.GetFileName(f).StartsWith("Del_")))
+                return true;  // Del_ 아닌 dcm 파일 있음 → 유효
+
+            // ② DICOM 영상 파일 체크
+            // Dicom Record 녹화를 했다면 여기에 .dcm 파일이 있음
+            string dicomVideoDir = Path.Combine(Common.executablePath, "DICOM",
+                patientFolderName, today, studyId, "Video");
+
+            if (Directory.Exists(dicomVideoDir) &&
+                Directory.GetFiles(dicomVideoDir, "*.dcm")
+                         .Any(f => !Path.GetFileName(f).StartsWith("Del_")))
+                return true;  // Del_ 아닌 dcm 파일 있음 → 유효
+
+            // ③ AVI Only 파일 체크
+            // AVI Only 녹화를 했다면 여기에 .avi 파일이 있음
+            string aviDir = Path.Combine(Common.executablePath, "VIDEO",
+                patientFolderName, today, studyId);
+
+            if (Directory.Exists(aviDir) &&
+                Directory.GetFiles(aviDir, "*.avi")
+                         .Any(f => !Path.GetFileName(f).StartsWith("Del_")))
+                return true;  // Del_ 아닌 avi 파일 있음 → 유효
+
+            // ① ② ③ 전부 없거나 전부 Del_ → 유효한 파일 없음
+            return false;
         }
 
         /// <summary>다음 StudyID 계산 - 마지막 StudyID seq + 1</summary>
@@ -1225,9 +1300,13 @@ namespace LSS_prototype.Scan_Page
         {
             string patientFolderName = $"{patientName}_{patientCode}";
             string studyDateFolder = studyId.Substring(0, 8);
-            string rootDir = Path.Combine(Common.executablePath, "DICOM");
-            string studyDir = Path.Combine(rootDir, patientFolderName, studyDateFolder, studyId);
-            return Directory.Exists(studyDir);
+
+            string dicomDir = Path.Combine(Common.executablePath, "DICOM",
+                patientFolderName, studyDateFolder, studyId);
+            string videoDir = Path.Combine(Common.executablePath, "VIDEO",
+                patientFolderName, studyDateFolder, studyId);
+
+            return Directory.Exists(dicomDir) || Directory.Exists(videoDir);
         }
 
         /// <summary>Image 폴더에서 마지막 이미지 번호 읽기</summary>

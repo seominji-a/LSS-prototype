@@ -29,6 +29,41 @@ namespace LSS_prototype.DB_CRUD
             }
         }
 
+        public bool InsertNormalVideoDeleteLog(string aviPath, int patientCode, string patientName)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.INSERT_NORMAL_VIDEO_DELETE_LOG, conn))
+                {
+                    cmd.Parameters.AddWithValue("@DeletedBy", Common.CurrentUserId);
+                    cmd.Parameters.AddWithValue("@FileType", "NORMAL_VIDEO");
+                    cmd.Parameters.AddWithValue("@AviPath", aviPath);
+                    cmd.Parameters.AddWithValue("@PatientCode", patientCode);
+                    cmd.Parameters.AddWithValue("@PatientName", patientName);
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+
+        public bool InsertDicomVideoDeleteLog(string aviPath, string dcmPath, int patientCode, string patientName)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.INSERT_DICOM_VIDEO_DELETE_LOG, conn))
+                {
+                    cmd.Parameters.AddWithValue("@DeletedBy", Common.CurrentUserId);
+                    cmd.Parameters.AddWithValue("@FileType", "DICOM_VIDEO");
+                    cmd.Parameters.AddWithValue("@AviPath", aviPath);
+                    cmd.Parameters.AddWithValue("@DicomPath", dcmPath);
+                    cmd.Parameters.AddWithValue("@PatientCode", patientCode);
+                    cmd.Parameters.AddWithValue("@PatientName", patientName);
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+
         public List<RecoveryModel> GetDeleteLogs()
         {
             var list = new List<RecoveryModel>();

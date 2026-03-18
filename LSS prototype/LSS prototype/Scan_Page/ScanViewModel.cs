@@ -1297,22 +1297,36 @@ namespace LSS_prototype.Scan_Page
                 DateTime now = DateTime.Now;
 
                 SelectedPatient.ShotNum += 1;
-                SelectedPatient.LastShootDate = now;
+                // 밀리초 제거
+                SelectedPatient.LastShootDate = new DateTime(
+                    now.Year, now.Month, now.Day,
+                    now.Hour, now.Minute, now.Second
+                );
 
-                // DB 저장용 enum 사용
-                SelectedPatient.SourceType = (int)PatientSourceType.ESync;
+                // LOCAL 환자는 기존 row만 업데이트
+                if (SelectedPatient.Source == PatientSource.Local ||
+                    SelectedPatient.SourceType == (int)PatientSourceType.Local)
+                {
+                    SelectedPatient.SourceType = (int)PatientSourceType.Local;
+                    SelectedPatient.Source = PatientSource.Local;
+                    SelectedPatient.IsEmrPatient = false;
 
-                // 화면 표시용 상태
-                SelectedPatient.Source = PatientSource.ESync;
-                SelectedPatient.IsEmrPatient = true;
+                    repo.UpdateLocalPatientAfterScan(SelectedPatient);
+                    return;
+                }
 
-                // EMR 환자라면 accession number를 Dataset에서 보정
+                // EMR 환자는 촬영 후 E-SYNC로 저장
                 if (string.IsNullOrWhiteSpace(SelectedPatient.AccessionNumber) &&
                     SelectedPatient.Dataset != null)
                 {
                     SelectedPatient.AccessionNumber =
                         SelectedPatient.Dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, "");
                 }
+
+                SelectedPatient.SourceType = (int)PatientSourceType.ESync;
+                SelectedPatient.Source = PatientSource.ESync;
+                SelectedPatient.IsEmrPatient = true;
+
 
                 repo.UpsertEmrPatient(SelectedPatient);
             }

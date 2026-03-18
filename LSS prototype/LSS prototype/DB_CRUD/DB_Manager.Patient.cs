@@ -241,7 +241,7 @@ namespace LSS_prototype.DB_CRUD
                             updateCmd.Parameters.AddWithValue("@PatientName", patient.PatientName);
                             updateCmd.Parameters.AddWithValue("@BirthDate", patient.BirthDate);
                             updateCmd.Parameters.AddWithValue("@Sex", patient.Sex);
-                            updateCmd.Parameters.AddWithValue("@LastShootDate", patient.LastShootDate);
+                            updateCmd.Parameters.AddWithValue("@LastShootDate",patient.LastShootDate?.ToString("yyyy-MM-dd HH:mm:ss"));
                             updateCmd.Parameters.AddWithValue("@ShotNum", patient.ShotNum);
                             updateCmd.Parameters.AddWithValue("@SourceType", patient.SourceType);
 
@@ -257,12 +257,29 @@ namespace LSS_prototype.DB_CRUD
                             insertCmd.Parameters.AddWithValue("@BirthDate", patient.BirthDate);
                             insertCmd.Parameters.AddWithValue("@Sex", patient.Sex);
                             insertCmd.Parameters.AddWithValue("@SourceType", patient.SourceType);
-                            insertCmd.Parameters.AddWithValue("@LastShootDate", patient.LastShootDate);
+                            insertCmd.Parameters.AddWithValue("@LastShootDate", patient.LastShootDate?.ToString("yyyy-MM-dd HH:mm:ss"));
                             insertCmd.Parameters.AddWithValue("@ShotNum", patient.ShotNum);
 
                             return insertCmd.ExecuteNonQuery() > 0;
                         }
                     }
+                }
+            }
+        }
+
+        public bool UpdateLocalPatientAfterScan(PatientModel patient)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+
+                using (var cmd = new SQLiteCommand(Query.UPDATE_LOCAL_PATIENT_AFTER_SCAN, conn))
+                {
+                    cmd.Parameters.AddWithValue("@PatientId", patient.PatientId);
+                    cmd.Parameters.AddWithValue("@LastShootDate", patient.LastShootDate?.ToString("yyyy-MM-dd HH:mm:ss"));
+                    cmd.Parameters.AddWithValue("@ShotNum", patient.ShotNum);
+
+                    return cmd.ExecuteNonQuery() > 0;
                 }
             }
         }

@@ -73,6 +73,13 @@ namespace LSS_prototype.ImageComment_Page
         //  바인딩 프로퍼티
         // ═══════════════════════════════════════════
 
+        private string _pageIndicator;
+        public string PageIndicator
+        {
+            get => _pageIndicator;
+            private set { _pageIndicator = value; OnPropertyChanged(); }
+        }
+
         // 현재 표시 중인 이미지 (코드비하인드 CapturedImage.Source 에 바인딩)
         private WriteableBitmap _currentImage;
         public WriteableBitmap CurrentImage
@@ -200,7 +207,7 @@ namespace LSS_prototype.ImageComment_Page
                     return false;
                 }
 
-                _currentIndex = 0;
+                _currentIndex = _dcmFiles.Count - 1;
                 LoadPage(_currentIndex);
                 return true;
             }
@@ -248,6 +255,8 @@ namespace LSS_prototype.ImageComment_Page
             {
                 CurrentStrokes = new StrokeCollection();
             }
+
+            PageIndicator = $"{index + 1:D2}/{_dcmFiles.Count:D2}"; // 우측상단 파일 카운트 
         }
 
         // ═══════════════════════════════════════════

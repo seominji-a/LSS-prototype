@@ -252,6 +252,8 @@
                     </TextBlock>
                 </StackPanel>
 
+                <TextBlock Text="{Binding PageIndicator}"  Foreground="White" FontSize="18" FontWeight="Bold"  HorizontalAlignment="Right"/>
+                
                 <!-- 좌/우 10% 터치 영역 안내 오버레이 (None 모드일 때만 표시) -->
             </Grid>
         </Border>

@@ -392,6 +392,8 @@ namespace LSS_prototype.ImageComment_Page
                 // 복구 시 이 경로를 보고 파일 찾아서 Del_ 제거
                 var db = new DB_Manager();
                 db.InsertImageDeleteLog(newDcmPath, SelectedPatient.PatientCode, SelectedPatient.PatientName);
+                Common.WriteSessionLog($"[IMAGE DELETE] User:{Common.CurrentUserId} PatientCode:{SelectedPatient.PatientCode}  " +
+                                       $"Patient_Name:{SelectedPatient.PatientName}File:{newDcmPath}");
 
                 // ── 목록에서도 제거 ──
                 _dcmFiles.RemoveAt(_currentIndex);

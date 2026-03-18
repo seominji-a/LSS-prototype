@@ -330,29 +330,28 @@ namespace LSS_prototype.Common_Module
 
                 using (Mat src = Mat.FromPixelData(height, width, MatType.CV_8UC1, data))
                 {
-                    // ApplyColorMap은 내부 필드 Mat(_colorDst)을 직접 반환
-                    // using으로 감싸면 필드를 Dispose해버리므로 일반 참조로 사용
                     Mat processed = ApplyColorMap(src);
 
-                    // ── lock 으로 _lastFrame 교체 안전하게 처리 ──
-                    lock (_frameLock)
+                    using (Mat safeProcessed = processed.Clone())
                     {
-                        _lastFrame?.Dispose();
-                        _lastFrame = src.Clone();
+                        lock (_frameLock)
+                        {
+                            _lastFrame?.Dispose();
+                            _lastFrame = safeProcessed.Clone();
+                        }
+
+                        stride = (int)safeProcessed.Step();
+                        isColor = safeProcessed.Channels() == 3;
+                        needed = height * stride;
+
+                        if (_processedDataBuffer == null || _processedDataBuffer.Length < needed)
+                            _processedDataBuffer = new byte[needed];
+
+                        processedData = _processedDataBuffer;
+                        Marshal.Copy(safeProcessed.Data, processedData, 0, needed);
+                        double sharpness = CalcSharpness(src);
+                        SharpnessUpdated?.Invoke(sharpness);
                     }
-
-                    stride = (int)processed.Step();
-                    isColor = processed.Channels() == 3;
-                    needed = height * stride;
-
-                    // 기존 버퍼가 충분히 크면 재사용, 부족할 때만 새로 할당
-                    if (_processedDataBuffer == null || _processedDataBuffer.Length < needed)
-                        _processedDataBuffer = new byte[needed];
-
-                    processedData = _processedDataBuffer;
-                    Marshal.Copy(processed.Data, processedData, 0, needed);
-                    double sharpness = CalcSharpness(src);
-                    SharpnessUpdated?.Invoke(sharpness);
                 }
 
                 // ── WriteableBitmap 재사용 ──

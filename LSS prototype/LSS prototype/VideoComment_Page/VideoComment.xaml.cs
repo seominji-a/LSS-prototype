@@ -1,4 +1,5 @@
 ﻿using LSS_prototype.Patient_Page;
+using LSS_prototype.Scan_Page;
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -41,6 +42,7 @@ namespace LSS_prototype.VideoComment_Page
             DataContext = new VideoCommentViewModel(patient, studyId);
 
             VM.PropertyChanged += OnViewModelPropertyChanged;
+            VM.RequestNavigateToScan += () => MainPage.Instance.NavigateTo(new Scan(patient, studyId)); // 1장있는데, 삭제 후 파일없을때 scan화면으로 이동 
 
             _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
             _timer.Tick += Timer_Tick;
@@ -100,6 +102,7 @@ namespace LSS_prototype.VideoComment_Page
                             else
                             {
                                 VideoPlayer.Play();
+                                VideoPlayer.SpeedRatio = VM.CurrentSpeedRatio; // 배속적용
                                 _isPlaying = true;
                                 VM.PlayPauseIcon = "⏸";
                                 _timer.Start();
@@ -273,6 +276,7 @@ namespace LSS_prototype.VideoComment_Page
         {
             _isDraggingSeek = true;
         }
+
 
         private void SliderSeek_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {

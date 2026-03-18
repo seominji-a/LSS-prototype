@@ -201,6 +201,7 @@
                               LoadedBehavior="Manual"
                               UnloadedBehavior="Stop"
                               Stretch="Uniform"
+                              ScrubbingEnabled="True"
                               MediaOpened="VideoPlayer_MediaOpened"
                               MediaEnded="VideoPlayer_MediaEnded"/>
 
@@ -211,9 +212,11 @@
                     <TextBlock Text="{Binding PatientInfo}"
                                Foreground="#BBCCE0" FontSize="15"/>
                 </StackPanel>
-                <!-- Video Type 우상단 -->
-                <TextBlock Margin="16,14" VerticalAlignment="Top" HorizontalAlignment="Right" Text="{Binding VideoType, Mode=OneWay}" Foreground="White" FontSize="18" FontWeight="Bold"/>
-                
+                <!-- Video Type, 파일count 우상단 -->
+                <StackPanel Margin="16,14" VerticalAlignment="Top" HorizontalAlignment="Right">
+                    <TextBlock Text="{Binding VideoType, Mode=OneWay}" Foreground="White" FontSize="18" FontWeight="Bold"  HorizontalAlignment="Right"/>
+                    <TextBlock Text="{Binding PageIndicator}"  Foreground="White" FontSize="18" FontWeight="Bold"  HorizontalAlignment="Right"/>
+                </StackPanel>
                 <!-- ── 하단 컨트롤 오버레이 ── -->
                 <Border VerticalAlignment="Bottom"
                         Background="#CC1C2B3A"

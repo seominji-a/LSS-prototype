@@ -413,7 +413,7 @@
                         <!-- RECOVERY -->
                         <Border Height="1" Background="#1E3F58" Margin="0,28,0,28"/>
                         <TextBlock Text="RECOVERY" Style="{StaticResource SectionLabel}"/>
-                        <Button Style="{StaticResource NavBtn}" Content="RECOVERY" Margin="0,0,0,0" Visibility="{Binding IsRecoveryVisible}"
+                        <Button Style="{StaticResource NavBtn}" Content="RECOVERY" Margin="0,0,0,0" 
                                 Command="{Binding RecoveryCommand}"/>
                     </StackPanel>
                 </ScrollViewer>

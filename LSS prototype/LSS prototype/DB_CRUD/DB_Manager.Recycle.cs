@@ -29,6 +29,41 @@ namespace LSS_prototype.DB_CRUD
             }
         }
 
+        public bool InsertNormalVideoDeleteLog(string aviPath, int patientCode, string patientName)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.INSERT_NORMAL_VIDEO_DELETE_LOG, conn))
+                {
+                    cmd.Parameters.AddWithValue("@DeletedBy", Common.CurrentUserId);
+                    cmd.Parameters.AddWithValue("@FileType", "NORMAL_VIDEO");
+                    cmd.Parameters.AddWithValue("@AviPath", aviPath);
+                    cmd.Parameters.AddWithValue("@PatientCode", patientCode);
+                    cmd.Parameters.AddWithValue("@PatientName", patientName);
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+
+        public bool InsertDicomVideoDeleteLog(string aviPath, string dcmPath, int patientCode, string patientName)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.INSERT_DICOM_VIDEO_DELETE_LOG, conn))
+                {
+                    cmd.Parameters.AddWithValue("@DeletedBy", Common.CurrentUserId);
+                    cmd.Parameters.AddWithValue("@FileType", "DICOM_VIDEO");
+                    cmd.Parameters.AddWithValue("@AviPath", aviPath);
+                    cmd.Parameters.AddWithValue("@DicomPath", dcmPath);
+                    cmd.Parameters.AddWithValue("@PatientCode", patientCode);
+                    cmd.Parameters.AddWithValue("@PatientName", patientName);
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+
         public List<RecoveryModel> GetDeleteLogs()
         {
             var list = new List<RecoveryModel>();
@@ -54,6 +89,7 @@ namespace LSS_prototype.DB_CRUD
                             PatientName = reader["PATIENT_NAME"].ToString(),
                             IsRecovered = reader["IS_RECOVERED"].ToString(),
                             RecoveredAt = reader["RECOVERED_AT"] == DBNull.Value ? null : reader["RECOVERED_AT"].ToString(),
+                            IsForceDeleted = reader["IS_FORCE_DELETED"].ToString(),
                         }); ;
                     }
                 }
@@ -74,6 +110,25 @@ namespace LSS_prototype.DB_CRUD
                 using (var cmd = new SQLiteCommand(Query.UPDATE_RECOVERED, conn))
                 {
                     cmd.Parameters.AddWithValue("@DeleteId", deleteId);
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+
+        // ================================================
+        // DELETE_LOG - 강제 삭제 처리 UPDATE
+        // IS_FORCE_DELETED = Y, FORCE_DELETED_AT = 현재시간
+        // DELETE_ID 기준으로 단 1건만 업데이트
+        // ================================================
+        public bool UpdateForceDeleted(int deleteId)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.UPDATE_FORCE_DELETED, conn))
+                {
+                    cmd.Parameters.AddWithValue("@DeleteId", deleteId);
+                    cmd.Parameters.AddWithValue("@ForceDeletedBy", Common.CurrentUserId);
                     return cmd.ExecuteNonQuery() > 0;
                 }
             }

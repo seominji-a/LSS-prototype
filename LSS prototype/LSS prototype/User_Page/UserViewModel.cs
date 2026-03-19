@@ -204,7 +204,7 @@ namespace LSS_prototype.User_Page
         }
 
 
-        private void ExecuteEditUser(object parameter)
+        private async void ExecuteEditUser(object parameter)
         {
             try
             {
@@ -223,7 +223,7 @@ namespace LSS_prototype.User_Page
                 
 
                 var vm = new User_EditViewModel(SelectedUser, isMaster);
-                var result = _dialogService.ShowDialog(vm);
+                var result = await _dialogService.ShowDialogAsync(vm);
 
                 if (result == true)
                     LoadUsers();
@@ -291,10 +291,10 @@ namespace LSS_prototype.User_Page
             }
         }
 
-        private void ExecuteAddUser(object parameter)
+        private async void ExecuteAddUser(object parameter)
         {
             var vm = new User_AddViewModel();
-            var result = _dialogService.ShowDialog(vm);
+            var result = await _dialogService.ShowDialogAsync(vm);
 
             if (result == true)
                 LoadUsers();

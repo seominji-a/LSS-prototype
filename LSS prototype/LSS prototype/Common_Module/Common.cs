@@ -30,7 +30,7 @@ namespace LSS_prototype
         public static string MwlDescriptionFilter = string.Empty;       // 현재 MWL FILTER 값 
 
 
-        public const int DB_VERSION = 55; // DB Version 
+        public const int DB_VERSION = 57; // DB Version 
 
         // ===== OTP 기능  =====
         public static bool VerifyMasterOtp(string inputId, string inputOtp)
@@ -416,7 +416,7 @@ namespace LSS_prototype
         public const string SELECT_PATIENTLIST = "SELECT * FROM PATIENT ORDER BY REG_DATE DESC";
         public const string SEARCH_PATIENT = "SELECT PATIENT_ID, PATIENT_CODE, PATIENT_NAME, BIRTH_DATE, SEX, REG_DATE, SOURCE_TYPE, LASTSHOOTDATE, SHOTNUM FROM PATIENT WHERE PATIENT_NAME LIKE @keyword OR PATIENT_CODE LIKE @keyword ORDER BY PATIENT_ID ASC";
         //public const string INSERT_PATIENT = "INSERT INTO PATIENT (PATIENT_NAME, PATIENT_CODE, BIRTH_DATE, SEX) VALUES (@PatientName, @PatientCode, @BirthDate, @Sex)";
-        public const string INSERT_PATIENT = "INSERT INTO PATIENT (PATIENT_NAME, PATIENT_CODE, BIRTH_DATE, SEX, SOURCE_TYPE) VALUES (@PatientName, @PatientCode, @BirthDate, @Sex, @SourceType)";
+        public const string INSERT_PATIENT = "INSERT INTO PATIENT (PATIENT_NAME, PATIENT_CODE, BIRTH_DATE, SEX, LASTSHOOTDATE, SHOTNUM, SOURCE_TYPE) VALUES (@PatientName, @PatientCode, @BirthDate, @Sex, @LastShootDate, @ShotNum, @SourceType)";
         public const string EDIT_PATIENT = "UPDATE PATIENT SET PATIENT_NAME = @PatientName, PATIENT_CODE = @PatientCode, BIRTH_DATE = @BirthDate, SEX = @Sex WHERE PATIENT_ID = @Patient_id";
         public const string DELETE_PATIENT = "DELETE FROM PATIENT WHERE PATIENT_ID = @Patient_id";
         public const string PATIENT_CODE_SEARCH = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode";                                                  // 환자 코드 중복 체크

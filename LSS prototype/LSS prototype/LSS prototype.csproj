@@ -310,37 +310,37 @@
     <Compile Include="Scan_Page\ScanViewModel.cs">
       <DependentUpon>Scan.xaml</DependentUpon>
     </Compile>
-    <Compile Include="User_Page\Default.xaml.cs">
+    <Compile Include="User_Page\Default_Page\Default.xaml.cs">
       <DependentUpon>Default.xaml</DependentUpon>
     </Compile>
-    <Compile Include="User_Page\DefaultModel.cs">
+    <Compile Include="User_Page\Default_Page\DefaultModel.cs">
       <DependentUpon>Default.xaml</DependentUpon>
     </Compile>
-    <Compile Include="User_Page\DefaultViewModel.cs">
+    <Compile Include="User_Page\Default_Page\DefaultViewModel.cs">
       <DependentUpon>Default.xaml</DependentUpon>
     </Compile>
-    <Compile Include="User_Page\ForceDeleteOTP.xaml.cs">
+    <Compile Include="User_Page\Recovery_Page\ForceDeleteOTP.xaml.cs">
       <DependentUpon>ForceDeleteOTP.xaml</DependentUpon>
     </Compile>
-    <Compile Include="User_Page\ForceDeleteOTPViewModel.cs" >
+    <Compile Include="User_Page\Recovery_Page\ForceDeleteOTPViewModel.cs">
       <DependentUpon>ForceDeleteOTP.xaml</DependentUpon>
     </Compile>
-    <Compile Include="User_Page\Recovery.xaml.cs">
+    <Compile Include="User_Page\Recovery_Page\Recovery.xaml.cs">
       <DependentUpon>Recovery.xaml</DependentUpon>
     </Compile>
-    <Compile Include="User_Page\RecoveryModel.cs" >
-    <DependentUpon>Recovery.xaml</DependentUpon>
+    <Compile Include="User_Page\Recovery_Page\RecoveryModel.cs">
+      <DependentUpon>Recovery.xaml</DependentUpon>
     </Compile>
-    <Compile Include="User_Page\RecoveryViewModel.cs" >
-     <DependentUpon>Recovery.xaml</DependentUpon>
+    <Compile Include="User_Page\Recovery_Page\RecoveryViewModel.cs">
+      <DependentUpon>Recovery.xaml</DependentUpon>
     </Compile>
-    <Compile Include="User_Page\setting.xaml.cs">
+    <Compile Include="User_Page\Setting_Page\setting.xaml.cs">
       <DependentUpon>setting.xaml</DependentUpon>
     </Compile>
-    <Compile Include="User_Page\SettingModel.cs" >
-     <DependentUpon>setting.xaml</DependentUpon>
+    <Compile Include="User_Page\Setting_Page\SettingModel.cs">
+      <DependentUpon>setting.xaml</DependentUpon>
     </Compile>
-    <Compile Include="User_Page\SettingViewModel.cs">
+    <Compile Include="User_Page\Setting_Page\SettingViewModel.cs">
       <DependentUpon>setting.xaml</DependentUpon>
     </Compile>
     <Compile Include="User_Page\User.xaml.cs">
@@ -422,19 +422,19 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="User_Page\Default.xaml">
+    <Page Include="User_Page\Default_Page\Default.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="User_Page\ForceDeleteOTP.xaml">
+    <Page Include="User_Page\Recovery_Page\ForceDeleteOTP.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="User_Page\Recovery.xaml">
+    <Page Include="User_Page\Recovery_Page\Recovery.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="User_Page\setting.xaml">
+    <Page Include="User_Page\Setting_Page\setting.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -566,6 +566,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

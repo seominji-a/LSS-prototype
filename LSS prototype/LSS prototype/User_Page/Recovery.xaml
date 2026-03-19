@@ -397,41 +397,50 @@
                         </Border>
 
                         <Border Background="{StaticResource Surface}"
-                                BorderBrush="{StaticResource Border}"
-                                BorderThickness="1.5" CornerRadius="10"
-                                Width="340" Height="55">
+                                            BorderBrush="{StaticResource Border}"
+                                            BorderThickness="1.5" CornerRadius="10"
+                                            Width="340" Height="55">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="52"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
+
                                 <Border Background="#F1F5F9" CornerRadius="9,0,0,9">
                                     <TextBlock Text="🔍" FontSize="16"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"/>
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"/>
                                 </Border>
+
                                 <Grid Grid.Column="1">
                                     <TextBlock Text="환자명 / 환자코드 검색..."
-                                               FontSize="15" Foreground="{StaticResource TextMuted}"
-                                               VerticalAlignment="Center" Margin="14,0,0,0"
-                                               IsHitTestVisible="False">
+                                            FontSize="15"
+                                            Foreground="{StaticResource TextMuted}"
+                                            VerticalAlignment="Center"
+                                            Margin="14,0,0,0"
+                                            IsHitTestVisible="False">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding SearchText}" Value="">
+                                                    <DataTrigger Binding="{Binding Text, ElementName=txtSearch}" Value="">
                                                         <Setter Property="Visibility" Value="Visible"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </TextBlock.Style>
                                     </TextBlock>
-                                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                             FontSize="15" BorderThickness="0" Background="Transparent"
-                                             Padding="14,0,0,0" VerticalContentAlignment="Center"
-                                             Foreground="{StaticResource TextDark}"
-                                             CaretBrush="{StaticResource Primary}"
-                                             xml:lang="ko-KR"/>
+
+                                    <TextBox x:Name="txtSearch"
+                                            Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                            FontSize="15"
+                                            BorderThickness="0"
+                                            Background="Transparent"
+                                            Padding="14,0,0,0"
+                                            VerticalContentAlignment="Center"
+                                            Foreground="{StaticResource TextDark}"
+                                            CaretBrush="{StaticResource Primary}"
+                                            xml:lang="ko-KR"/>
                                 </Grid>
                             </Grid>
                         </Border>

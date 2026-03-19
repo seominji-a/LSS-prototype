@@ -536,7 +536,7 @@ public class SearchDebouncer : IDisposable
             _ => _callback(searchText),
             null,
             _delayMs,
-            Timeout.Infinite    // 단발성 실행 (반복 없음)
+            Timeout.Infinite    
         );
     }
 

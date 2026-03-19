@@ -24,6 +24,15 @@ namespace LSS_prototype.DB_CRUD
                     cmd.Parameters.AddWithValue("@BirthDate", patient.BirthDate);
                     cmd.Parameters.AddWithValue("@Sex", patient.Sex);
                     cmd.Parameters.AddWithValue("@SourceType", patient.SourceType);
+
+                    cmd.Parameters.AddWithValue(
+                        "@LastShootDate",
+                        patient.LastShootDate.HasValue
+                            ? patient.LastShootDate.Value.ToString("yyyy-MM-dd HH:mm:ss")
+                            : (object)DBNull.Value);
+
+                    cmd.Parameters.AddWithValue("@ShotNum", patient.ShotNum);
+
                     return cmd.ExecuteNonQuery() > 0;
                 }
             }

@@ -576,7 +576,7 @@ SOPClassUID
 
 //분류
 NumberOfFrames 
-> 1 → video DICOM
+1 → video DICOM
 아니면 image DICOM
 
 3. .avi 분석
@@ -648,93 +648,190 @@ AVI 파일명/경로에 studyId 있음
 완전히 섞여 있는 외부 .avi를 파일명도 못 믿고, study_id도 없고, 
 메타데이터도 없는 상태에서 정확하게 자동 분류하는 방법은 없음
 
+---------------------------------------------------------------
+작성일: 2026-03-18
+작성자: 서민지
 
-(해결 방안)
-1. .dcm 으로 환자/스터디를 먼저 확정
-.avi 는 아래 규칙으로만 연결
--같은 폴더에 있었던 파일
--같은 시간대에 생성된 파일
--같은 개수/순서의 멀티프레임 DICOM과 대응
-3. 확신이 없으면 연결하지 않음 ->미연결 AVI
+(향후 계획)
+//emr 환자 관련-> 촬영 했을 때 ui 반영
+scan에서 sourcetype을 고려해야함
 
-(현재) 모든 환자 파일을 한 폴더에 섞어서 선택 
+//마지막 촬영 일자-시분초까지만 저장
 
-(고려) 
+//1.현재, DICOM, VIDEO 파일 별도 존재 
+IMPORT 할경우, 둘다 반영되게 변경해야함
 
-1. 폴더 구조 기반 매칭
+(1)avi는 모두 import 되지 않게 적용
+import 파일은 .dcm만 찾도록
+import할 경우 dicom.dcm (멀티 프레임)이 존재하면 Dicom.avi를 생성해주는 코드 들고와서 적용하기
 
-환자A/
-  a1.dcm
-  a2.dcm
-  x1.avi
+(2) 촬영 여부-팝업창 생성, 촬영 진행 사항-로딩바 추가
 
-환자B/
-  b1.dcm
-  b2.dcm
-  y1.avi
+//2. 마지막 촬영 일자, 총 촬영 횟수-일자로 맞추기
 
-(방식)
-같은 상위 폴더에 있는 .dcm 들로 환자 식별
-폴더 안의 .avi를 그 환자에게 귀속 가능
+3. import된 데이터 관련해서 마지막 촬영일자랑 총촬영 횟수도 같이 저장
+
+(1)촬영할 경우, DICOM 내부에 LastShootDate, ShotNum 저장
+(2)나중에 import 할 경우, 다시 읽어서 복원 가능
+(3)값이 없으면 fallback으로
+-ShotNum = 촬영 날짜 수
+-LastShootDate = 가장 최근 StudyDate로 처리
+
+(현재) 문제점-저장 시점과 계산 시점 차이 발생
+1.촬영 버튼 누름
+2.저장 전 계산 아직 파일 없음-> 0
+3.보정해서 1저장
+
+(문제사항)
+날짜 수 기준 계산, 증가 연산이 섞이면, 중복 증가 발생
+
+(권장) 예상값 저장 대신, 저장 완료 후 확정값 계산하고 저장
+1.촬영
+2.파일 저장 완료
+3.저장된 실제 폴더 기준으로 날짜 수 재계산
+4. 그 값을 DB에 그대로 저장
+
+(이유)
+저장 전에는 상태 불확실(예상값)
+-아직 폴더 생선 전일 확률
+-저장 실패 가능성
+-예외로 중간 종료 확률
+-메모리 값과 실제 디스크 상태 차이 존재
+
+저장 후에는 확실(확정값)
+-파일이 실제로 존재
+-날짜 폴더가 실제로 존재함
+-GetShotDateCount가 진짜 상태를 읽음
+
+=>emr 환자
+seletedpatient랑 실제 db의 esyncpatient 차이 존재
+
+//문제
+화면에 있는 selectedpatient.shotnum = 1 
+db의 esyncpatient.shotnum=1
+오늘 또 촬영
+->날짜 기준이면, 여전히 1이여야함
+
+esyncPatient.ShotNum += 1; 사용
+->무조건 2가 존재 (날짜 기준 로직과 충돌 발생)
+
+(결론)
+ShotNUM은 파일 개수x, 촬영 버튼 누른 횟수x, 날짜 수!
+절대 +=1 처리 불가, 재계산 결과 그대로 반영
+
+GetShotDateCount()를 한 번만 계산해서 공통으로 쓰고,
+EMR/E-SYNC도 += 1 없이 계산값 그대로 저장 , 반드시 파일 저장이 끝난 뒤 호출-GetShotDateCount()가 실제 저장된 폴더를 보고 정확한 값 계산
+
+=>
+이미지: SaveImageFile(...) 후 UpdatePatientAfterScan()
+동영상: SaveVideoFile(...) 후 UpdatePatientAfterScan()
+
+(결과)
+같은 날짜에 여러 번 찍어도 ShotNum 그대로
+다른 날짜에 새로 찍으면 그때만 ShotNum 증가
+EMR 환자도 2, 3처럼 이상하게 중복 증가되는 문제 방지
+
+<<import 용 lastshootdate>>
+1)Acquisition DateTime
+DicomTag.AcquisitionDateTime
+
+2)Content Date + Content Time
+DicomTag.ContentDate
+DicomTag.ContentTime
+
+3)Study Date + Study Time
+DicomTag.StudyDate
+DicomTag.StudyTime
+
+4)Series Date + Series Time
+
+5)없으면 null
+
+(결론)
+각 dcm 파일마다 import 촬영일시 추출
+같은 환자 그룹이면 가장 최신값으로 LastShootDate 반영
+ShotNum은 import에선 일단 0 또는 1 정책 결정
+
+4. 병합처리할 경우
+-lastshootDate 비교처리 해서, 제일 마지막에 촬영할 것으로 변경
+-shootnum은 서로 합쳐져서 표시되어야함
+
+5. 중복된 데이터 관련
+edit dialog 처리-환자 번호, 생년월일, 성별 같아야지만 중복이라 판단하게 변경
 
 
-2. 촬영시간 기반 근사 매칭 (보장 없음)
-
-DICOM의 태그
--StudyDate
--StudyTime
--SeriesDate
--SeriesTime
--AcquisitionDateTime
--ContentDate/Time
-
-AVI는 파일시스템 기준으로 확인 가능
--생성 시간
--수정 시간
-
-(방식)
-멀티프레임 DICOM들의 촬영 시각을 추출
-AVI의 생성/수정 시각과 가장 가까운 DICOM study에 연결
-시간 차가 너무 크면 연결 안 함
-
-예:
--DICOM study 시각: 10:27
--AVI 파일 수정 시각: 10:27~10:28
--같은 환자의 DICOM이 그 시간대면 연결
-
-
-3. DICOM 개수와 AVI 개수로 순서 매칭
-어떤 환자의 study 안에 멀티프레임 DICOM이 2개
-같은 시간대/같은 묶음의 AVI가 2개
-
-정렬 순서대로(반대로 규칙화)
-첫 번째 AVI → _Avi
-두 번째 AVI → _Dicom
-
-(핵심)AVI가 어느 환자/study 소속인지 알아야함
-
-(추천 방식)
-.dcm 은 무조건 자동 import
-.avi 는 다음 우선순위로만 연결
--같은 폴더
--시간 근접
--멀티프레임 DICOM 개수 대응
-=>애매하면 연결하지 않고 팝업 표시
-
-1. DICOM만으로 환자 그룹 생성
-2. AVI는 시간 기반 보조 매칭
-3. 확실하지 않은 AVI는 미연결 처리
-4. UI에서 미연결 AVI 별도 표시
-
-
-(운영 안정성)
-지금 당장은 .avi 자동 매칭을 완전 자동으로 믿지 말고
-DICOM만 자동 import
-AVI는
--같은 폴더일 때만 연결하거나
--선택한 환자에 수동 추가
--import 후 수동 매칭 UI 제공
+6. 마지막 촬영 일자, 총촬영 횟수-일자로 통일 => 환자 카드에 로드
 
 ---------------------------------------------------------------
+2026.03.19
 
+(현재)
+1️. Dicom Record 시작 //녹화 시작
+StartDicomRecord()
 
+_Dicom.avi 먼저 생성됨
+GenerateDicomAviPath(...) → "_Dicom.avi"
+
+2. 녹화 종료
+StopDicomRecord()
+
+dm.SaveVideoFile(dcmPath, _aviSavePath); //Dicom 변환
+이미 존재하는 _Dicom.avi를 사용해서 _Dicom.dcm 생성
+
+(향후) 역방향 변환 필요
+Dicom.dcm 존재 ->Dicom.avi 생성
+
+import된 멀티 프레임 DICOM (.dcm) 존재 
+->자동으로 _Dicom.avi 생성
+---------------------------------------------------------------
+파일명 기반 StudyID 추출 삭제
+
+DICOM 태그 기반으로만 판단
+
+내부 저장용 StudyID는 12자리 규칙으로 재생성
+
+같은 import 내에서는 캐시로 같은 스터디 유지
+
+기존 폴더와 충돌 없게 sequence 증가
+
+(규칙)
+내부 저장용 폴더 StudyID는 항상 12자리 규칙으로 통일
+
+외부 DICOM의 원본 Study 관련 태그는 읽기만 하고
+
+내부 저장용 StudyID는 아래 규칙으로 생성
+
+(결론)
+원본 DICOM의 StudyID가 12자리 숫자면 그대로 사용
+
+아니면 StudyDate + sequence(0001~) 방식으로 새로 생성
+
+StudyDate도 없으면 오늘 날짜 기준으로 생성
+
+(내부 저장용 StudyID 생성 규칙)-같은 날 여러 건도 출돌 없음
+
+DICOM StudyID가 ^\d{12}$ 이면 그대로 사용
+
+아니면 StudyDate(yyyyMMdd)를 가져옴
+
+그 날짜 기준으로 환자 폴더 안에서 이미 존재하는 StudyID들을 조회
+
+yyyyMMdd0001, yyyyMMdd0002 ... 식으로 안 겹치는 값 생성
+
+==>외부 import는 내부 장비처럼 완벽한 메타를 믿지 않는다
+==>같은 환자 + 같은 StudyID 또는 같은 StudyDate 는 한 묶음으로 본다
+
+---------------------------------------------------------------
+(현재) import 진행이 오래 걸리는 이유
+//import 과정
+-DICOM 파일 오픈
+-태그 읽기
+-파일 복사
+-멀티프레임이면 AVI 생성
+-DICOM 태그 수정
+-파일명 재정렬
+-다시 멀티프레임 DICOM 읽어서 AVI 생성
+
+파일 전체를 메모리로 다 읽기에 파일수 증가할 경우-지연 발생
+복사한 뒤 전체 .dcm를 또 한 번 전부 열고 다시 저장함(읽고, 복사하고, 열고, 다시 저장) -I/O 증가, 지연 발생 
+멀티프레임 DICOM 하나당 프레임 전체를 다시 렌더링해서 AVI로 사용-지연 발생

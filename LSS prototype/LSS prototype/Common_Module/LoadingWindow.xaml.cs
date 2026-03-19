@@ -51,6 +51,17 @@ namespace LSS_prototype
             });
         }
 
+        public static void Update(string message)
+        {
+            Application.Current?.Dispatcher.Invoke(() =>
+            {
+                if (_instance != null)
+                {
+                    _instance.MessageText.Text = message;
+                }
+            });
+        }
+
         public static void End()
         {
             _cts?.Cancel();

@@ -234,13 +234,13 @@ namespace LSS_prototype.Patient_Page
             Patients = new ObservableCollection<PatientModel>(list);
         }
 
-        private void AddPatient()
+        private async void AddPatient()
         {
             try
             {
                 var vm = new PatientAddViewModel(_dialogService);
 
-                if (_dialogService.ShowDialog(vm) == true)
+                if (await _dialogService.ShowDialogAsync(vm) == true)
                 {
                     var confirm = CustomMessageWindow.Show(
                             $"{vm.PatientName} 환자 정보를 생성하시겠습니까?",
@@ -286,7 +286,7 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
-        private void EditPatient()
+        private async void EditPatient()
         {
             if (SelectedPatient == null)
             {
@@ -321,7 +321,7 @@ namespace LSS_prototype.Patient_Page
 
             var vm = new PatientEditViewModel(_dialogService, SelectedPatient, canMergeWithoutEdit);
 
-            var result = _dialogService.ShowDialog(vm);
+            var result = await _dialogService.ShowDialogAsync(vm);
 
             if (result == true)
             {

@@ -11,6 +11,9 @@ namespace LSS_prototype.User_Page
     {
         private RecoveryViewModel VM => DataContext as RecoveryViewModel;
 
+
+        private string _lastSearchText = string.Empty;
+
         // ── 재생 상태 (UI 전용) ──
         private bool _isPlaying = false;
         private bool _isDraggingSeek = false;
@@ -24,6 +27,9 @@ namespace LSS_prototype.User_Page
 
             _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
             _timer.Tick += Timer_Tick;
+
+            // Patient.xaml.cs 와 동일
+            txtSearch.TextChanged += OnSearchTextChanged;
 
             Loaded += (s, e) =>
             {
@@ -50,6 +56,18 @@ namespace LSS_prototype.User_Page
             };
         }
 
+        // Patient.xaml 검색로직과 동일 
+        public void OnSearchTextChanged(object sender, TextChangedEventArgs e)
+        {
+            string current = txtSearch.Text;
+            if (current == _lastSearchText) return;
+
+            _lastSearchText = current;
+
+            if (DataContext is RecoveryViewModel vm)
+                vm.OnSearchTextChanged(current);
+        }
+
         // ═══════════════════════════════════════════
         //  PreviewVideoPath 변경 감지
         //  경로 있음 → 2배속 기본값으로 로드 + 재생
@@ -62,7 +80,7 @@ namespace LSS_prototype.User_Page
                 if (!string.IsNullOrEmpty(vm.PreviewVideoPath))
                 {
                     PreviewVideo.Source = new Uri(vm.PreviewVideoPath);
-                    PreviewVideo.SpeedRatio = 2.0;  // ★ 기본 2배속
+                    PreviewVideo.SpeedRatio = 2.0;
                     PreviewVideo.Play();
 
                     _isPlaying = true;
@@ -85,12 +103,12 @@ namespace LSS_prototype.User_Page
         //  MediaElement 이벤트
         // ═══════════════════════════════════════════
 
-        // 영상 열림 → 전체 시간 + 슬라이더 최대값 설정
-        private void PreviewVideo_MediaOpened(object sender, System.Windows.RoutedEventArgs e)
+        private void PreviewVideo_MediaOpened(object sender, RoutedEventArgs e)
         {
             try
             {
                 if (!PreviewVideo.NaturalDuration.HasTimeSpan) return;
+
                 var total = PreviewVideo.NaturalDuration.TimeSpan;
                 TxtTotalTime.Text = total.ToString(@"mm\:ss");
                 SliderSeek.Maximum = total.TotalSeconds;
@@ -98,14 +116,13 @@ namespace LSS_prototype.User_Page
             catch (Exception ex) { Common.WriteLog(ex); }
         }
 
-        // 영상 끝 → 처음부터 무한 반복
-        private void PreviewVideo_MediaEnded(object sender, System.Windows.RoutedEventArgs e)
+        private void PreviewVideo_MediaEnded(object sender, RoutedEventArgs e)
         {
             try
             {
                 PreviewVideo.Position = TimeSpan.Zero;
                 PreviewVideo.Play();
-                PreviewVideo.SpeedRatio = 2.0;  
+                PreviewVideo.SpeedRatio = 2.0;
                 SliderSeek.Value = 0;
                 TxtCurrentTime.Text = "00:00";
             }
@@ -133,8 +150,7 @@ namespace LSS_prototype.User_Page
         //  버튼 이벤트
         // ═══════════════════════════════════════════
 
-        // 재생 / 정지 토글
-        private void BtnPlayPause_Click(object sender, System.Windows.RoutedEventArgs e)
+        private void BtnPlayPause_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -150,7 +166,7 @@ namespace LSS_prototype.User_Page
                 else
                 {
                     PreviewVideo.Play();
-                    PreviewVideo.SpeedRatio = 2.0;  
+                    PreviewVideo.SpeedRatio = 2.0;
                     _isPlaying = true;
                     TxtPlayPauseIcon.Text = "⏸";
                     _timer.Start();
@@ -172,6 +188,13 @@ namespace LSS_prototype.User_Page
             try
             {
                 PreviewVideo.Position = TimeSpan.FromSeconds(SliderSeek.Value);
+
+                // 정지 상태에서도 프레임 갱신
+                if (!_isPlaying)
+                {
+                    PreviewVideo.Play();
+                    PreviewVideo.Pause();
+                }
             }
             catch (Exception ex) { Common.WriteLog(ex); }
             finally
@@ -181,7 +204,7 @@ namespace LSS_prototype.User_Page
         }
 
         private void PreviewSlider_ValueChanged(object sender,
-            System.Windows.RoutedPropertyChangedEventArgs<double> e)
+            RoutedPropertyChangedEventArgs<double> e)
         {
             if (_isDraggingSeek && TxtCurrentTime != null)
                 TxtCurrentTime.Text =
@@ -199,6 +222,8 @@ namespace LSS_prototype.User_Page
                 PreviewVideo.Stop();
                 PreviewVideo.Source = null;
 
+                PreviewVideo.Close(); 
+
                 _isPlaying = false;
                 _isDraggingSeek = false;
                 TxtPlayPauseIcon.Text = "▶";
@@ -210,7 +235,7 @@ namespace LSS_prototype.User_Page
         }
 
         // ═══════════════════════════════════════════
-        //  ISF 스케일 변환 (기존 로직 유지)
+        //  ISF 스케일 변환
         // ═══════════════════════════════════════════
         private void ApplyStrokesWithScale(RecoveryViewModel vm)
         {
@@ -267,35 +292,19 @@ namespace LSS_prototype.User_Page
                     offsetY = 0;
                 }
 
-                double origImgRatio = vm.PreviewImageWidth / vm.PreviewImageHeight;
-                double origViewRatio = originalWidth / originalHeight;
-                double origRenderedW, origRenderedH, origOffsetX, origOffsetY;
-                if (origImgRatio > origViewRatio)
+                double scaleX = renderedW / originalWidth;
+                double scaleY = renderedH / originalHeight;
+
+                var cloned = strokes.Clone();
+                foreach (var stroke in cloned)
                 {
-                    origRenderedW = originalWidth;
-                    origRenderedH = originalWidth / origImgRatio;
-                    origOffsetX = 0;
-                    origOffsetY = (originalHeight - origRenderedH) / 2;
-                }
-                else
-                {
-                    origRenderedH = originalHeight;
-                    origRenderedW = originalHeight * origImgRatio;
-                    origOffsetX = (originalWidth - origRenderedW) / 2;
-                    origOffsetY = 0;
+                    var matrix = new System.Windows.Media.Matrix();
+                    matrix.Scale(scaleX, scaleY);
+                    matrix.Translate(offsetX, offsetY);
+                    stroke.Transform(matrix, false);
                 }
 
-                double scaleX = renderedW / origRenderedW;
-                double scaleY = renderedH / origRenderedH;
-
-                var matrix = new System.Windows.Media.Matrix(
-                    scaleX, 0, 0, scaleY,
-                    -origOffsetX * scaleX + offsetX,
-                    -origOffsetY * scaleY + offsetY);
-
-                var scaledStrokes = strokes.Clone();
-                scaledStrokes.Transform(matrix, false);
-                PreviewDrawingCanvas.Strokes = scaledStrokes;
+                PreviewDrawingCanvas.Strokes = cloned;
             }
             catch (Exception ex) { Common.WriteLog(ex); }
         }

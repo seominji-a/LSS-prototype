@@ -40,6 +40,7 @@ namespace LSS_prototype.Scan_Page
         private string _currentStudyId;
         private int _currentInstanceIndex = 0;
         private bool _isFrameReady = false;          // 프레임 준비 전 촬영 방지
+        private bool _isBusy = false;
 
         // ── Dicom Record 녹화 관련 ──
         private VideoWriter _videoWriter;            // 영상기록 객체
@@ -364,11 +365,15 @@ namespace LSS_prototype.Scan_Page
         // ═══════════════════════════════════════════
         private async Task CaptureAndSaveDicomAsync()
         {
+            // 처리 중이면 연타 무시
+            if (_isBusy) return;
             System.Drawing.Bitmap bitmap = null;
             Mat frame = null;
 
             try
             {
+                _isBusy = true; 
+
                 // ① 유효성 검사
                 if (!CaptureValidation()) return;
 
@@ -457,6 +462,7 @@ namespace LSS_prototype.Scan_Page
                 
                 frame?.Dispose();
                 bitmap?.Dispose();
+                _isBusy = false; // ★ 잠금 해제 
             }
         }
 
@@ -485,6 +491,8 @@ namespace LSS_prototype.Scan_Page
         // ═══════════════════════════════════════════
         private async Task ToggleVideoRecord()
         {
+            if (_isBusy) return;
+
             try
             {
                 // Dicom Record 촬영 중이면 경고
@@ -495,7 +503,7 @@ namespace LSS_prototype.Scan_Page
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
-
+                _isBusy = true;
                 if (_isVideoRecording)
                     await StopVideoRecord();
                 else
@@ -505,6 +513,7 @@ namespace LSS_prototype.Scan_Page
                 }
             }
             catch (Exception ex) { Common.WriteLog(ex); }
+            finally  {  _isBusy = false;  }
         }
 
         // ═══════════════════════════════════════════
@@ -679,7 +688,7 @@ namespace LSS_prototype.Scan_Page
                     return;
                 }
 
-                CustomMessageWindow.Show("영상 저장 완료.",
+                CustomMessageWindow.Show("동영상 저장 완료.( NORMAL VIDEO )",
                     CustomMessageWindow.MessageBoxType.AutoClose, 2,
                     CustomMessageWindow.MessageIconType.Info);
 
@@ -719,6 +728,7 @@ namespace LSS_prototype.Scan_Page
         // ═══════════════════════════════════════════
         private async Task ToggleDicomRecord()
         {
+            if (_isBusy) return;
             try
             {
                 // AVI Only 촬영 중이면 경고
@@ -729,7 +739,7 @@ namespace LSS_prototype.Scan_Page
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
-
+                _isBusy = true; // 
                 if (_isDicomRecording)
                     await StopDicomRecord();
                 else
@@ -739,6 +749,7 @@ namespace LSS_prototype.Scan_Page
                 }
             }
             catch (Exception ex) { Common.WriteLog(ex); }
+            finally { _isBusy = false; }
         }
 
         // ═══════════════════════════════════════════
@@ -971,8 +982,8 @@ namespace LSS_prototype.Scan_Page
 
                 LoadingWindow.End();
 
-                CustomMessageWindow.Show("동영상 저장 완료.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                CustomMessageWindow.Show("동영상 저장 완료.( DICOM VIDEO )",
+                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
                     CustomMessageWindow.MessageIconType.Info);
 
                 _ = RefreshThumbnailsAsync();   // 썸네일 업데이트 

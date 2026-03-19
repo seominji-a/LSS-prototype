@@ -39,6 +39,9 @@ namespace LSS_prototype
         public static void CleanupOldLogs()
             => LogService.CleanupOldLogs();
 
+        public static bool VerifyOtpOnly(string inputOtp)
+            => OtpService.VerifyOtpOnly(inputOtp);
+
         public static void WriteLog(
             Exception ex,
             [CallerMemberName] string method = "",
@@ -242,6 +245,47 @@ namespace LSS_prototype
             }
 
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// 파일 강제 삭제 시, 사용하는 OTP만 확인하는 함수
+        /// </summary>
+        /// <param name="inputOtp"></param>
+        /// <returns></returns>
+        public static bool VerifyOtpOnly(string inputOtp)
+        {
+            try
+            {
+                string masterKey = Environment.GetEnvironmentVariable(
+                    "MASTER_KEY", EnvironmentVariableTarget.Machine);
+
+                // 환경변수 없으면 팝업만 띄우고 false 반환
+                // (프로그램 종료 X → 강제삭제만 차단)
+                if (string.IsNullOrWhiteSpace(masterKey))
+                {
+                    CustomMessageWindow.Show(
+                        "MASTER_KEY 환경변수가 설정되지 않았습니다.\n설정 후 재시작 해주세요.",
+                        CustomMessageWindow.MessageBoxType.Ok, 0,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return false;
+                }
+
+                DateTime now = DateTime.Now;
+                DateTime currentSlot = GetOtpSlot(now);
+                string currentOtp = GenerateOtp(currentSlot, masterKey);
+                if (currentOtp == inputOtp.Trim()) return true;
+
+                DateTime prevSlot = currentSlot.AddMinutes(-OTP_SLOT_MINUTES);
+                string prevOtp = GenerateOtp(prevSlot, masterKey);
+                if (prevOtp == inputOtp.Trim()) return true;
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                return false;
+            }
         }
     }
 
@@ -536,7 +580,7 @@ public class SearchDebouncer : IDisposable
             _ => _callback(searchText),
             null,
             _delayMs,
-            Timeout.Infinite    // 단발성 실행 (반복 없음)
+            Timeout.Infinite    
         );
     }
 

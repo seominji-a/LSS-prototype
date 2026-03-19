@@ -2292,13 +2292,7 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
-        private void CreateAviFromFinalDicom(
-    string finalDcmPath,
-    string videoDir,
-    string patientName,
-    int patientCode,
-    string studyId,
-    int dicomIndex)
+        private void CreateAviFromFinalDicom(string finalDcmPath,string videoDir,string patientName,int patientCode,string studyId,int dicomIndex)
         {
             try
             {

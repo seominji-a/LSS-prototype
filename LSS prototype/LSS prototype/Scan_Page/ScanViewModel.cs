@@ -14,6 +14,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -1375,10 +1376,13 @@ namespace LSS_prototype.Scan_Page
 
                 DateTime now = DateTime.Now;
 
-                SelectedPatient.ShotNum += 1;
-                SelectedPatient.LastShootDate = new DateTime(
-                    now.Year, now.Month, now.Day,
-                    now.Hour, now.Minute, now.Second
+                // 핵심: 촬영 직후 마지막 촬영일시 갱신
+                SelectedPatient.LastShootDate = now;
+
+                // 실제 촬영 날짜 수 기준으로 ShotNum 재계산
+                SelectedPatient.ShotNum = GetShotDateCount(
+                    SelectedPatient.PatientName,
+                    SelectedPatient.PatientCode.ToString()
                 );
 
                 // 1. LOCAL 환자 -> 기존 row만 갱신
@@ -1396,27 +1400,27 @@ namespace LSS_prototype.Scan_Page
                 if (SelectedPatient.Source == PatientSource.Emr ||
                     SelectedPatient.Source == PatientSource.ESync)
                 {
-
-                    // 핵심: E-SYNC row 가져오기
                     var esyncPatient = repo.GetPatientByCodeAndSource(
                         SelectedPatient.PatientCode,
                         (int)PatientSourceType.ESync
                     );
 
-                    // 없으면 기존 로직 (INSERT)
                     if (esyncPatient == null)
                     {
                         SelectedPatient.SourceType = (int)PatientSourceType.ESync;
                         SelectedPatient.Source = PatientSource.ESync;
                         SelectedPatient.IsEmrPatient = true;
 
+                        // SelectedPatient에 LastShootDate/ShotNum이 이미 세팅됨
                         repo.UpsertEmrPatient(SelectedPatient);
                     }
                     else
                     {
-                        // 기존 E-SYNC row 기준으로 업데이트
-                        esyncPatient.ShotNum += 1;
-                        esyncPatient.LastShootDate = SelectedPatient.LastShootDate;
+                        esyncPatient.LastShootDate = now;
+                        esyncPatient.ShotNum = GetShotDateCount(
+                            SelectedPatient.PatientName,
+                            SelectedPatient.PatientCode.ToString()
+                        );
 
                         repo.UpsertEmrPatient(esyncPatient);
                     }
@@ -1424,7 +1428,6 @@ namespace LSS_prototype.Scan_Page
                     return;
                 }
 
-                // 혹시 분류되지 않는 경우 로그 남김
                 Common.WriteSessionLog(
                     $"UpdatePatientAfterScan: 알 수 없는 환자 Source={SelectedPatient.Source}, SourceType={SelectedPatient.SourceType}");
             }
@@ -1433,6 +1436,7 @@ namespace LSS_prototype.Scan_Page
                 Common.WriteLog(ex);
             }
         }
+
         #endregion
 
         #region 페이지 이동
@@ -1875,6 +1879,80 @@ namespace LSS_prototype.Scan_Page
             int age = DateTime.Today.Year - birthDate.Year;
             if (birthDate.Date > DateTime.Today.AddYears(-age)) age--;
             return age;
+        }
+
+        /// <summary>
+        /// 환자의 실제 촬영 날짜 수를 계산
+        /// 기준:
+        /// - DICOM/환자폴더/날짜/StudyID/Image 또는 Video 안에 유효 파일이 있으면 그 날짜를 1일로 계산
+        /// - VIDEO/환자폴더/날짜/StudyID 안에 유효 avi 파일이 있어도 그 날짜를 1일로 계산
+        /// - 같은 날짜에 여러 StudyID가 있어도 날짜 1개로만 계산
+        /// </summary>
+        private int GetShotDateCount(string patientName, string patientCode)
+        {
+            try
+            {
+                string patientFolderName = $"{patientName}_{patientCode}";
+                var shotDates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                string dicomPatientDir = Path.Combine(Common.executablePath, "DICOM", patientFolderName);
+                string videoPatientDir = Path.Combine(Common.executablePath, "VIDEO", patientFolderName);
+
+                // 1. DICOM 폴더 기준 날짜 수집
+                if (Directory.Exists(dicomPatientDir))
+                {
+                    foreach (string dateDir in Directory.GetDirectories(dicomPatientDir))
+                    {
+                        string dateFolderName = Path.GetFileName(dateDir);
+
+                        if (!Regex.IsMatch(dateFolderName, @"^\d{8}$"))
+                            continue;
+
+                        bool hasValidDicom = Directory.GetFiles(dateDir, "*.*", SearchOption.AllDirectories)
+                            .Any(f =>
+                            {
+                                string ext = Path.GetExtension(f).ToLowerInvariant();
+                                string fileName = Path.GetFileName(f);
+
+                                return (ext == ".dcm") && !fileName.StartsWith("Del_");
+                            });
+
+                        if (hasValidDicom)
+                            shotDates.Add(dateFolderName);
+                    }
+                }
+
+                // 2. VIDEO 폴더 기준 날짜 수집
+                if (Directory.Exists(videoPatientDir))
+                {
+                    foreach (string dateDir in Directory.GetDirectories(videoPatientDir))
+                    {
+                        string dateFolderName = Path.GetFileName(dateDir);
+
+                        if (!Regex.IsMatch(dateFolderName, @"^\d{8}$"))
+                            continue;
+
+                        bool hasValidVideo = Directory.GetFiles(dateDir, "*.*", SearchOption.AllDirectories)
+                            .Any(f =>
+                            {
+                                string ext = Path.GetExtension(f).ToLowerInvariant();
+                                string fileName = Path.GetFileName(f);
+
+                                return (ext == ".avi") && !fileName.StartsWith("Del_");
+                            });
+
+                        if (hasValidVideo)
+                            shotDates.Add(dateFolderName);
+                    }
+                }
+
+                return shotDates.Count;
+            }
+            catch (Exception ex)
+            {
+                Common.WriteLog(ex);
+                return 0;
+            }
         }
 
         #endregion

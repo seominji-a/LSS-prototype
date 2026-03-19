@@ -319,15 +319,27 @@
     <Compile Include="User_Page\DefaultViewModel.cs">
       <DependentUpon>Default.xaml</DependentUpon>
     </Compile>
+    <Compile Include="User_Page\ForceDeleteOTP.xaml.cs">
+      <DependentUpon>ForceDeleteOTP.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="User_Page\ForceDeleteOTPViewModel.cs" >
+      <DependentUpon>ForceDeleteOTP.xaml</DependentUpon>
+    </Compile>
     <Compile Include="User_Page\Recovery.xaml.cs">
       <DependentUpon>Recovery.xaml</DependentUpon>
     </Compile>
-    <Compile Include="User_Page\RecoveryModel.cs" />
-    <Compile Include="User_Page\RecoveryViewModel.cs" />
+    <Compile Include="User_Page\RecoveryModel.cs" >
+    <DependentUpon>Recovery.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="User_Page\RecoveryViewModel.cs" >
+     <DependentUpon>Recovery.xaml</DependentUpon>
+    </Compile>
     <Compile Include="User_Page\setting.xaml.cs">
       <DependentUpon>setting.xaml</DependentUpon>
     </Compile>
-    <Compile Include="User_Page\SettingModel.cs" />
+    <Compile Include="User_Page\SettingModel.cs" >
+     <DependentUpon>setting.xaml</DependentUpon>
+    </Compile>
     <Compile Include="User_Page\SettingViewModel.cs">
       <DependentUpon>setting.xaml</DependentUpon>
     </Compile>
@@ -411,6 +423,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="User_Page\Default.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="User_Page\ForceDeleteOTP.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

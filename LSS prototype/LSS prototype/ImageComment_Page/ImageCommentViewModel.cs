@@ -409,16 +409,22 @@ namespace LSS_prototype.ImageComment_Page
 
                 // ── 남은 파일 없음 → Scan 화면 복귀 신호 ──
                 // 코드비하인드에서 true 받으면 NavigateTo(Scan) 실행
+
+                
                 if (_dcmFiles.Count == 0)
                 {
                     CustomMessageWindow.Show(
-                            "저장된 이미지가 존재하지 않아\nScan 화면으로 이동합니다.",
-                            CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                            "이미지가 삭제되었습니다. \n 저장된 이미지가 존재하지 않아\nScan 화면으로 이동합니다.",
+                            CustomMessageWindow.MessageBoxType.Ok, 0,
                             CustomMessageWindow.MessageIconType.Info);
                     RequestNavigateToScan?.Invoke();
                     return;
                 }
-                    
+
+                CustomMessageWindow.Show(
+                    "이미지가 정상적으로 삭제되었습니다.",
+                    CustomMessageWindow.MessageBoxType.Ok, 0,
+                    CustomMessageWindow.MessageIconType.Info);
 
                 // ── 남은 파일 있음 → 다음 or 이전 페이지 로드 ──
                 // 마지막 사진 삭제 시 → 인덱스 초과 방지 위해 한 칸 앞으로
@@ -427,8 +433,12 @@ namespace LSS_prototype.ImageComment_Page
                 // 예) 3장 중 1번(index=0) 삭제 → Min(0, 1) = 0 → 다음 사진
                 //     3장 중 2번(index=1) 삭제 → Min(1, 1) = 1 → 다음 사진
                 //     3장 중 3번(index=2) 삭제 → Min(2, 1) = 1 → 이전 사진
+
                 _currentIndex = Math.Min(_currentIndex, _dcmFiles.Count - 1);
                 LoadPage(_currentIndex);
+
+
+
             }
             catch (Exception ex)
             {

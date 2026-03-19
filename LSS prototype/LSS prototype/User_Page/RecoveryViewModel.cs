@@ -699,7 +699,7 @@ namespace LSS_prototype.User_Page
 
         #region 강제 삭제
 
-        private void ExecuteForceDelete()
+        private async void ExecuteForceDelete()
         {
             try
             {
@@ -716,14 +716,14 @@ namespace LSS_prototype.User_Page
                     return;
                 }
 
-                var confirm = CustomMessageWindow.Show(
-                    $"선택한 {targets.Count}개 항목을 완전 삭제하시겠습니까?\n\n삭제된 파일은 복구할 수 없습니다.",
-                    CustomMessageWindow.MessageBoxType.YesNo,
-                    icon: CustomMessageWindow.MessageIconType.Warning);
 
-                if (confirm != CustomMessageWindow.MessageBoxResult.Yes) return;
+                // ★ OTP 검증
+                var otpDialog = new ForceDeleteOTP();
+                bool passed = await otpDialog.ShowAsync();
+                if (!passed) return;
 
-                ResetViewer();
+
+                            ResetViewer();
 
                 var db = new DB_Manager();
 

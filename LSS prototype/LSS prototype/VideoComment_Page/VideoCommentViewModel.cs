@@ -386,18 +386,26 @@ namespace LSS_prototype.VideoComment_Page
                 if (_videoFiles.Count == 0)
                 {
                     CustomMessageWindow.Show(
-                        "저장된 영상이 존재하지 않아\nScan 화면으로 이동합니다.",
+                        "영상이 삭제되었습니다.\n 저장된 영상이 존재하지 않아\nScan 화면으로 이동합니다.",
                         CustomMessageWindow.MessageBoxType.AutoClose, 2,
                         CustomMessageWindow.MessageIconType.Info);
                     RequestNavigateToScan?.Invoke();
                     return;
                 }
 
+                CustomMessageWindow.Show(
+                   "비디오가 정상적으로 삭제되었습니다.",
+                   CustomMessageWindow.MessageBoxType.Ok, 0,
+                   CustomMessageWindow.MessageIconType.Info);
+
                 // 마지막 파일 삭제 시 인덱스 보정
                 if (_currentIndex >= _videoFiles.Count)
                     _currentIndex = _videoFiles.Count - 1;
 
                 UpdateCurrentFile();
+
+           
+
             }
             catch (Exception ex) { Common.WriteLog(ex); }
         }

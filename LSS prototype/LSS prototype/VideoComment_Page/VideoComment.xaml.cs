@@ -310,6 +310,7 @@ namespace LSS_prototype.VideoComment_Page
             {
                 _timer.Stop();
                 VideoPlayer.Stop();
+                VideoPlayer.Close(); // 이 close를 해줘야지만 딜레이없이 삭제 및 복구가 가능함.. 다른 페이지에서도 영상 정지 시 꼭 참조할것 ( 0319 박한용 ) 
                 VideoPlayer.Source = null;
 
                 _isPlaying = false;

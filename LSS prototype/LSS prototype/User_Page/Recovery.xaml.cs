@@ -222,6 +222,8 @@ namespace LSS_prototype.User_Page
                 PreviewVideo.Stop();
                 PreviewVideo.Source = null;
 
+                PreviewVideo.Close(); 
+
                 _isPlaying = false;
                 _isDraggingSeek = false;
                 TxtPlayPauseIcon.Text = "▶";

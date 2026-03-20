@@ -29,22 +29,46 @@ namespace LSS_prototype
         {
             var tcs = new TaskCompletionSource<bool?>();
             var blurredWindows = new List<Window>();
+            var window = CreateWindow(viewModel, tcs); 
 
-            var window = CreateWindow(viewModel);
-
-            // 창 닫힐 때 블러 제거 + 결과 반환
             window.Closed += (s, e) =>
             {
                 RemoveBlur(blurredWindows);
-                tcs.TrySetResult(window.DialogResult);
+                if (!tcs.Task.IsCompleted)
+                    tcs.TrySetResult(null);
             };
 
             ApplyBlur(window, blurredWindows);
-
-            // Show() 로 UI 스레드 안 막고 띄움
             window.Show();
-
             return tcs.Task;
+        }
+
+        private Window CreateWindow(object viewModel, TaskCompletionSource<bool?> tcs = null)
+        {
+            var window = new Window
+            {
+                Content = viewModel,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                SizeToContent = SizeToContent.WidthAndHeight,
+                Topmost = true,
+                WindowStyle = WindowStyle.None,
+                AllowsTransparency = true,
+                Background = Brushes.Transparent
+            };
+
+            try
+            {
+                var vm = viewModel as dynamic;
+                vm.CloseAction = new Action<bool?>((result) =>
+                {
+                    tcs?.TrySetResult(result);
+                    window.Close();
+                });
+            }
+            catch { }
+
+            window.DataContext = viewModel;
+            return window;
         }
 
         // ═══════════════════════════════════════════

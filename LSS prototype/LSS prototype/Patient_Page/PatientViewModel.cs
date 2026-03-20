@@ -266,14 +266,14 @@ namespace LSS_prototype.Patient_Page
 
                         if (result)
                         {
-                            CustomMessageWindow.Show("환자가 정상적으로 등록되었습니다.",
+                            await CustomMessageWindow.ShowAsync("환자가 정상적으로 등록되었습니다.",
                                 CustomMessageWindow.MessageBoxType.AutoClose, 1,
                                 CustomMessageWindow.MessageIconType.Info);
                             LoadPatients();
                         }
                         else
                         {
-                            CustomMessageWindow.Show("등록 중 오류가 발생했습니다.",
+                            await CustomMessageWindow.ShowAsync("등록 중 오류가 발생했습니다.",
                                 CustomMessageWindow.MessageBoxType.AutoClose, 1,
                                 CustomMessageWindow.MessageIconType.Danger);
                         }

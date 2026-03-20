@@ -124,7 +124,7 @@ namespace LSS_prototype.Login_Page
 
                     await CustomMessageWindow.ShowAsync(
                         "MASTER 로그인 성공\n관리자 화면으로 이동합니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose,
+                        CustomMessageWindow.MessageBoxType.Ok,
                         1,
                         CustomMessageWindow.MessageIconType.Info);
 
@@ -175,7 +175,7 @@ namespace LSS_prototype.Login_Page
                 {
                         await CustomMessageWindow.ShowAsync(
                         "최초 로그인입니다.\n비밀번호 변경 페이지로 이동합니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose,
+                        CustomMessageWindow.MessageBoxType.Ok,
                         3,
                         CustomMessageWindow.MessageIconType.Info);
 
@@ -213,7 +213,7 @@ namespace LSS_prototype.Login_Page
                 
                await CustomMessageWindow.ShowAsync(
                msg,
-               CustomMessageWindow.MessageBoxType.AutoClose,
+               CustomMessageWindow.MessageBoxType.Ok,
                1,
                CustomMessageWindow.MessageIconType.Info);
 

@@ -335,20 +335,20 @@ namespace LSS_prototype.Scan_Page
             if (SelectedPatient == null)
             {
                 await CustomMessageWindow.ShowAsync("환자를 먼저 선택해주세요.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    CustomMessageWindow.MessageBoxType.Ok, 2,
                     CustomMessageWindow.MessageIconType.Warning);
                 return false;
             }
 
             if (CameraStatus == "Camera Disconnected")
             {
-                await CustomMessageWindow.ShowAsync("카메라가 연결되어 있지 않습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
+                await CustomMessageWindow.ShowAsync("카메라가 연결되어 있지 않습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                 return false;
             }
 
             if (!_isFrameReady)
             {
-                await CustomMessageWindow.ShowAsync("카메라 영상이 \n 아직 준비되지 않았습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
+                await CustomMessageWindow.ShowAsync("카메라 영상이 \n 아직 준비되지 않았습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                 return false;
             }
 
@@ -384,7 +384,7 @@ namespace LSS_prototype.Scan_Page
                 if (frame == null || frame.Empty())
                 {
                     await CustomMessageWindow.ShowAsync("촬영할 이미지가 없습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
@@ -446,7 +446,7 @@ namespace LSS_prototype.Scan_Page
                 await UpdatePatientAfterScan();
 
                 await CustomMessageWindow.ShowAsync("촬영 및 저장이 완료되었습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    CustomMessageWindow.MessageBoxType.Ok, 1,
                     CustomMessageWindow.MessageIconType.Info);
 
                 _ = RefreshThumbnailsAsync();   // 썸네일 업데이트 
@@ -497,7 +497,7 @@ namespace LSS_prototype.Scan_Page
                 // Dicom Record 촬영 중이면 경고
                 if (_isDicomRecording)
                 {
-                    await CustomMessageWindow.ShowAsync("DICOM 영상 촬영 중...", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("DICOM 영상 촬영 중...", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
                 _isBusy = true;
@@ -534,7 +534,7 @@ namespace LSS_prototype.Scan_Page
                 if (frame == null || frame.Empty())
                 {
                     await CustomMessageWindow.ShowAsync("카메라 영상이 준비되지 않았습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
@@ -557,7 +557,7 @@ namespace LSS_prototype.Scan_Page
                     _aviOnlyWriter?.Dispose();
                     _aviOnlyWriter = null;
                     frame.Dispose();
-                    await CustomMessageWindow.ShowAsync("녹화를 시작할 수 없습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("녹화를 시작할 수 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
@@ -584,7 +584,7 @@ namespace LSS_prototype.Scan_Page
                         await Application.Current.Dispatcher.InvokeAsync(async () =>
                         {
                             await CustomMessageWindow.ShowAsync("30초 녹화 완료. 자동 저장합니다.",
-                                CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                                CustomMessageWindow.MessageBoxType.Ok, 2,
                                 CustomMessageWindow.MessageIconType.Info);
                             await StopVideoRecord();
                         });
@@ -677,11 +677,11 @@ namespace LSS_prototype.Scan_Page
                 if (string.IsNullOrEmpty(_aviOnlySavePath) || !File.Exists(_aviOnlySavePath))
                 {
                     _currentVideoIndex--;
-                    await CustomMessageWindow.ShowAsync("저장된 영상 파일이 없습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("저장된 영상 파일이 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
-                await CustomMessageWindow.ShowAsync("동영상 저장 완료.( NORMAL VIDEO )", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Info);
+                await CustomMessageWindow.ShowAsync("동영상 저장 완료.( NORMAL VIDEO )", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Info);
 
                 _ = RefreshThumbnailsAsync();  // 썸네일 작업 
             }
@@ -689,7 +689,7 @@ namespace LSS_prototype.Scan_Page
             {
                 await Common.WriteLog(ex);
                 await CustomMessageWindow.ShowAsync($"영상 저장 실패: {ex.Message}",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 3,
+                    CustomMessageWindow.MessageBoxType.Ok, 3,
                     CustomMessageWindow.MessageIconType.Warning);
             }
         }
@@ -725,7 +725,7 @@ namespace LSS_prototype.Scan_Page
                 // AVI Only 촬영 중이면 경고
                 if (_isVideoRecording)
                 {
-                    await CustomMessageWindow.ShowAsync("AVI 영상 촬영 중...", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("AVI 영상 촬영 중...", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
                 _isBusy = true; // 
@@ -759,7 +759,7 @@ namespace LSS_prototype.Scan_Page
                 if (frame == null || frame.Empty())
                 {
                     await CustomMessageWindow.ShowAsync("카메라 영상이 준비되지 않았습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
@@ -789,7 +789,7 @@ namespace LSS_prototype.Scan_Page
                     _videoWriter?.Dispose();
                     _videoWriter = null;
                     frame.Dispose();
-                    await CustomMessageWindow.ShowAsync("녹화를 시작할 수 없습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("녹화를 시작할 수 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
@@ -816,7 +816,7 @@ namespace LSS_prototype.Scan_Page
                         await Application.Current.Dispatcher.InvokeAsync(async () =>
                         {
                             await CustomMessageWindow.ShowAsync("1분 녹화 완료. 자동 저장합니다.",
-                                CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                                CustomMessageWindow.MessageBoxType.Ok, 2,
                                 CustomMessageWindow.MessageIconType.Info);
                             await StopDicomRecord();
                         });
@@ -916,7 +916,7 @@ namespace LSS_prototype.Scan_Page
                 {
                     _currentVideoIndex--;
                     await CustomMessageWindow.ShowAsync("저장된 영상 파일이 없습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
@@ -970,7 +970,7 @@ namespace LSS_prototype.Scan_Page
                 LoadingWindow.End();
 
                 await CustomMessageWindow.ShowAsync("동영상 저장 완료.( DICOM VIDEO )",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    CustomMessageWindow.MessageBoxType.Ok, 1,
                     CustomMessageWindow.MessageIconType.Info);
 
                 _ = RefreshThumbnailsAsync();   // 썸네일 업데이트 
@@ -980,7 +980,7 @@ namespace LSS_prototype.Scan_Page
                 LoadingWindow.End();
                 await Common.WriteLog(ex);
                 await CustomMessageWindow.ShowAsync($"동영상 저장 실패: {ex.Message}",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 3,
+                    CustomMessageWindow.MessageBoxType.Ok, 3,
                     CustomMessageWindow.MessageIconType.Warning);
             }
             finally
@@ -1447,7 +1447,7 @@ namespace LSS_prototype.Scan_Page
                 {
                     await CustomMessageWindow.ShowAsync(
                         "불러올 촬영 이미지가 없습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
@@ -1462,14 +1462,14 @@ namespace LSS_prototype.Scan_Page
 
                 if (!Directory.Exists(imageDir))
                 {
-                    await CustomMessageWindow.ShowAsync("촬영된 이미지가 없습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("촬영된 이미지가 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
                 bool hasDicom = Directory.EnumerateFiles(imageDir, "*.dcm").Any(f => !Path.GetFileName(f).StartsWith("Del_"));
                 if (!hasDicom)
                 {
-                    await CustomMessageWindow.ShowAsync("촬영된 이미지가 없습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("촬영된 이미지가 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
@@ -1479,7 +1479,7 @@ namespace LSS_prototype.Scan_Page
             catch (Exception ex)
             {
                 await Common.WriteLog(ex);
-                await CustomMessageWindow.ShowAsync("이미지 코멘트 화면으로 이동할 수 없습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
+                await CustomMessageWindow.ShowAsync("이미지 코멘트 화면으로 이동할 수 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
             }
         }
 
@@ -1492,7 +1492,7 @@ namespace LSS_prototype.Scan_Page
                 {
                     await CustomMessageWindow.ShowAsync(
                         "불러올 촬영 영상이 없습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
@@ -1509,7 +1509,7 @@ namespace LSS_prototype.Scan_Page
 
                 if (!Directory.Exists(videoDir))
                 {
-                    await CustomMessageWindow.ShowAsync("촬영된 영상이 없습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("촬영된 영상이 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
@@ -1519,7 +1519,7 @@ namespace LSS_prototype.Scan_Page
 
                 if (!hasVideo)
                 {
-                    await CustomMessageWindow.ShowAsync("촬영된 영상이 없습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("촬영된 영상이 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
@@ -1528,7 +1528,7 @@ namespace LSS_prototype.Scan_Page
             catch (Exception ex)
             {
                 await Common.WriteLog(ex);
-                await CustomMessageWindow.ShowAsync("영상 코멘트 화면으로 이동할 수 없습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
+                await CustomMessageWindow.ShowAsync("영상 코멘트 화면으로 이동할 수 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
             }
         }
 
@@ -1761,7 +1761,7 @@ namespace LSS_prototype.Scan_Page
                 Console.WriteLine($"오류 : {message}");
                 Common.WriteSessionLog(message);
                 await CustomMessageWindow.ShowAsync(message,
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    CustomMessageWindow.MessageBoxType.Ok, 2,
                     CustomMessageWindow.MessageIconType.Warning);
             });
         }
@@ -1803,7 +1803,7 @@ namespace LSS_prototype.Scan_Page
             });
 
             await CustomMessageWindow.ShowAsync("초기화 되었습니다.",
-                CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                CustomMessageWindow.MessageBoxType.Ok, 1,
                 CustomMessageWindow.MessageIconType.Info);
         }
 

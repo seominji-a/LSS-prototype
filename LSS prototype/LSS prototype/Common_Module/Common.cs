@@ -162,7 +162,7 @@ namespace LSS_prototype
                 if (string.IsNullOrWhiteSpace(masterId) ||
                     string.IsNullOrWhiteSpace(masterKey))
                 {
-                    await CustomMessageWindow.ShowAsync (
+                    await CustomMessageWindow.ShowAsync(
                        "MASTER_ID 또는 MASTER_KEY 환경변수가 설정되지 않았습니다.\n 설정 후 재시작 해주세요",
                        CustomMessageWindow.MessageBoxType.Ok,
                        0,
@@ -369,12 +369,26 @@ namespace LSS_prototype
                     File.AppendAllText(logFile, sb.ToString(), Encoding.UTF8);
                 }
 
-                await Application.Current?.Dispatcher.InvokeAsync(async () =>
+                // ✅ UI 스레드 여부에 따라 분기
+                // UI 스레드: await 직접 호출 → await tcs.Task에서 UI 스레드 반납
+                //            → 세션 타이머 정상 동작 + 팝업 OK 누를때까지 대기
+                // 백그라운드 스레드: InvokeAsync + Unwrap → UI 스레드에서 실행
+                if (Application.Current?.Dispatcher.CheckAccess() == true)
+                {
                     await CustomMessageWindow.ShowAsync(
                         ex.Message,
                         CustomMessageWindow.MessageBoxType.Ok, 0,
-                        CustomMessageWindow.MessageIconType.Danger)
-                );
+                        CustomMessageWindow.MessageIconType.Danger);
+                }
+                else
+                {
+                    await Application.Current?.Dispatcher.InvokeAsync(async () =>
+                        await CustomMessageWindow.ShowAsync(
+                            ex.Message,
+                            CustomMessageWindow.MessageBoxType.Ok, 0,
+                            CustomMessageWindow.MessageIconType.Danger)
+                    ).Task.Unwrap();
+                }
             }
             catch (Exception logEx)
             {
@@ -460,11 +474,11 @@ namespace LSS_prototype
         public const string PATIENT_CODE_SEARCH = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode";                                                  // 환자 코드 중복 체크
         public const string PATIENT_CODE_SEARCHSELF = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND PATIENT_ID <> @Patient_id";                   // 수정 시 자기 자신 제외 중복 체크
 
-        public const string SELECT_LOCAL_PATIENTLIST ="SELECT * FROM PATIENT WHERE SOURCE_TYPE = @SourceType ORDER BY REG_DATE DESC";
+        public const string SELECT_LOCAL_PATIENTLIST = "SELECT * FROM PATIENT WHERE SOURCE_TYPE = @SourceType ORDER BY REG_DATE DESC";
 
-        public const string SELECT_EMR_PATIENTLIST ="SELECT * FROM PATIENT WHERE SOURCE_TYPE = @SourceType ORDER BY REG_DATE DESC";
+        public const string SELECT_EMR_PATIENTLIST = "SELECT * FROM PATIENT WHERE SOURCE_TYPE = @SourceType ORDER BY REG_DATE DESC";
 
-        public const string SELECT_PATIENT_BY_CODE_AND_SOURCE ="SELECT PATIENT_ID FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND SOURCE_TYPE = @SourceType LIMIT 1";
+        public const string SELECT_PATIENT_BY_CODE_AND_SOURCE = "SELECT PATIENT_ID FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND SOURCE_TYPE = @SourceType LIMIT 1";
 
         public const string INSERT_EMR_PATIENT = @"INSERT INTO PATIENT(PATIENT_CODE, PATIENT_NAME, BIRTH_DATE, SEX, SOURCE_TYPE, LASTSHOOTDATE, SHOTNUM) VALUES(@PatientCode, @PatientName, @BirthDate, @Sex, @SourceType, @LastShootDate, @ShotNum)";
 
@@ -492,11 +506,11 @@ namespace LSS_prototype
         // ================================================
         // Recycle  -  DB_Manager.Recycle.cs
         // ================================================
-        public const string INSERT_IMAGE_DELETE_LOG ="INSERT INTO DELETE_LOG (DELETED_BY, FILE_TYPE, IMAGE_PATH, PATIENT_CODE, PATIENT_NAME) VALUES (@DeletedBy, @FileType, @ImagePath, @PatientCode, @PatientName)";
+        public const string INSERT_IMAGE_DELETE_LOG = "INSERT INTO DELETE_LOG (DELETED_BY, FILE_TYPE, IMAGE_PATH, PATIENT_CODE, PATIENT_NAME) VALUES (@DeletedBy, @FileType, @ImagePath, @PatientCode, @PatientName)";
         public const string INSERT_NORMAL_VIDEO_DELETE_LOG = "INSERT INTO DELETE_LOG (DELETED_BY, FILE_TYPE, AVI_PATH, PATIENT_CODE, PATIENT_NAME) VALUES (@DeletedBy, @FileType, @AviPath, @PatientCode, @PatientName)";
         public const string INSERT_DICOM_VIDEO_DELETE_LOG = "INSERT INTO DELETE_LOG (DELETED_BY, FILE_TYPE, AVI_PATH, DICOM_PATH, PATIENT_CODE, PATIENT_NAME)  VALUES (@DeletedBy, @FileType, @AviPath, @DicomPath, @PatientCode, @PatientName)";
         public const string SELECT_DELETE_LOGS = "SELECT DELETE_ID, DELETED_BY, DELETED_AT, FILE_TYPE, IMAGE_PATH, AVI_PATH, DICOM_PATH, PATIENT_CODE, IS_RECOVERED, RECOVERED_AT, PATIENT_NAME, IS_FORCE_DELETED FROM DELETE_LOG ORDER BY DELETED_AT DESC";
-        public const string UPDATE_RECOVERED ="UPDATE DELETE_LOG SET IS_RECOVERED = 'Y', RECOVERED_AT = datetime('now', 'localtime') WHERE DELETE_ID = @DeleteId";
+        public const string UPDATE_RECOVERED = "UPDATE DELETE_LOG SET IS_RECOVERED = 'Y', RECOVERED_AT = datetime('now', 'localtime') WHERE DELETE_ID = @DeleteId";
         public const string UPDATE_FORCE_DELETED = "UPDATE DELETE_LOG SET IS_FORCE_DELETED = 'Y', FORCE_DELETED_AT = datetime('now', 'localtime'), FORCE_DELETED_BY = @ForceDeletedBy WHERE DELETE_ID = @DeleteId";
     }
 }
@@ -574,7 +588,7 @@ public class SearchDebouncer : IDisposable
             _ => _callback(searchText),
             null,
             _delayMs,
-            Timeout.Infinite    
+            Timeout.Infinite
         );
     }
 

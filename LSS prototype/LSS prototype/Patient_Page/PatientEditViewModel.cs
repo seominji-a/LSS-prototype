@@ -189,7 +189,7 @@ namespace LSS_prototype.Patient_Page
                     if (repo.ExistsPatientCodeExceptSelf(this.PatientCode.Value, this.Patient_id))
                     {
                         await CustomMessageWindow.ShowAsync("이미 사용 중인 환자 번호입니다.",
-                            CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                            CustomMessageWindow.MessageBoxType.Ok, 2,
                             CustomMessageWindow.MessageIconType.Warning);
                         return;
                     }
@@ -206,7 +206,7 @@ namespace LSS_prototype.Patient_Page
                     if (repo.UpdatePatient(model))
                     {
                         await CustomMessageWindow.ShowAsync("수정되었습니다.",
-                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageBoxType.Ok, 1,
                             CustomMessageWindow.MessageIconType.Info);
 
                         CloseAction?.Invoke(true);

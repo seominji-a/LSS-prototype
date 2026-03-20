@@ -157,7 +157,7 @@ namespace LSS_prototype.ImageComment_Page
                 {
                     await CustomMessageWindow.ShowAsync(
                         "환자 정보 또는 Study 정보가 올바르지 않습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
                         CustomMessageWindow.MessageIconType.Warning);
                     return false;
                 }
@@ -179,7 +179,7 @@ namespace LSS_prototype.ImageComment_Page
 
                 if (!Directory.Exists(imageDir))
                 {
-                    await CustomMessageWindow.ShowAsync("해당 세션의 DICOM 폴더가 없습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("해당 세션의 DICOM 폴더가 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return false;
                 }
 
@@ -198,7 +198,7 @@ namespace LSS_prototype.ImageComment_Page
 
                 if (_dcmFiles.Count == 0)
                 {
-                    await CustomMessageWindow.ShowAsync("저장된 이미지가 없습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("저장된 이미지가 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return false;
                 }
 
@@ -340,7 +340,7 @@ namespace LSS_prototype.ImageComment_Page
                 {
                     await CustomMessageWindow.ShowAsync(
                         goNext ? "마지막 이미지입니다." : "첫 번째 이미지입니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Info);
                     return false;
                 }

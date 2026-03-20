@@ -85,7 +85,7 @@ namespace LSS_prototype.Patient_Page
             if (repo.ExistsPatientCode(PatientCode.Value))
             {
                 await CustomMessageWindow.ShowAsync("중복된 환자가 존재합니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    CustomMessageWindow.MessageBoxType.Ok, 2,
                     CustomMessageWindow.MessageIconType.Warning);
 
                 // 여기서 return을 하면 CloseAction이 실행되지 않아 창이 유지됩니다.
@@ -104,7 +104,7 @@ namespace LSS_prototype.Patient_Page
         private async Task ShowWarning(string message)
         {
             await CustomMessageWindow.ShowAsync(message,
-                CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                CustomMessageWindow.MessageBoxType.Ok, 1,
                 CustomMessageWindow.MessageIconType.Warning);
         }
 

@@ -71,31 +71,24 @@ namespace LSS_prototype.Auth
 
         private void CheckForNewWindows(object state)
         {
-            // 앱이 종료 중인지 확인
             if (Application.Current == null) return;
 
             try
             {
-                Application.Current.Dispatcher.Invoke(() =>
+                Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    // 1. ToList() 또는 Cast<Window>().ToArray()를 사용하여 
-                    // 열거하는 동안 컬렉션이 수정되어 발생하는 오류 방지
                     var currentWindows = Application.Current.Windows.Cast<Window>().ToList();
 
                     foreach (Window window in currentWindows)
                     {
-                        // 중복 체크 및 유효성 검사
                         if (window != null && !_monitoredWindows.Contains(window))
                         {
                             System.Diagnostics.Debug.WriteLine($"[새 창 감지] {window.GetType().Name}");
-
-                            // 모니터링 리스트에 먼저 추가하여 중복 호출 방지
                             _monitoredWindows.Add(window);
-
                             StartMonitoring(window);
                         }
                     }
-                });
+                }));
             }
             catch (Exception ex)
             {
@@ -176,7 +169,7 @@ namespace LSS_prototype.Auth
             }
             catch (Exception ex)
             {
-                 await Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
@@ -206,7 +199,7 @@ namespace LSS_prototype.Auth
                     return parent;
             }
 
-          
+
             if (child is FrameworkElement fe)
                 return fe.Parent;
 
@@ -216,31 +209,32 @@ namespace LSS_prototype.Auth
             return null;
         }
 
-        private async void CheckSessionTimeout(object state)
+        private void CheckSessionTimeout(object state)
         {
             try
             {
-                if (AuthToken.IsExpired())
-                {
-                    _timeoutCheckTimer.Change(Timeout.Infinite, Timeout.Infinite);
-                    _windowCheckTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                if (!AuthToken.IsExpired()) return;
 
-                    await Application.Current.Dispatcher.InvokeAsync(async () =>
-                    {
-                        await CustomMessageWindow.ShowAsync(
-                            "세션이 만료되었습니다. \n다시 로그인해주세요.",
-                            CustomMessageWindow.MessageBoxType.Ok,
-                            0,
-                            CustomMessageWindow.MessageIconType.Info);
-                        AuthToken.SignOut();
-                        NavigateToLoginPage();
-                    });
-                }
+                _timeoutCheckTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                _windowCheckTimer.Change(Timeout.Infinite, Timeout.Infinite);
+
+
+                Application.Current.Dispatcher.BeginInvoke(new Action(async () =>
+                {
+                    await CustomMessageWindow.ShowAsync(
+                        "세션이 만료되었습니다. \n다시 로그인해주세요.",
+                        CustomMessageWindow.MessageBoxType.Ok,
+                        0,
+                        CustomMessageWindow.MessageIconType.Info);
+
+                    AuthToken.SignOut();
+                    NavigateToLoginPage();
+                }));
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message + " 세션 닫기문제 발생");
-                throw; // 세션관련된 기능이 동작하지않으면 치명적이므로 테스트기간동안 throw 처리
+                throw;
             }
         }
 
@@ -252,6 +246,30 @@ namespace LSS_prototype.Auth
             var loginWindow = new Login();
             loginWindow.Show();
             Application.Current.MainWindow = loginWindow;
+        }
+
+        // ══════════════════════════════════════════
+        //  RegisterWindow()
+        //  팝업 창이 열릴 때 즉시 호출
+        //  → _windowCheckTimer 1초 감지 기다릴 필요 없이
+        //    팝업 위에서 마우스 움직여도 바로 세션 연장됨
+        // ══════════════════════════════════════════
+        public void RegisterWindow(Window window)
+        {
+            if (window == null) return;
+
+            // 이미 UI 스레드면 바로, 아니면 BeginInvoke로
+            if (Application.Current.Dispatcher.CheckAccess())
+            {
+                StartMonitoring(window);
+            }
+            else
+            {
+                Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    StartMonitoring(window);
+                }));
+            }
         }
 
         public void Stop()

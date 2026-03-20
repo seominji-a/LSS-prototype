@@ -40,7 +40,7 @@ namespace LSS_prototype.User_Page
                 if (string.IsNullOrEmpty(newPassword))
                 {
                     await CustomMessageWindow.ShowAsync("비밀번호를 입력해주세요.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
@@ -49,7 +49,7 @@ namespace LSS_prototype.User_Page
                 if (newPassword != confirmPassword)
                 {
                     await CustomMessageWindow.ShowAsync("비밀번호가 일치하지 않습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
@@ -59,7 +59,7 @@ namespace LSS_prototype.User_Page
                 if (error != null)
                 {
                     await CustomMessageWindow.ShowAsync(error,
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
@@ -79,13 +79,13 @@ namespace LSS_prototype.User_Page
 
                 if (success)
                 {
-                    await CustomMessageWindow.ShowAsync("사용자 정보가 변경되었습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 1, CustomMessageWindow.MessageIconType.Info);
+                    await CustomMessageWindow.ShowAsync("사용자 정보가 변경되었습니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Info);
 
                     CloseAction?.Invoke(true);
                 }
                 else
                 {
-                    await CustomMessageWindow.ShowAsync("변경에 실패했습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 1, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("변경에 실패했습니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Warning);
                 }
             }
             catch (Exception ex)

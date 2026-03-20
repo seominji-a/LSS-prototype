@@ -550,7 +550,7 @@ namespace LSS_prototype.User_Page
 
                 if (targets == null || targets.Count == 0)
                 {
-                    await CustomMessageWindow.ShowAsync("복구할 항목을 선택해주세요.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("복구할 항목을 선택해주세요.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
@@ -635,7 +635,7 @@ namespace LSS_prototype.User_Page
                     }
                 }
 
-                await CustomMessageWindow.ShowAsync("복구가 완료되었습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Info);
+                await CustomMessageWindow.ShowAsync("복구가 완료되었습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Info);
             }
             catch (Exception ex)
             {
@@ -706,7 +706,7 @@ namespace LSS_prototype.User_Page
 
                 if (targets == null || targets.Count == 0)
                 {
-                    await CustomMessageWindow.ShowAsync("즉시 삭제할 항목을 선택해주세요.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("즉시 삭제할 항목을 선택해주세요.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
@@ -757,7 +757,7 @@ namespace LSS_prototype.User_Page
                     }
                 }
 
-                await CustomMessageWindow.ShowAsync("완전 삭제가 완료되었습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Info);
+                await CustomMessageWindow.ShowAsync("완전 삭제가 완료되었습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Info);
             }
             catch (Exception ex)
             {

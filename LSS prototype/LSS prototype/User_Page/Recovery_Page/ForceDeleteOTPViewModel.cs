@@ -41,14 +41,14 @@ namespace LSS_prototype.User_Page
                 {
                     await CustomMessageWindow.ShowAsync(
                         "OTP 번호를 입력해주세요.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
                 if (!await Common.VerifyOtpOnly(OtpInput))
                 {
-                    await CustomMessageWindow.ShowAsync("OTP 번호가 올바르지 않습니다.\n다시 확인해주세요.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("OTP 번호가 올바르지 않습니다.\n다시 확인해주세요.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     OtpInput = string.Empty; // 입력창 초기화
                     return;
                 }

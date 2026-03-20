@@ -147,7 +147,7 @@ namespace LSS_prototype.User_Page
                 if (showMessage)
                 {
                     await CustomMessageWindow.ShowAsync("리셋되었습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Info);
                 }
             }
@@ -176,7 +176,7 @@ namespace LSS_prototype.User_Page
                 {
                     await CustomMessageWindow.ShowAsync(
                         "병원명이 저장되었습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Info);
                 }
             }
@@ -202,7 +202,7 @@ namespace LSS_prototype.User_Page
                 {
                     await CustomMessageWindow.ShowAsync(
                     "MWL 필터가 저장되었습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    CustomMessageWindow.MessageBoxType.Ok, 1,
                     CustomMessageWindow.MessageIconType.Info);
                     Common.MwlDescriptionFilter = MwlDescriptionFilter; 
                 }
@@ -239,7 +239,7 @@ namespace LSS_prototype.User_Page
 
                 await CustomMessageWindow.ShowAsync(
                     "PACS 전송 테스트 성공",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    CustomMessageWindow.MessageBoxType.Ok, 1,
                     CustomMessageWindow.MessageIconType.Info);
             }
             catch (Exception ex)
@@ -296,7 +296,7 @@ namespace LSS_prototype.User_Page
 
                 if (success)
                 {
-                        await CustomMessageWindow.ShowAsync("C-STORE 설정이 적용되었습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 1, CustomMessageWindow.MessageIconType.Info);
+                        await CustomMessageWindow.ShowAsync("C-STORE 설정이 적용되었습니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Info);
                 }
             }
             catch (Exception ex)
@@ -329,7 +329,7 @@ namespace LSS_prototype.User_Page
 
                 await CustomMessageWindow.ShowAsync(
                     "MWL 연결 테스트 성공",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    CustomMessageWindow.MessageBoxType.Ok, 1,
                     CustomMessageWindow.MessageIconType.Info);
             }
             catch (TimeoutException ex)
@@ -411,7 +411,7 @@ namespace LSS_prototype.User_Page
                 {
                     await CustomMessageWindow.ShowAsync(
                     "MWL 설정이 적용되었습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    CustomMessageWindow.MessageBoxType.Ok, 1,
                     CustomMessageWindow.MessageIconType.Info);
                 }
             }

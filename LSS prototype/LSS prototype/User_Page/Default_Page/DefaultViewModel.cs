@@ -97,7 +97,7 @@ namespace LSS_prototype.User_Page
 
                 if (showMessage)
                 {
-                    await CustomMessageWindow.ShowAsync("리셋되었습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 1, CustomMessageWindow.MessageIconType.Info);
+                    await CustomMessageWindow.ShowAsync("리셋되었습니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Info);
                 }
             }
             catch (Exception ex)
@@ -136,7 +136,7 @@ namespace LSS_prototype.User_Page
                 if (success)
                 {
                     await CustomMessageWindow.ShowAsync("변경되었습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Info);
 
                     CloseAction?.Invoke(true);

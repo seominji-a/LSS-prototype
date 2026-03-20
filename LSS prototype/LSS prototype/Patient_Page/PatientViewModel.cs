@@ -194,7 +194,7 @@ namespace LSS_prototype.Patient_Page
             if (SelectedPatient == null)
             {
                 await CustomMessageWindow.ShowAsync("환자를 먼저 선택해주세요.",
-                      CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                      CustomMessageWindow.MessageBoxType.Ok, 2,
                       CustomMessageWindow.MessageIconType.Warning);
 
                 return;
@@ -893,14 +893,14 @@ namespace LSS_prototype.Patient_Page
                         if (result)
                         {
                             await CustomMessageWindow.ShowAsync("환자가 정상적으로 등록되었습니다.",
-                                CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                                CustomMessageWindow.MessageBoxType.Ok, 1,
                                 CustomMessageWindow.MessageIconType.Info);
                             await LoadPatients();
                         }
                         else
                         {
                             await CustomMessageWindow.ShowAsync("등록 중 오류가 발생했습니다.",
-                                CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                                CustomMessageWindow.MessageBoxType.Ok, 1,
                                 CustomMessageWindow.MessageIconType.Danger);
                         }
                     }
@@ -917,7 +917,7 @@ namespace LSS_prototype.Patient_Page
             if (SelectedPatient == null)
             {
                 await CustomMessageWindow.ShowAsync("수정할 환자를 선택해주세요.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Info);
                 return;
             }
@@ -925,7 +925,7 @@ namespace LSS_prototype.Patient_Page
             if (!string.IsNullOrWhiteSpace(SelectedPatient.AccessionNumber))
             {
                 await CustomMessageWindow.ShowAsync("EMR 데이터는 수정이 \n 불가능합니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Warning);
                 return;
             }
@@ -962,7 +962,7 @@ namespace LSS_prototype.Patient_Page
                 if (SelectedPatient == null)
                 {
                     await CustomMessageWindow.ShowAsync("삭제할 환자를 선택해주세요.",
-                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageBoxType.Ok, 1,
                             CustomMessageWindow.MessageIconType.Info);
                     return;
                 }
@@ -970,7 +970,7 @@ namespace LSS_prototype.Patient_Page
                 if (!string.IsNullOrWhiteSpace(SelectedPatient.AccessionNumber))
                 {
                     await CustomMessageWindow.ShowAsync("EMR 데이터는 삭제가 \n 불가능합니다.",
-                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageBoxType.Ok, 1,
                             CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
@@ -985,7 +985,7 @@ namespace LSS_prototype.Patient_Page
                     if (repo.DeletePatient(SelectedPatient.PatientId))
                     {
                         await CustomMessageWindow.ShowAsync("삭제되었습니다.",
-                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageBoxType.Ok, 1,
                             CustomMessageWindow.MessageIconType.Info);
                         await LoadPatients();
                     }
@@ -1278,26 +1278,14 @@ namespace LSS_prototype.Patient_Page
                 }
                 RefreshPatients();
                 await CustomMessageWindow.ShowAsync("EMR 동기화 완료되었습니다.",
-                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageBoxType.Ok, 1,
                             CustomMessageWindow.MessageIconType.Info);
             }
-            catch (TimeoutException ex)
-            {
-                await Common.WriteLog(ex);
-                await CustomMessageWindow.ShowAsync(
-                    "DICOM 서버가 응답하지 않습니다.\n네트워크 또는 서버 상태를 확인해주세요.",
-                    CustomMessageWindow.MessageBoxType.Ok, 0,
-                    CustomMessageWindow.MessageIconType.Warning);
-            }
-            catch (OperationCanceledException) { } // task 해제되는 경우 
+            catch (OperationCanceledException) { } // task 해제되는 경우
 
             catch (Exception ex)
             {
                 await Common.WriteLog(ex);
-                await CustomMessageWindow.ShowAsync(
-                    $"MWL 조회 실패:\n{ex.Message}",
-                    CustomMessageWindow.MessageBoxType.Ok, 0,
-                    CustomMessageWindow.MessageIconType.Warning);
             }
 
             finally
@@ -1310,6 +1298,8 @@ namespace LSS_prototype.Patient_Page
         public void Dispose()
         {
             _searchDebouncer?.Dispose();
+            _cts?.Cancel();   
+            _cts?.Dispose();  
         }
 
         public void OnSearchTextChanged(string text)
@@ -1851,7 +1841,7 @@ namespace LSS_prototype.Patient_Page
 
                 await CustomMessageWindow.ShowAsync(
                     "E-SYNC 환자로 병합되었습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose,
+                    CustomMessageWindow.MessageBoxType.Ok,
                     1,
                     CustomMessageWindow.MessageIconType.Info);
 

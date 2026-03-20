@@ -11,7 +11,7 @@ namespace LSS_prototype
 {
     public interface IDialogService
     {
-        Task<bool?> ShowDialogAsync(object viewModel); // 세션 안 멈추는 비동기 버전
+        Task<bool?> ShowDialogAsync(object viewModel);
         Task ShowSetting();
         Task ShowDefault();
     }
@@ -102,8 +102,13 @@ namespace LSS_prototype
                 {
                     if (window != target && window.IsVisible)
                     {
-                        window.Effect = blurEffect;
-                        blurredWindows.Add(window);
+                        // ✅ window 전체가 아닌 Content에만 블러
+                        // → 세션 타이머 등 윈도우 레벨 타이머는 영향 없음
+                        if (window.Content is UIElement content)
+                        {
+                            content.Effect = blurEffect;
+                            blurredWindows.Add(window);
+                        }
                     }
                 }
             }
@@ -116,19 +121,14 @@ namespace LSS_prototype
             {
                 foreach (var window in blurredWindows)
                 {
-                    if (window != null)
-                        window.Effect = null;
+                    if (window?.Content is UIElement content)
+                        content.Effect = null;
                 }
                 blurredWindows.Clear();
             }
             catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
-        // ══════════════════════════════════════════
-        //  ShowSetting() / ShowDefault()
-        //  ShowDialog() → Show() + TaskCompletionSource
-        //  → UI 스레드 안 막음 → 세션 타이머 계속 동작
-        // ══════════════════════════════════════════
         public async Task ShowSetting()
         {
             var tcs = new TaskCompletionSource<bool?>();
@@ -147,7 +147,7 @@ namespace LSS_prototype
                 };
 
                 await ApplyBlur(window, blurredWindows);
-                window.Show(); // ShowDialog() → Show() 로 변경 (UI 스레드 블록 방지)
+                window.Show();
                 await tcs.Task;
             }
             catch (Exception ex)
@@ -175,7 +175,7 @@ namespace LSS_prototype
                 };
 
                 await ApplyBlur(window, blurredWindows);
-                window.Show(); // ShowDialog() → Show() 로 변경 (UI 스레드 블록 방지)
+                window.Show();
                 await tcs.Task;
             }
             catch (Exception ex)

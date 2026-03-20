@@ -104,14 +104,14 @@ namespace LSS_prototype.User_Page
             {
                 if (SelectedUser == null)
                 {
-                    await CustomMessageWindow.ShowAsync("권한을 부여할 사용자를 선택해 주세요.", CustomMessageWindow.MessageBoxType.AutoClose, 1, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("권한을 부여할 사용자를 선택해 주세요.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
                 // 추가: 이미 ADMIN이면 차단
                 if (SelectedUser.RoleCode == "A")
                 {
-                    await CustomMessageWindow.ShowAsync("이미 관리자 권한입니다.", CustomMessageWindow.MessageBoxType.AutoClose, 1, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("이미 관리자 권한입니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
@@ -123,7 +123,7 @@ namespace LSS_prototype.User_Page
                     bool success = db.DelegateUser(SelectedUser.UserId);
                     if (success)
                     {
-                        await CustomMessageWindow.ShowAsync($"{SelectedUser.UserName} 관리자 권한 부여", CustomMessageWindow.MessageBoxType.AutoClose, 1, CustomMessageWindow.MessageIconType.Info);
+                        await CustomMessageWindow.ShowAsync($"{SelectedUser.UserName} 관리자 권한 부여", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Info);
                         await LoadUsers();
                     }
                 }
@@ -141,7 +141,7 @@ namespace LSS_prototype.User_Page
                 if (SelectedUser == null)
                 {
                     await CustomMessageWindow.ShowAsync("권한 해임할 사용자를 선택해 주세요.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Info);
                     return;
                 }
@@ -149,7 +149,7 @@ namespace LSS_prototype.User_Page
                 // 추가: 이미 ADMIN가 아니면 차단
                 if (SelectedUser.RoleCode != "A")
                 {
-                    await CustomMessageWindow.ShowAsync("이미 일반 권한입니다.", CustomMessageWindow.MessageBoxType.AutoClose, 1, CustomMessageWindow.MessageIconType.Info);
+                    await CustomMessageWindow.ShowAsync("이미 일반 권한입니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Info);
                     return;
                 }
 
@@ -171,7 +171,7 @@ namespace LSS_prototype.User_Page
                     bool success = db.DismissUser(SelectedUser.UserId);
                     if (success)
                     {
-                        await CustomMessageWindow.ShowAsync($"{SelectedUser.UserName} 관리자 해임", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Info);
+                        await CustomMessageWindow.ShowAsync($"{SelectedUser.UserName} 관리자 해임", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Info);
                         if (SelectedUser.LoginId == Common.CurrentUserId)
                             await Common.ForceLogout();
                         else
@@ -179,7 +179,7 @@ namespace LSS_prototype.User_Page
                     }
                     else
                     {
-                        await CustomMessageWindow.ShowAsync("최소 1명의 관리자는 유지되어야 합니다.", CustomMessageWindow.MessageBoxType.AutoClose, 1, CustomMessageWindow.MessageIconType.Warning);
+                        await CustomMessageWindow.ShowAsync("최소 1명의 관리자는 유지되어야 합니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Warning);
                     }
                 }
             }
@@ -197,7 +197,7 @@ namespace LSS_prototype.User_Page
             {
                 if (SelectedUser == null)
                 {
-                    await CustomMessageWindow.ShowAsync("수정할 사용자를 선택해주세요.", CustomMessageWindow.MessageBoxType.AutoClose, 1, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("수정할 사용자를 선택해주세요.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
@@ -301,7 +301,7 @@ namespace LSS_prototype.User_Page
                 if (SelectedUser == null)
                 {
                     await CustomMessageWindow.ShowAsync("삭제할 사용자를 선택해주세요.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
@@ -321,7 +321,7 @@ namespace LSS_prototype.User_Page
                     if (success)
                     {
                         await CustomMessageWindow.ShowAsync($"{SelectedUser.UserName} 삭제",
-                            CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                            CustomMessageWindow.MessageBoxType.Ok, 2,
                             CustomMessageWindow.MessageIconType.Info);
 
                         if (SelectedUser.LoginId == Common.CurrentUserId)
@@ -332,7 +332,7 @@ namespace LSS_prototype.User_Page
                     else
                     {
                         await CustomMessageWindow.ShowAsync("최소 1명의 관리자는 유지되어야 합니다.",
-                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageBoxType.Ok, 1,
                             CustomMessageWindow.MessageIconType.Warning);
                     }
                 }

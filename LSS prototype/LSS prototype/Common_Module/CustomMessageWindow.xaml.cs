@@ -43,22 +43,16 @@ namespace LSS_prototype
         private DispatcherTimer _timeoutTimer;
 
         public CustomMessageWindow(
-            string message,
-            MessageBoxType type = MessageBoxType.Ok,
-            int autoCloseSeconds = 0,
-            MessageIconType icon = MessageIconType.None)
+    string message,
+    MessageBoxType type = MessageBoxType.Ok,
+    int autoCloseSeconds = 0,
+    MessageIconType icon = MessageIconType.None)
         {
             InitializeComponent();
 
-            // Owner 설정
-            var owner = Application.Current?.Windows?
-                .OfType<Window>()
-                .FirstOrDefault(w => w.IsActive)
-                ?? Application.Current?.Windows?
-                .OfType<Window>()
-                .FirstOrDefault(w => w.IsVisible);
-
-            if (owner != null && owner.IsVisible)
+            // ✅ Owner 설정 - 한 번만!
+            var owner = Application.Current?.MainWindow;
+            if (owner != null && owner != this && owner.IsVisible)
             {
                 this.Owner = owner;
                 this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -71,12 +65,8 @@ namespace LSS_prototype
             MessageText.Text = message;
             CountdownText.Visibility = Visibility.Collapsed;
 
-            // 아이콘 설정
             SetIcon(icon);
 
-         
-
-            // 버튼 타입 설정
             switch (type)
             {
                 case MessageBoxType.Ok:
@@ -89,7 +79,6 @@ namespace LSS_prototype
                     OkButton.Visibility = Visibility.Collapsed;
                     YesButton.Visibility = Visibility.Visible;
                     NoButton.Visibility = Visibility.Visible;
-
                     if (autoCloseSeconds > 0)
                         StartTimeout(autoCloseSeconds);
                     break;
@@ -98,7 +87,6 @@ namespace LSS_prototype
                     OkButton.Visibility = Visibility.Collapsed;
                     YesButton.Visibility = Visibility.Collapsed;
                     NoButton.Visibility = Visibility.Collapsed;
-
                     if (autoCloseSeconds > 0)
                     {
                         var timer = new DispatcherTimer
@@ -116,9 +104,8 @@ namespace LSS_prototype
             }
 
             Loaded += async (s, e) => await ApplyBlurToAllWindows();
-
-            // 창 닫힐 때 블러 제거
-            this.Closed += async (s, e) => await  RemoveBlurFromAllWindows();
+            this.Closed += async (s, e) => await RemoveBlurFromAllWindows();
+            Loaded += (s, e) => App.ActivityMonitor?.RegisterWindow(this);
         }
 
         private void SetIcon(MessageIconType icon)
@@ -175,8 +162,12 @@ namespace LSS_prototype
                 {
                     if (window != this && window.IsVisible)
                     {
-                        window.Effect = blurEffect;
-                        _blurredWindows.Add(window);
+                        // ✅ 윈도우 전체가 아니라 Content(UIElement)에만 블러
+                        if (window.Content is UIElement content)
+                        {
+                            content.Effect = blurEffect;
+                            _blurredWindows.Add(window); // window는 추적용으로만
+                        }
                     }
                 }
             }
@@ -192,8 +183,8 @@ namespace LSS_prototype
             {
                 foreach (var window in _blurredWindows)
                 {
-                    if (window != null)
-                        window.Effect = null;
+                    if (window?.Content is UIElement content)
+                        content.Effect = null;
                 }
                 _blurredWindows.Clear();
             }

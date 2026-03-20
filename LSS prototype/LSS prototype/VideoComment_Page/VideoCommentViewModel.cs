@@ -221,7 +221,7 @@ namespace LSS_prototype.VideoComment_Page
             {
                 if (!Directory.Exists(VideoDir))
                 {
-                    await CustomMessageWindow.ShowAsync("재생할 영상 파일이 없습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("재생할 영상 파일이 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return false;
                 }
 
@@ -232,7 +232,7 @@ namespace LSS_prototype.VideoComment_Page
 
                 if (_videoFiles.Count == 0)
                 {
-                    await CustomMessageWindow.ShowAsync("재생할 영상 파일이 없습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("재생할 영상 파일이 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return false;
                 }
 
@@ -256,7 +256,7 @@ namespace LSS_prototype.VideoComment_Page
             {
                 if (_currentIndex <= 0)
                 {
-                    await CustomMessageWindow.ShowAsync("첫 번째 영상입니다.", CustomMessageWindow.MessageBoxType.AutoClose, 1, CustomMessageWindow.MessageIconType.Info);
+                    await CustomMessageWindow.ShowAsync("첫 번째 영상입니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Info);
                     return false;
                 }
 
@@ -277,7 +277,7 @@ namespace LSS_prototype.VideoComment_Page
                 if (_currentIndex >= _videoFiles.Count - 1)
                 {
                     await CustomMessageWindow.ShowAsync("마지막 영상입니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Info);
                     return false;
                 }
@@ -380,7 +380,7 @@ namespace LSS_prototype.VideoComment_Page
 
                 if (_videoFiles.Count == 0)
                 {
-                    await CustomMessageWindow.ShowAsync("영상이 삭제되었습니다.\n 저장된 영상이 존재하지 않아\nScan 화면으로 이동합니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Info);
+                    await CustomMessageWindow.ShowAsync("영상이 삭제되었습니다.\n 저장된 영상이 존재하지 않아\nScan 화면으로 이동합니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Info);
                     RequestNavigateToScan?.Invoke();
                     return;
                 }
@@ -444,7 +444,7 @@ namespace LSS_prototype.VideoComment_Page
             {
                 // TODO: 코멘트 저장 구현
                 await CustomMessageWindow.ShowAsync("저장되었습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    CustomMessageWindow.MessageBoxType.Ok, 1,
                     CustomMessageWindow.MessageIconType.Info);
             }
             catch (Exception ex) { await Common.WriteLog(ex); }

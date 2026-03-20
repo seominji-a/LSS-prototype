@@ -115,27 +115,6 @@ namespace LSS_prototype.DB_CRUD
         }
         #endregion
 
-        #region [ 동일 환자 존재 여부 판단 담당부 ]
-        public bool ExistsSamePatientIdentity(PatientModel patient)
-        {
-
-            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
-            {
-                conn.Open();
-                using (var cmd = new SQLiteCommand(Query.PATIENT_DUPL_SEARCH, conn))
-                {
-                    cmd.Parameters.AddWithValue("@PatientCode", patient.PatientCode);
-                    cmd.Parameters.AddWithValue("@PatientName", patient.PatientName);
-                    cmd.Parameters.AddWithValue("@BirthDate", patient.BirthDate);
-                    cmd.Parameters.AddWithValue("@Sex", patient.Sex);
-                    cmd.Parameters.AddWithValue("@SourceType", patient.SourceType);
-
-                    long count = (long)cmd.ExecuteScalar();
-                    return count > 0;
-                }
-            }
-        }
-        #endregion
         #region [ 자기 자신 환자 번호 존재 여부 판단 담당부 ]
         public bool ExistsPatientCodeExceptSelf(int code, int id)
         {
@@ -256,26 +235,24 @@ namespace LSS_prototype.DB_CRUD
             {
                 conn.Open();
 
-                using (var checkCmd = new SQLiteCommand(Query.PATIENT_DUPL_PATIENT_SEARCH, conn))
+                using (var checkCmd = new SQLiteCommand(Query.SELECT_PATIENT_BY_CODE_AND_SOURCE, conn))
                 {
                     checkCmd.Parameters.AddWithValue("@PatientCode", patient.PatientCode);
                     checkCmd.Parameters.AddWithValue("@SourceType", patient.SourceType);
-                    checkCmd.Parameters.AddWithValue("@PatientName", patient.PatientName);
-                    checkCmd.Parameters.AddWithValue("@BirthDate", patient.BirthDate);
-                    checkCmd.Parameters.AddWithValue("@Sex", patient.Sex);
 
                     var exists = checkCmd.ExecuteScalar();
 
                     if (exists != null)
                     {
-                        using (var updateCmd = new SQLiteCommand(Query.UPDATE_PATIENT_SHOT, conn))
+                        using (var updateCmd = new SQLiteCommand(Query.UPDATE_EMR_PATIENT, conn))
                         {
-                            updateCmd.Parameters.AddWithValue("@PatientId", Convert.ToInt32(exists));
-                            updateCmd.Parameters.AddWithValue("@LastShootDate",
-                                patient.LastShootDate.HasValue
-                                    ? patient.LastShootDate.Value.ToString("yyyy-MM-dd HH:mm:ss")
-                                    : (object)DBNull.Value);
+                            updateCmd.Parameters.AddWithValue("@PatientCode", patient.PatientCode);
+                            updateCmd.Parameters.AddWithValue("@PatientName", patient.PatientName);
+                            updateCmd.Parameters.AddWithValue("@BirthDate", patient.BirthDate);
+                            updateCmd.Parameters.AddWithValue("@Sex", patient.Sex);
+                            updateCmd.Parameters.AddWithValue("@LastShootDate",patient.LastShootDate?.ToString("yyyy-MM-dd HH:mm:ss"));
                             updateCmd.Parameters.AddWithValue("@ShotNum", patient.ShotNum);
+                            updateCmd.Parameters.AddWithValue("@SourceType", patient.SourceType);
 
                             return updateCmd.ExecuteNonQuery() > 0;
                         }
@@ -289,10 +266,7 @@ namespace LSS_prototype.DB_CRUD
                             insertCmd.Parameters.AddWithValue("@BirthDate", patient.BirthDate);
                             insertCmd.Parameters.AddWithValue("@Sex", patient.Sex);
                             insertCmd.Parameters.AddWithValue("@SourceType", patient.SourceType);
-                            insertCmd.Parameters.AddWithValue("@LastShootDate",
-                                patient.LastShootDate.HasValue
-                                    ? patient.LastShootDate.Value.ToString("yyyy-MM-dd HH:mm:ss")
-                                    : (object)DBNull.Value);
+                            insertCmd.Parameters.AddWithValue("@LastShootDate", patient.LastShootDate?.ToString("yyyy-MM-dd HH:mm:ss"));
                             insertCmd.Parameters.AddWithValue("@ShotNum", patient.ShotNum);
 
                             return insertCmd.ExecuteNonQuery() > 0;
@@ -319,38 +293,38 @@ namespace LSS_prototype.DB_CRUD
             }
         }
 
-       
-
-        public PatientModel GetPatientByIdentityAndSource(
-               int patientCode,
-               string patientName,
-               DateTime birthDate,
-               string sex,
-               int sourceType)
+        public PatientModel GetPatientByCodeAndSource(int patientCode, int sourceType)
         {
             using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
             {
                 conn.Open();
 
-                using (var cmd = new SQLiteCommand(Query.SELECT_PATIENT_CODE_LIMIT, conn))
+                using (var cmd = new SQLiteCommand(Query.SELECT_PATIENT_CODE_SOURCE, conn))
                 {
                     cmd.Parameters.AddWithValue("@PatientCode", patientCode);
-                    cmd.Parameters.AddWithValue("@PatientName", patientName);
-                    cmd.Parameters.AddWithValue("@BirthDate", birthDate);
-                    cmd.Parameters.AddWithValue("@Sex", sex);
                     cmd.Parameters.AddWithValue("@SourceType", sourceType);
 
                     using (var reader = cmd.ExecuteReader())
                     {
                         if (reader.Read())
                         {
-                            return MapPatient(reader);
+                            return new PatientModel
+                            {
+                                PatientId = Convert.ToInt32(reader["PATIENT_ID"]),
+                                PatientCode = Convert.ToInt32(reader["PATIENT_CODE"]),
+                                PatientName = reader["PATIENT_NAME"].ToString(),
+                                BirthDate = DateTime.Parse(reader["BIRTH_DATE"].ToString()),
+                                Sex = reader["SEX"].ToString(),
+                                LastShootDate = reader["LASTSHOOTDATE"] == DBNull.Value? (DateTime?)null: DateTime.Parse(reader["LASTSHOOTDATE"].ToString()),
+                                ShotNum = Convert.ToInt32(reader["SHOTNUM"]),
+                                SourceType = Convert.ToInt32(reader["SOURCE_TYPE"])
+                            };
                         }
                     }
                 }
             }
-
             return null;
         }
+
     }
 }

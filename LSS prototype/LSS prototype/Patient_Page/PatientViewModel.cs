@@ -425,8 +425,22 @@ namespace LSS_prototype.Patient_Page
                             continue;
 
                         var existingPatient = FindExistingPatientForImport(group);
+                        var conflictPatient = existingPatient == null ? FindConflictPatientForImport(group) : null;
 
-                        // 기존 환자 존재 → 파일 단위 중복 여부 판단
+                        // 1) 충돌 환자
+                        if (conflictPatient != null)
+                        {
+                            plans.Add(new ImportPlan
+                            {
+                                Group = group,
+                                ExistingPatient = conflictPatient,
+                                ActionType = ImportActionType.SkipConflictPatient,
+                                Reason = $"[충돌] 같은 PatientCode, 다른 환자 정보: {group.PatientName}({group.PatientCode})"
+                            });
+                            continue;
+                        }
+
+                        // 2) 기존 환자 존재 → 파일 단위 중복 여부 판단
                         if (existingPatient != null)
                         {
                             string[] newFiles = FilterNewDicomFiles(
@@ -468,7 +482,7 @@ namespace LSS_prototype.Patient_Page
                             continue;
                         }
 
-                        // 정확히 같은 환자가 아니면 신규 환자로 등록
+                        // 3) 신규 환자
                         bool isEmr = !string.IsNullOrWhiteSpace(group.AccessionNumber);
 
                         plans.Add(new ImportPlan
@@ -702,6 +716,22 @@ namespace LSS_prototype.Patient_Page
             return null;
         }
 
+        //충돌 환자 찾기 helper 추가
+        private PatientModel FindConflictPatientForImport(PatientModel group)
+        {
+            if (group == null)
+                return null;
+
+            var localConflict = _localPatients.FirstOrDefault(x => IsConflictPatient(x, group));
+            if (localConflict != null)
+                return localConflict;
+
+            var emrConflict = _importedEmrPatients.FirstOrDefault(x => IsConflictPatient(x, group));
+            if (emrConflict != null)
+                return emrConflict;
+
+            return null;
+        }
 
         //BuildStudyKey() 기반 판정은 유지 불가함에 따라 파일 단위 키를 새로 생성.
         private string BuildDicomInstanceKey(DicomDataset ds)
@@ -769,26 +799,6 @@ namespace LSS_prototype.Patient_Page
             }
 
             return result;
-        }
-
-        //어떤 코드의 환자가 중복인지 보여줄 수 있는 함수
-        private List<int> GetDuplicatedPatientCodes()
-        {
-            try
-            {
-                return _importedEmrPatients
-                    .Concat(_localPatients)
-                    .GroupBy(p => p.PatientCode)
-                    .Where(g => g.Count() > 1)
-                    .Select(g => g.Key)
-                    .OrderBy(x => x)
-                    .ToList();
-            }
-            catch (Exception ex)
-            {
-                Common.WriteLog(ex);
-                return new List<int>();
-            }
         }
 
         /// <summary>
@@ -1102,8 +1112,8 @@ namespace LSS_prototype.Patient_Page
 
                 string confirmMessage = $"환자 파일 {willImportCount}건을 가져옵니다.";
 
-                if (duplicateStudySkipCountPlan > 0)
-                    confirmMessage += $"\n중복 파일 {duplicateStudySkipCountPlan}건은 제외됩니다.";
+                if (willSkipCount > 0)
+                    confirmMessage += $"\n{willSkipCount}건은 중복 또는 충돌로 제외됩니다.";
 
                 if (multiFrameCount > 0)
                     confirmMessage += "\n\n영상이 포함되어 시간이 소요됩니다.";
@@ -1736,7 +1746,8 @@ namespace LSS_prototype.Patient_Page
                 _importedEmrPatients = repo.GetEmrPatients();
 
                 // 같은 환자번호를 가진 E-SYNC 환자 찾기
-                var matchedEmr = _importedEmrPatients.FirstOrDefault(x => IsSamePatientIdentity(x, updatedLocal));
+                var matchedEmr = _importedEmrPatients
+                    .FirstOrDefault(x => x.PatientCode == updatedLocal.PatientCode);
 
                 // 없으면 그냥 갱신만
                 if (matchedEmr == null)

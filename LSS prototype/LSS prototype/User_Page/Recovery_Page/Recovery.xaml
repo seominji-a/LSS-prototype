@@ -202,7 +202,6 @@
         <!-- ── Cell DataTemplate ── -->
 
         <!-- ★ 체크박스 셀 -->
-        <!-- ★ 체크박스 셀 - 터치 친화적으로 크게 -->
         <DataTemplate x:Key="CheckBoxCell">
             <CheckBox IsChecked="{Binding IsChecked, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsCheckable}"
                       HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -210,14 +209,14 @@
                 <CheckBox.Template>
                     <ControlTemplate TargetType="CheckBox">
                         <Border x:Name="Bd"
-                                Width="32" Height="32"
+                                Width="40" Height="40"
                                 CornerRadius="6"
                                 BorderThickness="2"
                                 BorderBrush="#94A3B8"
                                 Background="White">
                             <TextBlock x:Name="Chk"
                                        Text="&#x2713;"
-                                       FontSize="20" FontWeight="Bold"
+                                       FontSize="40" FontWeight="Bold"
                                        Foreground="White"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"

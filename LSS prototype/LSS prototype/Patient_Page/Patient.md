@@ -1200,3 +1200,109 @@ DB 저장
 실패 상세는 txt 저장
 
 -------------------------------------------------
+(현재 사항)
+DB는 patientcode가 같으면 추가 방지,
+파일은 여전히 import 처리
+
+-DB 중복은 일부 방지
+-파일 중복은 방지 안됨
+-같은 촬영은 재수입하면 중복 STUDY/FOLDER/FILE 생성 가능
+-SHOTNUM, LASTSHOOTDATE 덮어쓰기/누락 가능
+
+(경우의 수)
+1.완전히 같은 기존 환자+같은 검사/같은 STUDY
+-같은 환자를 같은 DICOM 파일로 다시 IMPORT
+-같은 SUTDYID, 같은 SOPINSTANCEUID들이 이미 존재
+
+=> SKIP 처리
+DB 갱신 안함
+파일 복사 안함
+사용자에게 "이미 가져온 검사입니다"알림
+
+2.같은 환자 + 새로운 검사(STUDY 추가)
+-환자는 같지만 다른 날짜 촬영
+-혹은 같은 날짜라도 다른 SUTDYID
+
+=>MERGE/IMPORT 처리
+환자 재생성 안함, 
+기존 환자에 검사만 추가, 
+파일만 새 SUTDY 폴더에 IMPORT
+LASTSHOOTDATE, SHOTNUM 갱신
+
+3.PatientCode는 같지만, 사람이 다른 경우(이름/생년월일 다름)
+-자동 병합하면 안 됨
+-사용자 선택
+
+=>같은 환자번호의 기존 환자가 존재하지만 이름/생년월일이 다릅니다. 
+새 환자로 등록할지, 기존 환자에 병합할지 선택해주세요
+
+
+1)EMR(import with accession)
+기존 EMR 환자 존재 시:
+-AccessionNumber 같으면 동일 검사
+같은 study/file이면 skip
+새 study만 있으면 추가 import
+
+-AccessionNumber 다르면 같은 환자의 다른 검사
+기존 환자 유지 + 새 검사 추가
+
+2)Local(import without accession)
+PatientCode 같은 local 환자 존재 시:
+-이름/생년월일도 같으면 같은 환자
+새 study만 추가
+
+-다르면 충돌
+사용자 확인 필요
+
+(결론)
+기존 환자가 존재할 때 동일 환자를 import하면 “새 환자 생성”이 아니라 
+“기존 환자에 검사 추가”로 처리하고, 같은 검사/같은 파일은 SOPInstanceUID 또는 
+StudyInstanceUID 기준으로 중복 import를 막는 방식이 가장 적절합니다.
+
+-중복 환자
+EMR: AccessionNumber 우선
+Local: PatientCode + PatientName + BirthDate
+
+-중복 검사
+StudyInstanceUID 또는 StudyID 기준
+같은 검사면 skip
+
+-충돌 환자
+PatientCode는 같은데 이름/생년월일이 다르면 충돌
+자동 병합하지 않고 건너뜀 + 마지막에 요약 알림
+
+
+-------------------------------------------------------------------------------
+1. 기존 환자 + 완전히 같은 검사
+
+StudyInstanceUID / StudyID 기준으로 이미 있으면
+
+SkipDuplicateStudy
+
+2. 기존 환자 + 새로운 검사
+
+환자는 새로 만들지 않고
+
+기존 환자 폴더에 새 검사만 import
+
+3. 같은 PatientCode인데 이름/생년월일 다름
+
+자동 병합 안 함
+
+SkipConflictPatient
+
+4. 같은 검사인데 일부 DICOM만 다시 들어온 경우
+
+SOPInstanceUID 기준으로 기존 파일 제외 후
+
+신규 파일만 import
+
+
+------------------------------------
+문제 원인:
+
+Study 단위 중복 판정
+
+해결 방법:
+
+DICOM 파일 단위(SOPInstanceUID/fallback key) 중복 판정으로 변경

@@ -213,7 +213,8 @@ namespace LSS_prototype.Patient_Page
                 }
                 else if (CanMergeWithoutEdit)
                 {
-                    // 수정 없이 병합만 진행할 수 있도록 true 반환
+                    // 수정 없이
+                    // 만 진행할 수 있도록 true 반환
                     CloseAction?.Invoke(true);
                 }
             }

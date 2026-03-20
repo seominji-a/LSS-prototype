@@ -1411,8 +1411,11 @@ namespace LSS_prototype.Scan_Page
                 if (SelectedPatient.Source == PatientSource.Emr ||
                     SelectedPatient.Source == PatientSource.ESync)
                 {
-                    var esyncPatient = repo.GetPatientByCodeAndSource(
+                    var esyncPatient = repo.GetPatientByIdentityAndSource(
                         SelectedPatient.PatientCode,
+                        SelectedPatient.PatientName,
+                        SelectedPatient.BirthDate,
+                        SelectedPatient.Sex,
                         (int)PatientSourceType.ESync
                     );
 

@@ -463,7 +463,14 @@ namespace LSS_prototype
         public const string INSERT_PATIENT = "INSERT INTO PATIENT (PATIENT_NAME, PATIENT_CODE, BIRTH_DATE, SEX, LASTSHOOTDATE, SHOTNUM, SOURCE_TYPE) VALUES (@PatientName, @PatientCode, @BirthDate, @Sex, @LastShootDate, @ShotNum, @SourceType)";
         public const string EDIT_PATIENT = "UPDATE PATIENT SET PATIENT_NAME = @PatientName, PATIENT_CODE = @PatientCode, BIRTH_DATE = @BirthDate, SEX = @Sex WHERE PATIENT_ID = @Patient_id";
         public const string DELETE_PATIENT = "DELETE FROM PATIENT WHERE PATIENT_ID = @Patient_id";
-        public const string PATIENT_CODE_SEARCH = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode";                                                  // 환자 코드 중복 체크
+        public const string PATIENT_CODE_SEARCH = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode";
+
+        public const string PATIENT_DUPL_PATIENT_SEARCH = @"SELECT PATIENT_ID FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND SOURCE_TYPE = @SourceType AND PATIENT_NAME = @PatientName AND BIRTH_DATE = @BirthDate AND SEX = @Sex";
+
+        public const string PATIENT_DUPL_SEARCH = @"SELECT COUNT(*) FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND PATIENT_NAME = @PatientName AND BIRTH_DATE = @BirthDate AND SEX = @Sex AND SOURCE_TYPE = @SourceType";
+
+        public const string UPDATE_PATIENT_SHOT = @"UPDATE PATIENT SET LASTSHOOTDATE = @LastShootDate, SHOTNUM = @ShotNum WHERE PATIENT_ID = @PatientId";
+        // 환자 코드 중복 체크
         public const string PATIENT_CODE_SEARCHSELF = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND PATIENT_ID <> @Patient_id";                   // 수정 시 자기 자신 제외 중복 체크
 
         public const string SELECT_LOCAL_PATIENTLIST ="SELECT * FROM PATIENT WHERE SOURCE_TYPE = @SourceType ORDER BY REG_DATE DESC";
@@ -479,6 +486,8 @@ namespace LSS_prototype
         public const string UPDATE_LOCAL_PATIENT_AFTER_SCAN = @"UPDATE PATIENT SET LASTSHOOTDATE = @LastShootDate, SHOTNUM = @ShotNum WHERE PATIENT_ID = @PatientId AND SOURCE_TYPE = 0";
 
         public const string SELECT_PATIENT_CODE_SOURCE = @"SELECT * FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND SOURCE_TYPE = @SourceType";
+
+        public const string SELECT_PATIENT_CODE_LIMIT = @"SELECT * FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND PATIENT_NAME = @PatientName  AND BIRTH_DATE = @BirthDate AND SEX = @Sex AND SOURCE_TYPE = @SourceType ORDER BY PATIENT_ID LIMIT 1;";
         // ================================================
         // User_Page > Default (카메라 기본값)  -  DB_Manager.Set.cs
         // ================================================

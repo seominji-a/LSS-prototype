@@ -51,7 +51,7 @@ namespace LSS_prototype
         public static void WriteSessionLog(string message)
             => LogService.WriteSessionLog(message);
 
-        public async static void ExecuteLogout()
+        public async static Task ExecuteLogout()
         {
             try
             {

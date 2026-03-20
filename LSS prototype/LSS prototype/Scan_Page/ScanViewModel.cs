@@ -270,7 +270,7 @@ namespace LSS_prototype.Scan_Page
             _currentStudyId = studyId;
 
             NavigatePatientCommand = new RelayCommand(_ => NavigateToPatient());
-            LogoutCommand = new RelayCommand(_ => Common.ExecuteLogout());
+            LogoutCommand = new RelayCommand(async _ => await Common.ExecuteLogout());
             ExitCommand = new RelayCommand(async _ => await Common.ExcuteExit());
             ColorMapCommand = new RelayCommand(_ => ToggleColorMap());
 

@@ -34,7 +34,7 @@ namespace LSS_prototype.Patient_Page
     {
         private readonly SearchDebouncer _searchDebouncer;
         private readonly IDialogService _dialogService;
-        private CancellationTokenSource _cts = new CancellationTokenSource(); 
+        private CancellationTokenSource _cts = new CancellationTokenSource();
         // 위 변수 사용이유
         // dicom 이 연결끊킨 상태일때 한번의 task가 실행되고 -> 두번째 Patient 호출 시 -> 에러발생 
         // 첫번째때 연결된 task를 끊어주기위해서 0306 박한용
@@ -166,30 +166,34 @@ namespace LSS_prototype.Patient_Page
         {
             _dialogService = new Dialog();
 
-            PatientAddCommand = new RelayCommand(AddPatient);
-            PatientEditCommand = new RelayCommand(EditPatient);
-            PatientDeleteCommand = new RelayCommand(DeletePatient);
+            PatientAddCommand = new RelayCommand(async _ => await AddPatient());
+            PatientEditCommand = new RelayCommand(async _ => await EditPatient());
+            PatientDeleteCommand = new RelayCommand(async _ => await DeletePatient());
             EmrSyncCommand = new AsyncRelayCommand(async _ => await EmrSync());
-            ImportCommand = new RelayCommand(ImportPatient);
-            LogoutCommand = new RelayCommand(Common.ExecuteLogout);
-            ExitCommand = new RelayCommand(Common.ExcuteExit);
+            ImportCommand = new RelayCommand(async _ => await ImportPatient());
+            LogoutCommand = new RelayCommand(async _ => await Common.ExecuteLogout());
+            ExitCommand = new RelayCommand(async _ => await Common.ExcuteExit());
 
             NavScanCommand = new RelayCommand(NavScan);
             // 0227 박한용 아래코드는 데이터 관련 처리 완료 후 주석 풀고 연동 예정 
             //NavImageReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new ImageReview_Page.ImageReview()));
             //NavVideoReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new VideoReview_Page.VideoReview()));
-            _searchDebouncer = new SearchDebouncer(ExecuteSearch, delayMs: 500);
-            LoadPatients();
+            _searchDebouncer = new SearchDebouncer(async keyword => await ExecuteSearch(keyword), delayMs: 500);
             _ = EmrSync(_cts.Token); // task 무시하기위해 _ = 사용 (별의미 X )
 
         }
 
-        private void NavScan()
+        public async Task InitializeAsync()
+        {
+            await LoadPatients();
+        }
+
+        private async void NavScan()
         {
 
-            if(SelectedPatient == null)
+            if (SelectedPatient == null)
             {
-                CustomMessageWindow.Show("환자를 먼저 선택해주세요.",
+                await CustomMessageWindow.ShowAsync("환자를 먼저 선택해주세요.",
                       CustomMessageWindow.MessageBoxType.AutoClose, 2,
                       CustomMessageWindow.MessageIconType.Warning);
 
@@ -229,7 +233,7 @@ namespace LSS_prototype.Patient_Page
 
         //Dicom에서 study 키 추출
         //가능하면 studyinstanceUID, 없으면 studyID, 그것도 없으면 studyDate
-        private string BuildStudyKey(DicomDataset ds)
+        private async Task<string> BuildStudyKey(DicomDataset ds)
         {
             try
             {
@@ -252,13 +256,13 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return string.Empty;
             }
         }
 
         //import 그룹의 검사 키 집합 구하기
-        private HashSet<string> GetIncomingStudyKeys(IEnumerable<string> dcmFiles)
+        private async Task<HashSet<string>> GetIncomingStudyKeys(IEnumerable<string> dcmFiles)
         {
             var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -272,27 +276,27 @@ namespace LSS_prototype.Patient_Page
                             continue;
 
                         var dicomFile = DicomFile.Open(file, FileReadOption.ReadAll);
-                        string key = BuildStudyKey(dicomFile.Dataset);
+                        string key = await BuildStudyKey(dicomFile.Dataset);
 
                         if (!string.IsNullOrWhiteSpace(key))
                             result.Add(key);
                     }
                     catch (Exception ex)
                     {
-                        Common.WriteLog(ex);
+                        await Common.WriteLog(ex);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
 
             return result;
         }
 
         //기존 환자 폴더에서 검사 키 집합 구하기
-        private HashSet<string> GetExistingStudyKeys(string patientRootFolder)
+        private async Task<HashSet<string>> GetExistingStudyKeys(string patientRootFolder)
         {
             var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -306,20 +310,20 @@ namespace LSS_prototype.Patient_Page
                     try
                     {
                         var dicomFile = DicomFile.Open(file, FileReadOption.ReadAll);
-                        string key = BuildStudyKey(dicomFile.Dataset);
+                        string key = await BuildStudyKey(dicomFile.Dataset);
 
                         if (!string.IsNullOrWhiteSpace(key))
                             result.Add(key);
                     }
                     catch (Exception ex)
                     {
-                        Common.WriteLog(ex);
+                        await Common.WriteLog(ex);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
 
             return result;
@@ -327,7 +331,7 @@ namespace LSS_prototype.Patient_Page
 
         //SOPInstanceUID 기준 파일 중복 제거용
         //같은 검사라도 일부 파일만 중복 가능하니 파일 단위도 거름
-        private HashSet<string> GetExistingSopInstanceUids(string patientRootFolder)
+        private async Task<HashSet<string>> GetExistingSopInstanceUids(string patientRootFolder)
         {
             var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -348,27 +352,27 @@ namespace LSS_prototype.Patient_Page
                     }
                     catch (Exception ex)
                     {
-                        Common.WriteLog(ex);
+                        await Common.WriteLog(ex);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
 
             return result;
         }
 
         //import 대상 파일 중 기존 SOPInstanceUID 제외
-        private string[] FilterNewDicomFiles(string patientName, int patientCode, IEnumerable<string> sourceFiles)
+        private async Task<string[]> FilterNewDicomFiles(string patientName, int patientCode, IEnumerable<string> sourceFiles)
         {
             try
             {
                 string dicomRoot = GetDicomRootPath();
                 string patientRoot = Path.Combine(dicomRoot, $"{patientName}_{patientCode}");
 
-                var existingKeys = GetExistingDicomInstanceKeys(patientRoot);
+                var existingKeys = await GetExistingDicomInstanceKeys(patientRoot);
                 var result = new List<string>();
 
                 foreach (var file in sourceFiles ?? Enumerable.Empty<string>())
@@ -379,7 +383,7 @@ namespace LSS_prototype.Patient_Page
                             continue;
 
                         var dicomFile = DicomFile.Open(file, FileReadOption.ReadAll);
-                        string key = BuildDicomInstanceKey(dicomFile.Dataset);
+                        string key = await BuildDicomInstanceKey(dicomFile.Dataset);
 
                         // 키를 못 만들면 일단 신규로 허용
                         if (string.IsNullOrWhiteSpace(key))
@@ -393,7 +397,7 @@ namespace LSS_prototype.Patient_Page
                     }
                     catch (Exception ex)
                     {
-                        Common.WriteLog(ex);
+                        await Common.WriteLog(ex);
                     }
                 }
 
@@ -403,7 +407,7 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return sourceFiles?.Distinct(StringComparer.OrdinalIgnoreCase).ToArray() ?? Array.Empty<string>();
             }
         }
@@ -411,7 +415,7 @@ namespace LSS_prototype.Patient_Page
         //import 계획 수립 메서드 추가
         //메서드-그룹별
         //(신규 환자인지, 기존 환자에 새 검사 추가인지,완전 중복 검사인지, 충돌 환자인지) 판단
-        private List<ImportPlan> BuildImportPlans(List<PatientModel> patientGroups)
+        private async Task<List<ImportPlan>> BuildImportPlans(List<PatientModel> patientGroups)
         {
             var plans = new List<ImportPlan>();
 
@@ -443,7 +447,7 @@ namespace LSS_prototype.Patient_Page
                         // 2) 기존 환자 존재 → 파일 단위 중복 여부 판단
                         if (existingPatient != null)
                         {
-                            string[] newFiles = FilterNewDicomFiles(
+                            string[] newFiles = await FilterNewDicomFiles(
                                 existingPatient.PatientName,
                                 existingPatient.PatientCode,
                                 group.DcmFiles);
@@ -498,20 +502,20 @@ namespace LSS_prototype.Patient_Page
                     }
                     catch (Exception ex)
                     {
-                        Common.WriteLog(ex);
+                        await Common.WriteLog(ex);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
 
             return plans;
         }
 
         //실제 반영 메서드 추가
-        private bool ExecuteImportPlan(ImportPlan plan, DB_Manager repo)
+        private async Task<bool> ExecuteImportPlan(ImportPlan plan, DB_Manager repo)
         {
             try
             {
@@ -540,10 +544,10 @@ namespace LSS_prototype.Patient_Page
 
                             repo.AddPatient(patientModel);
 
-                            var newFiles = FilterNewDicomFiles(group.PatientName, group.PatientCode, group.DcmFiles);
+                            var newFiles = await FilterNewDicomFiles(group.PatientName, group.PatientCode, group.DcmFiles);
                             if (newFiles.Length > 0)
                             {
-                                ImportPatientFilesToStructuredFolders(
+                                await ImportPatientFilesToStructuredFolders(
                                     newFiles,
                                     group.PatientName,
                                     group.PatientCode,
@@ -555,11 +559,11 @@ namespace LSS_prototype.Patient_Page
 
                     case ImportActionType.ExistingLocalPatientAddStudy:
                         {
-                            var newFiles = FilterNewDicomFiles(group.PatientName, group.PatientCode, group.DcmFiles);
+                            var newFiles = await FilterNewDicomFiles(group.PatientName, group.PatientCode, group.DcmFiles);
                             if (newFiles.Length == 0)
                                 return false;
 
-                            ImportPatientFilesToStructuredFolders(
+                            await ImportPatientFilesToStructuredFolders(
                                 newFiles,
                                 group.PatientName,
                                 group.PatientCode,
@@ -586,10 +590,10 @@ namespace LSS_prototype.Patient_Page
 
                             repo.UpsertEmrPatient(emrPatientModel);
 
-                            var newFiles = FilterNewDicomFiles(group.PatientName, group.PatientCode, group.DcmFiles);
+                            var newFiles = await FilterNewDicomFiles(group.PatientName, group.PatientCode, group.DcmFiles);
                             if (newFiles.Length > 0)
                             {
-                                ImportPatientFilesToStructuredFolders(
+                                await ImportPatientFilesToStructuredFolders(
                                     newFiles,
                                     group.PatientName,
                                     group.PatientCode,
@@ -617,11 +621,11 @@ namespace LSS_prototype.Patient_Page
 
                             repo.UpsertEmrPatient(emrPatientModel);
 
-                            var newFiles = FilterNewDicomFiles(group.PatientName, group.PatientCode, group.DcmFiles);
+                            var newFiles = await FilterNewDicomFiles(group.PatientName, group.PatientCode, group.DcmFiles);
                             if (newFiles.Length == 0)
                                 return false;
 
-                            ImportPatientFilesToStructuredFolders(
+                            await ImportPatientFilesToStructuredFolders(
                                 newFiles,
                                 group.PatientName,
                                 group.PatientCode,
@@ -638,7 +642,7 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return false;
             }
         }
@@ -652,7 +656,7 @@ namespace LSS_prototype.Patient_Page
                 int duplicateStudySkipCount,
                 int conflictSkipCount,
                 List<string> conflictMessages)
-            {
+        {
             int skippedCount = duplicateStudySkipCount + conflictSkipCount;
 
             string message =
@@ -734,7 +738,7 @@ namespace LSS_prototype.Patient_Page
         }
 
         //BuildStudyKey() 기반 판정은 유지 불가함에 따라 파일 단위 키를 새로 생성.
-        private string BuildDicomInstanceKey(DicomDataset ds)
+        private async Task<string> BuildDicomInstanceKey(DicomDataset ds)
         {
             try
             {
@@ -762,13 +766,13 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return string.Empty;
             }
         }
 
         //기존 폴더의 “파일 단위 키” 수집 메서드
-        private HashSet<string> GetExistingDicomInstanceKeys(string patientRootFolder)
+        private async Task<HashSet<string>> GetExistingDicomInstanceKeys(string patientRootFolder)
         {
             var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -782,20 +786,20 @@ namespace LSS_prototype.Patient_Page
                     try
                     {
                         var dicomFile = DicomFile.Open(file, FileReadOption.ReadAll);
-                        string key = BuildDicomInstanceKey(dicomFile.Dataset);
+                        string key = await BuildDicomInstanceKey(dicomFile.Dataset);
 
                         if (!string.IsNullOrWhiteSpace(key))
                             result.Add(key);
                     }
                     catch (Exception ex)
                     {
-                        Common.WriteLog(ex);
+                        await Common.WriteLog(ex);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
 
             return result;
@@ -804,7 +808,7 @@ namespace LSS_prototype.Patient_Page
         /// <summary>
         /// DB에서 로컬등록된  환자 목록을 불러와 최신순(내림차순)으로 UI에 반영
         /// </summary>
-        public void LoadPatients()
+        public async Task LoadPatients()
         {
             try
             {
@@ -830,7 +834,7 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
@@ -856,7 +860,7 @@ namespace LSS_prototype.Patient_Page
             Patients = new ObservableCollection<PatientModel>(list);
         }
 
-        private async void AddPatient()
+        private async Task AddPatient()
         {
             try
             {
@@ -864,7 +868,7 @@ namespace LSS_prototype.Patient_Page
 
                 if (await _dialogService.ShowDialogAsync(vm) == true)
                 {
-                    var confirm = CustomMessageWindow.Show(
+                    var confirm = await CustomMessageWindow.ShowAsync(
                             $"{vm.PatientName} 환자 정보를 생성하시겠습니까?",
                             CustomMessageWindow.MessageBoxType.YesNo,
                             0,
@@ -891,7 +895,7 @@ namespace LSS_prototype.Patient_Page
                             await CustomMessageWindow.ShowAsync("환자가 정상적으로 등록되었습니다.",
                                 CustomMessageWindow.MessageBoxType.AutoClose, 1,
                                 CustomMessageWindow.MessageIconType.Info);
-                            LoadPatients();
+                            await LoadPatients();
                         }
                         else
                         {
@@ -904,15 +908,15 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
-        private async void EditPatient()
+        private async Task EditPatient()
         {
             if (SelectedPatient == null)
             {
-                CustomMessageWindow.Show("수정할 환자를 선택해주세요.",
+                await CustomMessageWindow.ShowAsync("수정할 환자를 선택해주세요.",
                         CustomMessageWindow.MessageBoxType.AutoClose, 1,
                         CustomMessageWindow.MessageIconType.Info);
                 return;
@@ -920,7 +924,7 @@ namespace LSS_prototype.Patient_Page
 
             if (!string.IsNullOrWhiteSpace(SelectedPatient.AccessionNumber))
             {
-                CustomMessageWindow.Show("EMR 데이터는 수정이 \n 불가능합니다.",
+                await CustomMessageWindow.ShowAsync("EMR 데이터는 수정이 \n 불가능합니다.",
                         CustomMessageWindow.MessageBoxType.AutoClose, 1,
                         CustomMessageWindow.MessageIconType.Warning);
                 return;
@@ -947,17 +951,17 @@ namespace LSS_prototype.Patient_Page
 
             if (result == true)
             {
-                HandleLocalEditConflictAfterSave(originalLocal);
+                await HandleLocalEditConflictAfterSave(originalLocal);
             }
         }
 
-        private void DeletePatient()
+        private async Task DeletePatient()
         {
             try
             {
                 if (SelectedPatient == null)
                 {
-                    CustomMessageWindow.Show("삭제할 환자를 선택해주세요.",
+                    await CustomMessageWindow.ShowAsync("삭제할 환자를 선택해주세요.",
                             CustomMessageWindow.MessageBoxType.AutoClose, 1,
                             CustomMessageWindow.MessageIconType.Info);
                     return;
@@ -965,13 +969,13 @@ namespace LSS_prototype.Patient_Page
 
                 if (!string.IsNullOrWhiteSpace(SelectedPatient.AccessionNumber))
                 {
-                    CustomMessageWindow.Show("EMR 데이터는 삭제가 \n 불가능합니다.",
+                    await CustomMessageWindow.ShowAsync("EMR 데이터는 삭제가 \n 불가능합니다.",
                             CustomMessageWindow.MessageBoxType.AutoClose, 1,
                             CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
-                if (CustomMessageWindow.Show(
+                if (await CustomMessageWindow.ShowAsync(
                         $"{SelectedPatient.PatientName} 환자 정보를 삭제하시겠습니까?",
                         CustomMessageWindow.MessageBoxType.YesNo, 0, CustomMessageWindow.MessageIconType.Info
                     ) == CustomMessageWindow.MessageBoxResult.Yes)
@@ -980,20 +984,20 @@ namespace LSS_prototype.Patient_Page
 
                     if (repo.DeletePatient(SelectedPatient.PatientId))
                     {
-                        CustomMessageWindow.Show("삭제되었습니다.",
+                        await CustomMessageWindow.ShowAsync("삭제되었습니다.",
                             CustomMessageWindow.MessageBoxType.AutoClose, 1,
                             CustomMessageWindow.MessageIconType.Info);
-                        LoadPatients();
+                        await LoadPatients();
                     }
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
-        private async void ImportPatient()
+        private async Task ImportPatient()
         {
             var dialog = new OpenFileDialog
             {
@@ -1011,7 +1015,7 @@ namespace LSS_prototype.Patient_Page
             {
                 if (selectedFiles == null || selectedFiles.Length == 0)
                 {
-                    CustomMessageWindow.Show(
+                    await CustomMessageWindow.ShowAsync(
                         "가져올 파일을 선택해주세요.",
                         CustomMessageWindow.MessageBoxType.Ok,
                         0,
@@ -1027,7 +1031,7 @@ namespace LSS_prototype.Patient_Page
 
                 if (supportedFiles.Count == 0)
                 {
-                    CustomMessageWindow.Show(
+                    await CustomMessageWindow.ShowAsync(
                         "지원되는 파일(.dcm)을 선택해주세요.",
                         CustomMessageWindow.MessageBoxType.Ok,
                         0,
@@ -1055,11 +1059,11 @@ namespace LSS_prototype.Patient_Page
                 }
 
                 // DCM 기준 환자 그룹 생성
-                var patientGroups = BuildPatientImportGroups(supportedFiles);
+                var patientGroups = await BuildPatientImportGroups(supportedFiles);
 
                 if (patientGroups.Count == 0)
                 {
-                    CustomMessageWindow.Show(
+                    await CustomMessageWindow.ShowAsync(
                         "가져올 수 있는 DICOM 환자 정보가 없습니다.",
                         CustomMessageWindow.MessageBoxType.Ok,
                         0,
@@ -1072,17 +1076,17 @@ namespace LSS_prototype.Patient_Page
                 {
                     try
                     {
-                        if (IsMultiFrameDicom(file))
+                        if (await IsMultiFrameDicom(file))
                             multiFrameCount++;
                     }
                     catch (Exception ex)
                     {
-                        Common.WriteLog(ex);
+                        await Common.WriteLog(ex);
                     }
                 }
 
                 // import 계획 수립
-                var importPlans = BuildImportPlans(patientGroups);
+                var importPlans = await BuildImportPlans(patientGroups);
 
                 int newLocalCountPlan = importPlans.Count(x => x.ActionType == ImportActionType.NewLocalPatient);
                 int existingLocalAddStudyCountPlan = importPlans.Count(x => x.ActionType == ImportActionType.ExistingLocalPatientAddStudy);
@@ -1101,7 +1105,7 @@ namespace LSS_prototype.Patient_Page
                     if (willSkipCount > 0)
                         noImportMessage += $"\n제외: {willSkipCount}건";
 
-                    CustomMessageWindow.Show(
+                    await CustomMessageWindow.ShowAsync(
                         noImportMessage,
                         CustomMessageWindow.MessageBoxType.Ok,
                         0,
@@ -1120,7 +1124,7 @@ namespace LSS_prototype.Patient_Page
 
                 confirmMessage += "\n계속 진행하시겠습니까?";
 
-                var confirm = CustomMessageWindow.Show(
+                var confirm = await CustomMessageWindow.ShowAsync(
                     confirmMessage,
                     CustomMessageWindow.MessageBoxType.YesNo,
                     0,
@@ -1128,7 +1132,7 @@ namespace LSS_prototype.Patient_Page
 
                 if (confirm != CustomMessageWindow.MessageBoxResult.Yes)
                     return;
-                
+
                 //실제 import 대상만 count
                 LoadingWindow.Begin($"환자 파일 import 중... (0/{willImportCount})");
 
@@ -1142,13 +1146,13 @@ namespace LSS_prototype.Patient_Page
                 int conflictSkipCount = 0;
                 var conflictMessages = new List<string>();
 
-                await Task.Run(() =>
+                await Task.Run(async () =>
                 {
                     foreach (var plan in importPlans)
                     {
                         try
                         {
-                            bool success = ExecuteImportPlan(plan, repo);
+                            bool success = await ExecuteImportPlan(plan, repo);
 
                             if (success)
                             {
@@ -1194,7 +1198,7 @@ namespace LSS_prototype.Patient_Page
                         }
                         catch (Exception ex)
                         {
-                            Common.WriteLog(ex);
+                            await Common.WriteLog(ex);
                         }
                     }
                 });
@@ -1231,7 +1235,7 @@ namespace LSS_prototype.Patient_Page
                     conflictSkipCount,
                     conflictMessages);
 
-                CustomMessageWindow.Show(
+                await CustomMessageWindow.ShowAsync(
                     message,
                     CustomMessageWindow.MessageBoxType.Ok,
                     0,
@@ -1240,9 +1244,9 @@ namespace LSS_prototype.Patient_Page
             catch (Exception ex)
             {
                 LoadingWindow.End();
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
 
-                CustomMessageWindow.Show(
+                await CustomMessageWindow.ShowAsync(
                     $"오류 발생: {ex.Message}",
                     CustomMessageWindow.MessageBoxType.Ok,
                     0,
@@ -1258,28 +1262,28 @@ namespace LSS_prototype.Patient_Page
                 var pacsSet = db.GetPacsSet();
 
                 var dicom = new DicomManager();
-                
+
 
                 LoadingWindow.Begin("MWL 조회 중...");
                 var worklistItems = await dicom.GetWorklistPatientsAsync(pacsSet.MwlMyAET, pacsSet.MwlIP, pacsSet.MwlPort, pacsSet.MwlAET);
                 await Task.Delay(500); // 로딩바 테스트 차 0.5 delay 추후 배포 시 해당코드 삭제
 
                 // TODO: LS / LSS 간 표시 데이터 차이 확인 후 바인딩 필드 정리 필요 0227 박한용
-                _emrPatients = worklistItems;  
+                _emrPatients = worklistItems;
 
                 foreach (var p in _emrPatients)
                 {
                     p.Source = PatientSource.Emr;
-                    p.IsEmrPatient = true; 
+                    p.IsEmrPatient = true;
                 }
                 RefreshPatients();
-                CustomMessageWindow.Show("EMR 동기화 완료되었습니다.",
+                await CustomMessageWindow.ShowAsync("EMR 동기화 완료되었습니다.",
                             CustomMessageWindow.MessageBoxType.AutoClose, 1,
                             CustomMessageWindow.MessageIconType.Info);
             }
             catch (TimeoutException ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 await CustomMessageWindow.ShowAsync(
                     "DICOM 서버가 응답하지 않습니다.\n네트워크 또는 서버 상태를 확인해주세요.",
                     CustomMessageWindow.MessageBoxType.Ok, 0,
@@ -1289,13 +1293,13 @@ namespace LSS_prototype.Patient_Page
 
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 await CustomMessageWindow.ShowAsync(
                     $"MWL 조회 실패:\n{ex.Message}",
                     CustomMessageWindow.MessageBoxType.Ok, 0,
                     CustomMessageWindow.MessageIconType.Warning);
             }
-            
+
             finally
             {
                 LoadingWindow.End();
@@ -1313,7 +1317,7 @@ namespace LSS_prototype.Patient_Page
             _searchDebouncer.OnTextChanged(text);
         }
 
-        private void ExecuteSearch(string keyword)
+        private async Task ExecuteSearch(string keyword)
         {
             try
             {
@@ -1349,7 +1353,7 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
@@ -1370,7 +1374,7 @@ namespace LSS_prototype.Patient_Page
             // || (p.AccessionNumber ?? "").Contains(keyword);
         }
 
-       
+
 
         /*private List<PatientModel> LoadImportedEmrPatientsFromDicomFolder()
         {
@@ -1428,7 +1432,7 @@ namespace LSS_prototype.Patient_Page
                 }
                 catch (Exception ex)
                 {
-                    Common.WriteLog(ex);
+                    await Common.WriteLog(ex);
                 }
             }
 
@@ -1455,7 +1459,7 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
-        private string FindPatientFolder(PatientModel patient)
+        private async Task<string> FindPatientFolder(PatientModel patient)
         {
             try
             {
@@ -1478,7 +1482,7 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return null;
             }
         }
@@ -1493,7 +1497,7 @@ namespace LSS_prototype.Patient_Page
             return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "VIDEO");
         }
 
-        private string FindPatientFolderByRoot(PatientModel patient, string rootPath)
+        private async Task<string> FindPatientFolderByRoot(PatientModel patient, string rootPath)
         {
             try
             {
@@ -1515,17 +1519,17 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return null;
             }
         }
 
-        private string FindPatientVideoFolder(PatientModel patient)
+        private async Task<string> FindPatientVideoFolder(PatientModel patient)
         {
-            return FindPatientFolderByRoot(patient, GetVideoRootPath());
+            return await FindPatientFolderByRoot(patient, GetVideoRootPath());
         }
 
-        private void MergePatientVideoFolder(string sourceVideoFolder, string targetVideoFolder, string patientName,int patientCode)
+        private async Task MergePatientVideoFolder(string sourceVideoFolder, string targetVideoFolder, string patientName, int patientCode)
         {
             try
             {
@@ -1547,22 +1551,22 @@ namespace LSS_prototype.Patient_Page
                     }
                     catch (Exception ex)
                     {
-                        Common.WriteLog(ex);
+                        await Common.WriteLog(ex);
                     }
                 }
 
                 // 복사/병합 후 파일명 정리
-                NormalizeVideoFileNamesRecursively(targetVideoFolder, patientName, patientCode);
+                await NormalizeVideoFileNamesRecursively(targetVideoFolder, patientName, patientCode);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
 
         //파일 이름 정리
-        private void NormalizeDicomFileNames(string folder, string patientName, int patientCode)
+        private async Task NormalizeDicomFileNames(string folder, string patientName, int patientCode)
         {
             try
             {
@@ -1604,12 +1608,12 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
         //일반 import나 fallback , 이미지에 관해서는 병합 후 단순 순번으로 처리
-        private void NormalizeDicomFileNamesRecursively(string rootFolder, string patientName, int patientCode)
+        private async Task NormalizeDicomFileNamesRecursively(string rootFolder, string patientName, int patientCode)
         {
             try
             {
@@ -1623,18 +1627,18 @@ namespace LSS_prototype.Patient_Page
                 {
                     if (Directory.GetFiles(dir, "*.dcm").Any())
                     {
-                        NormalizeDicomFileNames(dir, patientName, patientCode);
+                        await NormalizeDicomFileNames(dir, patientName, patientCode);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
         //병합할 때, lcoal에 관한 다이콤 태그 수정
-        private void UpdateDicomTagsForMerge(string rootFolder, string patientName, int patientCode, string accessionNumber)
+        private async Task UpdateDicomTagsForMerge(string rootFolder, string patientName, int patientCode, string accessionNumber)
         {
             try
             {
@@ -1666,13 +1670,13 @@ namespace LSS_prototype.Patient_Page
                     }
                     catch (Exception ex)
                     {
-                        Common.WriteLog(ex);
+                        await Common.WriteLog(ex);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
@@ -1726,7 +1730,7 @@ namespace LSS_prototype.Patient_Page
         }
 
         //수정 후 E-SYNC 충돌 검사
-        private void HandleLocalEditConflictAfterSave(PatientModel originalLocal)
+        private async Task HandleLocalEditConflictAfterSave(PatientModel originalLocal)
         {
             try
             {
@@ -1738,7 +1742,7 @@ namespace LSS_prototype.Patient_Page
 
                 if (updatedLocal == null)
                 {
-                    LoadPatients();
+                    await LoadPatients();
                     return;
                 }
 
@@ -1752,11 +1756,11 @@ namespace LSS_prototype.Patient_Page
                 // 없으면 그냥 갱신만
                 if (matchedEmr == null)
                 {
-                    LoadPatients();
+                    await LoadPatients();
                     return;
                 }
 
-                var popupResult = CustomMessageWindow.Show(
+                var popupResult = await CustomMessageWindow.ShowAsync(
                     $"번호가 같은 2명의 환자가 존재합니다.\n병합하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo,
                     0,
@@ -1764,23 +1768,23 @@ namespace LSS_prototype.Patient_Page
 
                 if (popupResult == CustomMessageWindow.MessageBoxResult.Yes)
                 {
-                    MergeEditedLocalToImportedEmr(originalLocal, updatedLocal, matchedEmr);
+                    await MergeEditedLocalToImportedEmr(originalLocal, updatedLocal, matchedEmr);
                 }
                 else
                 {
                     // 아니오면 그냥 닫고 끝
-                    LoadPatients();
+                    await LoadPatients();
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                LoadPatients();
+                await Common.WriteLog(ex);
+                await LoadPatients();
             }
         }
 
         //LOCAL → E-SYNC 병합
-        private void MergeEditedLocalToImportedEmr(PatientModel originalLocal, PatientModel updatedLocal, PatientModel importedEmr)
+        private async Task MergeEditedLocalToImportedEmr(PatientModel originalLocal, PatientModel updatedLocal, PatientModel importedEmr)
         {
             try
             {
@@ -1793,12 +1797,12 @@ namespace LSS_prototype.Patient_Page
 
                 // LOCAL 원래 폴더를 먼저 찾음
                 string localFolder =
-                    FindPatientFolder(originalLocal) ??
-                    FindPatientFolder(updatedLocal);
+                    await FindPatientFolder(originalLocal) ??
+                    await FindPatientFolder(updatedLocal);
 
                 string localVideoFolder =
-                    FindPatientVideoFolder(originalLocal) ??
-                    FindPatientVideoFolder(updatedLocal);
+                    await FindPatientVideoFolder(originalLocal) ??
+                    await FindPatientVideoFolder(updatedLocal);
 
                 if (!Directory.Exists(emrTargetFolder))
                     Directory.CreateDirectory(emrTargetFolder);
@@ -1822,45 +1826,45 @@ namespace LSS_prototype.Patient_Page
                     }
                     catch (Exception ex)
                     {
-                        Common.WriteLog(ex);
+                        await Common.WriteLog(ex);
                     }
                 }
 
                 // 병합 후 DICOM 태그를 E-SYNC 기준으로 통일
-                UpdateDicomTagsForMerge(emrTargetFolder,importedEmr.PatientName,importedEmr.PatientCode,importedEmr.AccessionNumber);
+                await UpdateDicomTagsForMerge(emrTargetFolder, importedEmr.PatientName, importedEmr.PatientCode, importedEmr.AccessionNumber);
 
                 // 파일명도 E-SYNC 기준으로 통일
                 //NormalizeDicomFileNamesRecursively(emrTargetFolder,importedEmr.PatientName,importedEmr.PatientCode);
 
                 // VIDEO 병합 추가
-                MergePatientVideoFolder(localVideoFolder,emrVideoTargetFolder,importedEmr.PatientName,importedEmr.PatientCode);
+                await MergePatientVideoFolder(localVideoFolder, emrVideoTargetFolder, importedEmr.PatientName, importedEmr.PatientCode);
 
                 // VIDEO의 Dicom 인덱스에 맞춰 DICOM 파일명 동기화
-                SyncDicomFileNamesWithVideoDicomIndices(emrTargetFolder,emrVideoTargetFolder,importedEmr.PatientName,importedEmr.PatientCode);
+                await SyncDicomFileNamesWithVideoDicomIndices(emrTargetFolder, emrVideoTargetFolder, importedEmr.PatientName, importedEmr.PatientCode);
 
                 // Image 폴더의 dcm은 E-SYNC 기준 일반 이름으로 정리
-                NormalizeImageDicomFileNames(emrTargetFolder, importedEmr.PatientName, importedEmr.PatientCode);
+                await NormalizeImageDicomFileNames(emrTargetFolder, importedEmr.PatientName, importedEmr.PatientCode);
 
                 // DB에서 LOCAL 환자 삭제
                 var repo = new DB_Manager();
                 repo.DeletePatient(updatedLocal.PatientId);
 
-                CustomMessageWindow.Show(
+                await CustomMessageWindow.ShowAsync(
                     "E-SYNC 환자로 병합되었습니다.",
                     CustomMessageWindow.MessageBoxType.AutoClose,
                     1,
                     CustomMessageWindow.MessageIconType.Info);
 
-                LoadPatients();
+                await LoadPatients();
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                LoadPatients();
+                await Common.WriteLog(ex);
+                await LoadPatients();
             }
         }
 
-        private void NormalizeVideoFileNames(string folder, string patientName, int patientCode)
+        private async Task NormalizeVideoFileNames(string folder, string patientName, int patientCode)
         {
             try
             {
@@ -1890,7 +1894,7 @@ namespace LSS_prototype.Patient_Page
                     string ext = Path.GetExtension(file);
 
                     // 원본 파일명에서 _Avi / _Dicom 유지
-                    string typeSuffix = ExtractVideoTypeSuffix(file);
+                    string typeSuffix = await ExtractVideoTypeSuffix(file);
 
                     string newName = $"{patientName}_{patientCode}_{studyId}_{index}{typeSuffix}{ext}";
                     string newPath = Path.Combine(folder, newName);
@@ -1914,11 +1918,11 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
-        private void NormalizeVideoFileNamesRecursively(string rootFolder, string patientName, int patientCode)
+        private async Task NormalizeVideoFileNamesRecursively(string rootFolder, string patientName, int patientCode)
         {
             try
             {
@@ -1937,18 +1941,18 @@ namespace LSS_prototype.Patient_Page
 
                     if (hasVideo)
                     {
-                        NormalizeVideoFileNames(dir, patientName, patientCode);
+                        await NormalizeVideoFileNames(dir, patientName, patientCode);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
         //병합해도 video 타입 표시는 유지 ->DICOM.avi/AVI.avi
-        private string ExtractVideoTypeSuffix(string filePath)
+        private async Task<string> ExtractVideoTypeSuffix(string filePath)
         {
             try
             {
@@ -1973,13 +1977,13 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return string.Empty;
             }
         }
 
         //DICOM 이름을 VIDEO 인덱스에 맞추는 메서드
-        private void SyncDicomFileNamesWithVideoDicomIndices(string dicomPatientRoot,string videoPatientRoot,string patientName,int patientCode)
+        private async Task SyncDicomFileNamesWithVideoDicomIndices(string dicomPatientRoot, string videoPatientRoot, string patientName, int patientCode)
         {
             try
             {
@@ -1998,24 +2002,24 @@ namespace LSS_prototype.Patient_Page
 
                 foreach (var dicomDir in dicomVideoDirs)
                 {
-                    string studyId = GetStudyIdFromDicomFolder(dicomDir);
+                    string studyId = await GetStudyIdFromDicomFolder(dicomDir);
                     if (string.IsNullOrWhiteSpace(studyId))
                         continue;
 
-                    string matchingVideoDir = FindVideoStudyFolder(videoPatientRoot, studyId);
+                    string matchingVideoDir = await FindVideoStudyFolder(videoPatientRoot, studyId);
                     if (string.IsNullOrWhiteSpace(matchingVideoDir))
                         continue;
 
-                    RenameDicomFilesByVideoIndices(dicomDir, matchingVideoDir, patientName, patientCode, studyId);
+                    await RenameDicomFilesByVideoIndices(dicomDir, matchingVideoDir, patientName, patientCode, studyId);
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
-        private string GetStudyIdFromDicomFolder(string dicomFolder)
+        private async Task<string> GetStudyIdFromDicomFolder(string dicomFolder)
         {
             try
             {
@@ -2038,11 +2042,11 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return string.Empty;
             }
         }
-        private string FindVideoStudyFolder(string videoPatientRoot, string studyId)
+        private async Task<string> FindVideoStudyFolder(string videoPatientRoot, string studyId)
         {
             try
             {
@@ -2055,11 +2059,11 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return null;
             }
         }
-        private void RenameDicomFilesByVideoIndices(string dicomDir,string videoDir,string patientName,int patientCode,string studyId)
+        private async Task RenameDicomFilesByVideoIndices(string dicomDir, string videoDir, string patientName, int patientCode, string studyId)
         {
             try
             {
@@ -2071,20 +2075,20 @@ namespace LSS_prototype.Patient_Page
                     return;
 
                 var dicomVideoFiles = Directory.GetFiles(videoDir)
-                    .Where(IsDicomVideoFile)
-                    .OrderBy(f => ExtractIndexFromMergedFileName(f))
+                    .Where(IsDicomVideoFileSync)
+                    .OrderBy(f => ExtractIndexFromMergedFileNameSync(f))
                     .ThenBy(f => f)
                     .ToList();
 
                 if (dicomVideoFiles.Count == 0)
                 {
                     // video 쪽 Dicom avi가 없으면 기존 방식으로 fallback
-                    NormalizeDicomFileNamesWithDicomSuffix(dicomDir, patientName, patientCode, studyId);
+                    await NormalizeDicomFileNamesWithDicomSuffix(dicomDir, patientName, patientCode, studyId);
                     return;
                 }
 
                 var targetIndices = dicomVideoFiles
-                    .Select(ExtractIndexFromMergedFileName)
+                    .Select(ExtractIndexFromMergedFileNameSync)
                     .Where(i => i > 0)
                     .Distinct()
                     .OrderBy(i => i)
@@ -2092,7 +2096,7 @@ namespace LSS_prototype.Patient_Page
 
                 if (targetIndices.Count == 0)
                 {
-                    NormalizeDicomFileNamesWithDicomSuffix(dicomDir, patientName, patientCode, studyId);
+                    await NormalizeDicomFileNamesWithDicomSuffix(dicomDir, patientName, patientCode, studyId);
                     return;
                 }
 
@@ -2146,11 +2150,11 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
         //DICOM fallback 정리 함수-VIDEO에서 DICOM.avi 인덱스를 찾지 못했을 경우, 파일명에 Dicom.dcm 유지 --> 필요한지 고려
-        private void NormalizeDicomFileNamesWithDicomSuffix(string folder, string patientName, int patientCode, string studyId)
+        private async Task NormalizeDicomFileNamesWithDicomSuffix(string folder, string patientName, int patientCode, string studyId)
         {
             try
             {
@@ -2189,12 +2193,12 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
         //VIDEO가 DICOM 파일인지 판단하는 함수
-        private bool IsDicomVideoFile(string filePath)
+        private async Task<bool> IsDicomVideoFile(string filePath)
         {
             try
             {
@@ -2203,14 +2207,21 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return false;
             }
         }
 
+        // OrderBy 람다 안에서 await 불가 → 동기 헬퍼 (순수 문자열 처리라 async 불필요)
+        private bool IsDicomVideoFileSync(string filePath)
+        {
+            try { return Regex.IsMatch(Path.GetFileNameWithoutExtension(filePath), @"_Dicom$", RegexOptions.IgnoreCase); }
+            catch { return false; }
+        }
+
         //병합된 파일명에서 인덱스 추출 함수-> DICOM.AVI의 인덱스를 추출,
         //병합 후 DICOM이름 단순 순번이 아닌 VIDEO DICOM 인덱스 종속
-        private int ExtractIndexFromMergedFileName(string filePath)
+        private async Task<int> ExtractIndexFromMergedFileName(string filePath)
         {
             try
             {
@@ -2224,12 +2235,25 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        private void NormalizeImageDicomFileNames(string dicomPatientRoot, string patientName, int patientCode)
+        // OrderBy 람다 안에서 await 불가 → 동기 헬퍼
+        private int ExtractIndexFromMergedFileNameSync(string filePath)
+        {
+            try
+            {
+                string name = Path.GetFileNameWithoutExtension(filePath);
+                var match = Regex.Match(name, @"_(\d+)_(Avi|AVI|Dicom|DICOM)$", RegexOptions.IgnoreCase);
+                if (match.Success && int.TryParse(match.Groups[1].Value, out int index)) return index;
+                return -1;
+            }
+            catch { return -1; }
+        }
+
+        private async Task NormalizeImageDicomFileNames(string dicomPatientRoot, string patientName, int patientCode)
         {
             try
             {
@@ -2247,20 +2271,20 @@ namespace LSS_prototype.Patient_Page
 
                 foreach (var imageDir in imageDirs)
                 {
-                    string studyId = GetStudyIdFromDicomFolder(imageDir);
+                    string studyId = await GetStudyIdFromDicomFolder(imageDir);
                     if (string.IsNullOrWhiteSpace(studyId))
                         continue;
 
-                    RenameImageDicomFiles(imageDir, patientName, patientCode, studyId);
+                    await RenameImageDicomFiles(imageDir, patientName, patientCode, studyId);
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
-        private void RenameImageDicomFiles(string imageDir, string patientName, int patientCode, string studyId)
+        private async Task RenameImageDicomFiles(string imageDir, string patientName, int patientCode, string studyId)
         {
             try
             {
@@ -2301,12 +2325,12 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
         //DICOM이 멀티프레임(비디오)인지 판별
-        private bool IsMultiFrameDicom(string filePath)
+        private async Task<bool> IsMultiFrameDicom(string filePath)
         {
             try
             {
@@ -2316,7 +2340,7 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return false;
             }
         }
@@ -2352,7 +2376,7 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return DateTime.Now.ToString("yyyyMMdd") + "0001";
             }
         }*/
@@ -2369,7 +2393,7 @@ namespace LSS_prototype.Patient_Page
         }
 
         //import 파일들을 원하는 구조로 재배치
-        private void ImportPatientFilesToStructuredFolders(string[] sourceFiles, string patientName, int patientCode, string accessionNumber)
+        private async Task ImportPatientFilesToStructuredFolders(string[] sourceFiles, string patientName, int patientCode, string accessionNumber)
         {
             try
             {
@@ -2412,7 +2436,7 @@ namespace LSS_prototype.Patient_Page
                         if (filePatientId != patientCode.ToString())
                             continue;
 
-                        string studyId = ResolveStudyIdForImport(
+                        string studyId = await ResolveStudyIdForImport(
                             dicomFile,
                             patientName,
                             patientCode,
@@ -2427,7 +2451,7 @@ namespace LSS_prototype.Patient_Page
 
                         string studyDate = studyId.Substring(0, 8);
 
-                        if (IsMultiFrameDicom(file))
+                        if (await IsMultiFrameDicom(file))
                         {
                             // 멀티프레임 => Video 폴더
                             string dicomVideoDir = Path.Combine(
@@ -2454,7 +2478,7 @@ namespace LSS_prototype.Patient_Page
                     }
                     catch (Exception ex)
                     {
-                        Common.WriteLog(ex);
+                        await Common.WriteLog(ex);
                     }
                 }
 
@@ -2464,7 +2488,7 @@ namespace LSS_prototype.Patient_Page
 
                 if (Directory.Exists(dicomPatientRoot))
                 {
-                    UpdateDicomTagsForMerge(dicomPatientRoot, patientName, patientCode, accessionNumber);
+                    await UpdateDicomTagsForMerge(dicomPatientRoot, patientName, patientCode, accessionNumber);
                 }
 
                 // 3. 파일명 정리
@@ -2481,7 +2505,7 @@ namespace LSS_prototype.Patient_Page
                         // Image DCM 정리
                         if (Directory.Exists(imageDir))
                         {
-                            RenameImageDicomFiles(imageDir, patientName, patientCode, studyId);
+                            await RenameImageDicomFiles(imageDir, patientName, patientCode, studyId);
                         }
 
                         // Video AVI 정리
@@ -2492,31 +2516,31 @@ namespace LSS_prototype.Patient_Page
                             if (Directory.Exists(dicomVideoDir))
                                 dicomVideoCount = Directory.GetFiles(dicomVideoDir, "*.dcm").Length;
 
-                            RenameImportedVideoFiles(videoDir, patientName, patientCode, studyId, dicomVideoCount);
+                            await RenameImportedVideoFiles(videoDir, patientName, patientCode, studyId, dicomVideoCount);
                         }
 
                         // Video DCM 정리
                         if (Directory.Exists(dicomVideoDir))
                         {
-                            NormalizeDicomVideoPairs(dicomVideoDir, patientName, patientCode, studyId);
+                            await NormalizeDicomVideoPairs(dicomVideoDir, patientName, patientCode, studyId);
                         }
                     }
                     catch (Exception ex)
                     {
-                        Common.WriteLog(ex);
+                        await Common.WriteLog(ex);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 throw;
             }
         }
 
         //AVI를 _Avi / _Dicom 구조로 정리
         //멀티프레임 DICOM 개수만큼 AVI를 _Dicom.avi로 매칭하고, 나머지는 _Avi.avi로 매칭
-        private void RenameImportedVideoFiles(string videoDir, string patientName, int patientCode, string studyId, int dicomVideoCount)
+        private async Task RenameImportedVideoFiles(string videoDir, string patientName, int patientCode, string studyId, int dicomVideoCount)
         {
             try
             {
@@ -2581,11 +2605,11 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
-        private List<PatientModel> BuildPatientImportGroups(List<string> dcmFiles)
+        private async Task<List<PatientModel>> BuildPatientImportGroups(List<string> dcmFiles)
         {
             var groups = new Dictionary<string, PatientModel>(StringComparer.OrdinalIgnoreCase);
 
@@ -2608,7 +2632,7 @@ namespace LSS_prototype.Patient_Page
                     string accession = ds.GetSingleValueOrDefault(DicomTag.AccessionNumber, "").Trim();
                     string birthText = ds.GetSingleValueOrDefault(DicomTag.PatientBirthDate, "19000101").Trim();
 
-                    DateTime? importedLastShootDate = TryGetImportLastShootDate(ds);
+                    DateTime? importedLastShootDate = await TryGetImportLastShootDate(ds);
 
                     if (string.IsNullOrWhiteSpace(patientName))
                         patientName = "Unknown Name";
@@ -2674,7 +2698,7 @@ namespace LSS_prototype.Patient_Page
 
                     groups[key].DcmFiles.Add(file);
 
-                    string studyId = ResolveStudyIdForImport(
+                    string studyId = await ResolveStudyIdForImport(
                         dicomFile,
                         patientName,
                         patientCode,
@@ -2686,7 +2710,7 @@ namespace LSS_prototype.Patient_Page
                 }
                 catch (Exception ex)
                 {
-                    Common.WriteLog(ex);
+                    await Common.WriteLog(ex);
                 }
             }
 
@@ -2699,7 +2723,7 @@ namespace LSS_prototype.Patient_Page
             {
                 try
                 {
-                    string studyId = ResolveStudyIdForImport(aviFile, null, null);
+                    string studyId = await ResolveStudyIdForImport(aviFile, null, null);
                     if (string.IsNullOrWhiteSpace(studyId))
                         continue;
 
@@ -2715,12 +2739,12 @@ namespace LSS_prototype.Patient_Page
                 }
                 catch (Exception ex)
                 {
-                    Common.WriteLog(ex);
+                    await Common.WriteLog(ex);
                 }
             }
         }*/
 
-        private void CreateAviFromDicom(string dcmPath, string dicomVideoDir, string patientName, int patientCode, string studyId)
+        private async Task CreateAviFromDicom(string dcmPath, string dicomVideoDir, string patientName, int patientCode, string studyId)
         {
             try
             {
@@ -2779,12 +2803,12 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
         //폴더 및 파일에 사용할 studyid 생성
-        private string GetStudyDateFromDataset(DicomDataset ds)
+        private async Task<string> GetStudyDateFromDataset(DicomDataset ds)
         {
             try
             {
@@ -2797,12 +2821,12 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return DateTime.Now.ToString("yyyyMMdd");
             }
         }
 
-        private HashSet<string> GetExistingStudyIds(string patientName, int patientCode)
+        private async Task<HashSet<string>> GetExistingStudyIds(string patientName, int patientCode)
         {
             var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -2826,7 +2850,7 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
 
             return result;
@@ -2835,7 +2859,7 @@ namespace LSS_prototype.Patient_Page
 
         //StudyID 없으면 StudyDate 기준으로만 묶음
         //같은 날짜의 같은 환자 파일은 같은 StudyID로 묶일 가능성이 높아짐
-        private string GenerateNextStudyId(string studyDate, HashSet<string> usedStudyIds)
+        private async Task<string> GenerateNextStudyId(string studyDate, HashSet<string> usedStudyIds)
         {
             try
             {
@@ -2856,12 +2880,12 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return DateTime.Now.ToString("yyyyMMdd") + "0001";
             }
         }
 
-        private string ResolveStudyIdForImport(DicomFile dicomFile,string patientName,int patientCode,Dictionary<string, string> studyIdMap,HashSet<string> reservedStudyIds)
+        private async Task<string> ResolveStudyIdForImport(DicomFile dicomFile, string patientName, int patientCode, Dictionary<string, string> studyIdMap, HashSet<string> reservedStudyIds)
         {
             try
             {
@@ -2870,7 +2894,7 @@ namespace LSS_prototype.Patient_Page
 
                 var ds = dicomFile.Dataset;
 
-                string originalStudyKey = BuildOriginalStudyKey(ds, patientName, patientCode);
+                string originalStudyKey = await BuildOriginalStudyKey(ds, patientName, patientCode);
 
                 if (studyIdMap.TryGetValue(originalStudyKey, out string cachedStudyId))
                     return cachedStudyId;
@@ -2885,13 +2909,13 @@ namespace LSS_prototype.Patient_Page
                     return rawStudyId;
                 }
 
-                string studyDate = GetStudyDateFromDataset(ds);
+                string studyDate = await GetStudyDateFromDataset(ds);
 
-                var usedStudyIds = GetExistingStudyIds(patientName, patientCode);
+                var usedStudyIds = await GetExistingStudyIds(patientName, patientCode);
                 foreach (var reserved in reservedStudyIds)
                     usedStudyIds.Add(reserved);
 
-                string newStudyId = GenerateNextStudyId(studyDate, usedStudyIds);
+                string newStudyId = await GenerateNextStudyId(studyDate, usedStudyIds);
 
                 studyIdMap[originalStudyKey] = newStudyId;
                 reservedStudyIds.Add(newStudyId);
@@ -2900,12 +2924,12 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return DateTime.Now.ToString("yyyyMMdd") + "0001";
             }
         }
 
-        private string BuildOriginalStudyKey(DicomDataset ds, string patientName, int patientCode)
+        private async Task<string> BuildOriginalStudyKey(DicomDataset ds, string patientName, int patientCode)
         {
             try
             {
@@ -2924,13 +2948,13 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return $"{patientName}|{patientCode}|SDATE|{DateTime.Now:yyyyMMdd}";
             }
         }
 
         //Dicom.dcm과 Dicom.avi와 쌍 맞춤
-        private void NormalizeDicomVideoPairs(string dicomVideoDir, string patientName, int patientCode, string studyId)
+        private async Task NormalizeDicomVideoPairs(string dicomVideoDir, string patientName, int patientCode, string studyId)
         {
             try
             {
@@ -2938,7 +2962,7 @@ namespace LSS_prototype.Patient_Page
                     return;
 
                 // 1. DCM 파일명을 먼저 최종 규칙으로 정리
-                NormalizeDicomFileNamesWithDicomSuffix(dicomVideoDir, patientName, patientCode, studyId);
+                await NormalizeDicomFileNamesWithDicomSuffix(dicomVideoDir, patientName, patientCode, studyId);
 
                 // 2. VIDEO 폴더 경로 계산
                 string videoDir = dicomVideoDir.Replace(GetDicomRootPath(), GetVideoRootPath());
@@ -2953,31 +2977,31 @@ namespace LSS_prototype.Patient_Page
                     }
                     catch (Exception ex)
                     {
-                        Common.WriteLog(ex);
+                        await Common.WriteLog(ex);
                     }
                 }
 
                 // 4. 최종 DCM 파일 기준으로 같은 인덱스의 AVI 생성
                 var finalDicomFiles = Directory.GetFiles(dicomVideoDir, "*_Dicom.dcm")
-                    .OrderBy(f => ExtractDicomIndexFromFileName(f))
+                    .OrderBy(f => ExtractDicomIndexFromFileNameSync(f))
                     .ToList();
 
                 foreach (var finalDcmPath in finalDicomFiles)
                 {
-                    int dicomIndex = ExtractDicomIndexFromFileName(finalDcmPath);
+                    int dicomIndex = await ExtractDicomIndexFromFileName(finalDcmPath);
                     if (dicomIndex < 0)
                         continue;
 
-                    CreateAviFromFinalDicom(finalDcmPath, videoDir, patientName, patientCode, studyId, dicomIndex);
+                    await CreateAviFromFinalDicom(finalDcmPath, videoDir, patientName, patientCode, studyId, dicomIndex);
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
-        private void CreateAviFromFinalDicom(string finalDcmPath,string videoDir,string patientName,int patientCode,string studyId,int dicomIndex)
+        private async Task CreateAviFromFinalDicom(string finalDcmPath, string videoDir, string patientName, int patientCode, string studyId, int dicomIndex)
         {
             try
             {
@@ -3031,12 +3055,12 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
         //인덱스 추출 함수 추가
-        private int ExtractDicomIndexFromFileName(string filePath)
+        private async Task<int> ExtractDicomIndexFromFileName(string filePath)
         {
             try
             {
@@ -3050,13 +3074,26 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
+        // OrderBy 람다 안에서 await 불가 → 동기 헬퍼
+        private int ExtractDicomIndexFromFileNameSync(string filePath)
+        {
+            try
+            {
+                string name = Path.GetFileNameWithoutExtension(filePath);
+                var match = Regex.Match(name, @"_(\d+)_Dicom$", RegexOptions.IgnoreCase);
+                if (match.Success && int.TryParse(match.Groups[1].Value, out int index)) return index;
+                return -1;
+            }
+            catch { return -1; }
+        }
+
         //dcm 파일마다 import 촬영 일시 추출
-        private DateTime? TryGetImportLastShootDate(DicomDataset ds)
+        private async Task<DateTime?> TryGetImportLastShootDate(DicomDataset ds)
         {
             try
             {
@@ -3102,7 +3139,7 @@ namespace LSS_prototype.Patient_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return null;
             }
         }

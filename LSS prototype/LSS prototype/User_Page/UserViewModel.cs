@@ -86,7 +86,7 @@ namespace LSS_prototype.User_Page
 
             DelegateCommand = new RelayCommand(async _ => await ExecuteDelegate());
             DismissCommand = new RelayCommand(async _ => await ExecuteDismiss());
-            LogoutCommand = new RelayCommand(Common.ExecuteLogout);
+            LogoutCommand = new RelayCommand(async _ => await Common.ExecuteLogout());
             ExitCommand = new RelayCommand(async _ => await Common.ExcuteExit());
 
             _searchDebouncer = new SearchDebouncer(async keyword => await ExecuteSearch(keyword), delayMs: 500);
@@ -128,7 +128,7 @@ namespace LSS_prototype.User_Page
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 await Common.WriteLog(ex);
             }
@@ -175,19 +175,19 @@ namespace LSS_prototype.User_Page
                         if (SelectedUser.LoginId == Common.CurrentUserId)
                             await Common.ForceLogout();
                         else
-                            await LoadUsers ();
+                            await LoadUsers();
                     }
                     else
                     {
-                        await CustomMessageWindow.ShowAsync("최소 1명의 관리자는 유지되어야 합니다.", CustomMessageWindow.MessageBoxType.AutoClose, 1,  CustomMessageWindow.MessageIconType.Warning);
+                        await CustomMessageWindow.ShowAsync("최소 1명의 관리자는 유지되어야 합니다.", CustomMessageWindow.MessageBoxType.AutoClose, 1, CustomMessageWindow.MessageIconType.Warning);
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 await Common.WriteLog(ex);
             }
-            
+
         }
 
 
@@ -204,20 +204,20 @@ namespace LSS_prototype.User_Page
 
                 string masterId = Environment.GetEnvironmentVariable("MASTER_ID", EnvironmentVariableTarget.Machine);
 
-                bool isMaster = Common.CurrentUserId == masterId; 
-                
+                bool isMaster = Common.CurrentUserId == masterId;
+
 
                 var vm = new User_EditViewModel(SelectedUser, isMaster);
                 var result = await _dialogService.ShowDialogAsync(vm);
 
                 if (result == true)
-                    await LoadUsers ();
+                    await LoadUsers();
             }
             catch (Exception ex)
             {
                 await Common.WriteLog(ex);
             }
-           
+
         }
 
         public void OnSearchTextChanged(string text)
@@ -327,7 +327,7 @@ namespace LSS_prototype.User_Page
                         if (SelectedUser.LoginId == Common.CurrentUserId)
                             await Common.ForceLogout();
                         else
-                            await LoadUsers ();
+                            await LoadUsers();
                     }
                     else
                     {
@@ -337,7 +337,7 @@ namespace LSS_prototype.User_Page
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 await Common.WriteLog(ex);
             }

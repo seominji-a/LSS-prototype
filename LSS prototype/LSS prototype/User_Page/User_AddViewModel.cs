@@ -3,6 +3,7 @@ using System;
 using System.ComponentModel;
 using System.Data.SQLite;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -43,7 +44,7 @@ namespace LSS_prototype.User_Page
 
  
 
-        public void ExecuteSubmit(string password, string confirmPassword)
+        public async Task ExecuteSubmit(string password, string confirmPassword)
         {
             // 1. 유효성 검사
             if (string.IsNullOrWhiteSpace(UserID) ||
@@ -51,7 +52,7 @@ namespace LSS_prototype.User_Page
                 string.IsNullOrWhiteSpace(Role) ||
                 string.IsNullOrEmpty(password))
             {
-                CustomMessageWindow.Show("필수 입력값이 비어있습니다.",
+                await CustomMessageWindow.ShowAsync("필수 입력값이 비어있습니다.",
                             CustomMessageWindow.MessageBoxType.AutoClose, 1,
                             CustomMessageWindow.MessageIconType.Warning);
                 return;
@@ -60,7 +61,7 @@ namespace LSS_prototype.User_Page
 
             if(password != confirmPassword)
             {
-                CustomMessageWindow.Show(
+                await CustomMessageWindow.ShowAsync(
                     "비밀번호가 일치하지 않습니다",
                     CustomMessageWindow.MessageBoxType.AutoClose,
                     2,
@@ -72,7 +73,7 @@ namespace LSS_prototype.User_Page
             string error = DB_Manager.ValidatePassword(password);
             if (error != null)
             {
-                CustomMessageWindow.Show(
+                await CustomMessageWindow.ShowAsync(
                     error,
                     CustomMessageWindow.MessageBoxType.AutoClose,
                     2,
@@ -87,15 +88,19 @@ namespace LSS_prototype.User_Page
                 bool success = db.InsertUser(UserID.Trim(), UserName.Trim(), Role.Trim(), password);
                 if (success)
                 {
-                    CustomMessageWindow.Show("사용자 정보 추가 성공",
+                    await CustomMessageWindow.ShowAsync("사용자 정보 추가 성공",
                             CustomMessageWindow.MessageBoxType.AutoClose, 1,
                             CustomMessageWindow.MessageIconType.Info);
-                    CloseAction?.Invoke(true);
+
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        CloseAction?.Invoke(true);
+                    });
                 }
             }
             catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Constraint)
             {
-                CustomMessageWindow.Show("이미 사용중인 ID입니다.",
+                await CustomMessageWindow.ShowAsync("이미 사용중인 ID입니다.",
                     CustomMessageWindow.MessageBoxType.AutoClose, 2,
                     CustomMessageWindow.MessageIconType.Warning);
             }

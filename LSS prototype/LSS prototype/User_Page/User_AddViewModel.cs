@@ -106,7 +106,7 @@ namespace LSS_prototype.User_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
 
         }

@@ -10,8 +10,13 @@ namespace LSS_prototype.User_Page
         public User()
         {
             InitializeComponent();
-            Unloaded += (s, e) => (DataContext as UserViewModel)?.Dispose(); // 사용자 입력 감지 타이머 종료 ( 자원 관리 차 ) 
+
+            var vm = new UserViewModel();
+            DataContext = vm;  // ★ DataContext 먼저 설정
+
             txtSearch.TextChanged += OnSearchTextChanged;
+            Unloaded += (s, e) => (DataContext as UserViewModel)?.Dispose();
+            Loaded += async (s, e) => await vm.InitializeAsync();
         }
 
         private void Home_Click(object sender, RoutedEventArgs e)

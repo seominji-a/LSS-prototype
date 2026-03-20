@@ -42,8 +42,8 @@ namespace LSS_prototype.User_Page
             }
 
             // 뒤 창 블러 (CustomMessageWindow 와 동일)
-            ApplyBlurToAllWindows();
-            this.Closed += (s, e) => RemoveBlurFromAllWindows();
+            Loaded += async (s, e) => await ApplyBlurToAllWindows();
+            this.Closed += async  (s, e) => await RemoveBlurFromAllWindows();
         }
 
         // ═══════════════════════════════════════════
@@ -95,7 +95,7 @@ namespace LSS_prototype.User_Page
         // ═══════════════════════════════════════════
         //  블러 처리 (CustomMessageWindow 방식 COPY)
         // ═══════════════════════════════════════════
-        private void ApplyBlurToAllWindows()
+        private async Task ApplyBlurToAllWindows()
         {
             try
             {
@@ -109,10 +109,10 @@ namespace LSS_prototype.User_Page
                     }
                 }
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
-        private void RemoveBlurFromAllWindows()
+        private async Task RemoveBlurFromAllWindows()
         {
             try
             {
@@ -123,7 +123,7 @@ namespace LSS_prototype.User_Page
                 }
                 _blurredWindows.Clear();
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
     }
 }

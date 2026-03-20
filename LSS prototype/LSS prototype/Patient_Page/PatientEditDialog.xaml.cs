@@ -40,7 +40,7 @@ namespace LSS_prototype.Patient_Page
                 }
             }
         }
-        private void Window_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        private async void Window_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             if (DataContext is PatientEditViewModel vm)
             {
@@ -56,7 +56,7 @@ namespace LSS_prototype.Patient_Page
                 // DOB keypad
                 if (vm.IsKeypadOpen)
                 {
-                    if (!vm.KeypadVm.ValidateInput())
+                    if (!await vm.KeypadVm.ValidateInput())
                         return;
 
                     vm.KeypadVm.ConfirmCommand.Execute(null);
@@ -65,7 +65,7 @@ namespace LSS_prototype.Patient_Page
                 // Code keypad
                 if (vm.IsCodeKeypadOpen)
                 {
-                    if (!vm.KeypadVm.ValidateInput())
+                    if (!await vm.KeypadVm.ValidateInput())
                         return;
 
                     vm.KeypadVm.ConfirmCommand.Execute(null);

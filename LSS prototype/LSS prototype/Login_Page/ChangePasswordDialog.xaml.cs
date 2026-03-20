@@ -18,21 +18,21 @@ namespace LSS_prototype.Login_Page
             };
         }
 
-        private void Save_Click(object sender, RoutedEventArgs e)
+        private async void Save_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 var vm = DataContext as ChangePasswordModelView;
                 if (vm == null) return;
-                vm.Save(NewPasswordBox.Password, ConfirmPasswordBox.Password);
+                await vm.Save(NewPasswordBox.Password, ConfirmPasswordBox.Password);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
-        private void Cancel_Click(object sender, RoutedEventArgs e)
+        private async void Cancel_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -47,7 +47,7 @@ namespace LSS_prototype.Login_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
@@ -71,25 +71,22 @@ namespace LSS_prototype.Login_Page
             CapsLockWarningConfirm.Visibility = Visibility.Collapsed;
         }
 
-        private void LoginIdBox_Loaded(object sender, RoutedEventArgs e)
+     
+        private async void LoginIdBox_Loaded(object sender, RoutedEventArgs e)
         {
             try
             {
-                Dispatcher.BeginInvoke(new Action(() =>
+                await Dispatcher.BeginInvoke(new Action(() =>
                 {
                     LoginIdBox.Focus();
-
-                    // 커서를 텍스트 맨 뒤로 이동 (선택 없이)
                     LoginIdBox.SelectionStart = LoginIdBox.Text.Length;
                     LoginIdBox.SelectionLength = 0;
-
                 }), DispatcherPriority.Input);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex); // ★ await 가능
             }
- 
         }
     }
 }

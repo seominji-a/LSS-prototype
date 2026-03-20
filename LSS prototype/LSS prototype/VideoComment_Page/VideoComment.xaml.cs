@@ -1,6 +1,7 @@
 ﻿using LSS_prototype.Patient_Page;
 using LSS_prototype.Scan_Page;
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -57,12 +58,12 @@ namespace LSS_prototype.VideoComment_Page
         //  2. VM.Initialize() → 파일 목록 수집 + 첫 파일 재생
         //  3. 터치 이동 이벤트 등록
         // ═══════════════════════════════════════════
-        private void OnLoaded(object sender, RoutedEventArgs e)
+        private async void OnLoaded(object sender, RoutedEventArgs e)
         {
             try
             {
                 VM.SetMediaActions(
-                    seekBack: () =>
+                    seekBack: async () =>
                     {
                         try
                         {
@@ -72,9 +73,9 @@ namespace LSS_prototype.VideoComment_Page
                                 ? TimeSpan.Zero
                                 : target;
                         }
-                        catch (Exception ex) { Common.WriteLog(ex); }
+                        catch (Exception ex) { await Common.WriteLog(ex); }
                     },
-                    seekForward: () =>
+                    seekForward: async () =>
                     {
                         try
                         {
@@ -84,9 +85,9 @@ namespace LSS_prototype.VideoComment_Page
                             var target = VideoPlayer.Position + TimeSpan.FromSeconds(1);
                             VideoPlayer.Position = target > total ? total : target;
                         }
-                        catch (Exception ex) { Common.WriteLog(ex); }
+                        catch (Exception ex) { await Common.WriteLog(ex); }
                     },
-                    playPause: () =>
+                    playPause: async () =>
                     {
                         try
                         {
@@ -108,26 +109,26 @@ namespace LSS_prototype.VideoComment_Page
                                 _timer.Start();
                             }
                         }
-                        catch (Exception ex) { Common.WriteLog(ex); }
+                        catch (Exception ex) { await Common.WriteLog(ex); }
                     }
                 );
 
-                VM.Initialize();
+                await VM.Initialize();
 
                 // 터치 이동 이벤트 등록
                 // VideoPlayer 가 아닌 VideoPlayer 의 부모 Grid 에 등록
                 // → 하단 오버레이 영역 제외하고 영상 영역 전체에서 터치 감지
                 VideoPlayer.PreviewMouseDown += OnVideoPreviewMouseDown;
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
         //  Unloaded → 리소스 정리
         // ═══════════════════════════════════════════
-        private void OnUnloaded(object sender, RoutedEventArgs e)
+        private async void OnUnloaded(object sender, RoutedEventArgs e)
         {
-            Dispose();
+            await Dispose();
         }
 
         // ═══════════════════════════════════════════
@@ -136,7 +137,7 @@ namespace LSS_prototype.VideoComment_Page
         //  재생 중 / 정지 중 구분 없이 항상 동작
         //  이동 시 배속 초기화
         // ═══════════════════════════════════════════
-        private void OnVideoPreviewMouseDown(object sender, MouseButtonEventArgs e)
+        private async void OnVideoPreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             try
             {
@@ -152,14 +153,14 @@ namespace LSS_prototype.VideoComment_Page
                 e.Handled = true;
 
                 // 배속 초기화 → 다음/이전 영상은 항상 1x 로 시작
-                VM.ResetSpeed();
+                await VM.ResetSpeed();
 
                 if (goNext)
-                    VM.MoveNext();
+                    await VM.MoveNext();
                 else
-                    VM.MovePrev();
+                    await VM.MovePrev();
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
@@ -172,7 +173,7 @@ namespace LSS_prototype.VideoComment_Page
         //  CurrentSpeedRatio 변경
         //    → MediaElement.SpeedRatio 적용
         // ═══════════════════════════════════════════
-        private void OnViewModelPropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        private async void OnViewModelPropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             try
             {
@@ -187,16 +188,16 @@ namespace LSS_prototype.VideoComment_Page
                         break;
                 }
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
-        private void OnCurrentVideoPathChanged()
+        private async void OnCurrentVideoPathChanged()
         {
             try
             {
                 if (string.IsNullOrEmpty(VM.CurrentVideoPath))
                 {
-                    StopAndReset();
+                    await StopAndReset ();
                     return;
                 }
 
@@ -212,7 +213,7 @@ namespace LSS_prototype.VideoComment_Page
 
                 _timer.Start();
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
@@ -220,7 +221,7 @@ namespace LSS_prototype.VideoComment_Page
         // ═══════════════════════════════════════════
 
         // 영상 열림 → 전체시간 표시 + Seek 최대값 설정
-        private void VideoPlayer_MediaOpened(object sender, RoutedEventArgs e)
+        private async void VideoPlayer_MediaOpened(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -230,11 +231,11 @@ namespace LSS_prototype.VideoComment_Page
                 TxtTotalTime.Text = total.ToString(@"mm\:ss");
                 SliderSeek.Maximum = total.TotalSeconds;
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // 영상 끝 → 처음으로 돌아가 무한 반복 재생
-        private void VideoPlayer_MediaEnded(object sender, RoutedEventArgs e)
+        private async void VideoPlayer_MediaEnded(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -244,7 +245,7 @@ namespace LSS_prototype.VideoComment_Page
                 SliderSeek.Value = 0;
                 TxtCurrentTime.Text = "00:00";
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
@@ -278,13 +279,13 @@ namespace LSS_prototype.VideoComment_Page
         }
 
 
-        private void SliderSeek_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+        private async void SliderSeek_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
             try
             {
                 VideoPlayer.Position = TimeSpan.FromSeconds(SliderSeek.Value);
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
             finally
             {
                 _isDraggingSeek = false;
@@ -304,7 +305,7 @@ namespace LSS_prototype.VideoComment_Page
         // ═══════════════════════════════════════════
 
         // MediaElement + 타이머 + UI 상태 완전 초기화
-        private void StopAndReset()
+        private async Task StopAndReset()
         {
             try
             {
@@ -320,7 +321,7 @@ namespace LSS_prototype.VideoComment_Page
                 TxtCurrentTime.Text = "00:00";
                 TxtTotalTime.Text = "00:00";
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
 
@@ -328,7 +329,7 @@ namespace LSS_prototype.VideoComment_Page
         //  Dispose
         //  Unloaded 에서 자동 호출
         // ═══════════════════════════════════════════
-        public void Dispose()
+        public async Task Dispose()
         {
             if (_disposed) return;
             _disposed = true;
@@ -352,7 +353,7 @@ namespace LSS_prototype.VideoComment_Page
                 Loaded -= OnLoaded;
                 Unloaded -= OnUnloaded;
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
     }
 }

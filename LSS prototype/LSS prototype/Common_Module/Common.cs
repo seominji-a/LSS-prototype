@@ -33,32 +33,29 @@ namespace LSS_prototype
         public const int DB_VERSION = 57; // DB Version 
 
         // ===== OTP 기능  =====
-        public static bool VerifyMasterOtp(string inputId, string inputOtp)
-            => OtpService.VerifyMasterOtp(inputId, inputOtp);
+        public async static Task<bool> VerifyMasterOtp(string inputId, string inputOtp) => await OtpService.VerifyMasterOtp(inputId, inputOtp);
 
-        public static void CleanupOldLogs()
-            => LogService.CleanupOldLogs();
+        public static void CleanupOldLogs() => LogService.CleanupOldLogs();
 
-        public static bool VerifyOtpOnly(string inputOtp)
-            => OtpService.VerifyOtpOnly(inputOtp);
+        public async static Task<bool> VerifyOtpOnly(string inputOtp) => await OtpService.VerifyOtpOnly(inputOtp);
 
-        public static void WriteLog(
+        public async static Task WriteLog(
             Exception ex,
             [CallerMemberName] string method = "",
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int line = 0)
-            => LogService.WriteLog(ex, method, filePath, line);
+            => await LogService.WriteLog(ex, method, filePath, line);
 
         public enum LogLevel { Info, Warning, Error } // (기존 위치/이름 유지)
 
         public static void WriteSessionLog(string message)
             => LogService.WriteSessionLog(message);
 
-        public static void ExecuteLogout()
+        public async static void ExecuteLogout()
         {
             try
             {
-                var result = CustomMessageWindow.Show(
+                var result = await CustomMessageWindow.ShowAsync(
                     "로그아웃 하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo,
                     0,
@@ -88,12 +85,12 @@ namespace LSS_prototype
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
 
-        public static void ForceLogout()
+        public async static Task ForceLogout()
         {
             try
             {
@@ -119,15 +116,15 @@ namespace LSS_prototype
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
 
 
-        public static void ExcuteExit()
+        public async static Task ExcuteExit()
         {
-            var result = CustomMessageWindow.Show(
+            var result = await CustomMessageWindow.ShowAsync(
                     "프로그램을 종료하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo,
                     0,
@@ -151,7 +148,7 @@ namespace LSS_prototype
         /// <summary>
         /// 입력된 ID + OTP 6자리가 MASTER 계정 기준으로 유효한지 검증
         /// </summary>
-        public static bool VerifyMasterOtp(string inputId, string inputOtp)
+        public async static Task<bool> VerifyMasterOtp(string inputId, string inputOtp)
         {
             try
             {
@@ -165,7 +162,7 @@ namespace LSS_prototype
                 if (string.IsNullOrWhiteSpace(masterId) ||
                     string.IsNullOrWhiteSpace(masterKey))
                 {
-                    CustomMessageWindow.Show(
+                    await CustomMessageWindow.ShowAsync (
                        "MASTER_ID 또는 MASTER_KEY 환경변수가 설정되지 않았습니다.\n 설정 후 재시작 해주세요",
                        CustomMessageWindow.MessageBoxType.Ok,
                        0,
@@ -206,7 +203,7 @@ namespace LSS_prototype
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return false;
             }
         }
@@ -252,7 +249,7 @@ namespace LSS_prototype
         /// </summary>
         /// <param name="inputOtp"></param>
         /// <returns></returns>
-        public static bool VerifyOtpOnly(string inputOtp)
+        public async static Task<bool> VerifyOtpOnly(string inputOtp)
         {
             try
             {
@@ -263,7 +260,7 @@ namespace LSS_prototype
                 // (프로그램 종료 X → 강제삭제만 차단)
                 if (string.IsNullOrWhiteSpace(masterKey))
                 {
-                    CustomMessageWindow.Show(
+                    await CustomMessageWindow.ShowAsync(
                         "MASTER_KEY 환경변수가 설정되지 않았습니다.\n설정 후 재시작 해주세요.",
                         CustomMessageWindow.MessageBoxType.Ok, 0,
                         CustomMessageWindow.MessageIconType.Warning);
@@ -283,7 +280,7 @@ namespace LSS_prototype
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return false;
             }
         }
@@ -332,11 +329,11 @@ namespace LSS_prototype
 
         // ══════════════════════════════════════════
         // 예외 로그 기록
-        // catch 블록에서 Common.WriteLog(ex) 로 호출
+        // catch 블록에서 await Common.WriteLog(ex) 로 호출
         // CallerMemberName / CallerFilePath / CallerLineNumber
         // → 호출한 메서드명, 파일경로, 라인번호 자동 수집
         // ══════════════════════════════════════════
-        public static void WriteLog(
+        public async static Task WriteLog(
             Exception ex,
             string method,
             string filePath,
@@ -372,15 +369,12 @@ namespace LSS_prototype
                     File.AppendAllText(logFile, sb.ToString(), Encoding.UTF8);
                 }
 
-                // 사용자에게 알려주기 위한 팝업 표시 
-                Application.Current?.Dispatcher.Invoke(() =>
-                {
-                    CustomMessageWindow.Show(
+                await Application.Current?.Dispatcher.InvokeAsync(async () =>
+                    await CustomMessageWindow.ShowAsync(
                         ex.Message,
-                        CustomMessageWindow.MessageBoxType.Ok,
-                        0,
-                        CustomMessageWindow.MessageIconType.Danger);
-                });
+                        CustomMessageWindow.MessageBoxType.Ok, 0,
+                        CustomMessageWindow.MessageIconType.Danger)
+                );
             }
             catch (Exception logEx)
             {

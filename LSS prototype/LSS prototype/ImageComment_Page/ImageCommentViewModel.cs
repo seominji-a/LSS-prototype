@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using LSS_prototype.DB_CRUD;
+using System.Threading.Tasks;
 
 namespace LSS_prototype.ImageComment_Page
 {
@@ -140,7 +141,7 @@ namespace LSS_prototype.ImageComment_Page
         public ImageCommentViewModel(PatientModel selectedPatient, string studyId = null)
         {
             SelectedPatient = selectedPatient;
-            ImageDeleteCommand = new RelayCommand(_ =>ExecuteImageDelete());
+            ImageDeleteCommand = new RelayCommand(async _ => await ExecuteImageDelete());
         }
 
         // ═══════════════════════════════════════════
@@ -148,13 +149,13 @@ namespace LSS_prototype.ImageComment_Page
         //  OnLoaded 에서 호출
         //  반환값: 파일이 있으면 true, 없으면 false
         // ═══════════════════════════════════════════
-        public bool Initialize(PatientModel patient, string studyId)
+        public async Task <bool> Initialize(PatientModel patient, string studyId)
         {
             try
             {
                 if (patient == null || string.IsNullOrWhiteSpace(studyId))
                 {
-                    CustomMessageWindow.Show(
+                    await CustomMessageWindow.ShowAsync(
                         "환자 정보 또는 Study 정보가 올바르지 않습니다.",
                         CustomMessageWindow.MessageBoxType.AutoClose, 2,
                         CustomMessageWindow.MessageIconType.Warning);
@@ -178,10 +179,7 @@ namespace LSS_prototype.ImageComment_Page
 
                 if (!Directory.Exists(imageDir))
                 {
-                    CustomMessageWindow.Show(
-                        "해당 세션의 DICOM 폴더가 없습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("해당 세션의 DICOM 폴더가 없습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
                     return false;
                 }
 
@@ -200,10 +198,7 @@ namespace LSS_prototype.ImageComment_Page
 
                 if (_dcmFiles.Count == 0)
                 {
-                    CustomMessageWindow.Show(
-                        "저장된 이미지가 없습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("저장된 이미지가 없습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
                     return false;
                 }
 
@@ -213,7 +208,7 @@ namespace LSS_prototype.ImageComment_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return false;
             }
         }
@@ -267,7 +262,7 @@ namespace LSS_prototype.ImageComment_Page
         //               strokes.AddPropertyData() 로 ISF 안에 크기 저장 ( 복구창에서 정확한 ISF 좌표 얻기위해 추가 0317  박한용 ) 
         // ═══════════════════════════════════════════
 
-        public void SaveIsf(StrokeCollection strokes, double canvasWidth, double canvasHeight)
+        public async void SaveIsf(StrokeCollection strokes, double canvasWidth, double canvasHeight)
         {
             try
             {
@@ -293,7 +288,7 @@ namespace LSS_prototype.ImageComment_Page
                 using (var fs = File.Create(isfPath))
                     strokes.Save(fs);
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
@@ -301,11 +296,11 @@ namespace LSS_prototype.ImageComment_Page
         //  Yes → true (코드비하인드에서 SaveIsf 호출)
         //  No  → false (저장 없이 페이지 이동)
         // ═══════════════════════════════════════════
-        public bool ConfirmSaveDrawing()
+        public async Task<bool> ConfirmSaveDrawing()
         {
             try
             {
-                var result = CustomMessageWindow.Show(
+                var result = await CustomMessageWindow.ShowAsync(
                     "드로잉을 저장하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo,
                     icon: CustomMessageWindow.MessageIconType.Info);
@@ -314,7 +309,7 @@ namespace LSS_prototype.ImageComment_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return false;
             }
         }
@@ -335,7 +330,7 @@ namespace LSS_prototype.ImageComment_Page
         //  반환값: 이동 성공 여부
         //  코드비하인드에서 _isDirty 확인 후 호출
         // ═══════════════════════════════════════════
-        public bool NavigatePage(bool goNext)
+        public async Task<bool> NavigatePage(bool goNext)
         {
             try
             {
@@ -343,7 +338,7 @@ namespace LSS_prototype.ImageComment_Page
 
                 if (targetIndex < 0 || targetIndex >= _dcmFiles.Count)
                 {
-                    CustomMessageWindow.Show(
+                    await CustomMessageWindow.ShowAsync(
                         goNext ? "마지막 이미지입니다." : "첫 번째 이미지입니다.",
                         CustomMessageWindow.MessageBoxType.AutoClose, 1,
                         CustomMessageWindow.MessageIconType.Info);
@@ -356,18 +351,18 @@ namespace LSS_prototype.ImageComment_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return false;
             }
         }
 
-        private void ExecuteImageDelete()
+        private async Task ExecuteImageDelete()
         {
             try
             {
                 // ── 삭제 확인 팝업 ──
                 // Yes 가 아니면 아무것도 하지 않고 false 반환
-                var result = CustomMessageWindow.Show(
+                var result = await CustomMessageWindow.ShowAsync(
                     "이미지를 삭제하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo,
                     icon: CustomMessageWindow.MessageIconType.Warning);
@@ -413,7 +408,7 @@ namespace LSS_prototype.ImageComment_Page
                 
                 if (_dcmFiles.Count == 0)
                 {
-                    CustomMessageWindow.Show(
+                    await CustomMessageWindow.ShowAsync(
                             "이미지가 삭제되었습니다. \n 저장된 이미지가 존재하지 않아\nScan 화면으로 이동합니다.",
                             CustomMessageWindow.MessageBoxType.Ok, 0,
                             CustomMessageWindow.MessageIconType.Info);
@@ -421,7 +416,7 @@ namespace LSS_prototype.ImageComment_Page
                     return;
                 }
 
-                CustomMessageWindow.Show(
+                await CustomMessageWindow.ShowAsync(
                     "이미지가 정상적으로 삭제되었습니다.",
                     CustomMessageWindow.MessageBoxType.Ok, 0,
                     CustomMessageWindow.MessageIconType.Info);
@@ -442,7 +437,7 @@ namespace LSS_prototype.ImageComment_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 

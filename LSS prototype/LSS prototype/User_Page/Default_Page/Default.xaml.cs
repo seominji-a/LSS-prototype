@@ -26,6 +26,7 @@ namespace LSS_prototype.User_Page
             var vm = new DefaultViewModel();
             vm.CloseAction = result => this.Close();
             DataContext = vm;
+            Loaded += async (s, e) => await vm.InitializeAsync();
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)

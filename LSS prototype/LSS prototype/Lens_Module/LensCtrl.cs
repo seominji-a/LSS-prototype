@@ -19,21 +19,21 @@ namespace LSS_prototype.Lens_Module
         public ushort zoomSpeedPPS, focusSpeedPPS, irisSpeedPPS;
         public ushort status2;
 
-        public ushort NoErrChk2BytesRead(ushort segmentOffset)
+        public async Task<ushort> NoErrChk2BytesRead(ushort segmentOffset)
         {
             try
             {
-                UsbRead(segmentOffset, ConfigVal.DATA_LENGTH);
-                return UsbRead2Bytes();
+                await UsbRead(segmentOffset, ConfigVal.DATA_LENGTH);
+                return await UsbRead2Bytes();
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return 0;
             }
         }
 
-        public string StringRead(int retval)
+        public async Task<string> StringRead(int retval)
         {
             try
             {
@@ -43,44 +43,42 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common .WriteLog(ex);
                 return null;
             }
         }
 
-        public int ModelName(out string model)
+        public async Task<(int retval, string model)> ModelName()
         {
-            model = null;
             try
             {
-                int retval = UsbRead(DevAddr.LENS_MODEL_NAME, ConfigVal.LENSMODEL_LENGTH);
-                model = StringRead(retval);
-                return retval;
+                int retval = await UsbRead(DevAddr.LENS_MODEL_NAME, ConfigVal.LENSMODEL_LENGTH);
+                string model = await StringRead(retval);
+                return (retval, model);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, null);
             }
         }
 
-        public int UserAreaRead(out string userName)
+        public async Task<(int retval, string userName)> UserAreaRead()
         {
-            userName = null;
             try
             {
-                int retval = UsbRead(DevAddr.USER_AREA, ConfigVal.USERAREA_LENGTH);
-                userName = StringRead(retval);
-                return retval;
+                int retval = await UsbRead(DevAddr.USER_AREA, ConfigVal.USERAREA_LENGTH);
+                string userName = await StringRead (retval);
+                return (retval, userName);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, null);
             }
         }
 
-        public string VersionRead(int retval)
+        public async Task<string> VersionRead(int retval)
         {
             try
             {
@@ -90,141 +88,134 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return null;
             }
         }
 
-        public int FWVersion(out string version)
+        public async Task<(int retval, string version)> FWVersion()
         {
-            version = null;
             try
             {
-                int retval = UsbRead(DevAddr.FIRMWARE_VERSION, ConfigVal.DATA_LENGTH);
-                version = VersionRead(retval);
-                return retval;
+                int retval = await UsbRead(DevAddr.FIRMWARE_VERSION, ConfigVal.DATA_LENGTH);
+                string version = await VersionRead(retval);
+                return (retval, version);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, null);
             }
         }
 
-        public int ProtocolVersion(out string version)
+        public async Task<(int retval, string version)> ProtocolVersion()
         {
-            version = null;
             try
             {
-                int retval = UsbRead(DevAddr.PROTOCOL_VERSION, ConfigVal.DATA_LENGTH);
-                version = VersionRead(retval);
-                return retval;
+                int retval = await UsbRead(DevAddr.PROTOCOL_VERSION, ConfigVal.DATA_LENGTH);
+                string version = await VersionRead(retval);
+                return (retval, version);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, null);
             }
         }
 
-        public int LensRevision(out int revision)
+        public async Task<(int retval, int revision)> LensRevision()
         {
-            revision = 0;
             try
             {
-                int retval = UsbRead(DevAddr.LENS_REVISION, ConfigVal.DATA_LENGTH);
-                revision = UsbRead2Bytes();
-                return retval;
+                int retval = await UsbRead(DevAddr.LENS_REVISION, ConfigVal.DATA_LENGTH);
+                int revision = await UsbRead2Bytes();
+                return (retval, revision);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, 0);
             }
         }
 
-        public int LensAddress(out int i2cAddress)
+        public async Task<(int retval, int i2cAddress)> LensAddress()
         {
-            i2cAddress = 0;
             try
             {
-                int retval = UsbRead(DevAddr.LENS_ADDRESS, ConfigVal.LENSADDRESS_LENGTH);
-                i2cAddress = receivedData[0];
-                return retval;
+                int retval = await UsbRead(DevAddr.LENS_ADDRESS, ConfigVal.LENSADDRESS_LENGTH);
+                int i2cAddress = receivedData[0];
+                return (retval, i2cAddress);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, 0);
             }
         }
 
-        public int CapabilitiesRead(out ushort capabilities)
+        public async Task<(int retval, ushort capabilities)> CapabilitiesRead()
         {
-            capabilities = 0;
             try
             {
-                int retval = UsbRead(DevAddr.CAPABILITIES, ConfigVal.DATA_LENGTH);
-                capabilities = UsbRead2Bytes();
-                return retval;
+                int retval = await UsbRead(DevAddr.CAPABILITIES, ConfigVal.DATA_LENGTH);
+                ushort capabilities = await UsbRead2Bytes();
+                return (retval, capabilities);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, 0);
             }
         }
 
-        public int Status1Read(out ushort status1)
+        public async Task<(int retval, ushort status1)> Status1Read()
         {
-            status1 = 0;
             try
             {
-                int retval = UsbRead(DevAddr.STATUS1, ConfigVal.DATA_LENGTH);
-                status1 = UsbRead2Bytes();
-                return retval;
+                int retval = await UsbRead(DevAddr.STATUS1, ConfigVal.DATA_LENGTH);
+                ushort status1 = await UsbRead2Bytes();
+                return (retval, status1);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, 0);
             }
         }
 
-        public int Status2ReadSet()
+        public async Task<int> Status2ReadSet()
         {
             try
             {
-                int retval = UsbRead(DevAddr.STATUS2, ConfigVal.DATA_LENGTH);
+                int retval = await UsbRead(DevAddr.STATUS2, ConfigVal.DATA_LENGTH);
                 if (retval != CP2112_DLL.HID_SMBUS_SUCCESS)
                     return retval;
-                status2 = UsbRead2Bytes();
+                status2 = await UsbRead2Bytes();
                 return retval;
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int TempKelvin(out int kelvinValue)
+        public async Task<(int retval, int kelvinValue)> TempKelvin()
         {
-            kelvinValue = 0;
             try
             {
-                int retval = UsbRead(DevAddr.TEMPERATURE_VAL, 2);
-                kelvinValue = UsbRead2Bytes();
-                return retval;
+                int retval = await UsbRead(DevAddr.TEMPERATURE_VAL, 2);
+                int kelvinValue = await UsbRead2Bytes();
+                return (retval, kelvinValue);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, 0);
             }
         }
 
-        public int UserAreaWrite(byte[] userName)
+        public async Task<int> UserAreaWrite(byte[] userName)
         {
             try
             {
@@ -241,9 +232,7 @@ namespace LSS_prototype.Lens_Module
                 {
                     int space = ConfigVal.USERAREA_LENGTH - userNameSize;
                     for (int i = 0; i < space; i++)
-                    {
                         sendData[sendSize + i] = 0;
-                    }
                 }
                 sendSize = (byte)sendData.Length;
                 int retval = CP2112_DLL.HidSmbus_WriteRequest(connectedDevice, i2cAddr,
@@ -252,12 +241,12 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        int WaitCalc(ushort moveValue, int speedPPS)
+        async Task<int> WaitCalc(ushort moveValue, int speedPPS)
         {
             try
             {
@@ -268,185 +257,175 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return 2000;
             }
         }
 
-        public int ZoomCurrentAddrReadSet()
+        public async Task<int> ZoomCurrentAddrReadSet()
         {
             try
             {
-                int retval = UsbRead(DevAddr.ZOOM_POSITION_VAL, ConfigVal.DATA_LENGTH);
-                zoomCurrentAddr = UsbRead2Bytes();
+                int retval = await UsbRead(DevAddr.ZOOM_POSITION_VAL, ConfigVal.DATA_LENGTH);
+                zoomCurrentAddr = await UsbRead2Bytes();
                 return retval;
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int ZoomParameterReadSet()
+        public async Task<int> ZoomParameterReadSet()
         {
             try
             {
-                int retval = UsbRead(DevAddr.ZOOM_POSITION_MIN, ConfigVal.DATA_LENGTH);
-                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS)
-                    return retval;
-                zoomMinAddr = UsbRead2Bytes();
+                int retval = await UsbRead(DevAddr.ZOOM_POSITION_MIN, ConfigVal.DATA_LENGTH);
+                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS) return retval;
+                zoomMinAddr = await UsbRead2Bytes();
 
-                retval = UsbRead(DevAddr.ZOOM_POSITION_MAX, ConfigVal.DATA_LENGTH);
-                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS)
-                    return retval;
-                zoomMaxAddr = UsbRead2Bytes();
+                retval = await UsbRead(DevAddr.ZOOM_POSITION_MAX, ConfigVal.DATA_LENGTH);
+                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS) return retval;
+                zoomMaxAddr = await UsbRead2Bytes();
 
-                retval = UsbRead(DevAddr.ZOOM_SPEED_VAL, ConfigVal.DATA_LENGTH);
-                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS)
-                    return retval;
-                zoomSpeedPPS = UsbRead2Bytes();
+                retval = await UsbRead(DevAddr.ZOOM_SPEED_VAL, ConfigVal.DATA_LENGTH);
+                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS) return retval;
+                zoomSpeedPPS = await UsbRead2Bytes();
 
                 return retval;
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int ZoomBacklashRead(out ushort flag)
+        public async Task<(int retval, ushort flag)> ZoomBacklashRead()
         {
-            flag = 0;
             try
             {
-                int retval = UsbRead(DevAddr.ZOOM_BACKLASH_CANCEL, ConfigVal.DATA_LENGTH);
-                flag = UsbRead2Bytes();
+                int retval = await UsbRead(DevAddr.ZOOM_BACKLASH_CANCEL, ConfigVal.DATA_LENGTH);
+                ushort flag = await UsbRead2Bytes();
+                return (retval, flag);
+            }
+            catch (Exception ex)
+            {
+                await Common.WriteLog(ex);
+                return (-1, 0);
+            }
+        }
+
+        public async Task<int> ZoomBacklashWrite(ushort flag)
+        {
+            try
+            {
+                int retval = await UsbWrite(DevAddr.ZOOM_BACKLASH_CANCEL, flag);
                 return retval;
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int ZoomBacklashWrite(ushort flag)
+        public async Task<(int retval, ushort speedPPS)> ZoomSpeedMinRead()
         {
             try
             {
-                int retval = UsbWrite(DevAddr.ZOOM_BACKLASH_CANCEL, flag);
-                return retval;
+                int retval = await UsbRead(DevAddr.ZOOM_SPEED_MIN, ConfigVal.DATA_LENGTH);
+                ushort speedPPS = await UsbRead2Bytes();
+                return (retval, speedPPS);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, 0);
             }
         }
 
-        public int ZoomSpeedMinRead(out ushort speedPPS)
+        public async Task<(int retval, ushort speedPPS)> ZoomSpeedMaxRead()
         {
-            speedPPS = 0;
             try
             {
-                int retval = UsbRead(DevAddr.ZOOM_SPEED_MIN, ConfigVal.DATA_LENGTH);
-                speedPPS = UsbRead2Bytes();
-                return retval;
+                int retval = await UsbRead(DevAddr.ZOOM_SPEED_MAX, ConfigVal.DATA_LENGTH);
+                ushort speedPPS = await UsbRead2Bytes();
+                return (retval, speedPPS);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, 0);
             }
         }
 
-        public int ZoomSpeedMaxRead(out ushort speedPPS)
-        {
-            speedPPS = 0;
-            try
-            {
-                int retval = UsbRead(DevAddr.ZOOM_SPEED_MAX, ConfigVal.DATA_LENGTH);
-                speedPPS = UsbRead2Bytes();
-                return retval;
-            }
-            catch (Exception ex)
-            {
-                Common.WriteLog(ex);
-                return -1;
-            }
-        }
-
-        public int ZoomSpeedWrite(ushort speedPPS)
+        public async Task<int> ZoomSpeedWrite(ushort speedPPS)
         {
             try
             {
-                int retval = UsbWrite(DevAddr.ZOOM_SPEED_VAL, speedPPS);
-                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS)
-                    return retval;
+                int retval = await UsbWrite(DevAddr.ZOOM_SPEED_VAL, speedPPS);
+                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS) return retval;
                 Thread.Sleep(1);
-                retval = UsbRead(DevAddr.ZOOM_SPEED_VAL, ConfigVal.DATA_LENGTH);
-                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS)
-                    return retval;
-                zoomSpeedPPS = UsbRead2Bytes();
+                retval = await UsbRead(DevAddr.ZOOM_SPEED_VAL, ConfigVal.DATA_LENGTH);
+                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS) return retval;
+                zoomSpeedPPS = await UsbRead2Bytes();
                 return retval;
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int ZoomCountValRead(out int count)
+        public async Task<(int retval, int count)> ZoomCountValRead()
         {
-            count = 0;
             try
             {
-                int retval = UsbRead(DevAddr.ZOOM_COUNT_VAL, ConfigVal.LENSCOUNT_LENGTH);
-                count = CountRead();
-                return retval;
+                int retval = await UsbRead(DevAddr.ZOOM_COUNT_VAL, ConfigVal.LENSCOUNT_LENGTH);
+                int count = await CountRead();
+                return (retval, count);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, 0);
             }
         }
 
-        public int ZoomCountMaxRead(out int count)
+        public async Task<(int retval, int count)> ZoomCountMaxRead()
         {
-            count = 0;
             try
             {
-                int retval = UsbRead(DevAddr.ZOOM_COUNT_MAX, ConfigVal.LENSCOUNT_LENGTH);
-                count = CountRead();
-                return retval;
+                int retval = await UsbRead(DevAddr.ZOOM_COUNT_MAX, ConfigVal.LENSCOUNT_LENGTH);
+                int count = await CountRead();
+                return (retval, count);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, 0);
             }
         }
 
-        public int ZoomInit()   // When using it, do ZoomParameterReadSet
+        public async Task<int> ZoomInit()
         {
             try
             {
-                int waitTime = WaitCalc((ushort)(zoomMaxAddr - zoomMinAddr), zoomSpeedPPS);
-                int retval = UsbWrite(DevAddr.ZOOM_INITIALIZE, ConfigVal.INIT_RUN_BIT);
+                int waitTime = await WaitCalc((ushort)(zoomMaxAddr - zoomMinAddr), zoomSpeedPPS);
+                int retval = await UsbWrite(DevAddr.ZOOM_INITIALIZE, ConfigVal.INIT_RUN_BIT);
                 if (retval == CP2112_DLL.HID_SMBUS_SUCCESS)
                 {
-                    retval = StatusWait(DevAddr.STATUS1, ConfigVal.ZOOM_MASK, waitTime);
+                    retval = await StatusWait(DevAddr.STATUS1, ConfigVal.ZOOM_MASK, waitTime);
                     if (retval == CP2112_DLL.HID_SMBUS_SUCCESS)
                     {
-                        retval = UsbRead(DevAddr.ZOOM_POSITION_VAL, ConfigVal.DATA_LENGTH);
+                        retval = await UsbRead(DevAddr.ZOOM_POSITION_VAL, ConfigVal.DATA_LENGTH);
                         if (retval == CP2112_DLL.HID_SMBUS_SUCCESS)
                         {
-                            zoomCurrentAddr = UsbRead2Bytes();
-                            Status2ReadSet();
+                            zoomCurrentAddr = await UsbRead2Bytes();
+                            await Status2ReadSet();
                             return retval;
                         }
                     }
@@ -455,18 +434,18 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int ZoomMove(ushort addrData)
+        public async Task<int> ZoomMove(ushort addrData)
         {
             try
             {
                 int moveValue = Math.Abs(addrData - zoomCurrentAddr);
-                int waitTime = WaitCalc((ushort)moveValue, zoomSpeedPPS);
-                int retval = DeviceMove(DevAddr.ZOOM_POSITION_VAL, ref addrData,
+                int waitTime = await WaitCalc((ushort)moveValue, zoomSpeedPPS);
+                int retval = await DeviceMove(DevAddr.ZOOM_POSITION_VAL, addrData,
                     ConfigVal.ZOOM_MASK, waitTime);
                 if (retval == CP2112_DLL.HID_SMBUS_SUCCESS)
                     zoomCurrentAddr = addrData;
@@ -474,185 +453,175 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int FocusCurrentAddrReadSet()
+        public async Task<int> FocusCurrentAddrReadSet()
         {
             try
             {
-                int retval = UsbRead(DevAddr.FOCUS_POSITION_VAL, ConfigVal.DATA_LENGTH);
-                focusCurrentAddr = UsbRead2Bytes();
+                int retval = await UsbRead(DevAddr.FOCUS_POSITION_VAL, ConfigVal.DATA_LENGTH);
+                focusCurrentAddr = await UsbRead2Bytes();
                 return retval;
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int FocusParameterReadSet()
+        public async Task<int> FocusParameterReadSet()
         {
             try
             {
-                int retval = UsbRead(DevAddr.FOCUS_MECH_STEP_MIN, ConfigVal.DATA_LENGTH);
-                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS)
-                    return retval;
-                focusMinAddr = UsbRead2Bytes();
+                int retval = await UsbRead(DevAddr.FOCUS_MECH_STEP_MIN, ConfigVal.DATA_LENGTH);
+                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS) return retval;
+                focusMinAddr = await UsbRead2Bytes();
 
-                retval = UsbRead(DevAddr.FOCUS_MECH_STEP_MAX, ConfigVal.DATA_LENGTH);
-                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS)
-                    return retval;
-                focusMaxAddr = UsbRead2Bytes();
+                retval = await UsbRead(DevAddr.FOCUS_MECH_STEP_MAX, ConfigVal.DATA_LENGTH);
+                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS) return retval;
+                focusMaxAddr = await UsbRead2Bytes();
 
-                retval = UsbRead(DevAddr.FOCUS_SPEED_VAL, ConfigVal.DATA_LENGTH);
-                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS)
-                    return retval;
-                focusSpeedPPS = UsbRead2Bytes();
+                retval = await UsbRead(DevAddr.FOCUS_SPEED_VAL, ConfigVal.DATA_LENGTH);
+                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS) return retval;
+                focusSpeedPPS = await UsbRead2Bytes();
 
                 return retval;
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int FocusBacklashRead(out ushort flag)
+        public async Task<(int retval, ushort flag)> FocusBacklashRead()
         {
-            flag = 0;
             try
             {
-                int retval = UsbRead(DevAddr.FOCUS_BACKLASH_CANCEL, 2);
-                flag = UsbRead2Bytes();
+                int retval = await UsbRead(DevAddr.FOCUS_BACKLASH_CANCEL, 2);
+                ushort flag = await UsbRead2Bytes();
+                return (retval, flag);
+            }
+            catch (Exception ex)
+            {
+                await Common.WriteLog(ex);
+                return (-1, 0);
+            }
+        }
+
+        public async Task<int> FocusBacklashWrite(ushort flag)
+        {
+            try
+            {
+                int retval = await UsbWrite(DevAddr.FOCUS_BACKLASH_CANCEL, flag);
                 return retval;
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int FocusBacklashWrite(ushort flag)
+        public async Task<(int retval, ushort speedPPS)> FocusSpeedMinRead()
         {
             try
             {
-                int retval = UsbWrite(DevAddr.FOCUS_BACKLASH_CANCEL, flag);
-                return retval;
+                int retval = await UsbRead(DevAddr.FOCUS_SPEED_MIN, ConfigVal.DATA_LENGTH);
+                ushort speedPPS = await UsbRead2Bytes();
+                return (retval, speedPPS);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, 0);
             }
         }
 
-        public int FocusSpeedMinRead(out ushort speedPPS)
+        public async Task<(int retval, ushort speedPPS)> FocusSpeedMaxRead()
         {
-            speedPPS = 0;
             try
             {
-                int retval = UsbRead(DevAddr.FOCUS_SPEED_MIN, ConfigVal.DATA_LENGTH);
-                speedPPS = UsbRead2Bytes();
-                return retval;
+                int retval = await UsbRead(DevAddr.FOCUS_SPEED_MAX, ConfigVal.DATA_LENGTH);
+                ushort speedPPS = await UsbRead2Bytes();
+                return (retval, speedPPS);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, 0);
             }
         }
 
-        public int FocusSpeedMaxRead(out ushort speedPPS)
-        {
-            speedPPS = 0;
-            try
-            {
-                int retval = UsbRead(DevAddr.FOCUS_SPEED_MAX, ConfigVal.DATA_LENGTH);
-                speedPPS = UsbRead2Bytes();
-                return retval;
-            }
-            catch (Exception ex)
-            {
-                Common.WriteLog(ex);
-                return -1;
-            }
-        }
-
-        public int FocusSpeedWrite(ushort speedPPS)
+        public async Task<int> FocusSpeedWrite(ushort speedPPS)
         {
             try
             {
-                int retval = UsbWrite(DevAddr.FOCUS_SPEED_VAL, speedPPS);
-                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS)
-                    return retval;
+                int retval = await UsbWrite(DevAddr.FOCUS_SPEED_VAL, speedPPS);
+                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS) return retval;
                 Thread.Sleep(1);
-                retval = UsbRead(DevAddr.FOCUS_SPEED_VAL, ConfigVal.DATA_LENGTH);
-                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS)
-                    return retval;
-                focusSpeedPPS = UsbRead2Bytes();
+                retval = await UsbRead(DevAddr.FOCUS_SPEED_VAL, ConfigVal.DATA_LENGTH);
+                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS) return retval;
+                focusSpeedPPS = await UsbRead2Bytes();
                 return retval;
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int FocusCountValRead(out int count)
+        public async Task<(int retval, int count)> FocusCountValRead()
         {
-            count = 0;
             try
             {
-                int retval = UsbRead(DevAddr.FOCUS_COUNT_VAL, ConfigVal.LENSCOUNT_LENGTH);
-                count = CountRead();
-                return retval;
+                int retval = await UsbRead(DevAddr.FOCUS_COUNT_VAL, ConfigVal.LENSCOUNT_LENGTH);
+                int count = await CountRead();
+                return (retval, count);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, 0);
             }
         }
 
-        public int FocusCountMaxRead(out int count)
+        public async Task<(int retval, int count)> FocusCountMaxRead()
         {
-            count = 0;
             try
             {
-                int retval = UsbRead(DevAddr.FOCUS_COUNT_MAX, ConfigVal.LENSCOUNT_LENGTH);
-                count = CountRead();
-                return retval;
+                int retval = await UsbRead(DevAddr.FOCUS_COUNT_MAX, ConfigVal.LENSCOUNT_LENGTH);
+                int count = await CountRead();
+                return (retval, count);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, 0);
             }
         }
 
-        public int FocusInit()  // When using it, do FocusParameterReadSet
+        public async Task<int> FocusInit()
         {
             try
             {
-                int waitTime = WaitCalc((ushort)(focusMaxAddr - focusMinAddr), focusSpeedPPS);
-                int retval = UsbWrite(DevAddr.FOCUS_INITIALIZE, ConfigVal.INIT_RUN_BIT);
+                int waitTime = await WaitCalc((ushort)(focusMaxAddr - focusMinAddr), focusSpeedPPS);
+                int retval = await UsbWrite(DevAddr.FOCUS_INITIALIZE, ConfigVal.INIT_RUN_BIT);
                 if (retval == CP2112_DLL.HID_SMBUS_SUCCESS)
                 {
-                    retval = StatusWait(DevAddr.STATUS1, ConfigVal.FOCUS_MASK, waitTime);
+                    retval = await StatusWait(DevAddr.STATUS1, ConfigVal.FOCUS_MASK, waitTime);
                     if (retval == CP2112_DLL.HID_SMBUS_SUCCESS)
                     {
-                        retval = UsbRead(DevAddr.FOCUS_POSITION_VAL, ConfigVal.DATA_LENGTH);
+                        retval = await UsbRead(DevAddr.FOCUS_POSITION_VAL, ConfigVal.DATA_LENGTH);
                         if (retval == CP2112_DLL.HID_SMBUS_SUCCESS)
                         {
-                            focusCurrentAddr = UsbRead2Bytes();
-                            Status2ReadSet();
+                            focusCurrentAddr = await UsbRead2Bytes();
+                            await Status2ReadSet();
                             return retval;
                         }
                     }
@@ -661,18 +630,18 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int FocusMove(ushort addrData)
+        public async Task<int> FocusMove(ushort addrData)
         {
             try
             {
                 int moveValue = Math.Abs(addrData - focusCurrentAddr);
-                int waitTime = WaitCalc((ushort)moveValue, focusSpeedPPS);
-                int retval = DeviceMove(DevAddr.FOCUS_POSITION_VAL, ref addrData,
+                int waitTime = await WaitCalc((ushort)moveValue, focusSpeedPPS);
+                int retval = await DeviceMove(DevAddr.FOCUS_POSITION_VAL, addrData,
                     ConfigVal.FOCUS_MASK, waitTime);
                 if (retval == CP2112_DLL.HID_SMBUS_SUCCESS)
                     focusCurrentAddr = addrData;
@@ -680,185 +649,175 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int IrisCurrentAddrReadSet()
+        public async Task<int> IrisCurrentAddrReadSet()
         {
             try
             {
-                int retval = UsbRead(DevAddr.IRIS_POSITION_VAL, ConfigVal.DATA_LENGTH);
-                irisCurrentAddr = UsbRead2Bytes();
+                int retval = await UsbRead(DevAddr.IRIS_POSITION_VAL, ConfigVal.DATA_LENGTH);
+                irisCurrentAddr = await UsbRead2Bytes();
                 return retval;
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int IrisParameterReadSet()
+        public async Task<int> IrisParameterReadSet()
         {
             try
             {
-                int retval = UsbRead(DevAddr.IRIS_MECH_STEP_MIN, ConfigVal.DATA_LENGTH);
-                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS)
-                    return retval;
-                irisMinAddr = UsbRead2Bytes();
+                int retval = await UsbRead(DevAddr.IRIS_MECH_STEP_MIN, ConfigVal.DATA_LENGTH);
+                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS) return retval;
+                irisMinAddr = await UsbRead2Bytes();
 
-                retval = UsbRead(DevAddr.IRIS_MECH_STEP_MAX, ConfigVal.DATA_LENGTH);
-                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS)
-                    return retval;
-                irisMaxAddr = UsbRead2Bytes();
+                retval = await UsbRead(DevAddr.IRIS_MECH_STEP_MAX, ConfigVal.DATA_LENGTH);
+                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS) return retval;
+                irisMaxAddr = await UsbRead2Bytes();
 
-                retval = UsbRead(DevAddr.IRIS_SPEED_VAL, ConfigVal.DATA_LENGTH);
-                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS)
-                    return retval;
-                irisSpeedPPS = UsbRead2Bytes();
+                retval = await UsbRead(DevAddr.IRIS_SPEED_VAL, ConfigVal.DATA_LENGTH);
+                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS) return retval;
+                irisSpeedPPS = await UsbRead2Bytes();
 
                 return retval;
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int IrisBacklashRead(out ushort flag)
+        public async Task<(int retval, ushort flag)> IrisBacklashRead()
         {
-            flag = 0;
             try
             {
-                int retval = UsbRead(DevAddr.IRIS_BACKLASH_CANCEL, ConfigVal.DATA_LENGTH);
-                flag = UsbRead2Bytes();
+                int retval = await UsbRead(DevAddr.IRIS_BACKLASH_CANCEL, ConfigVal.DATA_LENGTH);
+                ushort flag = await UsbRead2Bytes();
+                return (retval, flag);
+            }
+            catch (Exception ex)
+            {
+                await Common.WriteLog(ex);
+                return (-1, 0);
+            }
+        }
+
+        public async Task<int> IrisBacklashWrite(ushort flag)
+        {
+            try
+            {
+                int retval = await UsbWrite(DevAddr.IRIS_BACKLASH_CANCEL, flag);
                 return retval;
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int IrisBacklashWrite(ushort flag)
+        public async Task<(int retval, ushort speedPPS)> IrisSpeedMinRead()
         {
             try
             {
-                int retval = UsbWrite(DevAddr.IRIS_BACKLASH_CANCEL, flag);
-                return retval;
+                int retval = await UsbRead(DevAddr.IRIS_SPEED_MIN, ConfigVal.DATA_LENGTH);
+                ushort speedPPS = await UsbRead2Bytes();
+                return (retval, speedPPS);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, 0);
             }
         }
 
-        public int IrisSpeedMinRead(out ushort speedPPS)
+        public async Task<(int retval, ushort speedPPS)> IrisSpeedMaxRead()
         {
-            speedPPS = 0;
             try
             {
-                int retval = UsbRead(DevAddr.IRIS_SPEED_MIN, ConfigVal.DATA_LENGTH);
-                speedPPS = UsbRead2Bytes();
-                return retval;
+                int retval = await UsbRead(DevAddr.IRIS_SPEED_MAX, ConfigVal.DATA_LENGTH);
+                ushort speedPPS = await UsbRead2Bytes();
+                return (retval, speedPPS);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, 0);
             }
         }
 
-        public int IrisSpeedMaxRead(out ushort speedPPS)
-        {
-            speedPPS = 0;
-            try
-            {
-                int retval = UsbRead(DevAddr.IRIS_SPEED_MAX, ConfigVal.DATA_LENGTH);
-                speedPPS = UsbRead2Bytes();
-                return retval;
-            }
-            catch (Exception ex)
-            {
-                Common.WriteLog(ex);
-                return -1;
-            }
-        }
-
-        public int IrisSpeedWrite(ushort speedPPS)
+        public async Task<int> IrisSpeedWrite(ushort speedPPS)
         {
             try
             {
-                int retval = UsbWrite(DevAddr.IRIS_SPEED_VAL, speedPPS);
-                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS)
-                    return retval;
+                int retval = await UsbWrite(DevAddr.IRIS_SPEED_VAL, speedPPS);
+                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS) return retval;
                 Thread.Sleep(1);
-                retval = UsbRead(DevAddr.IRIS_SPEED_VAL, ConfigVal.DATA_LENGTH);
-                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS)
-                    return retval;
-                irisSpeedPPS = UsbRead2Bytes();
+                retval = await UsbRead(DevAddr.IRIS_SPEED_VAL, ConfigVal.DATA_LENGTH);
+                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS) return retval;
+                irisSpeedPPS = await UsbRead2Bytes();
                 return retval;
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int IrisCountValRead(out int count)
+        public async Task<(int retval, int count)> IrisCountValRead()
         {
-            count = 0;
             try
             {
-                int retval = UsbRead(DevAddr.IRIS_COUNT_VAL, ConfigVal.LENSCOUNT_LENGTH);
-                count = CountRead();
-                return retval;
+                int retval = await UsbRead(DevAddr.IRIS_COUNT_VAL, ConfigVal.LENSCOUNT_LENGTH);
+                int count = await CountRead();
+                return (retval, count);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, 0);
             }
         }
 
-        public int IrisCountMaxRead(out int count)
+        public async Task<(int retval, int count)> IrisCountMaxRead()
         {
-            count = 0;
             try
             {
-                int retval = UsbRead(DevAddr.IRIS_COUNT_MAX, ConfigVal.LENSCOUNT_LENGTH);
-                count = CountRead();
-                return retval;
+                int retval = await UsbRead(DevAddr.IRIS_COUNT_MAX, ConfigVal.LENSCOUNT_LENGTH);
+                int count = await CountRead();
+                return (retval, count);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, 0);
             }
         }
 
-        public int IrisInit()   // When using it, do IrisParameterReadSet
+        public async Task<int> IrisInit()
         {
             try
             {
-                int waitTime = WaitCalc((ushort)(irisMaxAddr - irisMinAddr), irisSpeedPPS);
-                int retval = UsbWrite(DevAddr.IRIS_INITIALIZE, ConfigVal.INIT_RUN_BIT);
+                int waitTime = await WaitCalc((ushort)(irisMaxAddr - irisMinAddr), irisSpeedPPS);
+                int retval = await UsbWrite(DevAddr.IRIS_INITIALIZE, ConfigVal.INIT_RUN_BIT);
                 if (retval == CP2112_DLL.HID_SMBUS_SUCCESS)
                 {
-                    retval = StatusWait(DevAddr.STATUS1, ConfigVal.IRIS_MASK, waitTime);
+                    retval = await StatusWait(DevAddr.STATUS1, ConfigVal.IRIS_MASK, waitTime);
                     if (retval == CP2112_DLL.HID_SMBUS_SUCCESS)
                     {
-                        retval = UsbRead(DevAddr.IRIS_POSITION_VAL, ConfigVal.DATA_LENGTH);
+                        retval = await UsbRead(DevAddr.IRIS_POSITION_VAL, ConfigVal.DATA_LENGTH);
                         if (retval == CP2112_DLL.HID_SMBUS_SUCCESS)
                         {
-                            irisCurrentAddr = UsbRead2Bytes();
-                            Status2ReadSet();
+                            irisCurrentAddr = await UsbRead2Bytes();
+                            await Status2ReadSet();
                             return retval;
                         }
                     }
@@ -867,18 +826,18 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int IrisMove(ushort addrData)
+        public async Task<int> IrisMove(ushort addrData)
         {
             try
             {
                 int moveValue = Math.Abs(addrData - irisCurrentAddr);
-                int waitTime = WaitCalc((ushort)moveValue, irisSpeedPPS);
-                int retval = DeviceMove(DevAddr.IRIS_POSITION_VAL, ref addrData,
+                int waitTime = await WaitCalc((ushort)moveValue, irisSpeedPPS);
+                int retval = await DeviceMove(DevAddr.IRIS_POSITION_VAL, addrData,
                     ConfigVal.IRIS_MASK, waitTime);
                 if (retval == CP2112_DLL.HID_SMBUS_SUCCESS)
                     irisCurrentAddr = addrData;
@@ -886,93 +845,90 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int OptFilterCurrentAddrReadSet()
+        public async Task<int> OptFilterCurrentAddrReadSet()
         {
             try
             {
-                int retval = UsbRead(DevAddr.OPT_FILTER_POSITION_VAL, ConfigVal.DATA_LENGTH);
-                optCurrentAddr = UsbRead2Bytes();
+                int retval = await UsbRead(DevAddr.OPT_FILTER_POSITION_VAL, ConfigVal.DATA_LENGTH);
+                optCurrentAddr = await UsbRead2Bytes();
                 return retval;
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int OptFilterParameterReadSet()
+        public async Task<int> OptFilterParameterReadSet()
         {
             try
             {
-                int retval = UsbRead(DevAddr.OPT_FILTER_MECH_STEP_MAX, ConfigVal.DATA_LENGTH);
-                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS)
-                    return retval;
-                optFilMaxAddr = UsbRead2Bytes();
+                int retval = await UsbRead(DevAddr.OPT_FILTER_MECH_STEP_MAX, ConfigVal.DATA_LENGTH);
+                if (retval != CP2112_DLL.HID_SMBUS_SUCCESS) return retval;
+                optFilMaxAddr = await UsbRead2Bytes();
 
-                retval = OptFilterCurrentAddrReadSet();
+                retval = await OptFilterCurrentAddrReadSet();
                 return retval;
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int OptFilterCountValRead(out int count)
+        public async Task<(int retval, int count)> OptFilterCountValRead()
         {
-            count = 0;
             try
             {
-                int retval = UsbRead(DevAddr.OPT_FILTER_COUNT_VAL, ConfigVal.LENSCOUNT_LENGTH);
-                count = CountRead();
-                return retval;
+                int retval = await UsbRead(DevAddr.OPT_FILTER_COUNT_VAL, ConfigVal.LENSCOUNT_LENGTH);
+                int count = await CountRead();
+                return (retval, count);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, 0);
             }
         }
 
-        public int OptFilterCountMaxRead(out int count)
+        public async Task<(int retval, int count)> OptFilterCountMaxRead()
         {
-            count = 0;
             try
             {
-                int retval = UsbRead(DevAddr.OPT_FILTER_COUNT_MAX, ConfigVal.LENSCOUNT_LENGTH);
-                count = CountRead();
-                return retval;
+                int retval = await UsbRead(DevAddr.OPT_FILTER_COUNT_MAX, ConfigVal.LENSCOUNT_LENGTH);
+                int count = await CountRead();
+                return (retval, count);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, 0);
             }
         }
 
-        public int OptFilterInit()  // When using it, do OptFilterParameterReadSet
+        public async Task<int> OptFilterInit()
         {
             try
             {
-                int waitTime = WaitCalc((ushort)(optFilMaxAddr + 1), ConfigVal.OPT_FILTER_SPEED);
-                int retval = UsbWrite(DevAddr.OPT_FILTER_INITIALIZE, ConfigVal.INIT_RUN_BIT);
+                int waitTime = await WaitCalc((ushort)(optFilMaxAddr + 1), ConfigVal.OPT_FILTER_SPEED);
+                int retval = await UsbWrite(DevAddr.OPT_FILTER_INITIALIZE, ConfigVal.INIT_RUN_BIT);
                 if (retval == CP2112_DLL.HID_SMBUS_SUCCESS)
                 {
-                    retval = StatusWait(DevAddr.STATUS1, ConfigVal.OPT_FILTER_MASK, waitTime);
+                    retval = await StatusWait(DevAddr.STATUS1, ConfigVal.OPT_FILTER_MASK, waitTime);
                     if (retval == CP2112_DLL.HID_SMBUS_SUCCESS)
                     {
-                        retval = UsbRead(DevAddr.OPT_FILTER_POSITION_VAL, ConfigVal.DATA_LENGTH);
+                        retval = await UsbRead(DevAddr.OPT_FILTER_POSITION_VAL, ConfigVal.DATA_LENGTH);
                         if (retval == CP2112_DLL.HID_SMBUS_SUCCESS)
                         {
-                            optCurrentAddr = UsbRead2Bytes();
-                            Status2ReadSet();
+                            optCurrentAddr = await UsbRead2Bytes();
+                            await Status2ReadSet();
                             return retval;
                         }
                     }
@@ -981,18 +937,18 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int OptFilterMove(ushort addrData)
+        public async Task<int> OptFilterMove(ushort addrData)
         {
             try
             {
                 int moveValue = Math.Abs(addrData - optCurrentAddr);
-                int waitTime = WaitCalc((ushort)moveValue, ConfigVal.OPT_FILTER_SPEED);
-                int retval = DeviceMove(DevAddr.OPT_FILTER_POSITION_VAL, ref addrData,
+                int waitTime = await WaitCalc((ushort)moveValue, ConfigVal.OPT_FILTER_SPEED);
+                int retval = await DeviceMove(DevAddr.OPT_FILTER_POSITION_VAL, addrData,
                     ConfigVal.OPT_FILTER_MASK, waitTime);
                 if (retval == CP2112_DLL.HID_SMBUS_SUCCESS)
                     optCurrentAddr = addrData;
@@ -1000,25 +956,25 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int DeviceMove(ushort segmentOffset, ref ushort addrData, ushort mask, int waitTime)
+        public async Task<int> DeviceMove(ushort segmentOffset, ushort addrData, ushort mask, int waitTime)
         {
             try
             {
-                int retval = UsbWrite(segmentOffset, addrData);
+                int retval = await UsbWrite(segmentOffset, addrData);
                 if (retval == CP2112_DLL.HID_SMBUS_SUCCESS)
                 {
-                    retval = StatusWait(DevAddr.STATUS1, mask, waitTime);
+                    retval = await StatusWait(DevAddr.STATUS1, mask, waitTime);
                     if (retval == CP2112_DLL.HID_SMBUS_SUCCESS)
                     {
-                        retval = UsbRead(segmentOffset, ConfigVal.DATA_LENGTH);
+                        retval = await UsbRead(segmentOffset, ConfigVal.DATA_LENGTH);
                         if (retval != CP2112_DLL.HID_SMBUS_SUCCESS)
                             return retval;
-                        addrData = UsbRead2Bytes();
+                        addrData = await UsbRead2Bytes();
                         return retval;
                     }
                     return retval;
@@ -1027,12 +983,12 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int StatusWait(ushort segmentOffset, ushort statusMask, int waitTime)
+        public async Task<int> StatusWait(ushort segmentOffset, ushort statusMask, int waitTime)
         {
             try
             {
@@ -1041,11 +997,11 @@ namespace LSS_prototype.Lens_Module
                 int retval;
                 do
                 {
-                    retval = UsbRead(segmentOffset, ConfigVal.DATA_LENGTH);
+                    retval = await UsbRead(segmentOffset, ConfigVal.DATA_LENGTH);
                     if (retval != CP2112_DLL.HID_SMBUS_SUCCESS)
                         return retval;
 
-                    readStatus = UsbRead2Bytes();
+                    readStatus = await UsbRead2Bytes();
                     tmp += 1;
                     if (tmp >= ConfigVal.LOW_HIGH_WAIT)
                         return ConfigVal.LOWHI_ERROR;
@@ -1055,11 +1011,11 @@ namespace LSS_prototype.Lens_Module
                 tmp = 0;
                 do
                 {
-                    retval = UsbRead(segmentOffset, ConfigVal.DATA_LENGTH);
+                    retval = await UsbRead(segmentOffset, ConfigVal.DATA_LENGTH);
                     if (retval != CP2112_DLL.HID_SMBUS_SUCCESS)
                         return retval;
 
-                    readStatus = UsbRead2Bytes();
+                    readStatus = await UsbRead2Bytes();
                     tmp += 1;
                     if (tmp >= waitTime)
                         return ConfigVal.HILOW_ERROR;
@@ -1071,12 +1027,12 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public string ErrorTxt(int returnCode)
+        public async Task<string> ErrorTxt(int returnCode)
         {
             try
             {
@@ -1101,7 +1057,7 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return "";
             }
         }

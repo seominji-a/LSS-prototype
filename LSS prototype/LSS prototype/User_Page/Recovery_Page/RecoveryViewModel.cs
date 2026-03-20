@@ -94,7 +94,7 @@ namespace LSS_prototype.User_Page
             {
                 _selectedFilter = value;
                 OnPropertyChanged();
-                ApplyFilter();
+                _ = ApplyFilter(); // UI 반응 대기가 목적이라 딱히 동기 처리안해도됨 
             }
         }
 
@@ -216,14 +216,17 @@ namespace LSS_prototype.User_Page
             NavigateBackCommand = new RelayCommand(_ =>
                 MainPage.Instance.NavigateTo(new User()));
 
-            ExitCommand = new RelayCommand(Common.ExcuteExit);
-            RecoverCommand = new RelayCommand(_ => ExecuteRecover());
-            ForceDeleteCommand = new RelayCommand(_ => ExecuteForceDelete());
+            ExitCommand = new RelayCommand(async _=> await Common.ExcuteExit());
+            RecoverCommand = new RelayCommand(async _ => await ExecuteRecover());
+            ForceDeleteCommand = new RelayCommand(async _ => await ExecuteForceDelete());
 
             // Patient 와 동일하게 SearchDebouncer 초기화
-            _searchDebouncer = new SearchDebouncer(ExecuteSearch, delayMs: 500);
+            _searchDebouncer = new SearchDebouncer(async keyword => await ExecuteSearch(keyword), delayMs: 500);
+        }
 
-            LoadLogs();
+        public async Task InitializeAsync()
+        {
+            await LoadLogs();
         }
 
         // Patient 와 동일하게 Dispose 구현
@@ -236,7 +239,7 @@ namespace LSS_prototype.User_Page
 
         #region 데이터 로드
 
-        private void LoadLogs()
+        private async Task LoadLogs()
         {
             try
             {
@@ -269,15 +272,15 @@ namespace LSS_prototype.User_Page
                 }
 
                 _allLogs = logs;
-                ApplyFilter();
+                await ApplyFilter();
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
-        private void UpdateItemInPlace(RecoveryModel log, bool isRecover)
+        private async Task UpdateItemInPlace(RecoveryModel log, bool isRecover)
         {
             if (isRecover)
             {
@@ -293,7 +296,7 @@ namespace LSS_prototype.User_Page
             log.IsChecked = false;
 
             if (_selectedLog?.DeleteId == log.DeleteId)
-                ResetViewer();
+                await ResetViewer();
         }
 
         #endregion
@@ -309,12 +312,12 @@ namespace LSS_prototype.User_Page
         }
 
         // 필터 콤보 변경 시 현재 검색어 기준 즉시 재실행
-        private void ApplyFilter()
+        private async Task ApplyFilter()
         {
-            ExecuteSearch(SearchText);
+            await ExecuteSearch(SearchText);
         }
 
-        private void ExecuteSearch(string keyword)
+        private async Task ExecuteSearch(string keyword)
         {
             try
             {
@@ -351,7 +354,7 @@ namespace LSS_prototype.User_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
@@ -374,7 +377,7 @@ namespace LSS_prototype.User_Page
         {
             try
             {
-                ResetViewer();
+                await ResetViewer();
 
                 if (_selectedLog == null) return;
                 if (_selectedLog.IsExpired) return;
@@ -392,18 +395,18 @@ namespace LSS_prototype.User_Page
 
                     case "DICOM_VIDEO":
                     case "NORMAL_VIDEO":
-                        LoadVideoPreview(_selectedLog.AviPath);
+                        await LoadVideoPreview(_selectedLog.AviPath);
                         break;
                 }
             }
             catch (OperationCanceledException) { }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
-        private void ResetViewer()
+        private async Task ResetViewer()
         {
             try
             {
@@ -417,7 +420,7 @@ namespace LSS_prototype.User_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
@@ -463,16 +466,16 @@ namespace LSS_prototype.User_Page
                 IsImageVisible = true;
                 IsViewerEmpty = false;
 
-                LoadIsfStrokes(dcmPath);
+                await LoadIsfStrokes (dcmPath);
             }
             catch (OperationCanceledException) { }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
-        private void LoadVideoPreview(string aviPath)
+        private async Task LoadVideoPreview(string aviPath)
         {
             try
             {
@@ -486,11 +489,11 @@ namespace LSS_prototype.User_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
-        private void LoadIsfStrokes(string dcmPath)
+        private async Task LoadIsfStrokes(string dcmPath)
         {
             try
             {
@@ -528,7 +531,7 @@ namespace LSS_prototype.User_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 CurrentStrokes = new StrokeCollection();
             }
         }
@@ -537,7 +540,7 @@ namespace LSS_prototype.User_Page
 
         #region 복구 실행
 
-        private void ExecuteRecover()
+        private async Task ExecuteRecover()
         {
             try
             {
@@ -547,21 +550,18 @@ namespace LSS_prototype.User_Page
 
                 if (targets == null || targets.Count == 0)
                 {
-                    CustomMessageWindow.Show(
-                        "복구할 항목을 선택해주세요.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("복구할 항목을 선택해주세요.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
-                var confirm = CustomMessageWindow.Show(
+                var confirm = await CustomMessageWindow.ShowAsync(
                     $"{targets.Count}개 항목을 복구하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo,
                     icon: CustomMessageWindow.MessageIconType.Info);
 
                 if (confirm != CustomMessageWindow.MessageBoxResult.Yes) return;
 
-                ResetViewer();
+                await ResetViewer ();
 
                 var db = new DB_Manager();
 
@@ -574,17 +574,17 @@ namespace LSS_prototype.User_Page
                         switch (log.FileType)
                         {
                             case "IMAGE":
-                                RestoreFile(log.ImagePath, renamedFiles);
-                                RestoreIsfFile(log.ImagePath, renamedFiles);
+                                await RestoreFile(log.ImagePath, renamedFiles);
+                                await RestoreIsfFile(log.ImagePath, renamedFiles);
                                 break;
 
                             case "DICOM_VIDEO":
-                                RestoreFile(log.AviPath, renamedFiles);
-                                RestoreFile(log.DicomPath, renamedFiles);
+                                await RestoreFile(log.AviPath, renamedFiles);
+                                await RestoreFile(log.DicomPath, renamedFiles);
                                 break;
 
                             case "NORMAL_VIDEO":
-                                RestoreFile(log.AviPath, renamedFiles);
+                                await RestoreFile(log.AviPath, renamedFiles);
                                 break;
                         }
 
@@ -614,11 +614,11 @@ namespace LSS_prototype.User_Page
                                 break;
                         }
 
-                        UpdateItemInPlace(log, isRecover: true);
+                        await UpdateItemInPlace(log, isRecover: true);
                     }
                     catch (Exception ex)
                     {
-                        Common.WriteLog(ex);
+                        await Common.WriteLog(ex);
 
                         foreach (var (from, to) in Enumerable.Reverse(renamedFiles))
                         {
@@ -629,24 +629,21 @@ namespace LSS_prototype.User_Page
                             }
                             catch (Exception rollbackEx)
                             {
-                                Common.WriteLog(rollbackEx);
+                                await Common.WriteLog(rollbackEx);
                             }
                         }
                     }
                 }
 
-                CustomMessageWindow.Show(
-                    "복구가 완료되었습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                    CustomMessageWindow.MessageIconType.Info);
+                await CustomMessageWindow.ShowAsync("복구가 완료되었습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Info);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
-        private void RestoreFile(string filePath, List<(string From, string To)> renamedFiles)
+        private async Task RestoreFile(string filePath, List<(string From, string To)> renamedFiles)
         {
             try
             {
@@ -665,12 +662,12 @@ namespace LSS_prototype.User_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 throw;
             }
         }
 
-        private void RestoreIsfFile(string dcmPath, List<(string From, string To)> renamedFiles)
+        private async Task RestoreIsfFile(string dcmPath, List<(string From, string To)> renamedFiles)
         {
             try
             {
@@ -686,11 +683,11 @@ namespace LSS_prototype.User_Page
                                            .TrimStart(Path.DirectorySeparatorChar);
 
                 string isfPath = Path.Combine(isfDir, relative, "Del_" + cleanName + ".isf");
-                RestoreFile(isfPath, renamedFiles);
+                await RestoreFile(isfPath, renamedFiles);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 throw;
             }
         }
@@ -699,7 +696,7 @@ namespace LSS_prototype.User_Page
 
         #region 강제 삭제
 
-        private async void ExecuteForceDelete()
+        private async Task ExecuteForceDelete()
         {
             try
             {
@@ -709,10 +706,7 @@ namespace LSS_prototype.User_Page
 
                 if (targets == null || targets.Count == 0)
                 {
-                    CustomMessageWindow.Show(
-                        "즉시 삭제할 항목을 선택해주세요.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("즉시 삭제할 항목을 선택해주세요.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
@@ -723,7 +717,7 @@ namespace LSS_prototype.User_Page
                 if (!passed) return;
 
 
-                            ResetViewer();
+                            await ResetViewer();
 
                 var db = new DB_Manager();
 
@@ -734,17 +728,17 @@ namespace LSS_prototype.User_Page
                         switch (log.FileType)
                         {
                             case "IMAGE":
-                                DeleteFileIfExists(log.ImagePath);
-                                DeleteIsfFile(log.ImagePath);
+                                await DeleteFileIfExists(log.ImagePath);
+                                await DeleteIsfFile(log.ImagePath);
                                 break;
 
                             case "NORMAL_VIDEO":
-                                DeleteFileIfExists(log.AviPath);
+                                await DeleteFileIfExists(log.AviPath);
                                 break;
 
                             case "DICOM_VIDEO":
-                                DeleteFileIfExists(log.AviPath);
-                                DeleteFileIfExists(log.DicomPath);
+                                await DeleteFileIfExists(log.AviPath);
+                                await DeleteFileIfExists(log.DicomPath);
                                 break;
                         }
 
@@ -755,33 +749,38 @@ namespace LSS_prototype.User_Page
                             $"Patient:{log.PatientName}({log.PatientCode}) " +
                             $"Type:{log.FileType} DeleteId:{log.DeleteId}");
 
-                        UpdateItemInPlace(log, isRecover: false);
+                        await UpdateItemInPlace(log, isRecover: false);
                     }
                     catch (Exception ex)
                     {
-                        Common.WriteLog(ex);
+                        await Common.WriteLog(ex);
                     }
                 }
 
-                CustomMessageWindow.Show(
-                    "완전 삭제가 완료되었습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                    CustomMessageWindow.MessageIconType.Info);
+                await CustomMessageWindow.ShowAsync("완전 삭제가 완료되었습니다.", CustomMessageWindow.MessageBoxType.AutoClose, 2, CustomMessageWindow.MessageIconType.Info);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
-        private void DeleteFileIfExists(string filePath)
+        private async Task DeleteFileIfExists(string filePath)
         {
-            if (string.IsNullOrEmpty(filePath)) return;
-            if (!File.Exists(filePath)) return;
-            File.Delete(filePath);
+            try
+            {
+                if (string.IsNullOrEmpty(filePath)) return;
+                if (!File.Exists(filePath)) return;
+                File.Delete(filePath);
+            }
+            catch (Exception ex)
+            {
+                await Common.WriteLog(ex);
+            }
+            
         }
 
-        private void DeleteIsfFile(string dcmPath)
+        private async Task DeleteIsfFile(string dcmPath)
         {
             try
             {
@@ -797,11 +796,11 @@ namespace LSS_prototype.User_Page
                                            .TrimStart(Path.DirectorySeparatorChar);
 
                 string isfPath = Path.Combine(isfDir, relative, "Del_" + cleanName + ".isf");
-                DeleteFileIfExists(isfPath);
+                await DeleteFileIfExists(isfPath);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 

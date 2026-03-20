@@ -29,6 +29,11 @@ namespace LSS_prototype.Scan_Page
             InitializeComponent();       
             DataContext = new ScanViewModel(selectedPatient, studyId);
             Unloaded += (s, e) => (DataContext as ScanViewModel)?.Dispose();
+            Loaded += async (s, e) =>
+            {
+                var vm = DataContext as ScanViewModel;
+                await vm.InitializeAsync(); // 렌즈 초기화 완료 후 카메라 연결
+            };
         }
 
 

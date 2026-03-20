@@ -74,8 +74,7 @@ namespace LSS_prototype
             // 아이콘 설정
             SetIcon(icon);
 
-            // 블러 효과 적용
-            ApplyBlurToAllWindows();
+         
 
             // 버튼 타입 설정
             switch (type)
@@ -116,8 +115,10 @@ namespace LSS_prototype
                     break;
             }
 
+            Loaded += async (s, e) => await ApplyBlurToAllWindows();
+
             // 창 닫힐 때 블러 제거
-            this.Closed += (s, e) => RemoveBlurFromAllWindows();
+            this.Closed += async (s, e) => await  RemoveBlurFromAllWindows();
         }
 
         private void SetIcon(MessageIconType icon)
@@ -164,7 +165,7 @@ namespace LSS_prototype
             IconPath.Visibility = Visibility.Visible;
         }
 
-        private void ApplyBlurToAllWindows()
+        private async Task ApplyBlurToAllWindows()
         {
             try
             {
@@ -181,11 +182,11 @@ namespace LSS_prototype
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
-        private void RemoveBlurFromAllWindows()
+        private async Task RemoveBlurFromAllWindows()
         {
             try
             {
@@ -198,7 +199,7 @@ namespace LSS_prototype
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
@@ -265,18 +266,18 @@ namespace LSS_prototype
         }
 
         // 정적 Show (동기)
-        public static MessageBoxResult Show(
-            string message,
-            MessageBoxType type = MessageBoxType.Ok,
-            int autoCloseSeconds = 0,
-            MessageIconType icon = MessageIconType.None)
-        {
-            var win = new CustomMessageWindow(message, type, autoCloseSeconds, icon);
-            win.ShowDialog();
-            return win.Result;
-        }
+        /*        public static MessageBoxResult Show(
+                    string message,
+                    MessageBoxType type = MessageBoxType.Ok,
+                    int autoCloseSeconds = 0,
+                    MessageIconType icon = MessageIconType.None)
+                {
+                    var win = new CustomMessageWindow(message, type, autoCloseSeconds, icon);
+                    win.ShowDialog();
+                    return win.Result;
+                }*/
 
-        // 정적 ShowAsync (비동기)
+        // 정적 ShowAsync (비동기 -> 무조건 모든 메시지창이 비동기여야함 why? 세션이 UI 단에서 동작하므로 별도로 관리해야함 )
         public static async Task<MessageBoxResult> ShowAsync(
             string message,
             MessageBoxType type = MessageBoxType.Ok,

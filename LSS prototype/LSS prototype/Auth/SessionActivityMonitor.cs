@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -155,7 +156,7 @@ namespace LSS_prototype.Auth
         // 로그인된 사용자의 모든 버튼 클릭을 기록
         // 클릭된 요소에서 상위로 올라가며 Button 을 찾음
         // ══════════════════════════════════════════
-        private void OnButtonClick(object sender, MouseButtonEventArgs e)
+        private async void OnButtonClick(object sender, MouseButtonEventArgs e)
         {
             try
             {
@@ -175,7 +176,7 @@ namespace LSS_prototype.Auth
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                 await Common.WriteLog(ex);
             }
         }
 
@@ -215,7 +216,7 @@ namespace LSS_prototype.Auth
             return null;
         }
 
-        private void CheckSessionTimeout(object state)
+        private async void CheckSessionTimeout(object state)
         {
             try
             {
@@ -224,14 +225,13 @@ namespace LSS_prototype.Auth
                     _timeoutCheckTimer.Change(Timeout.Infinite, Timeout.Infinite);
                     _windowCheckTimer.Change(Timeout.Infinite, Timeout.Infinite);
 
-                    Application.Current.Dispatcher.Invoke(() =>
+                    await Application.Current.Dispatcher.InvokeAsync(async () =>
                     {
-                        CustomMessageWindow.Show(
+                        await CustomMessageWindow.ShowAsync(
                             "세션이 만료되었습니다. \n다시 로그인해주세요.",
                             CustomMessageWindow.MessageBoxType.Ok,
                             0,
                             CustomMessageWindow.MessageIconType.Info);
-
                         AuthToken.SignOut();
                         NavigateToLoginPage();
                     });

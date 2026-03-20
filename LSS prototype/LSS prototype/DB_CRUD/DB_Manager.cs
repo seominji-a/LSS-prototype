@@ -27,7 +27,7 @@ namespace LSS_prototype.DB_CRUD
         #endregion
 
         #region [ DB 생성 및 버전확인 ] 
-        public void InitDB()
+        public async Task InitDB()
         {
             bool first_create = false;
 
@@ -54,7 +54,7 @@ namespace LSS_prototype.DB_CRUD
 
                             if (dbVersion < this._db_version)
                             {
-                                var result = CustomMessageWindow.Show(
+                                var result = await CustomMessageWindow.ShowAsync(
                                          "DB 버전이 다릅니다.\n 기존 로컬 DB가 삭제되고 신규 DB가 생성됩니다.\n진행하시겠습니까?",
                                          CustomMessageWindow.MessageBoxType.YesNo,
                                          autoCloseSeconds: 30,
@@ -80,7 +80,7 @@ namespace LSS_prototype.DB_CRUD
                         if (File.Exists(Common.DB_PATH))
                             File.Delete(Common.DB_PATH);
 
-                        InitDB(); // 자원 해제 및 기존 db 삭제 후 재귀방식으로 InitDB 함수 재호출
+                        await InitDB(); // 자원 해제 및 기존 db 삭제 후 재귀방식으로 InitDB 함수 재호출
                         return;
                     }
                 }
@@ -109,7 +109,7 @@ namespace LSS_prototype.DB_CRUD
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
 
                 if (first_create && File.Exists(_dbPath))
                     File.Delete(_dbPath);

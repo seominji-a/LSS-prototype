@@ -319,6 +319,7 @@
     <Compile Include="User_Page\Default_Page\DefaultViewModel.cs">
       <DependentUpon>Default.xaml</DependentUpon>
     </Compile>
+    <Compile Include="User_Page\Recovery_Page\AutoCleanupService.cs" />
     <Compile Include="User_Page\Recovery_Page\ForceDeleteOTP.xaml.cs">
       <DependentUpon>ForceDeleteOTP.xaml</DependentUpon>
     </Compile>

@@ -1040,7 +1040,7 @@ namespace LSS_prototype.Patient_Page
                 {
                     var repo = new DB_Manager();
 
-                    if (repo.DeletePatient(SelectedPatient.PatientId))
+                    if (repo.SoftDeletePatientWithLog(SelectedPatient.PatientId,SelectedPatient.PatientCode,SelectedPatient.PatientName))
                     {
                         await DeletePatientFilesAsync(SelectedPatient);
 
@@ -1050,6 +1050,8 @@ namespace LSS_prototype.Patient_Page
 
                         await LoadPatients();
                     }
+
+                   
                 }
             }
             catch (Exception ex)

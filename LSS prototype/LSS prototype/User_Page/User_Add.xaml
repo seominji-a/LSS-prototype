@@ -1,12 +1,14 @@
-﻿<UserControl x:Class="LSS_prototype.User_Page.User_Add"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             mc:Ignorable="d"
-              Width="550" Height="850">
+﻿<Window x:Class="LSS_prototype.User_Page.User_Add"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowState="Maximized"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        Topmost="True">
 
-    <UserControl.Resources>
+    <Window.Resources>
         <SolidColorBrush x:Key="Bg"           Color="#F3F5F7"/>
         <SolidColorBrush x:Key="Primary"      Color="#173753"/>
         <SolidColorBrush x:Key="PrimaryHover" Color="#1F4767"/>
@@ -28,7 +30,6 @@
             <Setter Property="SnapsToDevicePixels" Value="True"/>
         </Style>
 
-        <!-- 캡스락 경고 스타일 -->
         <Style x:Key="CapsLockStyle" TargetType="TextBlock">
             <Setter Property="FontFamily" Value="Arial"/>
             <Setter Property="FontSize"   Value="13"/>
@@ -51,10 +52,8 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                CornerRadius="12" Padding="18,10">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
+                        <Border Background="{TemplateBinding Background}" CornerRadius="12" Padding="18,10">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
@@ -81,151 +80,116 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-    </UserControl.Resources>
+    </Window.Resources>
 
-    <Border Background="{StaticResource Bg}"
-            CornerRadius="20"
-            BorderBrush="#EEEEEE"
-            BorderThickness="1">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="25" Direction="-90"
-                              RenderingBias="Quality"
-                              ShadowDepth="5" Opacity="0.15"/>
-        </Border.Effect>
+    <Grid>
+        <!-- ✅ 반투명 오버레이 - 뒷배경 터치 차단 -->
+        <Grid Background="#7F000000"/>
 
-        <Grid Margin="40">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
+        <!-- ✅ 중앙 팝업 내용 -->
+        <Border Background="{StaticResource Bg}"
+                CornerRadius="20"
+                BorderBrush="#EEEEEE"
+                BorderThickness="1"
+                Width="550"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Center">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="25" Direction="-90" RenderingBias="Quality" ShadowDepth="5" Opacity="0.15"/>
+            </Border.Effect>
 
-            <!-- 타이틀 -->
-            <TextBlock Grid.Row="0"
-                       Text="USER ADD"
-                       FontSize="32" FontWeight="ExtraBold" FontFamily="Arial"
-                       Foreground="{StaticResource Primary}"
-                       Margin="0,0,0,40"/>
+            <Grid Margin="40">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-            <!-- 입력 섹션 -->
-            <StackPanel Grid.Row="1">
+                <TextBlock Grid.Row="0" Text="USER ADD"
+                           FontSize="32" FontWeight="ExtraBold" FontFamily="Arial"
+                           Foreground="{StaticResource Primary}"
+                           Margin="0,0,0,40"/>
 
-                <!-- USER NAME -->
-                <TextBlock Text="USER NAME"
-                           FontSize="18" FontWeight="SemiBold" FontFamily="Arial"
-                           Foreground="{StaticResource TextMuted}"
-                           Margin="0,0,0,10"/>
-                <Border Style="{StaticResource InputBoxBorderStyle}">
-                    <TextBox Text="{Binding UserName, UpdateSourceTrigger=PropertyChanged}"
-                             FontSize="24" FontFamily="Arial"
-                             Background="Transparent" BorderThickness="0"
-                             Padding="18,0" Foreground="{StaticResource TextDark}"
-                             VerticalContentAlignment="Center"/>
-                </Border>
+                <StackPanel Grid.Row="1">
+                    <TextBlock Text="USER NAME" FontSize="18" FontWeight="SemiBold" FontFamily="Arial"
+                               Foreground="{StaticResource TextMuted}" Margin="0,0,0,10"/>
+                    <Border Style="{StaticResource InputBoxBorderStyle}">
+                        <TextBox Text="{Binding UserName, UpdateSourceTrigger=PropertyChanged}"
+                                 FontSize="24" FontFamily="Arial" Background="Transparent" BorderThickness="0"
+                                 Padding="18,0" Foreground="{StaticResource TextDark}" VerticalContentAlignment="Center"/>
+                    </Border>
 
-                <!-- USER ID -->
-                <TextBlock Text="USER ID"
-                           FontSize="18" FontWeight="SemiBold" FontFamily="Arial"
-                           Foreground="{StaticResource TextMuted}"
-                           Margin="0,24,0,10"/>
-                <Border Style="{StaticResource InputBoxBorderStyle}">
-                    <TextBox Text="{Binding UserID, UpdateSourceTrigger=PropertyChanged}"
-                             FontSize="24" FontFamily="Arial"
-                             Background="Transparent" BorderThickness="0"
-                             Padding="18,0" Foreground="{StaticResource TextDark}"
-                             VerticalContentAlignment="Center"/>
-                </Border>
+                    <TextBlock Text="USER ID" FontSize="18" FontWeight="SemiBold" FontFamily="Arial"
+                               Foreground="{StaticResource TextMuted}" Margin="0,24,0,10"/>
+                    <Border Style="{StaticResource InputBoxBorderStyle}">
+                        <TextBox Text="{Binding UserID, UpdateSourceTrigger=PropertyChanged}"
+                                 FontSize="24" FontFamily="Arial" Background="Transparent" BorderThickness="0"
+                                 Padding="18,0" Foreground="{StaticResource TextDark}" VerticalContentAlignment="Center"/>
+                    </Border>
 
-                <!-- PASSWORD 레이블 + 캡스락 경고 -->
-                <Grid Margin="0,24,0,10">
+                    <Grid Margin="0,24,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="PASSWORD" FontSize="18" FontWeight="SemiBold" FontFamily="Arial"
+                                   Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="CapsLockWarningNew" Grid.Column="1" Text="Caps Lock is ON" Style="{StaticResource CapsLockStyle}"/>
+                    </Grid>
+                    <Border Style="{StaticResource InputBoxBorderStyle}">
+                        <PasswordBox x:Name="txtPassword" FontSize="24" FontFamily="Arial"
+                                     Background="Transparent" BorderThickness="0" Padding="18,14"
+                                     Foreground="{StaticResource TextDark}"
+                                     GotKeyboardFocus="NewPasswordBox_CheckCaps"
+                                     PreviewKeyUp="NewPasswordBox_CheckCaps"
+                                     LostKeyboardFocus="NewPasswordBox_HideCaps"/>
+                    </Border>
+
+                    <Grid Margin="0,24,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="CONFIRM PASSWORD" FontSize="18" FontWeight="SemiBold" FontFamily="Arial"
+                                   Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="CapsLockWarningConfirm" Grid.Column="1" Text="Caps Lock is ON" Style="{StaticResource CapsLockStyle}"/>
+                    </Grid>
+                    <Border Style="{StaticResource InputBoxBorderStyle}">
+                        <PasswordBox x:Name="txtConfirmPassword" FontSize="24" FontFamily="Arial"
+                                     Background="Transparent" BorderThickness="0" Padding="18,14"
+                                     Foreground="{StaticResource TextDark}"
+                                     GotKeyboardFocus="ConfirmPasswordBox_CheckCaps"
+                                     PreviewKeyUp="ConfirmPasswordBox_CheckCaps"
+                                     LostKeyboardFocus="ConfirmPasswordBox_HideCaps"/>
+                    </Border>
+
+                    <TextBlock Text="ROLE" FontSize="18" Foreground="{StaticResource TextMuted}"
+                               FontWeight="SemiBold" Margin="0,24,0,10"/>
+                    <Border Style="{StaticResource InputBoxBorderStyle}">
+                        <ComboBox Style="{StaticResource InputComboBoxStyle}"
+                                  ItemContainerStyle="{StaticResource InputComboBoxItemStyle}"
+                                  SelectedValue="{Binding Role, UpdateSourceTrigger=PropertyChanged}"
+                                  SelectedValuePath="Content">
+                            <ComboBoxItem Content="Physician"/>
+                            <ComboBoxItem Content="Therapist"/>
+                            <ComboBoxItem Content="Nurse"/>
+                            <ComboBoxItem Content="Technician"/>
+                            <ComboBoxItem Content="Researcher"/>
+                            <ComboBoxItem Content="Other"/>
+                        </ComboBox>
+                    </Border>
+                </StackPanel>
+
+                <Grid Grid.Row="2" Margin="0,30,0,0">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="20"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0"
-                               Text="PASSWORD"
-                               FontSize="18" FontWeight="SemiBold" FontFamily="Arial"
-                               Foreground="{StaticResource TextMuted}"
-                               VerticalAlignment="Center"/>
-                    <TextBlock x:Name="CapsLockWarningNew"
-                               Grid.Column="1"
-                               Text="Caps Lock is ON"
-                               Style="{StaticResource CapsLockStyle}"/>
+                    <Button Grid.Column="0" Content="SUBMIT" Style="{StaticResource PrimaryButtonStyle}" Click="Button_Click"/>
+                    <Button Grid.Column="2" Content="CANCEL" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding CancelCommand}"/>
                 </Grid>
-                <Border Style="{StaticResource InputBoxBorderStyle}">
-                    <PasswordBox x:Name="txtPassword"
-                                 FontSize="24" FontFamily="Arial"
-                                 Background="Transparent" BorderThickness="0"
-                                 Padding="18,14"
-                                 Foreground="{StaticResource TextDark}"
-                                 GotKeyboardFocus="NewPasswordBox_CheckCaps"
-                                 PreviewKeyUp="NewPasswordBox_CheckCaps"
-                                 LostKeyboardFocus="NewPasswordBox_HideCaps"/>
-                </Border>
-
-                <!-- CONFIRM PASSWORD 레이블 + 캡스락 경고 -->
-                <Grid Margin="0,24,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0"
-                               Text="CONFIRM PASSWORD"
-                               FontSize="18" FontWeight="SemiBold" FontFamily="Arial"
-                               Foreground="{StaticResource TextMuted}"
-                               VerticalAlignment="Center"/>
-                    <TextBlock x:Name="CapsLockWarningConfirm"
-                               Grid.Column="1"
-                               Text="Caps Lock is ON"
-                               Style="{StaticResource CapsLockStyle}"/>
-                </Grid>
-                <Border Style="{StaticResource InputBoxBorderStyle}">
-                    <PasswordBox x:Name="txtConfirmPassword"
-                                 FontSize="24" FontFamily="Arial"
-                                 Background="Transparent" BorderThickness="0"
-                                 Padding="18,14"
-                                 Foreground="{StaticResource TextDark}"
-                                 GotKeyboardFocus="ConfirmPasswordBox_CheckCaps"
-                                 PreviewKeyUp="ConfirmPasswordBox_CheckCaps"
-                                 LostKeyboardFocus="ConfirmPasswordBox_HideCaps"/>
-                </Border>
-
-                <!-- ROLE -->
-                <TextBlock Text="ROLE"
-                            FontSize="18"
-                           Foreground="{StaticResource TextMuted}"
-                            FontWeight="SemiBold"
-                            Margin="0,24,0,10"/>
-
-                <Border Style="{StaticResource InputBoxBorderStyle}">
-                    <ComboBox Style="{StaticResource InputComboBoxStyle}"
-                            ItemContainerStyle="{StaticResource InputComboBoxItemStyle}"
-                            SelectedValue="{Binding Role, UpdateSourceTrigger=PropertyChanged}"
-                            SelectedValuePath="Content">
-                        <ComboBoxItem Content="Physician"/>
-                        <ComboBoxItem Content="Therapist"/>
-                        <ComboBoxItem Content="Nurse"/>
-                        <ComboBoxItem Content="Technician"/>
-                        <ComboBoxItem Content="Researcher"/>
-                        <ComboBoxItem Content="Other"/>
-                    </ComboBox>
-                </Border>
-
-            </StackPanel>
-
-            <!-- 버튼 -->
-            <Grid Grid.Row="2" Margin="0,30,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="20"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <Button Grid.Column="0" Content="SUBMIT"
-                        Style="{StaticResource PrimaryButtonStyle}" Click="Button_Click"/>
-                <Button Grid.Column="2" Content="CANCEL"
-                        Style="{StaticResource SecondaryButtonStyle}"
-                        Command="{Binding CancelCommand}"/>
             </Grid>
-        </Grid>
-    </Border>
-</UserControl>
+        </Border>
+    </Grid>
+</Window>

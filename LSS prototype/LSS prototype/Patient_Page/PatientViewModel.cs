@@ -1071,6 +1071,7 @@ namespace LSS_prototype.Patient_Page
                 return;
 
             string[] selectedFiles = dialog.FileNames;
+            string importErrorBatchFolder = null;
 
             try
             {
@@ -1100,6 +1101,9 @@ namespace LSS_prototype.Patient_Page
                     return;
                 }
 
+                // [중요] BuildPatientImportGroups 전에 먼저 생성
+                importErrorBatchFolder = CreateImportErrorBatchFolder();
+
                 var repo = new DB_Manager();
 
                 // 최신 상태 재조회
@@ -1121,15 +1125,49 @@ namespace LSS_prototype.Patient_Page
 
                 // DCM 기준 환자 그룹 생성
                 bool forceEsyncImport = true;
-                var patientGroups = await BuildPatientImportGroups(supportedFiles, forceEsyncImport);
+                List<PatientModel> patientGroups = null;
 
-                if (patientGroups.Count == 0)
+                try
                 {
+                    patientGroups = await BuildPatientImportGroups(supportedFiles, forceEsyncImport);
+                }
+                catch (Exception ex)
+                {
+                    await Common.WriteLog(ex);
+
+                    int saved = await SaveFilesToImportErrorFolder(
+                        supportedFiles,
+                        importErrorBatchFolder,
+                        "Unknown",
+                        0,
+                        $"BuildPatientImportGroups 실패: {ex.Message}");
+
                     await CustomMessageWindow.ShowAsync(
-                        "가져올 수 있는 DICOM 환자 정보가 없습니다.",
+                        $"가져오기 중 오류가 발생했습니다.\n" +
+                        $"선택한 파일 {saved}건을 \n ImportError 폴더에 저장했습니다.",
+                        CustomMessageWindow.MessageBoxType.Ok,
+                        0,
+                        CustomMessageWindow.MessageIconType.Danger);
+
+                    return;
+                }
+
+                if (patientGroups == null || patientGroups.Count == 0)
+                {
+                    int saved = await SaveFilesToImportErrorFolder(
+                        supportedFiles,
+                        importErrorBatchFolder,
+                        "Unknown",
+                        0,
+                        "가져올 수 있는 DICOM 환자 정보가 없습니다. (invalid DICOM 또는 환자 정보 추출 실패)");
+
+                    await CustomMessageWindow.ShowAsync(
+                        "DICOM 환자 정보가 없습니다.\n" +
+                        $"선택한 파일 {saved}건을 \n ImportError 폴더에 저장했습니다.",
                         CustomMessageWindow.MessageBoxType.Ok,
                         0,
                         CustomMessageWindow.MessageIconType.Warning);
+
                     return;
                 }
 
@@ -1155,6 +1193,7 @@ namespace LSS_prototype.Patient_Page
                 int newEmrCountPlan = importPlans.Count(x => x.ActionType == ImportActionType.NewEmrPatient);
                 int existingEmrAddStudyCountPlan = importPlans.Count(x => x.ActionType == ImportActionType.ExistingEmrPatientAddStudy);
                 int duplicateStudySkipCountPlan = importPlans.Count(x => x.ActionType == ImportActionType.SkipDuplicateStudy);
+
                 int willImportCount = newLocalCountPlan + existingLocalAddStudyCountPlan + newEmrCountPlan + existingEmrAddStudyCountPlan;
                 int willSkipCount = duplicateStudySkipCountPlan;
 
@@ -1170,6 +1209,20 @@ namespace LSS_prototype.Patient_Page
                         CustomMessageWindow.MessageBoxType.Ok,
                         0,
                         CustomMessageWindow.MessageIconType.Info);
+
+                    // 여기서 importErrorBatchFolder가 비어 있으면 아래 finally 성격 정리에서 삭제되도록 둠
+                    if (Directory.Exists(importErrorBatchFolder) &&
+                        !Directory.EnumerateFileSystemEntries(importErrorBatchFolder).Any())
+                    {
+                        Directory.Delete(importErrorBatchFolder, true);
+
+                        string importErrorRoot = GetDesktopImportErrorRootPath();
+                        if (Directory.Exists(importErrorRoot) &&
+                            !Directory.EnumerateFileSystemEntries(importErrorRoot).Any())
+                        {
+                            Directory.Delete(importErrorRoot, true);
+                        }
+                    }
 
                     return;
                 }
@@ -1191,9 +1244,23 @@ namespace LSS_prototype.Patient_Page
                     CustomMessageWindow.MessageIconType.Info);
 
                 if (confirm != CustomMessageWindow.MessageBoxResult.Yes)
-                    return;
+                {
+                    if (Directory.Exists(importErrorBatchFolder) &&
+                        !Directory.EnumerateFileSystemEntries(importErrorBatchFolder).Any())
+                    {
+                        Directory.Delete(importErrorBatchFolder, true);
 
-                //실제 import 대상만 count
+                        string importErrorRoot = GetDesktopImportErrorRootPath();
+                        if (Directory.Exists(importErrorRoot) &&
+                            !Directory.EnumerateFileSystemEntries(importErrorRoot).Any())
+                        {
+                            Directory.Delete(importErrorRoot, true);
+                        }
+                    }
+
+                    return;
+                }
+
                 LoadingWindow.Begin($"환자 파일 import 중... (0/{willImportCount})");
 
                 int processedCount = 0;
@@ -1262,9 +1329,14 @@ namespace LSS_prototype.Patient_Page
                                 if (errorPatientCodes.Add(plan.Group.PatientCode))
                                     errorPatientCount++;
 
-                                errorFileCount += plan.Group.DcmFiles?
-                                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                                    .Count() ?? 0;
+                                int saved = await SaveFilesToImportErrorFolder(
+                                    plan.Group.DcmFiles?.Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
+                                    importErrorBatchFolder,
+                                    plan.Group.PatientName,
+                                    plan.Group.PatientCode,
+                                    ex.Message);
+
+                                errorFileCount += saved;
                             }
                         }
                     }
@@ -1292,6 +1364,29 @@ namespace LSS_prototype.Patient_Page
                 ShowAll = true;
                 RefreshPatients();
 
+                // importError 폴더가 비어있으면 정리
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(importErrorBatchFolder) &&
+                        Directory.Exists(importErrorBatchFolder) &&
+                        !Directory.EnumerateFileSystemEntries(importErrorBatchFolder).Any())
+                    {
+                        Directory.Delete(importErrorBatchFolder, true);
+                    }
+
+                    string importErrorRoot = GetDesktopImportErrorRootPath();
+
+                    if (Directory.Exists(importErrorRoot) &&
+                        !Directory.EnumerateFileSystemEntries(importErrorRoot).Any())
+                    {
+                        Directory.Delete(importErrorRoot, true);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await Common.WriteLog(ex);
+                }
+
                 string message = BuildImportSummaryMessage(
                     successCount,
                     duplicateStudySkipCount,
@@ -1303,9 +1398,7 @@ namespace LSS_prototype.Patient_Page
                     CustomMessageWindow.MessageBoxType.Ok,
                     0,
                     CustomMessageWindow.MessageIconType.Info);
-                // import 완료 후 동일 PatientCode 중복 여부 안내
-                // import 완료 후 동일 PatientCode 안내 / 병합 제안
-                // import 완료 후 동일 PatientCode 검사
+
                 var duplicatedCodes = await GetDuplicatedPatientCodesAsync();
 
                 if (duplicatedCodes.Any())
@@ -1313,7 +1406,6 @@ namespace LSS_prototype.Patient_Page
                     var mergeCandidates = new List<(PatientModel Local, PatientModel Emr)>();
                     var warningOnlyCodes = new List<int>();
 
-                    // 최신 상태 재조회
                     _localPatients = repo.GetLocalPatients();
                     _importedEmrPatients = repo.GetEmrPatients();
 
@@ -1340,12 +1432,10 @@ namespace LSS_prototype.Patient_Page
                             }
                         }
 
-                        // 병합 후보 없으면 warning 대상
                         if (!hasMergeCandidate)
                             warningOnlyCodes.Add(code);
                     }
 
-                    //  병합 대상이 있는 경우 → 병합 팝업만 띄움
                     if (mergeCandidates.Any())
                     {
                         string mergeCodeText = string.Join(", ",
@@ -1404,7 +1494,6 @@ namespace LSS_prototype.Patient_Page
                                 CustomMessageWindow.MessageIconType.Info);
                         }
                     }
-                    //2) 병합 대상은 없고 "코드만 같은 경우"
                     else if (warningOnlyCodes.Any())
                     {
                         string warningCodeText = string.Join(", ", warningOnlyCodes.OrderBy(x => x));
@@ -1424,6 +1513,34 @@ namespace LSS_prototype.Patient_Page
             {
                 LoadingWindow.End();
                 await Common.WriteLog(ex);
+
+                // 최상위 예외도 ImportError로 최대한 회수
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(importErrorBatchFolder) &&
+                        Directory.Exists(importErrorBatchFolder))
+                    {
+                        var recoverFiles = selectedFiles?
+                            .Where(f => File.Exists(f) &&
+                                        Path.GetExtension(f).Equals(".dcm", StringComparison.OrdinalIgnoreCase))
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .ToList();
+
+                        if (recoverFiles != null && recoverFiles.Count > 0)
+                        {
+                            await SaveFilesToImportErrorFolder(
+                                recoverFiles,
+                                importErrorBatchFolder,
+                                "Unknown",
+                                0,
+                                $"ImportPatient 최상위 예외: {ex.Message}");
+                        }
+                    }
+                }
+                catch (Exception saveEx)
+                {
+                    await Common.WriteLog(saveEx);
+                }
 
                 await CustomMessageWindow.ShowAsync(
                     $"오류 발생: {ex.Message}",
@@ -2609,13 +2726,15 @@ namespace LSS_prototype.Patient_Page
                     .ToList();
 
                 if (allFiles.Count == 0)
-                    return;
+                    throw new Exception("가져올 DICOM 파일이 없습니다.");
 
                 var discoveredStudyIds = new List<string>();
 
                 // 같은 import 작업 안에서 StudyID를 일관되게 유지
                 var studyIdMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 var reservedStudyIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                int savedFileCount = 0;   // 추가
 
                 // 1. DCM 파일 분류
                 foreach (var file in allFiles)
@@ -2627,12 +2746,12 @@ namespace LSS_prototype.Patient_Page
                         string filePatientName = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.PatientName, "").Trim();
                         string filePatientId = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.PatientID, "").Trim();
 
-                        // 대표 환자와 다른 파일은 제외
-                        if (!string.Equals(filePatientName, patientName, StringComparison.OrdinalIgnoreCase))
+                        // PatientID가 있으면 환자코드와 비교, 비어 있으면 통과
+                        //이름 때문에 불필요하게 스킵되지는 않음
+                        if (!string.IsNullOrWhiteSpace(filePatientId) &&
+                            filePatientId != patientCode.ToString())
                             continue;
 
-                        if (filePatientId != patientCode.ToString())
-                            continue;
 
                         string studyId = await ResolveStudyIdForImport(
                             dicomFile,
@@ -2660,6 +2779,7 @@ namespace LSS_prototype.Patient_Page
                                 "Video");
 
                             CopyFileWithUniqueName(file, dicomVideoDir, ".dcm");
+                            savedFileCount++;   // 추가
                         }
                         else
                         {
@@ -2672,6 +2792,7 @@ namespace LSS_prototype.Patient_Page
                                 "Image");
 
                             CopyFileWithUniqueName(file, imageDir, ".dcm");
+                            savedFileCount++;   // 추가
                         }
                     }
                     catch (Exception ex)
@@ -2679,6 +2800,10 @@ namespace LSS_prototype.Patient_Page
                         await Common.WriteLog(ex);
                     }
                 }
+
+                // foreach 끝난 직후 추가
+                if (savedFileCount == 0)
+                    throw new Exception("유효한 DICOM 파일 없음");
 
                 // 2. DICOM 태그 보정
                 string dicomPatientRoot = Path.Combine(dicomRoot, patientFolderName);
@@ -3420,6 +3545,93 @@ namespace LSS_prototype.Patient_Page
             {
                 return false;
             }
+        }
+
+        private string GetDesktopImportErrorRootPath()
+        {
+            string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+            return Path.Combine(desktop, "ImportError");
+        }
+
+        private string CreateImportErrorBatchFolder()
+        {
+            string root = GetDesktopImportErrorRootPath();
+            Directory.CreateDirectory(root);
+
+            string batchFolderName = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string batchFolderPath = Path.Combine(root, batchFolderName);
+
+            Directory.CreateDirectory(batchFolderPath);
+            return batchFolderPath;
+        }
+
+        private async Task<int> SaveFilesToImportErrorFolder(
+            IEnumerable<string> sourceFiles,
+            string batchFolderPath,
+            string patientName,
+            int patientCode,
+            string reason)
+        {
+            int savedCount = 0;
+
+            try
+            {
+                if (string.IsNullOrWhiteSpace(batchFolderPath))
+                    return 0;
+
+                string safePatientName = string.IsNullOrWhiteSpace(patientName) ? "Unknown" : patientName;
+                foreach (char c in Path.GetInvalidFileNameChars())
+                    safePatientName = safePatientName.Replace(c, '_');
+
+                string patientFolderName = $"{safePatientName}_{patientCode}";
+                string patientFolderPath = Path.Combine(batchFolderPath, patientFolderName);
+
+                Directory.CreateDirectory(patientFolderPath);
+
+                //import 로직 task.run 안에서 실행되므로
+                //파일 하나 작성하는 작업이라 동기 방식 사용해도 부담 없음
+                string infoPath = Path.Combine(patientFolderPath, "reason.txt");
+                File.WriteAllText(
+                infoPath,
+                $"Reason: {reason}{Environment.NewLine}" +
+                $"SavedAt: {DateTime.Now:yyyy-MM-dd HH:mm:ss}{Environment.NewLine}" +
+                $"PatientName: {patientName}{Environment.NewLine}" +
+                $"PatientCode: {patientCode}");
+
+                foreach (var file in sourceFiles ?? Enumerable.Empty<string>())
+                {
+                    try
+                    {
+                        if (!File.Exists(file))
+                            continue;
+
+                        string fileName = Path.GetFileName(file);
+                        string destPath = Path.Combine(patientFolderPath, fileName);
+
+                        if (File.Exists(destPath))
+                        {
+                            string name = Path.GetFileNameWithoutExtension(fileName);
+                            string ext = Path.GetExtension(fileName);
+                            destPath = Path.Combine(
+                                patientFolderPath,
+                                $"{name}_{Guid.NewGuid():N}{ext}");
+                        }
+
+                        File.Copy(file, destPath, true);
+                        savedCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        await Common.WriteLog(ex);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await Common.WriteLog(ex);
+            }
+
+            return savedCount;
         }
     }
 }

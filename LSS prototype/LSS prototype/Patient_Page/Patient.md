@@ -1445,3 +1445,47 @@ Import와 Edit 후 병합 제안 문구를 분리한다
 try~catch 잘되어 있는지 확인
 테스트 많이 이행
 import 부분 따로 클래스 생성
+플로우차트 생성
+환자 관련 코드 정리
+
+-------------------------------------------------------
+에러 없음:importError 폴더 아예 생성 안됨
+일부 에러 있음: 해당 batch 폴더만 유지
+batch 폴더만 있고 파일 없음: 자동 삭제
+importError 전체 비움: 루트까지 삭제
+
+DICOM 태그 이상해도 무조건 import되는 안전 구조
+
+------------------------------------------------------
+(현재)
+import 실패 발생
+importerror 폴더 만드는 지점 전에 종료되는 상황 발생
+
+(1)importpatient()에서 buildpatientimportgroups()호출, 결과 0개
+1)가져올 수 있는 dicom 환자 정보가 없습니다.라는 팝업 띄우고 return 실행
+2)importerrorbatch폴더는 뒤쪽에서 만들어짐
+
+(2)BuildPatientImportGroups(...) 내부나 그 전에 DICOM 읽는 부분에서 예외 발생
+대개 catch에서 로그만 쓰고 계속 진행하는 형태
+invalid DICOM이 들어와도 “실패 환자”로 수집되지 않고, 그룹이 안 만들어진 채 종료
+
+(결과)
+완전히 깨진 dicom은 초반에 탈락해서 에러 폴더 생성 로직에 도달하지 못함
+실패는 했는데 import 후반부 실패 처리 파이프라인에 포함되지 않음
+
+BuildPatientImportGroups(...) 내부나 그 전에 DICOM 읽는 부분에서 예외 발생
+대개 catch에서 로그만 쓰고 계속 진행하는 형태
+invalid DICOM이 들어와도 “실패 환자”로 수집되지 않고, 그룹이 안 만들어진 채 종료
+
+(해결방안)
+1)CreateImportErrorBatchFolder() 먼저 실행될 필요 존재
+최소한 supportedFiles 확인 직후, BuildPatientImportGroups(...) 호출 전
+
+2)patientGroups.Count == 0 인 경우에도 원본 파일을 ImportError 폴더로 옮기거나 복사 필요
+팝업만 띄우고 종료, 폴더가 생성 안됨
+
+
+-------------------------------------------------------------------
+BuildPatientImportGroups(...) 내부에서 DICOM 읽기 실패 시 
+단순 로그만 쓰고 continue 하지 말고, 실패 파일 경로를 별도 리스트에 모아서 
+ImportPatient()에서 같이 SaveFilesToImportErrorFolder() 하도록 바꾸기

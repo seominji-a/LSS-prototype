@@ -26,6 +26,7 @@ namespace LSS_prototype.Patient_Page
             {
                 _patientName = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(EditButtonText));
                 EditCommand?.RaiseCanExecuteChanged();
             }
         }
@@ -38,6 +39,7 @@ namespace LSS_prototype.Patient_Page
             {
                 _patientCode = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(EditButtonText));
                 EditCommand?.RaiseCanExecuteChanged();
             }
         }
@@ -77,6 +79,7 @@ namespace LSS_prototype.Patient_Page
             {
                 _canMergeWithoutEdit = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(EditButtonText));
                 EditCommand?.RaiseCanExecuteChanged();
             }
         }
@@ -89,6 +92,7 @@ namespace LSS_prototype.Patient_Page
             {
                 _birthDate = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(EditButtonText));
                 EditCommand?.RaiseCanExecuteChanged();
             }
         }
@@ -112,6 +116,7 @@ namespace LSS_prototype.Patient_Page
             {
                 _sex = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(EditButtonText));
                 EditCommand?.RaiseCanExecuteChanged();
             }
         }
@@ -177,6 +182,8 @@ namespace LSS_prototype.Patient_Page
             return IsValid() && (IsDirty() || CanMergeWithoutEdit) && IsDobConfirmed && IsCodeConfirmed;
         }
 
+        public string EditButtonText =>
+            CanMergeWithoutEdit && !IsDirty() ? "MERGE" : "EDIT";
         private async Task UpdatePatient()
         {
             try
@@ -186,14 +193,6 @@ namespace LSS_prototype.Patient_Page
                 // 실제 변경사항이 있을 때만 DB 업데이트
                 if (IsDirty())
                 {
-                    if (repo.ExistsPatientCodeExceptSelf(this.PatientCode.Value, this.Patient_id))
-                    {
-                        await CustomMessageWindow.ShowAsync("이미 사용 중인 환자 번호입니다.",
-                            CustomMessageWindow.MessageBoxType.Ok, 2,
-                            CustomMessageWindow.MessageIconType.Warning);
-                        return;
-                    }
-
                     var model = new PatientModel
                     {
                         PatientId = this.Patient_id,
@@ -210,6 +209,12 @@ namespace LSS_prototype.Patient_Page
                             CustomMessageWindow.MessageIconType.Info);
 
                         CloseAction?.Invoke(true);
+                    }
+                    else
+                    {
+                        await CustomMessageWindow.ShowAsync("수정 중 오류가 발생했습니다.",
+                            CustomMessageWindow.MessageBoxType.Ok, 1,
+                            CustomMessageWindow.MessageIconType.Warning);
                     }
                 }
                 else if (CanMergeWithoutEdit)

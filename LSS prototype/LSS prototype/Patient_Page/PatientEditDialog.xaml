@@ -64,62 +64,6 @@
                                Foreground="#1A3B5D"
                                HorizontalAlignment="Left" FontWeight="Bold" FontFamily="Arial"/>
                 </StackPanel>
-<<<<<<< HEAD
-            </ScrollViewer>
-            <Grid Grid.Row="2" Margin="0,20,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="20"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <Button Grid.Column="0" Content="{Binding EditButtonText}" Command="{Binding EditCommand}" Height="65" FontSize="20" FontWeight="Bold" Foreground="White" Cursor="Hand">
-                    <Button.Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Background" Value="#1A3B5D"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#122B45"/>
-                                </Trigger>
-                                <Trigger Property="IsEnabled" Value="False">
-                                    <Setter Property="Background" Value="#C0C0C0"/>
-                                    <Setter Property="Foreground" Value="#666666"/>
-                                    <Setter Property="Cursor" Value="Arrow"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Button.Style>
-                </Button>
-                <Button Grid.Column="2" Content="CANCEL" Command="{Binding CancelCommand}" Height="65" FontSize="20" FontWeight="Bold" Foreground="White" Cursor="Hand">
-                    <Button.Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Background" Value="#64738C"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#505C70"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Button.Style>
-                </Button>
-=======
 
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="500">
                     <StackPanel>
@@ -211,7 +155,8 @@
                         <ColumnDefinition Width="20"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <Button Grid.Column="0" Content="EDIT" Command="{Binding EditCommand}" Height="65" FontSize="20" FontWeight="Bold" Foreground="White" Cursor="Hand">
+                    <!-- ✅ 동료 작업: EditButtonText 바인딩 유지 -->
+                    <Button Grid.Column="0" Content="{Binding EditButtonText}" Command="{Binding EditCommand}" Height="65" FontSize="20" FontWeight="Bold" Foreground="White" Cursor="Hand">
                         <Button.Style>
                             <Style TargetType="Button">
                                 <Setter Property="Background" Value="#1A3B5D"/>
@@ -259,7 +204,6 @@
                         </Button.Style>
                     </Button>
                 </Grid>
->>>>>>> hanyong-branch
             </Grid>
         </Border>
     </Grid>

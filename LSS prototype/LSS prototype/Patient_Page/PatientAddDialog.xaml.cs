@@ -1,30 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace LSS_prototype.Patient_Page
 {
-    /// <summary>
-    /// PatientAddDialog.xaml에 대한 상호 작용 논리
-    /// </summary>
-    public partial class PatientAddDialog : UserControl
+    public partial class PatientAddDialog : Window
     {
         public PatientAddDialog()
         {
             InitializeComponent();
-            //DpBirthDate.BlackoutDates.Add(new CalendarDateRange(DateTime.Today.AddDays(1), DateTime.MaxValue));
+            // ✅ 세션 모니터 등록 → 팝업 위에서 마우스 움직여도 세션 연장
+            Loaded += (s, e) => App.ActivityMonitor?.RegisterWindow(this);
         }
-       
     }
 }

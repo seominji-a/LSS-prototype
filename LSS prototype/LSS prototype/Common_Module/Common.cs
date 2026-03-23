@@ -369,26 +369,23 @@ namespace LSS_prototype
                     File.AppendAllText(logFile, sb.ToString(), Encoding.UTF8);
                 }
 
-                // ✅ UI 스레드 여부에 따라 분기
-                // UI 스레드: await 직접 호출 → await tcs.Task에서 UI 스레드 반납
-                //            → 세션 타이머 정상 동작 + 팝업 OK 누를때까지 대기
-                // 백그라운드 스레드: InvokeAsync + Unwrap → UI 스레드에서 실행
-                if (Application.Current?.Dispatcher.CheckAccess() == true)
+                //   BeginInvoke + TaskCompletionSource 패턴
+                // UI 스레드든 백그라운드 스레드든 동일한 흐름
+                // → UI 스레드 안에서 await ShowAsync → UI 스레드 자동 반납
+                // → 세션 타이머 100% 정상 동작 보장
+                var tcs = new TaskCompletionSource<bool>();
+
+                Application.Current?.Dispatcher.BeginInvoke(new Action(async () =>
                 {
                     await CustomMessageWindow.ShowAsync(
                         ex.Message,
                         CustomMessageWindow.MessageBoxType.Ok, 0,
                         CustomMessageWindow.MessageIconType.Danger);
-                }
-                else
-                {
-                    await Application.Current?.Dispatcher.InvokeAsync(async () =>
-                        await CustomMessageWindow.ShowAsync(
-                            ex.Message,
-                            CustomMessageWindow.MessageBoxType.Ok, 0,
-                            CustomMessageWindow.MessageIconType.Danger)
-                    ).Task.Unwrap();
-                }
+
+                    tcs.SetResult(true); // 팝업 닫히면 대기 중인 쪽에 신호
+                }));
+
+                await tcs.Task; // 팝업 닫힐 때까지 대기 (UI 스레드는 반납된 상태)
             }
             catch (Exception logEx)
             {

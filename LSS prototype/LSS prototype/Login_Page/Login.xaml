@@ -340,7 +340,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- ✅ CapsLock 경고 (왼쪽) -->
+                    <!--   CapsLock 경고 (왼쪽) -->
                     <TextBlock x:Name="CapsLockWarning"
                          Grid.Column="0"
                          Text="Caps Lock is ON. Password is case-sensitive."

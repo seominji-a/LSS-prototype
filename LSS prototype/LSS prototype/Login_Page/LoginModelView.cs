@@ -133,6 +133,7 @@ namespace LSS_prototype.Login_Page
                     masterShell.Show();
                     masterShell.NavigateTo(new User());
                     App.ActivityMonitor.Start(masterShell); // ← 세션 관리 기능은 테스트때 잠시 주석 
+                    _ = AutoCleanupService.RunAsync(); // 만료기한 지난 삭제된 데이터 정리 
                     CloseLoginWindow();
                     return;
                 }
@@ -231,6 +232,7 @@ namespace LSS_prototype.Login_Page
                 Common.MwlDescriptionFilter = pacsSet?.MwlDescriptionFilter ?? "";
 
                 App.ActivityMonitor.Start(shell); // ← 세션 관리 기능은 테스트때 잠시 주석 
+                _ = AutoCleanupService.RunAsync(); // 만료기한 지난 삭제된 데이터 정리 
                 CloseLoginWindow();
             }
             catch (Exception ex)

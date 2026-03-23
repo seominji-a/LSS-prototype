@@ -15,7 +15,7 @@
         <SolidColorBrush x:Key="Overlay"   Color="#01000000"/>
         <SolidColorBrush x:Key="CardBg"    Color="#F3F5F7"/>
         <SolidColorBrush x:Key="Primary"   Color="#173753"/>
-        <!-- ✅ 전체 톤 -->
+        <!--   전체 톤 -->
         <SolidColorBrush x:Key="TextColor" Color="#0F172A"/>
         <SolidColorBrush x:Key="Muted"     Color="#64748B"/>
 

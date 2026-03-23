@@ -1,14 +1,15 @@
 ﻿using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace LSS_prototype.User_Page
 {
-    public partial class User_Edit : UserControl
+    public partial class User_Edit : Window
     {
         public User_Edit()
         {
             InitializeComponent();
+            // ✅ 세션 모니터 등록
+            Loaded += (s, e) => App.ActivityMonitor?.RegisterWindow(this);
         }
 
         private async void Submit_Click(object sender, RoutedEventArgs e)

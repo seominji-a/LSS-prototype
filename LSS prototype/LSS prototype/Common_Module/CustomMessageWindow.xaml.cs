@@ -50,7 +50,7 @@ namespace LSS_prototype
         {
             InitializeComponent();
 
-            // ✅ Owner 설정 - 한 번만!
+            //   Owner 설정 - 한 번만!
             var owner = Application.Current?.MainWindow;
             if (owner != null && owner != this && owner.IsVisible)
             {
@@ -162,7 +162,7 @@ namespace LSS_prototype
                 {
                     if (window != this && window.IsVisible)
                     {
-                        // ✅ 윈도우 전체가 아니라 Content(UIElement)에만 블러
+                        //   윈도우 전체가 아니라 Content(UIElement)에만 블러
                         if (window.Content is UIElement content)
                         {
                             content.Effect = blurEffect;

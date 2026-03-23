@@ -1,12 +1,15 @@
-﻿<UserControl x:Class="LSS_prototype.Patient_Page.PatientEditDialog"
-             xmlns:local="clr-namespace:LSS_prototype.Patient_Page"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             mc:Ignorable="d" 
-             d:DesignHeight="800" d:DesignWidth="550">
-    <UserControl.Resources>
+﻿<Window x:Class="LSS_prototype.Patient_Page.PatientEditDialog"
+        xmlns:local="clr-namespace:LSS_prototype.Patient_Page"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowState="Maximized"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        Topmost="True">
+
+    <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <Style x:Key="InputTextBoxStyle" TargetType="TextBox">
             <Setter Property="Height" Value="55"/>
@@ -30,131 +33,38 @@
             <Setter Property="Margin" Value="0,0,0,8"/>
             <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
         </Style>
-    </UserControl.Resources>
-    <Border Background="#F7F9FC" CornerRadius="15" BorderBrush="#DDE2E8" BorderThickness="1">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="30" Direction="-90" RenderingBias="Quality" ShadowDepth="2" Opacity="0.1"/>
-        </Border.Effect>
-        <Grid Margin="35">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="500"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <StackPanel Grid.Row="0" Margin="0,0,0,30">
-                <TextBlock Text="Edit PATIENT" 
-                           FontSize="28" 
-                           Foreground="#1A3B5D" 
-                           HorizontalAlignment="Left" FontWeight="Bold" FontFamily="Arial"/>
-            </StackPanel>
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                <StackPanel>
-                    <TextBlock Text="PATIENT NAME" Style="{StaticResource InputLabelStyle}"/>
-                    <TextBox Text="{Binding PatientName, UpdateSourceTrigger=PropertyChanged}" 
-                             Style="{StaticResource InputTextBoxStyle}"/>
-                    <TextBlock Text="PATIENT CODE" Style="{StaticResource InputLabelStyle}"/>
+    </Window.Resources>
 
-                    <Button x:Name="PatientCodeButton" 
-                            Command="{Binding OpenPatientCodeKeypadCommand}"
-                                    Height="60" 
-                                    Margin="0,0,0,25" 
-                                    Background="White" 
-                                    BorderBrush="#DDE2E8" 
-                                    BorderThickness="1.5">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}" 
-                                        BorderBrush="{TemplateBinding BorderBrush}" 
-                                        BorderThickness="{TemplateBinding BorderThickness}" 
-                                        CornerRadius="10">
-                                    <ContentPresenter HorizontalAlignment="Left" 
-                                  VerticalAlignment="Center" 
-                                  Margin="15,0,0,0"/>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
+    <Grid>
+        <!-- ✅ 반투명 오버레이 - 뒷배경 터치 차단 -->
+        <Grid Background="#7F000000"/>
 
-                        <TextBlock Text="{Binding PatientCode}" 
-                            FontSize="18" 
-                            Foreground="#222222"
-                            VerticalAlignment="Center"/>
-                    </Button>
+        <!-- ✅ 중앙 팝업 내용 -->
+        <Border Background="#F7F9FC"
+                CornerRadius="15"
+                BorderBrush="#DDE2E8"
+                BorderThickness="1"
+                Width="570"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Center">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="30" Direction="-90" RenderingBias="Quality" ShadowDepth="2" Opacity="0.1"/>
+            </Border.Effect>
 
-                    <Popup IsOpen="{Binding IsCodeKeypadOpen}" 
-                            PlacementTarget="{Binding ElementName=PatientCodeButton}" 
-                            Placement="Right" 
-                            HorizontalOffset="20" 
-                            StaysOpen="False" 
-                            AllowsTransparency="True">
-                        <Border Background="White" 
-                            CornerRadius="10" 
-                            Padding="10" 
-                            Width="400" 
-                            Height="400" 
-                            BorderBrush="#DDE2E8" 
-                            BorderThickness="1">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="15" Opacity="0.2" ShadowDepth="2"/>
-                            </Border.Effect>
+            <Grid Margin="35">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                            <local:Keypad 
-                                    x:Name="KeypadControl"
-                                    DataContext="{Binding KeypadVm}"
-                                    Visibility="{Binding IsCodeKeypadOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                        </Border>
-                    </Popup>
-
-                    <TextBlock Text="DATE OF BIRTH" Style="{StaticResource InputLabelStyle}"/>
-                    <Button x:Name="BirthDateButton" 
-                        Command="{Binding OpenKeypadCommand}"
-                        Height="60" Margin="0,0,0,25" Background="White" BorderBrush="#DDE2E8" BorderThickness="1.5">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}" 
-                    BorderBrush="{TemplateBinding BorderBrush}" 
-                    BorderThickness="{TemplateBinding BorderThickness}" 
-                    CornerRadius="10">
-                                    <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" Margin="15,0"/>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
-                        <TextBlock Text="{Binding BirthDatePreview}" FontSize="18" Foreground="#222222"/>
-                    </Button>
-                    <Popup IsOpen="{Binding IsKeypadOpen}" PlacementTarget="{Binding ElementName=BirthDateButton}" 
-                           Placement="Right" HorizontalOffset="20" 
-                           VerticalOffset="0"
-                           AllowsTransparency="True" 
-                           StaysOpen="False">
-                        <Border Background="White"
-                                BorderBrush="Gray"
-                                BorderThickness="1"
-                                CornerRadius="10"
-                                Padding="10" 
-                                Width="400" 
-                                Height="400">
-                            <local:Keypad DataContext="{Binding KeypadVm}" />
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="15" Opacity="0.2" ShadowDepth="2"/>
-                            </Border.Effect>
-                        </Border>
-                    </Popup>
-
-                    <TextBlock Text="SEX" Style="{StaticResource InputLabelStyle}"/>
-
-                    <Border Style="{StaticResource InputBoxBorderStyle}">
-                        <ComboBox Style="{StaticResource InputComboBoxStyle}"
-                        ItemContainerStyle="{StaticResource InputComboBoxItemStyle}"
-                        SelectedValue="{Binding Sex}"
-                        SelectedValuePath="Content">
-                            <ComboBoxItem Content="M"/>
-                            <ComboBoxItem Content="F"/>
-                        </ComboBox>
-                    </Border>
+                <StackPanel Grid.Row="0" Margin="0,0,0,30">
+                    <TextBlock Text="Edit PATIENT"
+                               FontSize="28"
+                               Foreground="#1A3B5D"
+                               HorizontalAlignment="Left" FontWeight="Bold" FontFamily="Arial"/>
                 </StackPanel>
+<<<<<<< HEAD
             </ScrollViewer>
             <Grid Grid.Row="2" Margin="0,20,0,0">
                 <Grid.ColumnDefinitions>
@@ -209,7 +119,148 @@
                         </Style>
                     </Button.Style>
                 </Button>
+=======
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="500">
+                    <StackPanel>
+                        <TextBlock Text="PATIENT NAME" Style="{StaticResource InputLabelStyle}"/>
+                        <TextBox Text="{Binding PatientName, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource InputTextBoxStyle}"/>
+
+                        <TextBlock Text="PATIENT CODE" Style="{StaticResource InputLabelStyle}"/>
+                        <Button x:Name="PatientCodeButton"
+                                Command="{Binding OpenPatientCodeKeypadCommand}"
+                                Height="60"
+                                Margin="0,0,0,25"
+                                Background="White"
+                                BorderBrush="#DDE2E8"
+                                BorderThickness="1.5">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            CornerRadius="10">
+                                        <ContentPresenter HorizontalAlignment="Left"
+                                                          VerticalAlignment="Center"
+                                                          Margin="15,0,0,0"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <TextBlock Text="{Binding PatientCode}" FontSize="18" Foreground="#222222" VerticalAlignment="Center"/>
+                        </Button>
+
+                        <Popup IsOpen="{Binding IsCodeKeypadOpen}"
+                               PlacementTarget="{Binding ElementName=PatientCodeButton}"
+                               Placement="Right" HorizontalOffset="20" StaysOpen="False" AllowsTransparency="True">
+                            <Border Background="White" CornerRadius="10" Padding="10" Width="400" Height="400" BorderBrush="#DDE2E8" BorderThickness="1">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="15" Opacity="0.2" ShadowDepth="2"/>
+                                </Border.Effect>
+                                <local:Keypad x:Name="KeypadControl"
+                                              DataContext="{Binding KeypadVm}"
+                                              Visibility="{Binding IsCodeKeypadOpen, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            </Border>
+                        </Popup>
+
+                        <TextBlock Text="DATE OF BIRTH" Style="{StaticResource InputLabelStyle}"/>
+                        <Button x:Name="BirthDateButton"
+                                Command="{Binding OpenKeypadCommand}"
+                                Height="60" Margin="0,0,0,25" Background="White" BorderBrush="#DDE2E8" BorderThickness="1.5">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            CornerRadius="10">
+                                        <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" Margin="15,0"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <TextBlock Text="{Binding BirthDatePreview}" FontSize="18" Foreground="#222222"/>
+                        </Button>
+
+                        <Popup IsOpen="{Binding IsKeypadOpen}" PlacementTarget="{Binding ElementName=BirthDateButton}"
+                               Placement="Right" HorizontalOffset="20" VerticalOffset="0"
+                               AllowsTransparency="True" StaysOpen="False">
+                            <Border Background="White" BorderBrush="Gray" BorderThickness="1"
+                                    CornerRadius="10" Padding="10" Width="400" Height="400">
+                                <local:Keypad DataContext="{Binding KeypadVm}"/>
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="15" Opacity="0.2" ShadowDepth="2"/>
+                                </Border.Effect>
+                            </Border>
+                        </Popup>
+
+                        <TextBlock Text="SEX" Style="{StaticResource InputLabelStyle}"/>
+                        <Border Style="{StaticResource InputBoxBorderStyle}">
+                            <ComboBox Style="{StaticResource InputComboBoxStyle}"
+                                      ItemContainerStyle="{StaticResource InputComboBoxItemStyle}"
+                                      SelectedValue="{Binding Sex}"
+                                      SelectedValuePath="Content">
+                                <ComboBoxItem Content="M"/>
+                                <ComboBoxItem Content="F"/>
+                            </ComboBox>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <Grid Grid.Row="2" Margin="0,20,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0" Content="EDIT" Command="{Binding EditCommand}" Height="65" FontSize="20" FontWeight="Bold" Foreground="White" Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#1A3B5D"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="12">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#122B45"/>
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter Property="Background" Value="#C0C0C0"/>
+                                        <Setter Property="Foreground" Value="#666666"/>
+                                        <Setter Property="Cursor" Value="Arrow"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Grid.Column="2" Content="CANCEL" Command="{Binding CancelCommand}" Height="65" FontSize="20" FontWeight="Bold" Foreground="White" Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#64738C"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="12">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#505C70"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </Grid>
+>>>>>>> hanyong-branch
             </Grid>
-        </Grid>
-    </Border>
-</UserControl>
+        </Border>
+    </Grid>
+</Window>

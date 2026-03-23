@@ -193,6 +193,30 @@
                                 <Setter Property="Opacity" Value="0.5"/>
                                 <Setter Property="Cursor"  Value="Arrow"/>
                             </DataTrigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding PatientDeleted}" Value="Y"/>
+                                    <Condition Binding="{Binding FileType}" Value="IMAGE"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Opacity" Value="0.4"/>
+                                <Setter Property="Cursor"  Value="Arrow"/>
+                            </MultiDataTrigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding PatientDeleted}" Value="Y"/>
+                                    <Condition Binding="{Binding FileType}" Value="DICOM_VIDEO"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Opacity" Value="0.4"/>
+                                <Setter Property="Cursor"  Value="Arrow"/>
+                            </MultiDataTrigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding PatientDeleted}" Value="Y"/>
+                                    <Condition Binding="{Binding FileType}" Value="NORMAL_VIDEO"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Opacity" Value="0.4"/>
+                                <Setter Property="Cursor"  Value="Arrow"/>
+                            </MultiDataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>

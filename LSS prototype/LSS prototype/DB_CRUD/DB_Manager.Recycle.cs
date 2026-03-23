@@ -64,6 +64,59 @@ namespace LSS_prototype.DB_CRUD
             }
         }
 
+        /// <summary>
+        /// 환자 강제 삭제 시 delete log 테이블 및 patient 테이블 트랜잭션 처리 추가 0323 박한용
+        /// </summary>
+        /// <param name="deleteId"></param>
+        /// <param name="patientCode"></param>
+        /// <param name="patientName"></param>
+        /// <returns></returns>
+        public bool ForceDeletePatientWithLog(int deleteId, int patientCode, string patientName)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var transaction = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        // 1. DELETE_LOG UPDATE_FORCE_DELETED
+                        using (var cmd = new SQLiteCommand(Query.UPDATE_FORCE_DELETED, conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@DeleteId", deleteId);
+                            cmd.Parameters.AddWithValue("@ForceDeletedBy", Common.CurrentUserId);
+                            if (cmd.ExecuteNonQuery() <= 0)
+                            {
+                                transaction.Rollback();
+                                return false;
+                            }
+                        }
+
+                        // 2. PATIENT 테이블 완전 DELETE
+                        using (var cmd = new SQLiteCommand(Query.DELETE_PATIENT_BY_CODE_AND_NAME, conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@PatientCode", patientCode);
+                            cmd.Parameters.AddWithValue("@PatientName", patientName); //  이름까지 100% 동일해야 삭제 ( 환자코드가 같지만, 사용자가 병합안했을 경우 대비 ,
+                                                                                      //  if 동일한 환자코드 환자 이름이 존재하면 ? -> 애초에 윈도우 파일 자체에 중복된 파일이 생성이 안되므로 해당 케이스는 고려 X ) 0323 박한용
+                            if (cmd.ExecuteNonQuery() <= 0)
+                            {
+                                transaction.Rollback();
+                                return false;
+                            }
+                        }
+
+                        transaction.Commit();
+                        return true;
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        return false;
+                    }
+                }
+            }
+        }
+
         public List<RecoveryModel> GetDeleteLogs()
         {
             var list = new List<RecoveryModel>();
@@ -90,6 +143,7 @@ namespace LSS_prototype.DB_CRUD
                             IsRecovered = reader["IS_RECOVERED"].ToString(),
                             RecoveredAt = reader["RECOVERED_AT"] == DBNull.Value ? null : reader["RECOVERED_AT"].ToString(),
                             IsForceDeleted = reader["IS_FORCE_DELETED"].ToString(),
+                            PatientDeleted = reader["PATIENT_DELETED"].ToString(),
                         }); ;
                     }
                 }
@@ -99,9 +153,14 @@ namespace LSS_prototype.DB_CRUD
 
         // ================================================
         // DELETE_LOG - 복구 처리 UPDATE
-        // 복구 버튼 클릭 시 IS_RECOVERED = Y, RECOVERED_AT = 현재시간
+        // 복구 버튼 클릭 시 IS_RECOVERED = Y, RECOVERED_AT = 현재시간 ( 환자 복구는 RestorePatient 함수에서 처리 ) 
         // DELETE_ID 기준으로 단 1건만 업데이트
         // ================================================
+        /// <summary>
+        /// 영상 및 이미지 복구 함수 
+        /// </summary>
+        /// <param name="deleteId"></param>
+        /// <returns></returns>
         public bool UpdateRecovered(int deleteId)
         {
             using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
@@ -110,7 +169,83 @@ namespace LSS_prototype.DB_CRUD
                 using (var cmd = new SQLiteCommand(Query.UPDATE_RECOVERED, conn))
                 {
                     cmd.Parameters.AddWithValue("@DeleteId", deleteId);
+                    cmd.Parameters.AddWithValue("@RecoveredBy", Common.CurrentUserId); // 누가 복구했는지도 추적가능하도록 추가 
                     return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+
+        // ================================================
+        // DELETE_LOG - 복구 처리 UPDATE (only Patient,나머지 이미지 및 영상은 UpdateRecovered < 이 함수에서 처리 ) 
+        // ================================================
+        /// <summary>
+        /// 환자 복구 함수 
+        /// </summary>
+        /// <param name="patientCode"></param>
+        /// <param name="patientName"></param>
+        /// <returns></returns>
+        public bool RestorePatient(int patientCode, string patientName)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.RESTORE_PATIENT, conn))
+                {
+                    cmd.Parameters.AddWithValue("@PatientCode", patientCode);
+                    cmd.Parameters.AddWithValue("@PatientName", patientName);
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 환자 복구 트랙잭션 함수 why? DELETE_LOG 테이블과 PATIENT 테이블 둘다 성공 OR 실패 보장을 받아야함 0323 박한용
+        /// </summary>
+        /// <param name="deleteId"></param>
+        /// <param name="patientCode"></param>
+        /// <param name="patientName"></param>
+        /// <returns></returns>
+        public bool RecoverPatientWithLog(int deleteId, int patientCode, string patientName)
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var transaction = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        // 1. PATIENT IS_DELETED = 'N' 복구
+                        using (var cmd = new SQLiteCommand(Query.RESTORE_PATIENT, conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@PatientCode", patientCode);
+                            cmd.Parameters.AddWithValue("@PatientName", patientName);
+                            if (cmd.ExecuteNonQuery() <= 0)
+                            {
+                                transaction.Rollback();
+                                return false;
+                            }
+                        }
+
+                        // 2. DELETE_LOG IS_RECOVERED = 'Y' 업데이트
+                        using (var cmd = new SQLiteCommand(Query.UPDATE_RECOVERED, conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@DeleteId", deleteId);
+                            cmd.Parameters.AddWithValue("@RecoveredBy", Common.CurrentUserId);
+                            if (cmd.ExecuteNonQuery() <= 0)
+                            {
+                                transaction.Rollback();
+                                return false;
+                            }
+                        }
+
+                        transaction.Commit();
+                        return true;
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        return false;
+                    }
                 }
             }
         }

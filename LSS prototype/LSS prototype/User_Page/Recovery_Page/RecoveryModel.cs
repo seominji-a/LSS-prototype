@@ -47,6 +47,15 @@
         set { _isChecked = value; OnPropertyChanged(); }
     }
 
+    // ✅ 추가 - 환자 자체가 삭제된 경우
+    private string _patientDeleted;
+    public string PatientDeleted
+    {
+        get => _patientDeleted;
+        set { _patientDeleted = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsCheckable)); }
+    }
+
+
     // 체크박스 활성화 조건
     public bool IsCheckable
     {
@@ -55,9 +64,12 @@
             if (IsExpired) return false;
             if (IsRecovered == "Y") return false;
             if (IsForceDeleted == "Y") return false;
+            if (PatientDeleted == "Y" && FileType != "PATIENT") return false;
             return true;
         }
     }
+
+
 
     public string DisplayName => PatientName?.Replace("^", " ") ?? "";
 

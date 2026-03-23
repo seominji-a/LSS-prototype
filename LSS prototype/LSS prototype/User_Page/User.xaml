@@ -404,7 +404,7 @@
                         <!-- SYSTEM SETTINGS -->
                         <TextBlock Text="SYSTEM SETTINGS" Style="{StaticResource SectionLabel}"/>
                         <Button Style="{StaticResource NavBtn}" Command="{Binding SettingCommand}"
-                                Content="SYSTEM SETUP" Margin="0,0,0,12"/>
+                                Content="DICOM SETUP" Margin="0,0,0,12"/>
                         <Button Style="{StaticResource NavBtn}" Command="{Binding DefaultCommand}"
                                 Content="CAMERA_DEFAULT" Margin="0,0,0,0"/>
                         <!-- RECOVERY -->

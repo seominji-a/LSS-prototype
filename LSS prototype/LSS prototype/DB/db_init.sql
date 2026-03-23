@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS USER
 -- ================================================
 -- Patient TABLE ( 2026.02.09 생성자 : 서민지 )
 -- Patient TABLE ( 2026.03.17 수정일 : 서민지 )
+-- Patient TABLE ( 2026.03.23 수정일 : 박한용 ) --> 사용자 삭제 기능 추가 
 -- ================================================
 CREATE TABLE IF NOT EXISTS PATIENT (
     PATIENT_ID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,6 +55,8 @@ CREATE TABLE IF NOT EXISTS PATIENT (
     REG_DATE TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     LASTSHOOTDATE DATE,
     SHOTNUM INTEGER NOT NULL DEFAULT 0,
+    -- 사용자 삭제는 즉시 DELETE하지않고, IS_DELETED 컬럼을 이용해 판단 
+    IS_DELETED      TEXT    DEFAULT 'N',
 
     --문자열 보다 enum/코드화
     SOURCE_TYPE INTEGER NOT NULL
@@ -117,7 +120,7 @@ CREATE TABLE PACS_SET (
 );
 
 -- ================================================
--- DELETE_LOG TABLE ( 2026.03.17 생성자 : 박한용 )
+-- DELETE_LOG TABLE ( 최종수정 2026.03.23  : 박한용 )
 -- 삭제된 파일 이력 관리 테이블
 --
 -- FILE_TYPE 종류
@@ -129,23 +132,24 @@ CREATE TABLE PACS_SET (
 --   IMAGE        → IMAGE_PATH = dcm경로  / AVI_PATH = NULL      / DICOM_PATH = NULL
 --   NORMAL_VIDEO → IMAGE_PATH = NULL     / AVI_PATH = avi경로   / DICOM_PATH = NULL
 --   DICOM_VIDEO  → IMAGE_PATH = NULL     / AVI_PATH = avi경로   / DICOM_PATH = dcm경로
---
+--   PATIENT -> 삭제 할 때, 환자코드와 환자이름을 이용하여 폴더명을 만들고 VIDEO와 DICOM 폴더 2개를 확인해서 안에있는 환자폴더 삭제 처리 
 -- IS_RECOVERED : 복구 여부 Y / N  (기본값 N)
 -- RECOVERED_AT : 복구한 시간      (복구 안했으면 NULL)
 -- ================================================
 CREATE TABLE DELETE_LOG (
-    DELETE_ID       INTEGER  PRIMARY KEY AUTOINCREMENT,
-    DELETED_BY      TEXT     NOT NULL,
-    DELETED_AT      DATETIME NOT NULL DEFAULT (datetime('now', 'localtime')),
-    FILE_TYPE       TEXT     NOT NULL,
-    IMAGE_PATH      TEXT     NULL,
-    AVI_PATH        TEXT     NULL,
-    DICOM_PATH      TEXT     NULL,
-    PATIENT_CODE    INTEGER  NOT NULL,
-    PATIENT_NAME    TEXT     NOT NULL,
-    IS_RECOVERED    TEXT     NOT NULL DEFAULT 'N',
-    RECOVERED_AT    DATETIME NULL,
-    IS_FORCE_DELETED  TEXT     NOT NULL DEFAULT 'N',
-    FORCE_DELETED_AT  DATETIME NULL,
-    FORCE_DELETED_BY  TEXT     NULL
+    DELETE_ID           INTEGER  PRIMARY KEY AUTOINCREMENT,
+    DELETED_BY          TEXT     NOT NULL,
+    DELETED_AT          DATETIME NOT NULL DEFAULT (datetime('now', 'localtime')),
+    FILE_TYPE           TEXT     NOT NULL,
+    IMAGE_PATH          TEXT     NULL,
+    AVI_PATH            TEXT     NULL,
+    DICOM_PATH          TEXT     NULL,
+    PATIENT_CODE        INTEGER  NOT NULL,
+    PATIENT_NAME        TEXT     NOT NULL,
+    IS_RECOVERED        TEXT     NOT NULL DEFAULT 'N',
+    RECOVERED_AT        DATETIME NULL,
+    RECOVERED_BY        TEXT     NULL,       
+    IS_FORCE_DELETED    TEXT     NOT NULL DEFAULT 'N',
+    FORCE_DELETED_AT    DATETIME NULL,
+    FORCE_DELETED_BY    TEXT     NULL
 );

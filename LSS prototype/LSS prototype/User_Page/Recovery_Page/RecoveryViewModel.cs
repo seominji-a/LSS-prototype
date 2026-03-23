@@ -267,6 +267,7 @@ namespace LSS_prototype.User_Page
 
                     if (log.IsRecovered == "Y") log.RemainText = "복구처리";
                     if (log.IsForceDeleted == "Y") log.RemainText = "강제삭제";
+                    if (log.PatientDeleted == "Y" && log.FileType != "PATIENT") log.RemainText = "환자 삭제";
 
                     log.IsChecked = false;
                 }
@@ -383,6 +384,7 @@ namespace LSS_prototype.User_Page
                 if (_selectedLog.IsExpired) return;
                 if (_selectedLog.IsRecovered == "Y") return;
                 if (_selectedLog.IsForceDeleted == "Y") return;
+                if (_selectedLog.PatientDeleted == "Y" && _selectedLog.FileType != "PATIENT") return; 
 
                 await Task.Delay(PREVIEW_DELAY, ct);
                 if (ct.IsCancellationRequested) return;
@@ -545,8 +547,9 @@ namespace LSS_prototype.User_Page
             try
             {
                 var targets = FilteredLogs?
-                    .Where(x => x.IsChecked)
-                    .ToList();
+                        .Where(x => x.IsChecked)
+                        .OrderBy(x => x.FileType == "PATIENT" ? 1 : 0)
+                        .ToList(); // 환자와 환자에 엮인 비디오 및 영상을 다중 선택 후 강제 삭제 했을때를 대비 -> Patient는 무조건 리스트 맨 뒤로 처리 
 
                 if (targets == null || targets.Count == 0)
                 {
@@ -561,7 +564,7 @@ namespace LSS_prototype.User_Page
 
                 if (confirm != CustomMessageWindow.MessageBoxResult.Yes) return;
 
-                await ResetViewer ();
+                await ResetViewer();
 
                 var db = new DB_Manager();
 
@@ -586,9 +589,24 @@ namespace LSS_prototype.User_Page
                             case "NORMAL_VIDEO":
                                 await RestoreFile(log.AviPath, renamedFiles);
                                 break;
+
+                            case "PATIENT":
+                                if (!db.RecoverPatientWithLog(log.DeleteId, log.PatientCode, log.PatientName))
+                                    break;
+
+                                Common.WriteSessionLog(
+                                    $"[PATIENT RECOVER] User:{Common.CurrentUserId} " +
+                                    $"Patient:{log.PatientName}({log.PatientCode})");
+
+                                // ✅ 환자 복구 후 전체 새로고침
+                                // → 같은 환자의 이미지/영상 행들 PatientDeleted = 'N' 으로 반영
+                                await LoadLogs();
+                                break;
                         }
 
-                        db.UpdateRecovered(log.DeleteId);
+                        // ✅ PATIENT 는 RecoverPatientWithLog 내부에서 이미 처리했으니 스킵
+                        if (log.FileType != "PATIENT")
+                            db.UpdateRecovered(log.DeleteId);
 
                         switch (log.FileType)
                         {
@@ -612,9 +630,12 @@ namespace LSS_prototype.User_Page
                                     $"Patient:{log.PatientName}({log.PatientCode}) " +
                                     $"AVI:{log.AviPath} DCM:{log.DicomPath}");
                                 break;
+                                // ✅ PATIENT 세션 로그는 위에서 이미 처리했으니 제거
                         }
 
-                        await UpdateItemInPlace(log, isRecover: true);
+                        // ✅ PATIENT 는 LoadLogs() 로 이미 전체 새로고침했으니 스킵
+                        if (log.FileType != "PATIENT")
+                            await UpdateItemInPlace(log, isRecover: true);
                     }
                     catch (Exception ex)
                     {
@@ -702,6 +723,7 @@ namespace LSS_prototype.User_Page
             {
                 var targets = FilteredLogs?
                     .Where(x => x.IsChecked)
+                    .OrderBy(x => x.FileType == "PATIENT" ? 1 : 0) // ✅ PATIENT 무조건 맨 마지막 처리
                     .ToList();
 
                 if (targets == null || targets.Count == 0)
@@ -710,14 +732,12 @@ namespace LSS_prototype.User_Page
                     return;
                 }
 
-
                 // ★ OTP 검증
                 var otpDialog = new ForceDeleteOTP();
                 bool passed = await otpDialog.ShowAsync();
                 if (!passed) return;
 
-
-                            await ResetViewer();
+                await ResetViewer();
 
                 var db = new DB_Manager();
 
@@ -740,16 +760,43 @@ namespace LSS_prototype.User_Page
                                 await DeleteFileIfExists(log.AviPath);
                                 await DeleteFileIfExists(log.DicomPath);
                                 break;
+
+                            // ✅ PATIENT 강제삭제
+                            case "PATIENT":
+                                // 1. DELETE_LOG + PATIENT 테이블 트랜잭션
+                                //    PATIENT_CODE + PATIENT_NAME 100% 동일해야 삭제
+                                if (!db.ForceDeletePatientWithLog(log.DeleteId, log.PatientCode, log.PatientName))
+                                    break;
+
+                                // 2. DICOM/VIDEO 폴더 삭제
+                                //    환자명_환자코드 조합으로 폴더 찾아서 완전 삭제
+                                string folderName = $"{log.PatientName}_{log.PatientCode}";
+                                string dicomPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DICOM", folderName);
+                                string videoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "VIDEO", folderName);
+
+                                if (Directory.Exists(dicomPath))
+                                    Directory.Delete(dicomPath, recursive: true);
+
+                                if (Directory.Exists(videoPath))
+                                    Directory.Delete(videoPath, recursive: true);
+
+                                // 3. 전체 리스트 새로고침
+                                await LoadLogs();
+                                break;
                         }
 
-                        db.UpdateForceDeleted(log.DeleteId);
+                        // ✅ PATIENT 는 ForceDeletePatientWithLog 내부에서 이미 처리했으니 스킵
+                        if (log.FileType != "PATIENT")
+                            db.UpdateForceDeleted(log.DeleteId);
 
                         Common.WriteSessionLog(
                             $"[FORCE DELETE] User:{Common.CurrentUserId} " +
                             $"Patient:{log.PatientName}({log.PatientCode}) " +
                             $"Type:{log.FileType} DeleteId:{log.DeleteId}");
 
-                        await UpdateItemInPlace(log, isRecover: false);
+                        // ✅ PATIENT 는 LoadLogs() 로 이미 전체 새로고침했으니 스킵
+                        if (log.FileType != "PATIENT")
+                            await UpdateItemInPlace(log, isRecover: false);
                     }
                     catch (Exception ex)
                     {

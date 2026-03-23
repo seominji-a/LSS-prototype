@@ -982,13 +982,15 @@ namespace LSS_prototype.Patient_Page
                 {
                     var repo = new DB_Manager();
 
-                    if (repo.DeletePatient(SelectedPatient.PatientId))
+                    if (repo.SoftDeletePatientWithLog(SelectedPatient.PatientId,SelectedPatient.PatientCode,SelectedPatient.PatientName))
                     {
                         await CustomMessageWindow.ShowAsync("삭제되었습니다.",
                             CustomMessageWindow.MessageBoxType.Ok, 1,
                             CustomMessageWindow.MessageIconType.Info);
                         await LoadPatients();
                     }
+
+                   
                 }
             }
             catch (Exception ex)

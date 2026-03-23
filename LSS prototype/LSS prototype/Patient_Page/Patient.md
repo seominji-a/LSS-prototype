@@ -1489,3 +1489,9 @@ invalid DICOM이 들어와도 “실패 환자”로 수집되지 않고, 그룹
 BuildPatientImportGroups(...) 내부에서 DICOM 읽기 실패 시 
 단순 로그만 쓰고 continue 하지 말고, 실패 파일 경로를 별도 리스트에 모아서 
 ImportPatient()에서 같이 SaveFilesToImportErrorFolder() 하도록 바꾸기
+
+------------------------------------------------------------------
+ShotNum = 로컬 ShotNum + EMR ShotNum
+LastShootDate = 둘 중 더 늦은 날짜
+DB에는 EMR 환자 레코드가 최종값으로 저장
+그 다음 로컬 환자 삭제

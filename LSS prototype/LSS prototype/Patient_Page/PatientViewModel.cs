@@ -2092,9 +2092,9 @@ namespace LSS_prototype.Patient_Page
 
         //LOCAL → E-SYNC 병합
         private async Task<bool> MergeEditedLocalToImportedEmr(
-            PatientModel originalLocal,
-            PatientModel updatedLocal,
-            PatientModel importedEmr)
+    PatientModel originalLocal,
+    PatientModel updatedLocal,
+    PatientModel importedEmr)
         {
             try
             {
@@ -2166,6 +2166,54 @@ namespace LSS_prototype.Patient_Page
                     importedEmr.PatientCode);
 
                 var repo = new DB_Manager();
+
+                // [추가] ShotNum 합산
+                int localShotNum = updatedLocal?.ShotNum ?? 0;
+                int emrShotNum = importedEmr?.ShotNum ?? 0;
+                int mergedShotNum = localShotNum + emrShotNum;
+
+                // [추가] LastShootDate는 더 늦은 날짜 선택
+                DateTime? localLastShootDate = updatedLocal?.LastShootDate;
+                DateTime? emrLastShootDate = importedEmr?.LastShootDate;
+                DateTime? mergedLastShootDate = null;
+
+                if (localLastShootDate.HasValue && emrLastShootDate.HasValue)
+                {
+                    mergedLastShootDate =
+                        localLastShootDate.Value >= emrLastShootDate.Value
+                        ? localLastShootDate.Value
+                        : emrLastShootDate.Value;
+                }
+                else if (localLastShootDate.HasValue)
+                {
+                    mergedLastShootDate = localLastShootDate.Value;
+                }
+                else if (emrLastShootDate.HasValue)
+                {
+                    mergedLastShootDate = emrLastShootDate.Value;
+                }
+
+                // [추가] EMR 환자 DB 값 갱신
+                var mergedEmrPatient = new PatientModel
+                {
+                    PatientId = importedEmr.PatientId,
+                    PatientCode = importedEmr.PatientCode,
+                    PatientName = importedEmr.PatientName,
+                    BirthDate = importedEmr.BirthDate,
+                    Sex = importedEmr.Sex,
+                    AccessionNumber = importedEmr.AccessionNumber,
+                    IsEmrPatient = true,
+                    Source = PatientSource.ESync,
+                    SourceType = (int)PatientSourceType.ESync,
+                    LastShootDate = mergedLastShootDate,
+                    ShotNum = mergedShotNum
+                };
+
+                bool upserted = repo.UpsertEmrPatient(mergedEmrPatient);
+                if (!upserted)
+                    return false;
+
+                // LOCAL 삭제
                 repo.DeletePatient(updatedLocal.PatientId);
 
                 await LoadPatients();

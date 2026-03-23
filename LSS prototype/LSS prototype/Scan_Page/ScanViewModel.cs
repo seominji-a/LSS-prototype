@@ -269,10 +269,10 @@ namespace LSS_prototype.Scan_Page
             SelectedPatient = selectedPatient;
             _currentStudyId = studyId;
 
-            NavigatePatientCommand = new RelayCommand(NavigateToPatient);
-            LogoutCommand = new RelayCommand(Common.ExecuteLogout);
-            ExitCommand = new RelayCommand(Common.ExcuteExit);
-            ColorMapCommand = new RelayCommand(ToggleColorMap);
+            NavigatePatientCommand = new RelayCommand(_ => NavigateToPatient());
+            LogoutCommand = new RelayCommand(async _ => await Common.ExecuteLogout());
+            ExitCommand = new RelayCommand(async _ => await Common.ExcuteExit());
+            ColorMapCommand = new RelayCommand(_ => ToggleColorMap());
 
             _cameraService.FrameArrived += OnFrameArrived;
             _cameraService.ErrorOccurred += OnCameraError;
@@ -286,27 +286,27 @@ namespace LSS_prototype.Scan_Page
             // 프레임 도착 전 카메라 준비 상태 사용자에게 확인 목적
             CameraStatus = "Camera Initializing...";
 
-            ConnectCamera();
+            //ConnectCamera();
 
-            ZoomIncCommand = new RelayCommand(OnZoomInc);
-            ZoomDecCommand = new RelayCommand(OnZoomDec);
-            FocusIncCommand = new RelayCommand(OnFocusInc);
-            FocusDecCommand = new RelayCommand(OnFocusDec);
-            AutoFocusCommand = new RelayCommand(OnAutoFocus);
-            GainIncCommand = new RelayCommand(OnGainInc);
-            GainDecCommand = new RelayCommand(OnGainDec);
-            ExposureIncCommand = new RelayCommand(OnExposureInc);
-            ExposureDecCommand = new RelayCommand(OnExposureDec);
-            GammaIncCommand = new RelayCommand(OnGammaInc);
-            GammaDecCommand = new RelayCommand(OnGammaDec);
-            IrisIncCommand = new RelayCommand(OnIrisInc);
-            IrisDecCommand = new RelayCommand(OnIrisDec);
-            ResetSettingCommand = new RelayCommand(ResetValue);
-            FilterOnCommand = new RelayCommand(OnFilterOn);
-            FilterOffCommand = new RelayCommand(OnFilterOff);
+            ZoomIncCommand = new RelayCommand(async _ => await OnZoomInc());
+            ZoomDecCommand = new RelayCommand(async _ => await OnZoomDec());
+            FocusIncCommand = new RelayCommand(async _ => await OnFocusInc());
+            FocusDecCommand = new RelayCommand(async _ => await OnFocusDec());
+            AutoFocusCommand = new RelayCommand(async _ => await _cameraService.AutoFocus());
+            GainIncCommand = new RelayCommand(async _ => await OnGainInc());
+            GainDecCommand = new RelayCommand(async _ => await OnGainDec());
+            ExposureIncCommand = new RelayCommand(async _ => await OnExposureInc());
+            ExposureDecCommand = new RelayCommand(async _ => await OnExposureDec());
+            GammaIncCommand = new RelayCommand(async _ => await OnGammaInc());
+            GammaDecCommand = new RelayCommand(async _ => await OnGammaDec());
+            IrisIncCommand = new RelayCommand(async _ => await OnIrisInc());
+            IrisDecCommand = new RelayCommand(async _ => await OnIrisDec());
+            ResetSettingCommand = new RelayCommand(async _ => await ResetValue());
+            FilterOnCommand = new RelayCommand(async _ => await OnFilterOn());
+            FilterOffCommand = new RelayCommand(async _ => await OnFilterOff());
             ImageScanCommand = new RelayCommand(async _ => await CaptureAndSaveDicomAsync());
-            ImageCommentCommand = new RelayCommand(OpenImageComment);
-            VideoCommentCommand = new RelayCommand(OpenVideoComment);
+            ImageCommentCommand = new RelayCommand(async _ => await OpenImageComment());
+            VideoCommentCommand = new RelayCommand(async _ => await OpenVideoComment());
             DicomRecordCommand = new RelayCommand(async _ => await ToggleDicomRecord());
             VideoRecordCommand = new RelayCommand(async _ => await ToggleVideoRecord());
 
@@ -315,6 +315,12 @@ namespace LSS_prototype.Scan_Page
 
         }
 
+
+        public async Task InitializeAsync()
+        {
+            await _cameraService.InitializeAsync(); // 렌즈 초기화 완료 보장
+            await ConnectCamera();                        // 그 다음 카메라 연결
+        }
         #endregion
 
         #region 공통 유효성 검사
@@ -324,29 +330,25 @@ namespace LSS_prototype.Scan_Page
         //  환자 선택 여부, 카메라 상태, 프레임 준비 여부 확인
         //  문제 있으면 false 반환 + 팝업 표시
         // ═══════════════════════════════════════════
-        private bool CaptureValidation()
+        private async Task<bool> CaptureValidation()
         {
             if (SelectedPatient == null)
             {
-                CustomMessageWindow.Show("환자를 먼저 선택해주세요.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                await CustomMessageWindow.ShowAsync("환자를 먼저 선택해주세요.",
+                    CustomMessageWindow.MessageBoxType.Ok, 2,
                     CustomMessageWindow.MessageIconType.Warning);
                 return false;
             }
 
             if (CameraStatus == "Camera Disconnected")
             {
-                CustomMessageWindow.Show("카메라가 연결되어 있지 않습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                    CustomMessageWindow.MessageIconType.Warning);
+                await CustomMessageWindow.ShowAsync("카메라가 연결되어 있지 않습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                 return false;
             }
 
             if (!_isFrameReady)
             {
-                CustomMessageWindow.Show("카메라 영상이 \n 아직 준비되지 않았습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                    CustomMessageWindow.MessageIconType.Warning);
+                await CustomMessageWindow.ShowAsync("카메라 영상이 \n 아직 준비되지 않았습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                 return false;
             }
 
@@ -372,17 +374,17 @@ namespace LSS_prototype.Scan_Page
 
             try
             {
-                _isBusy = true; 
+                _isBusy = true;
 
                 // ① 유효성 검사
-                if (!CaptureValidation()) return;
+                if (!await CaptureValidation()) return;
 
                 // ② 프레임 캡처
                 frame = _cameraService.GetCurrentFrame();
                 if (frame == null || frame.Empty())
                 {
-                    CustomMessageWindow.Show("촬영할 이미지가 없습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    await CustomMessageWindow.ShowAsync("촬영할 이미지가 없습니다.",
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
@@ -396,16 +398,16 @@ namespace LSS_prototype.Scan_Page
                     ? SelectedPatient.Dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, "")
                     : "";
 
-                double exposure = _cameraService.ExposureCurrentRead();
-                double gain = _cameraService.GainCurrentRead();
-                double gamma = _cameraService.GammaCurrentRead();
+                double exposure = await _cameraService.ExposureCurrentRead();
+                double gain = await _cameraService.GainCurrentRead();
+                double gamma = await _cameraService.GammaCurrentRead();
 
                 var db = new DB_Manager();
                 var setting = db.GetPacsSet();
                 string hospName = setting?.HospitalName ?? "";
 
                 // ③ StudyID / instanceIndex 확정
-                EnsureStudyReady();
+                await EnsureStudyReady();
 
                 // ④ instanceIndex 증가
                 _currentInstanceIndex++;
@@ -441,25 +443,22 @@ namespace LSS_prototype.Scan_Page
 
                 await dm.SaveImageFile(path, bitmap);
 
-                UpdatePatientAfterScan();
+                await UpdatePatientAfterScan();
 
-                CustomMessageWindow.Show("촬영 및 저장이 완료되었습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                await CustomMessageWindow.ShowAsync("촬영 및 저장이 완료되었습니다.",
+                    CustomMessageWindow.MessageBoxType.Ok, 1,
                     CustomMessageWindow.MessageIconType.Info);
 
                 _ = RefreshThumbnailsAsync();   // 썸네일 업데이트 
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                CustomMessageWindow.Show($"촬영/저장 중 오류가 발생했습니다.\n{ex.Message}",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 3,
-                    CustomMessageWindow.MessageIconType.Warning);
+                await Common.WriteLog(ex);
             }
             finally
             {
                 // 사용한 리소스 반드시 해제
-                
+
                 frame?.Dispose();
                 bitmap?.Dispose();
                 _isBusy = false; // ★ 잠금 해제 
@@ -498,9 +497,7 @@ namespace LSS_prototype.Scan_Page
                 // Dicom Record 촬영 중이면 경고
                 if (_isDicomRecording)
                 {
-                    CustomMessageWindow.Show("DICOM 영상 촬영 중...",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("DICOM 영상 촬영 중...", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
                 _isBusy = true;
@@ -508,12 +505,12 @@ namespace LSS_prototype.Scan_Page
                     await StopVideoRecord();
                 else
                 {
-                    if (!CaptureValidation()) return;
-                    StartVideoRecord();
+                    if (!await CaptureValidation()) return;
+                    await StartVideoRecord();
                 }
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
-            finally  {  _isBusy = false;  }
+            catch (Exception ex) { await Common.WriteLog(ex); }
+            finally { _isBusy = false; }
         }
 
         // ═══════════════════════════════════════════
@@ -525,19 +522,19 @@ namespace LSS_prototype.Scan_Page
         //  ⑤ AviOnlyRecordLoop Task 시작
         //  ⑥ 30초 자동 중지 타이머 (테스트 차 30초, 추후 15분으로 변경 예정)
         // ═══════════════════════════════════════════
-        private void StartVideoRecord()
+        private async Task StartVideoRecord()
         {
             try
             {
                 // ① StudyID 확정 먼저
-                EnsureStudyReady();
+                await EnsureStudyReady();
 
                 // ② 프레임 확인
                 var frame = _cameraService.GetCurrentFrame();
                 if (frame == null || frame.Empty())
                 {
-                    CustomMessageWindow.Show("카메라 영상이 준비되지 않았습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    await CustomMessageWindow.ShowAsync("카메라 영상이 준비되지 않았습니다.",
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
@@ -560,9 +557,7 @@ namespace LSS_prototype.Scan_Page
                     _aviOnlyWriter?.Dispose();
                     _aviOnlyWriter = null;
                     frame.Dispose();
-                    CustomMessageWindow.Show("녹화를 시작할 수 없습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("녹화를 시작할 수 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
@@ -581,15 +576,15 @@ namespace LSS_prototype.Scan_Page
                 _aviOnlyLoopTask = Task.Run(() => AviOnlyRecordLoop(_aviOnlyCts.Token, fps));
 
                 // ⑥ 자동 중지 타이머 (테스트 차 30초, 추후 15분으로 변경 예정)
-                Task.Run(async () =>
+                _ = Task.Run(async () =>
                 {
                     try
                     {
                         await Task.Delay(TimeSpan.FromSeconds(30), _aviOnlyCts.Token);
                         await Application.Current.Dispatcher.InvokeAsync(async () =>
                         {
-                            CustomMessageWindow.Show("30초 녹화 완료. 자동 저장합니다.",
-                                CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                            await CustomMessageWindow.ShowAsync("30초 녹화 완료. 자동 저장합니다.",
+                                CustomMessageWindow.MessageBoxType.Ok, 2,
                                 CustomMessageWindow.MessageIconType.Info);
                             await StopVideoRecord();
                         });
@@ -599,7 +594,7 @@ namespace LSS_prototype.Scan_Page
 
                 frame.Dispose();
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
@@ -607,7 +602,7 @@ namespace LSS_prototype.Scan_Page
         //  DicomRecord 의 RecordLoop 와 동일한 구조
         //  목표 간격 - 처리시간 = 남은 시간만 Sleep → 정확한 fps 유지
         // ═══════════════════════════════════════════
-        private void AviOnlyRecordLoop(CancellationToken ct, double fps)
+        private async void AviOnlyRecordLoop(CancellationToken ct, double fps)
         {
             var targetInterval = TimeSpan.FromMilliseconds(1000.0 / fps);
 
@@ -634,7 +629,7 @@ namespace LSS_prototype.Scan_Page
                     }
                 }
                 catch (OperationCanceledException) { break; }
-                catch (Exception ex) { Common.WriteLog(ex); break; }
+                catch (Exception ex) { await Common.WriteLog(ex); break; }
 
                 var frameElapsed = DateTime.Now - frameStart;
                 var remaining = targetInterval - frameElapsed;
@@ -672,7 +667,7 @@ namespace LSS_prototype.Scan_Page
                 }
 
                 // ③ VideoWriter 닫기
-              
+
                 _aviOnlyWriter?.Release();
                 _aviOnlyWriter?.Dispose();
                 _aviOnlyWriter = null;
@@ -682,23 +677,19 @@ namespace LSS_prototype.Scan_Page
                 if (string.IsNullOrEmpty(_aviOnlySavePath) || !File.Exists(_aviOnlySavePath))
                 {
                     _currentVideoIndex--;
-                    CustomMessageWindow.Show("저장된 영상 파일이 없습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("저장된 영상 파일이 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
-                CustomMessageWindow.Show("동영상 저장 완료.( NORMAL VIDEO )",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                    CustomMessageWindow.MessageIconType.Info);
+                await CustomMessageWindow.ShowAsync("동영상 저장 완료.( NORMAL VIDEO )", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Info);
 
                 _ = RefreshThumbnailsAsync();  // 썸네일 작업 
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                CustomMessageWindow.Show($"영상 저장 실패: {ex.Message}",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 3,
+                await Common.WriteLog(ex);
+                await CustomMessageWindow.ShowAsync($"영상 저장 실패: {ex.Message}",
+                    CustomMessageWindow.MessageBoxType.Ok, 3,
                     CustomMessageWindow.MessageIconType.Warning);
             }
         }
@@ -734,9 +725,7 @@ namespace LSS_prototype.Scan_Page
                 // AVI Only 촬영 중이면 경고
                 if (_isVideoRecording)
                 {
-                    CustomMessageWindow.Show("AVI 영상 촬영 중...",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("AVI 영상 촬영 중...", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
                 _isBusy = true; // 
@@ -744,11 +733,11 @@ namespace LSS_prototype.Scan_Page
                     await StopDicomRecord();
                 else
                 {
-                    if (!CaptureValidation()) return;
-                    StartDicomRecord();
+                    if (!await CaptureValidation()) return;
+                    await StartDicomRecord();
                 }
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
             finally { _isBusy = false; }
         }
 
@@ -761,7 +750,7 @@ namespace LSS_prototype.Scan_Page
         //  ⑤ RecordLoop Task 시작
         //  ⑥ 1분 자동 중지 타이머
         // ═══════════════════════════════════════════
-        private void StartDicomRecord()
+        private async Task StartDicomRecord()
         {
             try
             {
@@ -769,14 +758,14 @@ namespace LSS_prototype.Scan_Page
                 var frame = _cameraService.GetCurrentFrame();
                 if (frame == null || frame.Empty())
                 {
-                    CustomMessageWindow.Show("카메라 영상이 준비되지 않았습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    await CustomMessageWindow.ShowAsync("카메라 영상이 준비되지 않았습니다.",
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
                 // ② StudyID 확정
-                EnsureStudyReady();
+                await EnsureStudyReady();
 
                 // ③ VideoWriter 초기화 먼저 확인
                 // VideoWriter 실패 시 VideoIndex 증가하면 안 되므로 성공 확인 후 증가
@@ -800,9 +789,7 @@ namespace LSS_prototype.Scan_Page
                     _videoWriter?.Dispose();
                     _videoWriter = null;
                     frame.Dispose();
-                    CustomMessageWindow.Show("녹화를 시작할 수 없습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("녹화를 시작할 수 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
@@ -821,15 +808,15 @@ namespace LSS_prototype.Scan_Page
                 _recordLoopTask = Task.Run(() => RecordLoop(_recordCts.Token, fps));
 
                 // ⑥ 1분 자동 중지 타이머
-                Task.Run(async () =>
+                _ = Task.Run(async () =>
                 {
                     try
                     {
                         await Task.Delay(TimeSpan.FromMinutes(1), _recordCts.Token);
                         await Application.Current.Dispatcher.InvokeAsync(async () =>
                         {
-                            CustomMessageWindow.Show("1분 녹화 완료. 자동 저장합니다.",
-                                CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                            await CustomMessageWindow.ShowAsync("1분 녹화 완료. 자동 저장합니다.",
+                                CustomMessageWindow.MessageBoxType.Ok, 2,
                                 CustomMessageWindow.MessageIconType.Info);
                             await StopDicomRecord();
                         });
@@ -839,7 +826,7 @@ namespace LSS_prototype.Scan_Page
 
                 frame.Dispose();
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
@@ -851,7 +838,7 @@ namespace LSS_prototype.Scan_Page
         //  무조건 33ms Sleep 하면 실제 fps가 낮아짐
         //  해결: 목표간격 - 처리시간 = 남은 시간만 Sleep → 정확한 fps 유지
         // ═══════════════════════════════════════════
-        private void RecordLoop(CancellationToken ct, double fps)
+        private async void RecordLoop(CancellationToken ct, double fps)
         {
             var targetInterval = TimeSpan.FromMilliseconds(1000.0 / fps);
 
@@ -878,7 +865,7 @@ namespace LSS_prototype.Scan_Page
                     }
                 }
                 catch (OperationCanceledException) { break; }
-                catch (Exception ex) { Common.WriteLog(ex); break; }
+                catch (Exception ex) { await Common.WriteLog(ex); break; }
 
                 var frameElapsed = DateTime.Now - frameStart;
                 var remaining = targetInterval - frameElapsed;
@@ -928,8 +915,8 @@ namespace LSS_prototype.Scan_Page
                 if (string.IsNullOrEmpty(_aviSavePath) || !File.Exists(_aviSavePath))
                 {
                     _currentVideoIndex--;
-                    CustomMessageWindow.Show("저장된 영상 파일이 없습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    await CustomMessageWindow.ShowAsync("저장된 영상 파일이 없습니다.",
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
@@ -937,7 +924,7 @@ namespace LSS_prototype.Scan_Page
                 // ⑤ DICOM 변환 시작 (로딩창 표시)
                 LoadingWindow.Begin("DICOM 변환 중...");
 
-                await Task.Run(() =>
+                await Task.Run(async () =>
                 {
                     string date = DateTime.Now.ToString("yyyyMMdd");
                     string time = DateTime.Now.ToString("HHmmss");
@@ -977,13 +964,13 @@ namespace LSS_prototype.Scan_Page
 
                     // AVI → DICOM 변환 저장
                     dm.SaveVideoFile(dcmPath, _aviSavePath);
-                    UpdatePatientAfterScan();
+                    await UpdatePatientAfterScan();
                 });
 
                 LoadingWindow.End();
 
-                CustomMessageWindow.Show("동영상 저장 완료.( DICOM VIDEO )",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                await CustomMessageWindow.ShowAsync("동영상 저장 완료.( DICOM VIDEO )",
+                    CustomMessageWindow.MessageBoxType.Ok, 1,
                     CustomMessageWindow.MessageIconType.Info);
 
                 _ = RefreshThumbnailsAsync();   // 썸네일 업데이트 
@@ -991,9 +978,9 @@ namespace LSS_prototype.Scan_Page
             catch (Exception ex)
             {
                 LoadingWindow.End();
-                Common.WriteLog(ex);
-                CustomMessageWindow.Show($"동영상 저장 실패: {ex.Message}",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 3,
+                await Common.WriteLog(ex);
+                await CustomMessageWindow.ShowAsync($"동영상 저장 실패: {ex.Message}",
+                    CustomMessageWindow.MessageBoxType.Ok, 3,
                     CustomMessageWindow.MessageIconType.Warning);
             }
             finally
@@ -1005,7 +992,7 @@ namespace LSS_prototype.Scan_Page
                     _videoWriter = null;
                 }
                 RecordingTime = "00:00";
-               
+
             }
         }
 
@@ -1045,7 +1032,7 @@ namespace LSS_prototype.Scan_Page
         //  _currentStudyId 있지만 instanceIndex 가 0 이면
         //  → Comment/Review 에서 돌아온 경우이므로 마지막 인덱스 복원
         // ═══════════════════════════════════════════
-        private void EnsureStudyReady()
+        private async Task EnsureStudyReady()
         {
             // ═══════════════════════════════════════════
             //  StudyID 가 없는 경우
@@ -1057,7 +1044,7 @@ namespace LSS_prototype.Scan_Page
                 // 오늘 촬영 이력 기준으로 StudyID 결정
                 // - 오늘 촬영 이력 없음 → 새 StudyID (yyyyMMdd0001)
                 // - 오늘 촬영 이력 있음 → "이어서 촬영?" 팝업 → 네/아니오 선택
-                string resolvedStudyId = ResolveStudyId(
+                string resolvedStudyId = await ResolveStudyId(
                     SelectedPatient.PatientName,
                     SelectedPatient.PatientCode.ToString()
                 );
@@ -1268,7 +1255,7 @@ namespace LSS_prototype.Scan_Page
         /// 최종 StudyID 결정
         /// 오늘 촬영 이력 있으면 이어서/새로 촬영 선택 팝업
         /// </summary>
-        private string ResolveStudyId(string patientName, string patientCode)
+        private async Task<string> ResolveStudyId(string patientName, string patientCode)
         {
             var todayStudyIds = GetTodayStudyIds(patientName, patientCode);
 
@@ -1278,7 +1265,7 @@ namespace LSS_prototype.Scan_Page
             string lastStudyId = GetLastStudyId(todayStudyIds);
             string nextStudyId = GetNextStudyId(todayStudyIds);
 
-            var result = CustomMessageWindow.Show(
+            var result = await CustomMessageWindow.ShowAsync(
                 $"오늘 촬영된 이미지가 존재합니다.\n\n기존 촬영을 이어서 촬영하시겠습니까?",
                 CustomMessageWindow.MessageBoxType.YesNo,
                 0,
@@ -1379,7 +1366,7 @@ namespace LSS_prototype.Scan_Page
             return maxIndex;
         }
 
-        private void UpdatePatientAfterScan()
+        private async Task UpdatePatientAfterScan()
         {
             try
             {
@@ -1391,7 +1378,7 @@ namespace LSS_prototype.Scan_Page
                 SelectedPatient.LastShootDate = now;
 
                 // 실제 촬영 날짜 수 기준으로 ShotNum 재계산
-                SelectedPatient.ShotNum = GetShotDateCount(
+                SelectedPatient.ShotNum = await GetShotDateCount(
                     SelectedPatient.PatientName,
                     SelectedPatient.PatientCode.ToString()
                 );
@@ -1411,11 +1398,8 @@ namespace LSS_prototype.Scan_Page
                 if (SelectedPatient.Source == PatientSource.Emr ||
                     SelectedPatient.Source == PatientSource.ESync)
                 {
-                    var esyncPatient = repo.GetPatientByIdentityAndSource(
+                    var esyncPatient = repo.GetPatientByCodeAndSource(
                         SelectedPatient.PatientCode,
-                        SelectedPatient.PatientName,
-                        SelectedPatient.BirthDate,
-                        SelectedPatient.Sex,
                         (int)PatientSourceType.ESync
                     );
 
@@ -1431,7 +1415,7 @@ namespace LSS_prototype.Scan_Page
                     else
                     {
                         esyncPatient.LastShootDate = now;
-                        esyncPatient.ShotNum = GetShotDateCount(
+                        esyncPatient.ShotNum = await GetShotDateCount(
                             SelectedPatient.PatientName,
                             SelectedPatient.PatientCode.ToString()
                         );
@@ -1447,7 +1431,7 @@ namespace LSS_prototype.Scan_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
@@ -1455,15 +1439,15 @@ namespace LSS_prototype.Scan_Page
 
         #region 페이지 이동
 
-        private void OpenImageComment()
+        private async Task OpenImageComment()
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(_currentStudyId))
                 {
-                    CustomMessageWindow.Show(
+                    await CustomMessageWindow.ShowAsync(
                         "불러올 촬영 이미지가 없습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
@@ -1478,20 +1462,14 @@ namespace LSS_prototype.Scan_Page
 
                 if (!Directory.Exists(imageDir))
                 {
-                    CustomMessageWindow.Show(
-                        "촬영된 이미지가 없습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("촬영된 이미지가 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
                 bool hasDicom = Directory.EnumerateFiles(imageDir, "*.dcm").Any(f => !Path.GetFileName(f).StartsWith("Del_"));
                 if (!hasDicom)
                 {
-                    CustomMessageWindow.Show(
-                        "촬영된 이미지가 없습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("촬영된 이미지가 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
@@ -1500,24 +1478,21 @@ namespace LSS_prototype.Scan_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                CustomMessageWindow.Show(
-                    "이미지 코멘트 화면으로 이동할 수 없습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                    CustomMessageWindow.MessageIconType.Warning);
+                await Common.WriteLog(ex);
+                await CustomMessageWindow.ShowAsync("이미지 코멘트 화면으로 이동할 수 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
             }
         }
 
-        private void OpenVideoComment()
+        private async Task OpenVideoComment()
         {
             try
             {
                 // StudyID 없으면 영상 촬영 자체가 없는 상태
                 if (string.IsNullOrWhiteSpace(_currentStudyId))
                 {
-                    CustomMessageWindow.Show(
+                    await CustomMessageWindow.ShowAsync(
                         "불러올 촬영 영상이 없습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
@@ -1534,10 +1509,7 @@ namespace LSS_prototype.Scan_Page
 
                 if (!Directory.Exists(videoDir))
                 {
-                    CustomMessageWindow.Show(
-                        "촬영된 영상이 없습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("촬영된 영상이 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
@@ -1547,10 +1519,7 @@ namespace LSS_prototype.Scan_Page
 
                 if (!hasVideo)
                 {
-                    CustomMessageWindow.Show(
-                        "촬영된 영상이 없습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("촬영된 영상이 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
@@ -1558,11 +1527,8 @@ namespace LSS_prototype.Scan_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                CustomMessageWindow.Show(
-                    "영상 코멘트 화면으로 이동할 수 없습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                    CustomMessageWindow.MessageIconType.Warning);
+                await Common.WriteLog(ex);
+                await CustomMessageWindow.ShowAsync("영상 코멘트 화면으로 이동할 수 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
             }
         }
 
@@ -1599,11 +1565,11 @@ namespace LSS_prototype.Scan_Page
                     VideoThumbnail = vidTask.Result;
                 });
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ── 마지막 DCM 파일 첫 프레임 추출 ──
-        private ImageSource LoadImageThumbnail()
+        private async Task<ImageSource> LoadImageThumbnail()
         {
             try
             {
@@ -1645,11 +1611,11 @@ namespace LSS_prototype.Scan_Page
 
                 return bitmap;
             }
-            catch (Exception ex) { Common.WriteLog(ex); return null; }
+            catch (Exception ex) { await Common.WriteLog(ex); return null; }
         }
 
         // ── 마지막 AVI 파일 첫 프레임 추출 ──
-        private ImageSource LoadVideoThumbnail()
+        private async Task<ImageSource> LoadVideoThumbnail()
         {
             try
             {
@@ -1680,15 +1646,15 @@ namespace LSS_prototype.Scan_Page
                         cap.Read(frame);
                         if (frame.Empty()) return null;
 
-                        return ConvertMatToBitmapSource(frame);
+                        return await ConvertMatToBitmapSource(frame);
                     }
                 }
             }
-            catch (Exception ex) { Common.WriteLog(ex); return null; }
+            catch (Exception ex) { await Common.WriteLog(ex); return null; }
         }
 
         // ── Mat → BitmapSource 변환 (UI 스레드 안전) ──
-        private BitmapSource ConvertMatToBitmapSource(Mat mat)
+        private async Task<BitmapSource> ConvertMatToBitmapSource(Mat mat)
         {
             try
             {
@@ -1717,7 +1683,7 @@ namespace LSS_prototype.Scan_Page
                 bitmap.Freeze();
                 return bitmap;
             }
-            catch (Exception ex) { Common.WriteLog(ex); return null; }
+            catch (Exception ex) { await Common.WriteLog(ex); return null; }
         }
 
 
@@ -1725,9 +1691,9 @@ namespace LSS_prototype.Scan_Page
 
         #region 카메라 제어
 
-        private void ConnectCamera()
+        private async Task ConnectCamera()
         {
-            Task.Run(() =>
+            await Task.Run(async () =>
             {
                 try
                 {
@@ -1743,7 +1709,7 @@ namespace LSS_prototype.Scan_Page
                     DefaultModel data = db.GetDefaultSet();
                     if (data != null)
                     {
-                        _cameraService.InitializeCameraSettings(data);
+                        await _cameraService.InitializeCameraSettings(data);
                         Application.Current?.Dispatcher.Invoke(() => GainText = $"{data.Gain:F1} dB");
                         ExposureText = $"{data.ExposureTime / 1000000:F1}s";
                         GainText = $"{data.Gain:F1} dB";
@@ -1753,8 +1719,8 @@ namespace LSS_prototype.Scan_Page
                     }
                     else Console.WriteLine("> DB 기본값 없음 → 카메라 기본값 사용");
 
-                    _cameraService.StartLiveView();
-                    GainText = $"{_cameraService.GainCurrentRead():F1} dB";
+                    await _cameraService.StartLiveView();
+                    GainText = $"{await _cameraService.GainCurrentRead():F1} dB";
                 }
                 catch (Exception ex) { OnCameraError($"카메라 스레드 오류: {ex.Message}"); }
             });
@@ -1788,14 +1754,14 @@ namespace LSS_prototype.Scan_Page
         private void OnCameraReconnected() =>
             Application.Current?.Dispatcher.Invoke(() => Console.WriteLine("> 카메라 재연결 완료"));
 
-        private void OnCameraError(string message)
+        private async void OnCameraError(string message)
         {
-            Application.Current?.Dispatcher.Invoke(() =>
+            await Application.Current?.Dispatcher.InvokeAsync(async () =>
             {
                 Console.WriteLine($"오류 : {message}");
                 Common.WriteSessionLog(message);
-                CustomMessageWindow.Show(message,
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                await CustomMessageWindow.ShowAsync(message,
+                    CustomMessageWindow.MessageBoxType.Ok, 2,
                     CustomMessageWindow.MessageIconType.Warning);
             });
         }
@@ -1813,9 +1779,9 @@ namespace LSS_prototype.Scan_Page
             Console.WriteLine($"> 컬러맵 변경: {prev} → {_cameraService.ColorMap}");
         }
 
-        private void ResetValue()
+        private async Task ResetValue()
         {
-            var confirm = CustomMessageWindow.Show(
+            var confirm = await CustomMessageWindow.ShowAsync(
                 "기본 셋팅값으로 초기화하시겠습니까?",
                 CustomMessageWindow.MessageBoxType.YesNo, 0,
                 CustomMessageWindow.MessageIconType.Info);
@@ -1826,7 +1792,7 @@ namespace LSS_prototype.Scan_Page
             DefaultModel data = db.GetDefaultSet();
             if (data == null) return;
 
-            _cameraService.InitializeCameraSettings(data);
+            await _cameraService.InitializeCameraSettings(data);
 
             Application.Current?.Dispatcher.Invoke(() =>
             {
@@ -1836,8 +1802,8 @@ namespace LSS_prototype.Scan_Page
                 IrisValue = data.Iris;
             });
 
-            CustomMessageWindow.Show("초기화 되었습니다.",
-                CustomMessageWindow.MessageBoxType.AutoClose, 1,
+            await CustomMessageWindow.ShowAsync("초기화 되었습니다.",
+                CustomMessageWindow.MessageBoxType.Ok, 1,
                 CustomMessageWindow.MessageIconType.Info);
         }
 
@@ -1851,36 +1817,85 @@ namespace LSS_prototype.Scan_Page
                 ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3B82F6"))
                 : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3F55"));
 
-        private void OnFilterOn() { LensCtrl.Instance.OptFilterMove(1); FilterValue = 1; }
-        private void OnFilterOff() { LensCtrl.Instance.OptFilterMove(0); FilterValue = 0; }
-        private void OnExposureInc() { _cameraService.ExposureInc(); ExposureText = $"{_cameraService.ExposureCurrentRead() / 1000000:F1}s"; }
-        private void OnExposureDec() { _cameraService.ExposureDec(); ExposureText = $"{_cameraService.ExposureCurrentRead() / 1000000:F1}s"; }
-        private void OnGainInc() { _cameraService.GainInc(); GainText = $"{_cameraService.GainCurrentRead():F1} dB"; }
-        private void OnGainDec() { _cameraService.GainDec(); GainText = $"{_cameraService.GainCurrentRead():F1} dB"; }
-        private void OnGammaInc() { _cameraService.GammaInc(); GammaValue = _cameraService.GammaCurrentRead(); }
-        private void OnGammaDec() { _cameraService.GammaDec(); GammaValue = _cameraService.GammaCurrentRead(); }
-        private void OnIrisInc() { _cameraService.IrisInc(); IrisValue = _cameraService.IrisCurrentRead(); }
-        private void OnIrisDec() { _cameraService.IrisDec(); IrisValue = _cameraService.IrisCurrentRead(); }
-        private async void OnAutoFocus() => await _cameraService.AutoFocus();
-        private void OnZoomInc()
+        private async Task OnFilterOn()
         {
-            try { _cameraService.ZoomIn(); ZoomText = $"{LensCtrl.Instance.zoomCurrentAddr}"; }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            await LensCtrl.Instance.OptFilterMove(1);
+            FilterValue = 1;
         }
-        private void OnZoomDec()
+
+        private async Task OnFilterOff()
         {
-            try { _cameraService.ZoomOut(); ZoomText = $"{LensCtrl.Instance.zoomCurrentAddr}"; }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            await LensCtrl.Instance.OptFilterMove(0);
+            FilterValue = 0;
         }
-        private void OnFocusInc()
+
+        private async Task OnExposureInc()
         {
-            try { _cameraService.FocusIn(); FocusText = $"{LensCtrl.Instance.focusCurrentAddr}"; }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            await _cameraService.ExposureInc();
+            ExposureText = $"{await _cameraService.ExposureCurrentRead() / 1000000:F1}s";
         }
-        private void OnFocusDec()
+
+        private async Task OnExposureDec()
         {
-            try { _cameraService.FocusOut(); FocusText = $"{LensCtrl.Instance.focusCurrentAddr}"; }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            await _cameraService.ExposureDec();
+            ExposureText = $"{await _cameraService.ExposureCurrentRead() / 1000000:F1}s";
+        }
+
+        private async Task OnGainInc()
+        {
+            await _cameraService.GainInc();
+            GainText = $"{await _cameraService.GainCurrentRead():F1} dB";
+        }
+
+        private async Task OnGainDec()
+        {
+            await _cameraService.GainDec();
+            GainText = $"{await _cameraService.GainCurrentRead():F1} dB";
+        }
+
+        private async Task OnGammaInc()
+        {
+            await _cameraService.GammaInc();
+            GammaValue = await _cameraService.GammaCurrentRead();
+        }
+
+        private async Task OnGammaDec()
+        {
+            await _cameraService.GammaDec();
+            GammaValue = await _cameraService.GammaCurrentRead();
+        }
+
+        private async Task OnIrisInc()
+        {
+            await _cameraService.IrisInc();
+            IrisValue = await _cameraService.IrisCurrentRead();
+        }
+
+        private async Task OnIrisDec()
+        {
+            await _cameraService.IrisDec();
+            IrisValue = await _cameraService.IrisCurrentRead();
+        }
+
+        private async Task OnZoomInc()
+        {
+            try { await _cameraService.ZoomIn(); ZoomText = $"{LensCtrl.Instance.zoomCurrentAddr}"; }
+            catch (Exception ex) { await Common.WriteLog(ex); }
+        }
+        private async Task OnZoomDec()
+        {
+            try { await _cameraService.ZoomOut(); ZoomText = $"{LensCtrl.Instance.zoomCurrentAddr}"; }
+            catch (Exception ex) { await Common.WriteLog(ex); }
+        }
+        private async Task OnFocusInc()
+        {
+            try { await  _cameraService.FocusIn(); FocusText = $"{LensCtrl.Instance.focusCurrentAddr}"; }
+            catch (Exception ex) { await Common.WriteLog(ex); }
+        }
+        private async Task OnFocusDec()
+        {
+            try { await  _cameraService.FocusOut(); FocusText = $"{LensCtrl.Instance.focusCurrentAddr}"; }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         #endregion
@@ -1902,7 +1917,7 @@ namespace LSS_prototype.Scan_Page
         /// - VIDEO/환자폴더/날짜/StudyID 안에 유효 avi 파일이 있어도 그 날짜를 1일로 계산
         /// - 같은 날짜에 여러 StudyID가 있어도 날짜 1개로만 계산
         /// </summary>
-        private int GetShotDateCount(string patientName, string patientCode)
+        private async Task<int> GetShotDateCount(string patientName, string patientCode)
         {
             try
             {
@@ -1964,7 +1979,7 @@ namespace LSS_prototype.Scan_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return 0;
             }
         }

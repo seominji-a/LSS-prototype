@@ -33,7 +33,7 @@ namespace LSS_prototype.Login_Page
             _firstId = loginId;  // 원본 저장
         }
 
-        public void Save(string newPw, string confirmPw)
+        public async Task Save(string newPw, string confirmPw)
         {
             // 1. 유효성 검사
             if (string.IsNullOrWhiteSpace(LoginId) ||
@@ -41,8 +41,8 @@ namespace LSS_prototype.Login_Page
                 string.IsNullOrEmpty(newPw) ||
                 string.IsNullOrEmpty(confirmPw))
             {
-                CustomMessageWindow.Show("필수 입력값이 비어있습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                await CustomMessageWindow.ShowAsync("필수 입력값이 비어있습니다.",
+                    CustomMessageWindow.MessageBoxType.Ok, 1,
                     CustomMessageWindow.MessageIconType.Warning);
                 return;
             }
@@ -50,7 +50,7 @@ namespace LSS_prototype.Login_Page
             // 2. 기존 ID와 동일한지 비교
             if (LoginId == _firstId)
             {
-                CustomMessageWindow.Show("기존 ID와 동일한 ID로는 변경할 수 없습니다.",
+                await CustomMessageWindow.ShowAsync("기존 ID와 동일한 ID로는 변경할 수 없습니다.",
                     CustomMessageWindow.MessageBoxType.Ok, 0,
                     CustomMessageWindow.MessageIconType.Warning);
                 return;
@@ -60,8 +60,8 @@ namespace LSS_prototype.Login_Page
             string error = DB_Manager.ValidatePassword(newPw);
             if (error != null)
             {
-                CustomMessageWindow.Show(error,
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                await CustomMessageWindow.ShowAsync(error,
+                    CustomMessageWindow.MessageBoxType.Ok, 0,
                     CustomMessageWindow.MessageIconType.Warning);
                 return;
             }
@@ -69,8 +69,8 @@ namespace LSS_prototype.Login_Page
             // 4. 비밀번호 일치 확인
             if (newPw != confirmPw)
             {
-                CustomMessageWindow.Show("비밀번호가 일치하지 않습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                await CustomMessageWindow.ShowAsync("비밀번호가 일치하지 않습니다.",
+                    CustomMessageWindow.MessageBoxType.Ok, 0,
                     CustomMessageWindow.MessageIconType.Warning);
                 return;
             }
@@ -82,14 +82,14 @@ namespace LSS_prototype.Login_Page
 
             if (!success_flag)
             {
-                CustomMessageWindow.Show("비밀번호 변경에 실패했습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                await CustomMessageWindow.ShowAsync("비밀번호 변경에 실패했습니다.",
+                    CustomMessageWindow.MessageBoxType.Ok, 0,
                     CustomMessageWindow.MessageIconType.Warning);
                 return;
             }
 
             // 6. 성공 
-                CustomMessageWindow.Show("비밀번호가 변경되었습니다. 다시 로그인해주세요.",
+                await CustomMessageWindow.ShowAsync("비밀번호가 변경되었습니다. 다시 로그인해주세요.",
                     CustomMessageWindow.MessageBoxType.Ok, 0,
                     CustomMessageWindow.MessageIconType.Info);
 

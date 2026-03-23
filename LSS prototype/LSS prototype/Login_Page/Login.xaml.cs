@@ -22,10 +22,8 @@ namespace LSS_prototype.Login_Page
         public Login()
         {
             InitializeComponent();
-            var db = new DB_Manager();
-            db.InitDB();
+
             var vm = DataContext as LoginViewModel;
-            vm?.LoadAdminIds();
 
             if (vm != null)
             {
@@ -38,6 +36,13 @@ namespace LSS_prototype.Login_Page
                     }), DispatcherPriority.Input);
                 };
             }
+
+            Loaded += async (s, e) =>
+            {
+                var db = new DB_Manager();
+                await db.InitDB();
+                vm?.LoadAdminIds();
+            };
         }
 
         // ── EXIT 버튼 ──
@@ -47,7 +52,7 @@ namespace LSS_prototype.Login_Page
         }
 
         // ── 캡스락 체크 (GotKeyboardFocus + PreviewKeyUp 공용) ──
-        private void PasswordBox_CheckCaps(object sender, RoutedEventArgs e)
+        private async void PasswordBox_CheckCaps(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -63,7 +68,7 @@ namespace LSS_prototype.Login_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 

@@ -71,20 +71,20 @@ namespace LSS_prototype.ImageComment_Page
         //  ViewModel.Initialize() 로 현재 세션 DCM 목록 수집 및 첫 페이지 로드
         //  실패 시 팝업은 ViewModel 에서 처리
         // ═══════════════════════════════════════════
-        private void OnLoaded()
+        private async void OnLoaded()
         {
             try
             {
                 // patient + seriesNumber 둘 다 넘겨줌
                 // → 현재 세션 폴더만 탐색
-                bool success = VM.Initialize(_patient, _studyId);
+                bool success = await VM.Initialize(_patient, _studyId);
                 if (!success) return;
 
                 DrawingCanvas.EditingMode = InkCanvasEditingMode.None;
                 ApplyDrawingAttributes();
                 DrawingCanvas.PreviewMouseDown += OnCanvasPreviewMouseDown;
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
@@ -92,7 +92,7 @@ namespace LSS_prototype.ImageComment_Page
         //  CurrentImage   → CapturedImage.Source 갱신
         //  CurrentStrokes → DrawingCanvas.Strokes 갱신
         // ═══════════════════════════════════════════
-        private void OnViewModelPropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        private async void OnViewModelPropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             try
             {
@@ -108,7 +108,7 @@ namespace LSS_prototype.ImageComment_Page
                     DrawingCanvas.Strokes.StrokesChanged += OnStrokesChanged;
                 }
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
@@ -125,7 +125,7 @@ namespace LSS_prototype.ImageComment_Page
         //  PEN/ERASE 모드일 때는 이동 안함 (그림 그리는 중)
         //  _isDirty 시 ViewModel 에 저장 여부 확인 요청
         // ═══════════════════════════════════════════
-        private void OnCanvasPreviewMouseDown(object sender, MouseButtonEventArgs e)
+        private async void OnCanvasPreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             try
             {
@@ -143,15 +143,15 @@ namespace LSS_prototype.ImageComment_Page
                 // 새 드로잉이 있으면 저장 여부 확인
                 if (_isDirty)
                 {
-                    bool save = VM.ConfirmSaveDrawing();
+                    bool save = await VM.ConfirmSaveDrawing();
                     if (save) VM.SaveIsf(DrawingCanvas.Strokes, DrawingCanvas.ActualWidth, DrawingCanvas.ActualHeight);
                 }
 
                 // 페이지 이동 성공 시 펜 모드 해제
-                bool moved = VM.NavigatePage(goNext);
+                bool moved = await VM.NavigatePage(goNext);
                 if (moved) SetDrawingMode(false);
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
@@ -196,17 +196,17 @@ namespace LSS_prototype.ImageComment_Page
         //  PEN 토글
         //  현재 Ink 모드면 OFF, 아니면 ON
         // ═══════════════════════════════════════════
-        private void BtnPen_Click(object sender, RoutedEventArgs e)
+        private async void BtnPen_Click(object sender, RoutedEventArgs e)
         {
             try { SetDrawingMode(DrawingCanvas.EditingMode != InkCanvasEditingMode.Ink); }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
         //  ERASE 토글
         //  획 단위 지우기 모드 (EraseByStroke)
         // ═══════════════════════════════════════════
-        private void BtnErase_Click(object sender, RoutedEventArgs e)
+        private async void BtnErase_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -221,23 +221,23 @@ namespace LSS_prototype.ImageComment_Page
                     BtnErase.Background = BrushAccent;
                 }
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
         //  CLEAR - 전체 획 삭제
         // ═══════════════════════════════════════════
-        private void BtnClear_Click(object sender, RoutedEventArgs e)
+        private async void BtnClear_Click(object sender, RoutedEventArgs e)
         {
             try { DrawingCanvas.Strokes.Clear(); }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
         //  색상 버튼 클릭 → 펜 색상 변경 + 자동 PEN ON
         //  Button.Tag 에 색상 HEX 값 저장
         // ═══════════════════════════════════════════
-        private void ColorBtn_Click(object sender, RoutedEventArgs e)
+        private async void ColorBtn_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -248,14 +248,14 @@ namespace LSS_prototype.ImageComment_Page
                     SetDrawingMode(true);
                 }
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
         //  굵기 슬라이더
         //  숫자 박스(TxtThickness) 동기화
         // ═══════════════════════════════════════════
-        private void SliderThickness_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        private async void SliderThickness_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             try
             {
@@ -264,14 +264,14 @@ namespace LSS_prototype.ImageComment_Page
                 TxtThickness.Text = ((int)_penThickness).ToString();
                 ApplyDrawingAttributes();
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
         //  RESET
         //  InkCanvas 초기화 + ViewModel 입력값 초기화
         // ═══════════════════════════════════════════
-        private void BtnReset_Click(object sender, RoutedEventArgs e)
+        private async void BtnReset_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -279,27 +279,27 @@ namespace LSS_prototype.ImageComment_Page
                 SetDrawingMode(false);
                 VM.Reset();
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
         //  BACK → Scan 화면으로 복귀
         //  _patient 를 그대로 넘겨서 선택된 환자 유지
         // ═══════════════════════════════════════════
-        private void Back_Click(object sender, RoutedEventArgs e)
+        private async void Back_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 // 드로잉이 있으면 저장 여부 확인 
                 if (_isDirty)
                 {
-                    bool save = VM.ConfirmSaveDrawing();
+                    bool save = await VM.ConfirmSaveDrawing();
                     if (save) VM.SaveIsf(DrawingCanvas.Strokes, DrawingCanvas.ActualWidth, DrawingCanvas.ActualHeight);
                 }
 
                 MainPage.Instance.NavigateTo(new Scan(_patient, _studyId));
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
     }
 }

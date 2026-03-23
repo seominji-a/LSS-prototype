@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -178,15 +179,15 @@ namespace LSS_prototype.VideoComment_Page
             Patient = patient;
             StudyId = studyId;
 
-            VideoDeleteCommand = new RelayCommand(_ => ExecuteVideoDelete());
-            CommentSaveCommand = new RelayCommand(_ => ExecuteCommentSave());
-            ExitCommand = new RelayCommand(Common.ExcuteExit);
-            SlowerCommand = new RelayCommand(_ => ExecuteSlower());
-            FasterCommand = new RelayCommand(_ => ExecuteFaster());
+            VideoDeleteCommand = new RelayCommand(async _ => await ExecuteVideoDelete());
+            CommentSaveCommand = new RelayCommand(async _ => await ExecuteCommentSave());
+            ExitCommand = new RelayCommand(async _ => await Common.ExcuteExit());
+            SlowerCommand = new RelayCommand(async _ => await ExecuteSlower());
+            FasterCommand = new RelayCommand(async _ => await ExecuteFaster());
             SeekBackCommand = new RelayCommand(_ => _seekBackAction?.Invoke());
             SeekForwardCommand = new RelayCommand(_ => _seekForwardAction?.Invoke());
             PlayPauseCommand = new RelayCommand(_ => _playPauseAction?.Invoke());
-            NavigateBackCommand = new RelayCommand(_ => ExecuteNavigateBack());
+            NavigateBackCommand = new RelayCommand(async _ => await ExecuteNavigateBack());
         }
 
         #endregion
@@ -214,15 +215,13 @@ namespace LSS_prototype.VideoComment_Page
         //  Del_ 파일 제외 + 번호순 정렬
         //  xaml.cs Loaded 에서 호출
         // ═══════════════════════════════════════════
-        public bool Initialize()
+        public async Task<bool> Initialize()
         {
             try
             {
                 if (!Directory.Exists(VideoDir))
                 {
-                    CustomMessageWindow.Show("재생할 영상 파일이 없습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("재생할 영상 파일이 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return false;
                 }
 
@@ -233,9 +232,7 @@ namespace LSS_prototype.VideoComment_Page
 
                 if (_videoFiles.Count == 0)
                 {
-                    CustomMessageWindow.Show("재생할 영상 파일이 없습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("재생할 영상 파일이 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return false;
                 }
 
@@ -243,7 +240,7 @@ namespace LSS_prototype.VideoComment_Page
                 UpdateCurrentFile();
                 return true;
             }
-            catch (Exception ex) { Common.WriteLog(ex); return false; }
+            catch (Exception ex) { await Common.WriteLog(ex); return false; }
         }
 
         #endregion
@@ -253,15 +250,13 @@ namespace LSS_prototype.VideoComment_Page
         // ═══════════════════════════════════════════
         //  이전 파일 이동
         // ═══════════════════════════════════════════
-        public bool MovePrev()
+        public async Task<bool> MovePrev()
         {
             try
             {
                 if (_currentIndex <= 0)
                 {
-                    CustomMessageWindow.Show("첫 번째 영상입니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                        CustomMessageWindow.MessageIconType.Info);
+                    await CustomMessageWindow.ShowAsync("첫 번째 영상입니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Info);
                     return false;
                 }
 
@@ -269,20 +264,20 @@ namespace LSS_prototype.VideoComment_Page
                 UpdateCurrentFile();
                 return true;
             }
-            catch (Exception ex) { Common.WriteLog(ex); return false; }
+            catch (Exception ex) { await Common.WriteLog(ex); return false; }
         }
 
         // ═══════════════════════════════════════════
         //  다음 파일 이동
         // ═══════════════════════════════════════════
-        public bool MoveNext()
+        public async Task<bool> MoveNext()
         {
             try
             {
                 if (_currentIndex >= _videoFiles.Count - 1)
                 {
-                    CustomMessageWindow.Show("마지막 영상입니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    await CustomMessageWindow.ShowAsync("마지막 영상입니다.",
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Info);
                     return false;
                 }
@@ -291,7 +286,7 @@ namespace LSS_prototype.VideoComment_Page
                 UpdateCurrentFile();
                 return true;
             }
-            catch (Exception ex) { Common.WriteLog(ex); return false; }
+            catch (Exception ex) { await Common.WriteLog(ex); return false; }
         }
 
         // ═══════════════════════════════════════════
@@ -325,13 +320,13 @@ namespace LSS_prototype.VideoComment_Page
         //
         //  삭제 후 파일 0개 → RequestNavigateToScan 발생 → Scan 화면 이동
         // ═══════════════════════════════════════════
-        private void ExecuteVideoDelete()
+        private async Task ExecuteVideoDelete()
         {
             try
             {
                 if (_videoFiles.Count == 0) return;
 
-                var result = CustomMessageWindow.Show(
+                var result = await CustomMessageWindow.ShowAsync(
                     "영상을 삭제하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo,
                     icon: CustomMessageWindow.MessageIconType.Warning);
@@ -364,7 +359,7 @@ namespace LSS_prototype.VideoComment_Page
                 else
                 {
                     // DICOM_VIDEO: AVI + DCM 둘 다 Del_
-                    string dcmPath = GetDicomPathFromAvi(currentFile);
+                    string dcmPath = await GetDicomPathFromAvi(currentFile);
                     string deletedDcmPath = null;
 
                     if (!string.IsNullOrEmpty(dcmPath) && File.Exists(dcmPath))
@@ -385,18 +380,12 @@ namespace LSS_prototype.VideoComment_Page
 
                 if (_videoFiles.Count == 0)
                 {
-                    CustomMessageWindow.Show(
-                        "영상이 삭제되었습니다.\n 저장된 영상이 존재하지 않아\nScan 화면으로 이동합니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                        CustomMessageWindow.MessageIconType.Info);
+                    await CustomMessageWindow.ShowAsync("영상이 삭제되었습니다.\n 저장된 영상이 존재하지 않아\nScan 화면으로 이동합니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Info);
                     RequestNavigateToScan?.Invoke();
                     return;
                 }
 
-                CustomMessageWindow.Show(
-                   "비디오가 정상적으로 삭제되었습니다.",
-                   CustomMessageWindow.MessageBoxType.Ok, 0,
-                   CustomMessageWindow.MessageIconType.Info);
+                await CustomMessageWindow.ShowAsync("비디오가 정상적으로 삭제되었습니다.", CustomMessageWindow.MessageBoxType.Ok, 0, CustomMessageWindow.MessageIconType.Info);
 
                 // 마지막 파일 삭제 시 인덱스 보정
                 if (_currentIndex >= _videoFiles.Count)
@@ -407,7 +396,7 @@ namespace LSS_prototype.VideoComment_Page
            
 
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
@@ -421,7 +410,7 @@ namespace LSS_prototype.VideoComment_Page
         //  3. Video 폴더 추가
         //  4. 확장자 .avi → .dcm
         // ═══════════════════════════════════════════
-        private string GetDicomPathFromAvi(string aviPath)
+        private async Task<string> GetDicomPathFromAvi(string aviPath)
         {
             try
             {
@@ -438,7 +427,7 @@ namespace LSS_prototype.VideoComment_Page
 
                 return Path.Combine(dicomRoot, folderRelative, "Video", dcmFileName);
             }
-            catch (Exception ex) { Common.WriteLog(ex); return null; }
+            catch (Exception ex) { await Common.WriteLog(ex); return null; }
         }
 
         #endregion
@@ -449,16 +438,16 @@ namespace LSS_prototype.VideoComment_Page
         //  Comment Save
         //  TODO: 코멘트 저장 로직 구현 예정
         // ═══════════════════════════════════════════
-        private void ExecuteCommentSave()
+        private async Task ExecuteCommentSave()
         {
             try
             {
                 // TODO: 코멘트 저장 구현
-                CustomMessageWindow.Show("저장되었습니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                await CustomMessageWindow.ShowAsync("저장되었습니다.",
+                    CustomMessageWindow.MessageBoxType.Ok, 1,
                     CustomMessageWindow.MessageIconType.Info);
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         #endregion
@@ -469,7 +458,7 @@ namespace LSS_prototype.VideoComment_Page
         //  🐢 느리게
         //  1x → x0.5 → x0.25 → x0.16 → 1x (복귀)
         // ═══════════════════════════════════════════
-        private void ExecuteSlower()
+        private async Task ExecuteSlower()
         {
             try
             {
@@ -480,14 +469,14 @@ namespace LSS_prototype.VideoComment_Page
                     _slowLabels[_slowIndex],
                     _slowIndex == 0 ? SpeedMode.Normal : SpeedMode.Slow);
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
         //  🐇 빠르게
         //  1x → x2 → x4 → x6 → 1x (복귀)
         // ═══════════════════════════════════════════
-        private void ExecuteFaster()
+        private async Task ExecuteFaster()
         {
             try
             {
@@ -498,7 +487,7 @@ namespace LSS_prototype.VideoComment_Page
                     _fastLabels[_fastIndex],
                     _fastIndex == 0 ? SpeedMode.Normal : SpeedMode.Fast);
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         private enum SpeedMode { Normal, Slow, Fast }
@@ -520,7 +509,7 @@ namespace LSS_prototype.VideoComment_Page
         //  배속 초기화
         //  이전/다음 영상 이동 시 xaml.cs 에서 호출
         // ═══════════════════════════════════════════
-        public void ResetSpeed()
+        public async Task ResetSpeed()
         {
             try
             {
@@ -528,7 +517,7 @@ namespace LSS_prototype.VideoComment_Page
                 _fastIndex = 0;
                 ApplySpeed(1.0, "1x", SpeedMode.Normal);
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         #endregion
@@ -539,14 +528,14 @@ namespace LSS_prototype.VideoComment_Page
         //  BACK → Scan 화면 복귀
         //  xaml.cs 에서 CleanupMedia() 먼저 호출 후 이 커맨드 실행
         // ═══════════════════════════════════════════
-        private void ExecuteNavigateBack()
+        private async Task ExecuteNavigateBack()
         {
             try
             {
                 MainPage.Instance.NavigateTo(
                     new Scan_Page.Scan(Patient, StudyId));
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         #endregion

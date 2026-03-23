@@ -43,22 +43,16 @@ namespace LSS_prototype
         private DispatcherTimer _timeoutTimer;
 
         public CustomMessageWindow(
-            string message,
-            MessageBoxType type = MessageBoxType.Ok,
-            int autoCloseSeconds = 0,
-            MessageIconType icon = MessageIconType.None)
+    string message,
+    MessageBoxType type = MessageBoxType.Ok,
+    int autoCloseSeconds = 0,
+    MessageIconType icon = MessageIconType.None)
         {
             InitializeComponent();
 
-            // Owner 설정
-            var owner = Application.Current?.Windows?
-                .OfType<Window>()
-                .FirstOrDefault(w => w.IsActive)
-                ?? Application.Current?.Windows?
-                .OfType<Window>()
-                .FirstOrDefault(w => w.IsVisible);
-
-            if (owner != null && owner.IsVisible)
+            // ✅ Owner 설정 - 한 번만!
+            var owner = Application.Current?.MainWindow;
+            if (owner != null && owner != this && owner.IsVisible)
             {
                 this.Owner = owner;
                 this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -71,13 +65,8 @@ namespace LSS_prototype
             MessageText.Text = message;
             CountdownText.Visibility = Visibility.Collapsed;
 
-            // 아이콘 설정
             SetIcon(icon);
 
-            // 블러 효과 적용
-            ApplyBlurToAllWindows();
-
-            // 버튼 타입 설정
             switch (type)
             {
                 case MessageBoxType.Ok:
@@ -90,7 +79,6 @@ namespace LSS_prototype
                     OkButton.Visibility = Visibility.Collapsed;
                     YesButton.Visibility = Visibility.Visible;
                     NoButton.Visibility = Visibility.Visible;
-
                     if (autoCloseSeconds > 0)
                         StartTimeout(autoCloseSeconds);
                     break;
@@ -99,7 +87,6 @@ namespace LSS_prototype
                     OkButton.Visibility = Visibility.Collapsed;
                     YesButton.Visibility = Visibility.Collapsed;
                     NoButton.Visibility = Visibility.Collapsed;
-
                     if (autoCloseSeconds > 0)
                     {
                         var timer = new DispatcherTimer
@@ -116,8 +103,9 @@ namespace LSS_prototype
                     break;
             }
 
-            // 창 닫힐 때 블러 제거
-            this.Closed += (s, e) => RemoveBlurFromAllWindows();
+            Loaded += async (s, e) => await ApplyBlurToAllWindows();
+            this.Closed += async (s, e) => await RemoveBlurFromAllWindows();
+            Loaded += (s, e) => App.ActivityMonitor?.RegisterWindow(this);
         }
 
         private void SetIcon(MessageIconType icon)
@@ -164,7 +152,7 @@ namespace LSS_prototype
             IconPath.Visibility = Visibility.Visible;
         }
 
-        private void ApplyBlurToAllWindows()
+        private async Task ApplyBlurToAllWindows()
         {
             try
             {
@@ -174,31 +162,35 @@ namespace LSS_prototype
                 {
                     if (window != this && window.IsVisible)
                     {
-                        window.Effect = blurEffect;
-                        _blurredWindows.Add(window);
+                        // ✅ 윈도우 전체가 아니라 Content(UIElement)에만 블러
+                        if (window.Content is UIElement content)
+                        {
+                            content.Effect = blurEffect;
+                            _blurredWindows.Add(window); // window는 추적용으로만
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
-        private void RemoveBlurFromAllWindows()
+        private async Task RemoveBlurFromAllWindows()
         {
             try
             {
                 foreach (var window in _blurredWindows)
                 {
-                    if (window != null)
-                        window.Effect = null;
+                    if (window?.Content is UIElement content)
+                        content.Effect = null;
                 }
                 _blurredWindows.Clear();
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
@@ -265,18 +257,18 @@ namespace LSS_prototype
         }
 
         // 정적 Show (동기)
-        public static MessageBoxResult Show(
-            string message,
-            MessageBoxType type = MessageBoxType.Ok,
-            int autoCloseSeconds = 0,
-            MessageIconType icon = MessageIconType.None)
-        {
-            var win = new CustomMessageWindow(message, type, autoCloseSeconds, icon);
-            win.ShowDialog();
-            return win.Result;
-        }
+        /*        public static MessageBoxResult Show(
+                    string message,
+                    MessageBoxType type = MessageBoxType.Ok,
+                    int autoCloseSeconds = 0,
+                    MessageIconType icon = MessageIconType.None)
+                {
+                    var win = new CustomMessageWindow(message, type, autoCloseSeconds, icon);
+                    win.ShowDialog();
+                    return win.Result;
+                }*/
 
-        // 정적 ShowAsync (비동기)
+        // 정적 ShowAsync (비동기 -> 무조건 모든 메시지창이 비동기여야함 why? 세션이 UI 단에서 동작하므로 별도로 관리해야함 )
         public static async Task<MessageBoxResult> ShowAsync(
             string message,
             MessageBoxType type = MessageBoxType.Ok,

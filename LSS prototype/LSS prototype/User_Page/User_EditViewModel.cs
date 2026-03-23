@@ -2,6 +2,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace LSS_prototype.User_Page
@@ -31,15 +32,15 @@ namespace LSS_prototype.User_Page
             CancelCommand = new RelayCommand(_ => CloseAction?.Invoke(false));
         }
 
-        public void ExecuteSubmit(string newPassword, string confirmPassword)
+        public async Task ExecuteSubmit(string newPassword, string confirmPassword)
         {
             try
             {
                 // 1. 빈값 검사
                 if (string.IsNullOrEmpty(newPassword))
                 {
-                    CustomMessageWindow.Show("비밀번호를 입력해주세요.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    await CustomMessageWindow.ShowAsync("비밀번호를 입력해주세요.",
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
@@ -47,8 +48,8 @@ namespace LSS_prototype.User_Page
                 // 2. 비밀번호 일치 검사
                 if (newPassword != confirmPassword)
                 {
-                    CustomMessageWindow.Show("비밀번호가 일치하지 않습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    await CustomMessageWindow.ShowAsync("비밀번호가 일치하지 않습니다.",
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
@@ -57,8 +58,8 @@ namespace LSS_prototype.User_Page
                 string error = DB_Manager.ValidatePassword(newPassword);
                 if (error != null)
                 {
-                    CustomMessageWindow.Show(error,
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    await CustomMessageWindow.ShowAsync(error,
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
@@ -78,22 +79,18 @@ namespace LSS_prototype.User_Page
 
                 if (success)
                 {
-                    CustomMessageWindow.Show("사용자 정보가 변경되었습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                        CustomMessageWindow.MessageIconType.Info);
+                    await CustomMessageWindow.ShowAsync("사용자 정보가 변경되었습니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Info);
 
                     CloseAction?.Invoke(true);
                 }
                 else
                 {
-                    CustomMessageWindow.Show("변경에 실패했습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("변경에 실패했습니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Warning);
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 

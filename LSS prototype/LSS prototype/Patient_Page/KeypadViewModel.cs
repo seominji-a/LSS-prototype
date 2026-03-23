@@ -75,12 +75,12 @@ namespace LSS_prototype.Patient_Page
         }
 
         //Keypad ENTER 클릭
-        private void Confirm()
+        private async void Confirm()
         {
             if (_isClosing) return;
             _isClosing = true;
 
-            if (!ValidateInput())
+            if (!await ValidateInput())
             {
                 _isClosing = false;
                 return;
@@ -102,16 +102,16 @@ namespace LSS_prototype.Patient_Page
             Confirm();
         }
 
-        public bool ValidateInput()
+        public async Task<bool> ValidateInput()
         {
             // PatientCode 모드
             if (!IsDateMode)
             {
                 if (string.IsNullOrEmpty(InputText))
                 {
-                    CustomMessageWindow.Show(
+                    await CustomMessageWindow.ShowAsync(
                         "환자번호를 입력하지 않았습니다.\n수정된 환자번호를 다시 입력해주십시오.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
                         CustomMessageWindow.MessageIconType.Warning);
 
                     return false;
@@ -123,10 +123,7 @@ namespace LSS_prototype.Patient_Page
             // DOB 모드
             if (string.IsNullOrEmpty(InputText) || InputText.Length != 8)
             {
-                CustomMessageWindow.Show(
-                    "숫자 8자리를 입력하지 않았습니다.\n수정된 날짜를 다시 입력해주십시오.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                    CustomMessageWindow.MessageIconType.Warning);
+                await CustomMessageWindow.ShowAsync("숫자 8자리를 입력하지 않았습니다.\n수정된 날짜를 다시 입력해주십시오.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
 
                 return false;
             }
@@ -136,10 +133,7 @@ namespace LSS_prototype.Patient_Page
                 System.Globalization.DateTimeStyles.None,
                 out DateTime date))
             {
-                CustomMessageWindow.Show(
-                    "유효하지 않은 날짜 형식입니다.\n다시 확인해주세요.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                    CustomMessageWindow.MessageIconType.Warning);
+                await CustomMessageWindow.ShowAsync("유효하지 않은 날짜 형식입니다.\n다시 확인해주세요.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
 
                 return false;
             }

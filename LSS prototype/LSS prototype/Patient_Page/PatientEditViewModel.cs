@@ -2,6 +2,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace LSS_prototype.Patient_Page
@@ -147,7 +148,7 @@ namespace LSS_prototype.Patient_Page
             IsCodeConfirmed = true;
             CanMergeWithoutEdit = canMergeWithoutEdit;
 
-            EditCommand = new RelayCommand(UpdatePatient, CanEditPatient);
+            EditCommand = new RelayCommand(async _ => await UpdatePatient(), _ => CanEditPatient());
             CancelCommand = new RelayCommand(Cancel);
             OpenKeypadCommand = new RelayCommand(OpenKeypad);
             OpenPatientCodeKeypadCommand = new RelayCommand(OpenPatientCodeKeypad);
@@ -176,7 +177,7 @@ namespace LSS_prototype.Patient_Page
             return IsValid() && (IsDirty() || CanMergeWithoutEdit) && IsDobConfirmed && IsCodeConfirmed;
         }
 
-        private void UpdatePatient()
+        private async Task UpdatePatient()
         {
             try
             {
@@ -187,8 +188,8 @@ namespace LSS_prototype.Patient_Page
                 {
                     if (repo.ExistsPatientCodeExceptSelf(this.PatientCode.Value, this.Patient_id))
                     {
-                        CustomMessageWindow.Show("이미 사용 중인 환자 번호입니다.",
-                            CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        await CustomMessageWindow.ShowAsync("이미 사용 중인 환자 번호입니다.",
+                            CustomMessageWindow.MessageBoxType.Ok, 2,
                             CustomMessageWindow.MessageIconType.Warning);
                         return;
                     }
@@ -204,8 +205,8 @@ namespace LSS_prototype.Patient_Page
 
                     if (repo.UpdatePatient(model))
                     {
-                        CustomMessageWindow.Show("수정되었습니다.",
-                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        await CustomMessageWindow.ShowAsync("수정되었습니다.",
+                            CustomMessageWindow.MessageBoxType.Ok, 1,
                             CustomMessageWindow.MessageIconType.Info);
 
                         CloseAction?.Invoke(true);
@@ -213,14 +214,13 @@ namespace LSS_prototype.Patient_Page
                 }
                 else if (CanMergeWithoutEdit)
                 {
-                    // 수정 없이
-                    // 만 진행할 수 있도록 true 반환
+                    // 수정 없이 병합만 진행할 수 있도록 true 반환
                     CloseAction?.Invoke(true);
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 

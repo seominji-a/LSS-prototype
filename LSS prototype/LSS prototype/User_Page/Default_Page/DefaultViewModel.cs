@@ -2,6 +2,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -62,14 +63,24 @@ namespace LSS_prototype.User_Page
             ZoomDecCommand = new RelayCommand(_ => ChangeZoom(-ZoomStep));
             FilterOnCommand = new RelayCommand(_ => FilterValue = 1);
             FilterOffCommand = new RelayCommand(_ => FilterValue = 0);
-            ResetCommand = new RelayCommand(_ => LoadDefaultSet(true));
-            SaveCommand = new RelayCommand(_ => ExecuteSave());
+            ResetCommand = new RelayCommand(async _ => await LoadDefaultSet(true));
+            SaveCommand = new RelayCommand(async _ => await ExecuteSave());
 
-            LoadDefaultSet();
+            
+        }
+
+
+        /// <summary>
+        /// 생성자에서 await를 사용할 수 없어서 UI 순서를 보장받기 위해 예외적으로 코드비하인드에서 해당 함수 호출 
+        /// </summary>
+        /// <returns></returns>
+        public async Task InitializeAsync()
+        {
+            await LoadDefaultSet();
         }
 
         // DB 로드
-        private void LoadDefaultSet(bool showMessage = false)
+        private async Task LoadDefaultSet(bool showMessage = false)
         {
             try
             {
@@ -86,23 +97,21 @@ namespace LSS_prototype.User_Page
 
                 if (showMessage)
                 {
-                    CustomMessageWindow.Show("리셋되었습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                        CustomMessageWindow.MessageIconType.Info);
+                    await CustomMessageWindow.ShowAsync("리셋되었습니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Info);
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
         // DB 저장
-        private void ExecuteSave()
+        private async Task ExecuteSave()
         {
             try
             {
-                var confirm = CustomMessageWindow.Show(
+                var confirm = await CustomMessageWindow.ShowAsync(
                     "기본값을 변경하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo,
                     0,
@@ -126,8 +135,8 @@ namespace LSS_prototype.User_Page
 
                 if (success)
                 {
-                    CustomMessageWindow.Show("변경되었습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    await CustomMessageWindow.ShowAsync("변경되었습니다.",
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Info);
 
                     CloseAction?.Invoke(true);
@@ -135,7 +144,7 @@ namespace LSS_prototype.User_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 

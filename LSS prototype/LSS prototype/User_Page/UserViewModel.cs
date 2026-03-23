@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -76,51 +77,45 @@ namespace LSS_prototype.User_Page
         public UserViewModel()
         {
             _dialogService = new Dialog();
-            AddUserCommand = new RelayCommand(ExecuteAddUser);
-            EditUserCommand = new RelayCommand(ExecuteEditUser);  
+            AddUserCommand = new RelayCommand(async _ => await ExecuteAddUser());
+            EditUserCommand = new RelayCommand(async _ => await ExecuteEditUser());
 
-            SettingCommand = new RelayCommand(ExecuteOpenSetting);
-            DefaultCommand = new RelayCommand(ExecuteOpenDefault);
-            DeleteUserCommand = new RelayCommand(ExecuteDeleteUser);
+            SettingCommand = new RelayCommand(async _ => await ExecuteOpenSetting());
+            DefaultCommand = new RelayCommand(async _ => await ExecuteOpenDefault());
+            DeleteUserCommand = new RelayCommand(async _ => await ExecuteDeleteUser());
 
-            DelegateCommand = new RelayCommand(ExecuteDelegate);
-            DismissCommand = new RelayCommand(ExecuteDismiss);
-            LogoutCommand = new RelayCommand(Common.ExecuteLogout);
-            ExitCommand = new RelayCommand(Common.ExcuteExit);
+            DelegateCommand = new RelayCommand(async _ => await ExecuteDelegate());
+            DismissCommand = new RelayCommand(async _ => await ExecuteDismiss());
+            LogoutCommand = new RelayCommand(async _ => await Common.ExecuteLogout());
+            ExitCommand = new RelayCommand(async _ => await Common.ExcuteExit());
 
-            _searchDebouncer = new SearchDebouncer(ExecuteSearch, delayMs: 500);
-
+            _searchDebouncer = new SearchDebouncer(async keyword => await ExecuteSearch(keyword), delayMs: 500);
             RecoveryCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new Recovery()));
-
-            LoadUsers();
         }
 
-        private void ExecuteDelegate()
+        public async Task InitializeAsync()
+        {
+            await LoadUsers();
+        }
+
+        private async Task ExecuteDelegate()
         {
             try
             {
                 if (SelectedUser == null)
                 {
-                    CustomMessageWindow.Show("권한을 부여할 사용자를 선택해 주세요.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("권한을 부여할 사용자를 선택해 주세요.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
                 // 추가: 이미 ADMIN이면 차단
                 if (SelectedUser.RoleCode == "A")
                 {
-                    CustomMessageWindow.Show("이미 관리자 권한입니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("이미 관리자 권한입니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
-                var result = CustomMessageWindow.Show(
-                        $"{SelectedUser.UserName} 사용자에게 관리자 권한을\n부여하시겠습니까?",
-                        CustomMessageWindow.MessageBoxType.YesNo,
-                        0,
-                        CustomMessageWindow.MessageIconType.Warning);
+                var result = await CustomMessageWindow.ShowAsync($"{SelectedUser.UserName} 사용자에게 관리자 권한을\n부여하시겠습니까?", CustomMessageWindow.MessageBoxType.YesNo, 0, CustomMessageWindow.MessageIconType.Warning);
 
                 if (result == CustomMessageWindow.MessageBoxResult.Yes)
                 {
@@ -128,27 +123,25 @@ namespace LSS_prototype.User_Page
                     bool success = db.DelegateUser(SelectedUser.UserId);
                     if (success)
                     {
-                        CustomMessageWindow.Show($"{SelectedUser.UserName} 관리자 권한 부여",
-                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                            CustomMessageWindow.MessageIconType.Info);
-                        LoadUsers();
+                        await CustomMessageWindow.ShowAsync($"{SelectedUser.UserName} 관리자 권한 부여", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Info);
+                        await LoadUsers();
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
-        private void ExecuteDismiss()
+        private async Task ExecuteDismiss()
         {
             try
             {
                 if (SelectedUser == null)
                 {
-                    CustomMessageWindow.Show("권한 해임할 사용자를 선택해 주세요.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    await CustomMessageWindow.ShowAsync("권한 해임할 사용자를 선택해 주세요.",
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Info);
                     return;
                 }
@@ -156,9 +149,7 @@ namespace LSS_prototype.User_Page
                 // 추가: 이미 ADMIN가 아니면 차단
                 if (SelectedUser.RoleCode != "A")
                 {
-                    CustomMessageWindow.Show("이미 일반 권한입니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                        CustomMessageWindow.MessageIconType.Info);
+                    await CustomMessageWindow.ShowAsync("이미 일반 권한입니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Info);
                     return;
                 }
 
@@ -168,7 +159,7 @@ namespace LSS_prototype.User_Page
                      : $"{SelectedUser.UserName} 사용자의 관리자 권한을\n해임하시겠습니까?";
 
 
-                var result = CustomMessageWindow.Show(
+                var result = await CustomMessageWindow.ShowAsync(
                         msg,
                         CustomMessageWindow.MessageBoxType.YesNo,
                         0,
@@ -180,59 +171,53 @@ namespace LSS_prototype.User_Page
                     bool success = db.DismissUser(SelectedUser.UserId);
                     if (success)
                     {
-                        CustomMessageWindow.Show($"{SelectedUser.UserName} 관리자 해임",
-                            CustomMessageWindow.MessageBoxType.AutoClose, 2,
-                            CustomMessageWindow.MessageIconType.Info);
+                        await CustomMessageWindow.ShowAsync($"{SelectedUser.UserName} 관리자 해임", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Info);
                         if (SelectedUser.LoginId == Common.CurrentUserId)
-                            Common.ForceLogout();
+                            await Common.ForceLogout();
                         else
-                            LoadUsers();
+                            await LoadUsers();
                     }
                     else
                     {
-                        CustomMessageWindow.Show("최소 1명의 관리자는 유지되어야 합니다.",
-                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                            CustomMessageWindow.MessageIconType.Warning);
+                        await CustomMessageWindow.ShowAsync("최소 1명의 관리자는 유지되어야 합니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Warning);
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
-            
+
         }
 
 
-        private async void ExecuteEditUser(object parameter)
+        private async Task ExecuteEditUser()
         {
             try
             {
                 if (SelectedUser == null)
                 {
-                    CustomMessageWindow.Show("수정할 사용자를 선택해주세요.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("수정할 사용자를 선택해주세요.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
 
                 string masterId = Environment.GetEnvironmentVariable("MASTER_ID", EnvironmentVariableTarget.Machine);
 
-                bool isMaster = Common.CurrentUserId == masterId; 
-                
+                bool isMaster = Common.CurrentUserId == masterId;
+
 
                 var vm = new User_EditViewModel(SelectedUser, isMaster);
                 var result = await _dialogService.ShowDialogAsync(vm);
 
                 if (result == true)
-                    LoadUsers();
+                    await LoadUsers();
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
-           
+
         }
 
         public void OnSearchTextChanged(string text)
@@ -240,7 +225,7 @@ namespace LSS_prototype.User_Page
             _searchDebouncer.OnTextChanged(text);
         }
 
-        private void ExecuteSearch(string keyword)
+        private async Task ExecuteSearch(string keyword)
         {
             try
             {
@@ -265,7 +250,7 @@ namespace LSS_prototype.User_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
@@ -277,7 +262,7 @@ namespace LSS_prototype.User_Page
 
         // DB 로드하는 함수 
 
-        public void LoadUsers()
+        public async Task LoadUsers()
         {
             try
             {
@@ -287,37 +272,36 @@ namespace LSS_prototype.User_Page
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
-        private async void ExecuteAddUser(object parameter)
+        private async Task ExecuteAddUser()
         {
             var vm = new User_AddViewModel();
             var result = await _dialogService.ShowDialogAsync(vm);
-
             if (result == true)
-                LoadUsers();
+                await LoadUsers();
         }
-        private void ExecuteOpenSetting(object parameter)  
+        private async Task ExecuteOpenSetting()
         {
-            _dialogService.ShowSetting();
+            await _dialogService.ShowSetting();
         }
 
-        private void ExecuteOpenDefault(object parameter)
+        private async Task ExecuteOpenDefault()
         {
-            _dialogService.ShowDefault();
+            await _dialogService.ShowDefault();
         }
 
 
-        private void ExecuteDeleteUser(object parameter)
+        private async Task ExecuteDeleteUser()
         {
             try
             {
                 if (SelectedUser == null)
                 {
-                    CustomMessageWindow.Show("삭제할 사용자를 선택해주세요.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    await CustomMessageWindow.ShowAsync("삭제할 사용자를 선택해주세요.",
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
@@ -326,7 +310,7 @@ namespace LSS_prototype.User_Page
                     ? $"자신({SelectedUser.LoginId})을 정말 삭제하시겠습니까?\n되돌릴 수 없는 명령입니다.\n로그인 페이지로 이동합니다."
                     : $"{SelectedUser.UserName} 사용자를 정말 삭제하시겠습니까?\n되돌릴 수 없는 명령입니다.";
 
-                var result = CustomMessageWindow.Show(msg, CustomMessageWindow.MessageBoxType.YesNo, 0, CustomMessageWindow.MessageIconType.Info);
+                var result = await CustomMessageWindow.ShowAsync(msg, CustomMessageWindow.MessageBoxType.YesNo, 0, CustomMessageWindow.MessageIconType.Info);
 
 
                 if (result == CustomMessageWindow.MessageBoxResult.Yes)
@@ -336,26 +320,26 @@ namespace LSS_prototype.User_Page
 
                     if (success)
                     {
-                        CustomMessageWindow.Show($"{SelectedUser.UserName} 삭제",
-                            CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                        await CustomMessageWindow.ShowAsync($"{SelectedUser.UserName} 삭제",
+                            CustomMessageWindow.MessageBoxType.Ok, 2,
                             CustomMessageWindow.MessageIconType.Info);
 
                         if (SelectedUser.LoginId == Common.CurrentUserId)
-                            Common.ForceLogout();
+                            await Common.ForceLogout();
                         else
-                            LoadUsers();
+                            await LoadUsers();
                     }
                     else
                     {
-                        CustomMessageWindow.Show("최소 1명의 관리자는 유지되어야 합니다.",
-                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        await CustomMessageWindow.ShowAsync("최소 1명의 관리자는 유지되어야 합니다.",
+                            CustomMessageWindow.MessageBoxType.Ok, 1,
                             CustomMessageWindow.MessageIconType.Warning);
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
 
         }

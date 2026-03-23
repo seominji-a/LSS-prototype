@@ -53,7 +53,7 @@ namespace LSS_prototype.User_Page
                 string.IsNullOrEmpty(password))
             {
                 await CustomMessageWindow.ShowAsync("필수 입력값이 비어있습니다.",
-                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageBoxType.Ok, 1,
                             CustomMessageWindow.MessageIconType.Warning);
                 return;
             }
@@ -63,7 +63,7 @@ namespace LSS_prototype.User_Page
             {
                 await CustomMessageWindow.ShowAsync(
                     "비밀번호가 일치하지 않습니다",
-                    CustomMessageWindow.MessageBoxType.AutoClose,
+                    CustomMessageWindow.MessageBoxType.Ok,
                     2,
                     CustomMessageWindow.MessageIconType.Warning);
                 return;
@@ -75,7 +75,7 @@ namespace LSS_prototype.User_Page
             {
                 await CustomMessageWindow.ShowAsync(
                     error,
-                    CustomMessageWindow.MessageBoxType.AutoClose,
+                    CustomMessageWindow.MessageBoxType.Ok,
                     2,
                     CustomMessageWindow.MessageIconType.Warning);
                 return;
@@ -89,7 +89,7 @@ namespace LSS_prototype.User_Page
                 if (success)
                 {
                     await CustomMessageWindow.ShowAsync("사용자 정보 추가 성공",
-                            CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                            CustomMessageWindow.MessageBoxType.Ok, 1,
                             CustomMessageWindow.MessageIconType.Info);
 
                     await Application.Current.Dispatcher.InvokeAsync(() =>
@@ -101,12 +101,12 @@ namespace LSS_prototype.User_Page
             catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Constraint)
             {
                 await CustomMessageWindow.ShowAsync("이미 사용중인 ID입니다.",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 2,
+                    CustomMessageWindow.MessageBoxType.Ok, 2,
                     CustomMessageWindow.MessageIconType.Warning);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
 
         }

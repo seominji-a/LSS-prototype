@@ -9,6 +9,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -19,29 +20,24 @@ namespace LSS_prototype.Common_Module
     {
         #region 필드 & 이벤트
 
-        // ── Spinnaker 핵심 객체 ( 버전이 안맞으면 catch 로 안빠져서 그냥 뻗어버림 주의 ( C++ DLL LOAD 단에서 에러나는거라 CATCH 어려움 ) ──
         private ManagedSystem _managedSystem;
         private ManagedCameraList _managedCameras;
         private List<BackgroundWorker> _workers = new List<BackgroundWorker>();
 
-        private Timer _reconnectTimer; // 카메라 재연결 감지 타이머
+        private Timer _reconnectTimer;
 
         private Mat _lastFrame = null;
-        private readonly object _frameLock = new object(); // ── _lastFrame 스레드 안전 lock ( 화면 멈춤 방지 ) ──
+        private readonly object _frameLock = new object();
 
-        // ── WriteableBitmap 재사용 (매 프레임 new 방지 → 메모리/GC 절감) ──
         private WriteableBitmap _reusableBitmap = null;
         private readonly object _bitmapLock = new object();
 
-        // ── processedData 재사용 (매 프레임 new byte[] 방지) ──
         private byte[] _processedDataBuffer = null;
 
-        // ── ApplyColorMap 내부 Mat 재사용 (매 프레임 new Mat 방지) ──
         private Mat _colorSrc3ch = new Mat();
         private Mat _colorDst = new Mat();
         private Mat _colorNotImg = new Mat();
 
-        // ── CalcSharpness 내부 Mat 재사용 ──
         private Mat _sharpGray = new Mat();
         private Mat _sharpSobelX = new Mat();
         private Mat _sharpSobelY = new Mat();
@@ -49,28 +45,20 @@ namespace LSS_prototype.Common_Module
         private Mat _sharpSobelY2 = new Mat();
         private Mat _sharpCombined = new Mat();
 
-        // ── 상태 플래그 ──
         private bool _camOpen = false;
         private bool _camConnection = false;
         private bool _disposed = false;
 
-        // ── 테스트 영상 ──
         private Thread _testVideoThread;
         private bool _testVideoRunning = false;
 
-        // ── UI 로 프레임 전달하는 이벤트 ──
         public event Action<WriteableBitmap> FrameArrived;
         public event Action<string> ErrorOccurred;
-        public event Action<double> SharpnessUpdated; // 선명도 출력 이벤트
-
-        // ── 카메라 끊켰을 때, 재연결 때 뷰모델로 전달 이벤트 ──
+        public event Action<double> SharpnessUpdated;
         public event Action CameraDisconnected;
         public event Action CameraReconnected;
 
-        // ── 컬러맵 ──
         public string ColorMap { get; set; } = "Origin";
-
-        // ── 상태 프로퍼티 ──
         public bool IsConnected => _camConnection;
         public bool IsOpen => _camOpen;
 
@@ -81,27 +69,38 @@ namespace LSS_prototype.Common_Module
         public CameraService()
         {
             _managedSystem = new ManagedSystem();
-            InitLens();
         }
 
-        // ────────────────────────────────────────────
-        // 렌즈 초기화 - 현재 줌 위치 및 파라미터 읽기
-        // ────────────────────────────────────────────
-        private void InitLens()
+        // ═══════════════════════════════════════════
+        //  InitializeAsync
+        //  생성자에서 async 불가 → Loaded 이벤트에서 호출
+        //  렌즈 초기화 완료 보장 후 카메라 연결
+        // ═══════════════════════════════════════════
+        public async Task InitializeAsync()
+        {
+            await InitLens();
+        }
+
+        // ═══════════════════════════════════════════
+        //  InitLens
+        //  LensCtrl 함수들이 async Task 로 변환됐으므로
+        //  전부 await 로 호출 → 순서 보장
+        // ═══════════════════════════════════════════
+        private async Task InitLens()
         {
             try
             {
-                LensCtrl.Instance.UsbOpen(0);                   // USB 연결
-                LensCtrl.Instance.UsbSetConfig();               // USB 설정
-                LensCtrl.Instance.ZoomParameterReadSet();       // zoomMin, zoomMax, zoomSpeed 읽기
-                LensCtrl.Instance.ZoomCurrentAddrReadSet();     // 현재 줌 위치 읽기
-                LensCtrl.Instance.FocusParameterReadSet();      // 포커스 읽기
-                LensCtrl.Instance.FocusCurrentAddrReadSet();
+                await LensCtrl.Instance.UsbOpen(0);
+                await LensCtrl.Instance.UsbSetConfig();
+                await LensCtrl.Instance.ZoomParameterReadSet();
+                await LensCtrl.Instance.ZoomCurrentAddrReadSet();
+                await LensCtrl.Instance.FocusParameterReadSet();
+                await LensCtrl.Instance.FocusCurrentAddrReadSet();
                 Console.WriteLine($"> 렌즈 초기화 완료: zoom={LensCtrl.Instance.zoomCurrentAddr} min={LensCtrl.Instance.zoomMinAddr} max={LensCtrl.Instance.zoomMaxAddr}");
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 Common.WriteSessionLog($"렌즈 초기화 실패: {ex.Message}");
             }
         }
@@ -110,9 +109,6 @@ namespace LSS_prototype.Common_Module
 
         #region 카메라 연결 & 라이브뷰
 
-        // ────────────────────────────────────────────
-        // 카메라 연결 + Init
-        // ────────────────────────────────────────────
         public bool Connect()
         {
             try
@@ -140,11 +136,7 @@ namespace LSS_prototype.Common_Module
             }
         }
 
-        // ────────────────────────────────────────────
-        // 라이브뷰 시작
-        // BeginAcquisition 먼저 → Worker 시작 순서 중요!
-        // ────────────────────────────────────────────
-        public void StartLiveView()
+        public async Task StartLiveView()
         {
             if (_managedCameras == null) return;
 
@@ -152,10 +144,8 @@ namespace LSS_prototype.Common_Module
             {
                 try
                 {
-                    // 1. 카메라 스트리밍 시작
                     _managedCameras[i].BeginAcquisition();
 
-                    // 2. 프레임 읽기 Worker 시작
                     BackgroundWorker worker = new BackgroundWorker();
                     worker.DoWork += Worker_DoWork;
                     worker.RunWorkerCompleted += Worker_RunWorkerCompleted;
@@ -165,11 +155,11 @@ namespace LSS_prototype.Common_Module
                 catch (SpinnakerException se)
                 {
                     if (se.Message.Contains("Stream has been aborted")) return;
-                    Common.WriteLog(se);
+                    await Common.WriteLog(se);
                 }
                 catch (Exception ex)
                 {
-                    Common.WriteLog(ex);
+                    await Common.WriteLog(ex);
                 }
             }
             _camOpen = true;
@@ -179,11 +169,9 @@ namespace LSS_prototype.Common_Module
         {
             if (!_camOpen) return;
 
-            // 테스트 영상 정지
             _testVideoRunning = false;
             _testVideoThread?.Join(500);
 
-            // 카메라 정지
             if (_managedCameras != null)
             {
                 for (int i = 0; i < _managedCameras.Count; i++)
@@ -193,9 +181,6 @@ namespace LSS_prototype.Common_Module
             _camOpen = false;
         }
 
-        // ────────────────────────────────────────────
-        // 연결 해제
-        // ────────────────────────────────────────────
         public void Disconnect()
         {
             StopLiveView();
@@ -210,17 +195,18 @@ namespace LSS_prototype.Common_Module
             _camConnection = false;
         }
 
+        // ═══════════════════════════════════════════
+        //  StartReconnectTimer
+        //  Timer 콜백은 async void 람다 사용
+        //  Timer 가 void 반환을 요구하므로 어쩔 수 없음
+        // ═══════════════════════════════════════════
         private void StartReconnectTimer()
         {
             _reconnectTimer?.Dispose();
-            _reconnectTimer = new Timer(_ =>
+            _reconnectTimer = new Timer(async _ =>
             {
-
                 if (_disposed) return;
-
-
                 if (_camConnection || _managedSystem == null) return;
-
                 try
                 {
                     var cameras = _managedSystem.GetCameras();
@@ -229,18 +215,15 @@ namespace LSS_prototype.Common_Module
                         _reconnectTimer?.Dispose();
                         _testVideoRunning = false;
                         _testVideoThread?.Join(500);
-
                         _managedCameras = cameras;
                         foreach (IManagedCamera cam in _managedCameras)
                             cam.Init();
-
                         _camConnection = true;
-                        StartLiveView();
+                        await StartLiveView();
                         CameraReconnected?.Invoke();
                     }
                 }
-                catch (Exception ex) { Common.WriteLog(ex); }
-
+                catch (Exception ex) { await Common.WriteLog(ex); }
             }, null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
         }
 
@@ -248,23 +231,21 @@ namespace LSS_prototype.Common_Module
 
         #region 프레임 처리 (Worker & 이미지 변환)
 
-        // ────────────────────────────────────────────
-        // Worker - 프레임 1장 캡처
-        // GetNextImage → BGR8 변환 → WriteableBitmap
-        // ────────────────────────────────────────────
-        private void Worker_DoWork(object sender, DoWorkEventArgs e)
+        // ═══════════════════════════════════════════
+        //  Worker_DoWork
+        //  BackgroundWorker 이벤트 핸들러 → async void 유지
+        // ═══════════════════════════════════════════
+        private async void Worker_DoWork(object sender, DoWorkEventArgs e)
         {
             IManagedCamera cam = (IManagedCamera)e.Argument;
 
             try
             {
-                // 1. 카메라에서 이미지 1장 가져오기
                 using (IManagedImage rawImage = cam.GetNextImage(1000))
                 {
                     if (rawImage.IsIncomplete) return;
 
-                    // 2. Convert 없이 rawImage 직접 전달
-                    WriteableBitmap bitmap = ToBitmap(rawImage);
+                    WriteableBitmap bitmap = await ToBitmap(rawImage);
 
                     if (bitmap != null)
                         FrameArrived?.Invoke(bitmap);
@@ -273,17 +254,14 @@ namespace LSS_prototype.Common_Module
             catch (SpinnakerException se)
             {
                 if (se.Message.Contains("Stream has been aborted")) return;
-                Common.WriteLog(se);
+                await Common.WriteLog(se);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
-        // ────────────────────────────────────────────
-        // Worker 완료 → 카메라 스트리밍 중이면 다음 프레임 요청
-        // ────────────────────────────────────────────
         private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             BackgroundWorker worker = (BackgroundWorker)sender;
@@ -291,7 +269,6 @@ namespace LSS_prototype.Common_Module
 
             if (idx >= 0 && idx < _managedCameras.Count && _managedCameras[idx].IsStreaming())
             {
-                // 스트리밍 중이면 계속 다음 프레임 요청
                 worker.RunWorkerAsync(argument: _managedCameras[idx]);
             }
             else
@@ -310,10 +287,7 @@ namespace LSS_prototype.Common_Module
             }
         }
 
-        // ────────────────────────────────────────────
-        // IManagedImage (BGR8) → WriteableBitmap
-        // ────────────────────────────────────────────
-        private WriteableBitmap ToBitmap(IManagedImage image)
+        private async Task<WriteableBitmap> ToBitmap(IManagedImage image)
         {
             try
             {
@@ -321,8 +295,6 @@ namespace LSS_prototype.Common_Module
                 int height = (int)image.Height;
                 byte[] data = image.ManagedData;
 
-                // ── Mat 처리는 using 블록 안에서 완전히 끝내고 ──
-                // byte[] 로 복사해서 using 블록 밖으로 꺼냄
                 byte[] processedData;
                 int stride;
                 bool isColor;
@@ -330,7 +302,7 @@ namespace LSS_prototype.Common_Module
 
                 using (Mat src = Mat.FromPixelData(height, width, MatType.CV_8UC1, data))
                 {
-                    Mat processed = ApplyColorMap(src);
+                    Mat processed = await ApplyColorMap(src);
 
                     using (Mat safeProcessed = processed.Clone())
                     {
@@ -349,20 +321,17 @@ namespace LSS_prototype.Common_Module
 
                         processedData = _processedDataBuffer;
                         Marshal.Copy(safeProcessed.Data, processedData, 0, needed);
-                        double sharpness = CalcSharpness(src);
+
+                        // ★ CalcSharpness 가 async Task<double> 로 변환됐으므로 await 추가
+                        double sharpness = await CalcSharpness(src);
                         SharpnessUpdated?.Invoke(sharpness);
                     }
                 }
 
-                // ── WriteableBitmap 재사용 ──
-                // 매 프레임 new 하지 않고, 크기가 바뀔 때만 새로 생성
-                // 기존: 30fps → 초당 30개 객체 생성 → GC 압박
-                // 개선: 최초 1회 or 해상도 변경 시에만 생성 → 픽셀 데이터만 덮어씀
                 Application.Current?.Dispatcher.Invoke(() =>
                 {
                     var format = isColor ? PixelFormats.Bgr24 : PixelFormats.Gray8;
 
-                    // 크기 또는 포맷이 달라진 경우에만 새로 생성
                     lock (_bitmapLock)
                     {
                         if (_reusableBitmap == null
@@ -373,12 +342,10 @@ namespace LSS_prototype.Common_Module
                             _reusableBitmap = new WriteableBitmap(width, height, 96, 96, format, null);
                         }
 
-                        // 새 프레임 픽셀 데이터만 덮어씀 (객체는 그대로)
                         _reusableBitmap.Lock();
                         Marshal.Copy(processedData, 0, _reusableBitmap.BackBuffer, needed);
                         _reusableBitmap.AddDirtyRect(new Int32Rect(0, 0, width, height));
                         _reusableBitmap.Unlock();
-                        // Freeze 하지 않음 → 재사용 가능
                     }
                 });
 
@@ -386,7 +353,7 @@ namespace LSS_prototype.Common_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return null;
             }
         }
@@ -399,12 +366,10 @@ namespace LSS_prototype.Common_Module
             }
         }
 
-        private Mat ApplyColorMap(Mat src)
+        private async Task<Mat> ApplyColorMap(Mat src)
         {
             try
             {
-                // _colorSrc3ch, _colorDst, _colorNotImg 은 필드로 재사용
-                // 매 프레임 new Mat() 생성 방지 → GC 압박 감소
                 Cv2.CvtColor(src, _colorSrc3ch, ColorConversionCodes.GRAY2BGR);
 
                 if (ColorMap == "Rainbow")
@@ -418,7 +383,6 @@ namespace LSS_prototype.Common_Module
                 }
                 else
                 {
-                    // Origin 또는 알 수 없는 값 → 원본 그대로 (fallback)
                     _colorSrc3ch.CopyTo(_colorDst);
                 }
 
@@ -426,7 +390,7 @@ namespace LSS_prototype.Common_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return src;
             }
         }
@@ -435,10 +399,9 @@ namespace LSS_prototype.Common_Module
 
         #region 선명도 계산 및 프레임 계산
 
-        // ────────────────────────────────────────────
-        // 선명도 계산 함수
-        // ────────────────────────────────────────────
-        public double CalcSharpness(Mat src)
+        // ★ async Task<double> 로 변환
+        // await Common.WriteLog(ex) 사용을 위해 필요
+        public async Task<double> CalcSharpness(Mat src)
         {
             try
             {
@@ -447,8 +410,6 @@ namespace LSS_prototype.Common_Module
                 int roiX = src.Width / 2 - roiW / 2;
                 int roiY = src.Height / 2 - roiH / 2;
 
-                // roi 는 src의 부분 참조(헤더만 생성, 픽셀 복사 없음) → using 유지
-                // gray, sobelX, sobelY, sobelX2, sobelY2, combined 는 필드 재사용
                 using (Mat roi = new Mat(src, new OpenCvSharp.Rect(roiX, roiY, roiW, roiH)))
                 {
                     if (roi.Channels() == 3)
@@ -458,8 +419,6 @@ namespace LSS_prototype.Common_Module
 
                     Cv2.Sobel(_sharpGray, _sharpSobelX, MatType.CV_64F, 1, 0);
                     Cv2.Sobel(_sharpGray, _sharpSobelY, MatType.CV_64F, 0, 1);
-
-                    // Mul은 결과를 필드 Mat에 덮어씀 → new 없음
                     Cv2.Multiply(_sharpSobelX, _sharpSobelX, _sharpSobelX2);
                     Cv2.Multiply(_sharpSobelY, _sharpSobelY, _sharpSobelY2);
                     Cv2.Add(_sharpSobelX2, _sharpSobelY2, _sharpCombined);
@@ -469,15 +428,13 @@ namespace LSS_prototype.Common_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return 0;
             }
         }
 
-        /// <summary>
-        /// SDK를 이용해서 카메라에 있는 FPS값을 직접 가져옴 ( 그래서 인자값없음 헷갈림 주의 )
-        /// </summary>
-        /// <returns></returns>
+        // ── GetCurrentFps ──
+        // try-catch 에 await 없으므로 async 불필요 → 동기 유지
         public double GetCurrentFps()
         {
             try
@@ -489,7 +446,7 @@ namespace LSS_prototype.Common_Module
             }
             catch
             {
-                return 30.0; // 읽기 실패 시 기본값 (카메라 없을 때, 테스트 영상 모드일 때)
+                return 30.0;
             }
         }
 
@@ -497,9 +454,6 @@ namespace LSS_prototype.Common_Module
 
         #region 테스트 영상
 
-        // ────────────────────────────────────────────
-        // 테스트 비디오 실행 함수
-        // ────────────────────────────────────────────
         public void StartTestVideo(string videoPath)
         {
             if (!File.Exists(videoPath))
@@ -521,7 +475,6 @@ namespace LSS_prototype.Common_Module
                         return;
                     }
 
-                    // 원본 FPS 유지 (없으면 30 기본값)
                     double fps = cap.Get(VideoCaptureProperties.Fps);
                     if (fps <= 0) fps = 30;
                     int delay = (int)(1000.0 / fps);
@@ -532,22 +485,19 @@ namespace LSS_prototype.Common_Module
                         {
                             if (!cap.Read(frame) || frame.Empty())
                             {
-                                // 영상 끝나면 처음부터 반복
                                 cap.Set(VideoCaptureProperties.PosFrames, 0);
                                 continue;
                             }
 
                             int width = frame.Width;
                             int height = frame.Rows;
-                            int stride = width * 3; // BGR = 3 bytes
+                            int stride = width * 3;
                             int needed = height * stride;
 
-                            // _processedDataBuffer 재사용 (ToBitmap과 동일한 방식)
                             if (_processedDataBuffer == null || _processedDataBuffer.Length < needed)
                                 _processedDataBuffer = new byte[needed];
                             Marshal.Copy(frame.Data, _processedDataBuffer, 0, needed);
 
-                            // ── WriteableBitmap 재사용 (ToBitmap과 동일한 방식) ──
                             Application.Current?.Dispatcher.Invoke(() =>
                             {
                                 lock (_bitmapLock)
@@ -563,7 +513,6 @@ namespace LSS_prototype.Common_Module
                                     Marshal.Copy(_processedDataBuffer, 0, _reusableBitmap.BackBuffer, needed);
                                     _reusableBitmap.AddDirtyRect(new Int32Rect(0, 0, width, height));
                                     _reusableBitmap.Unlock();
-                                    // Freeze 하지 않음 → 재사용 가능
                                 }
                             });
 
@@ -573,8 +522,8 @@ namespace LSS_prototype.Common_Module
                                     _lastFrame?.Dispose();
                                     _lastFrame = frame.Clone();
                                 }
-                            FrameArrived?.Invoke(_reusableBitmap);
 
+                            FrameArrived?.Invoke(_reusableBitmap);
                             Thread.Sleep(delay);
                         }
                     }
@@ -589,9 +538,6 @@ namespace LSS_prototype.Common_Module
 
         #region Dispose
 
-        // ────────────────────────────────────────────
-        // Dispose
-        // ────────────────────────────────────────────
         public void Dispose()
         {
             if (_disposed) return;
@@ -602,14 +548,12 @@ namespace LSS_prototype.Common_Module
 
             Disconnect();
             lock (_frameLock) { _lastFrame?.Dispose(); _lastFrame = null; }
-            lock (_bitmapLock) { _reusableBitmap = null; }  // WriteableBitmap은 GC에 맡김 (Dispose 없음)
+            lock (_bitmapLock) { _reusableBitmap = null; }
 
-            // ApplyColorMap 재사용 필드 Mat 해제
             _colorSrc3ch?.Dispose();
             _colorDst?.Dispose();
             _colorNotImg?.Dispose();
 
-            // CalcSharpness 재사용 필드 Mat 해제
             _sharpGray?.Dispose();
             _sharpSobelX?.Dispose();
             _sharpSobelY?.Dispose();

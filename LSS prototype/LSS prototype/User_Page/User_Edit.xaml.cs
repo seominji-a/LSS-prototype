@@ -11,10 +11,10 @@ namespace LSS_prototype.User_Page
             InitializeComponent();
         }
 
-        private void Submit_Click(object sender, RoutedEventArgs e)
+        private async void Submit_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is User_EditViewModel vm)
-                vm.ExecuteSubmit(txtNewPassword.Password, txtConfirmPassword.Password);
+                await vm.ExecuteSubmit(txtNewPassword.Password, txtConfirmPassword.Password);
         }
 
         private void NewPasswordBox_CheckCaps(object sender, RoutedEventArgs e)

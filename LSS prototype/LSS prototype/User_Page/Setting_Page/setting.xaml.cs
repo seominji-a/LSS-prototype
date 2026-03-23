@@ -22,13 +22,15 @@ namespace LSS_prototype.User_Page
         }
 
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             ResetIpBox(CStoreIPTextBox);
             ResetIpBox(MwlIPTextBox);
 
             // DB에서 기존 IP 불러올 경우 양식에 맞춰 바인딩
             var vm = DataContext as SettingViewModel;
+            await vm.InitializeAsync();
+
             SetIpToBox(CStoreIPTextBox, vm.CStoreIP);
             SetIpToBox(MwlIPTextBox, vm.MwlIP);
         }

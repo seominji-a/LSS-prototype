@@ -11,36 +11,29 @@ namespace LSS_prototype
 {
     public interface IDialogService
     {
-        Task<bool?> ShowDialogAsync(object viewModel); // 세션 안 멈추는 비동기 버전
-        void ShowSetting();
-        void ShowDefault();
+        Task<bool?> ShowDialogAsync(object viewModel);
+        Task ShowSetting();
+        Task ShowDefault();
     }
 
     internal class Dialog : IDialogService
     {
-        // ═══════════════════════════════════════════
-        //  ShowDialogAsync()
-        //  Show() 로 UI 스레드 안 막고 띄움
-        //  → 세션 타이머 멈추지 않음
-        //  블러 처리 추가 → 뒤 화면 터치 차단
-        //  확인/취소 결과는 TaskCompletionSource 로 반환
-        // ═══════════════════════════════════════════
-        public Task<bool?> ShowDialogAsync(object viewModel)
+        public async Task<bool?> ShowDialogAsync(object viewModel)
         {
             var tcs = new TaskCompletionSource<bool?>();
             var blurredWindows = new List<Window>();
-            var window = CreateWindow(viewModel, tcs); 
+            var window = CreateWindow(viewModel, tcs);
 
-            window.Closed += (s, e) =>
+            window.Closed += async (s, e) =>
             {
-                RemoveBlur(blurredWindows);
+                await RemoveBlur(blurredWindows);
                 if (!tcs.Task.IsCompleted)
                     tcs.TrySetResult(null);
             };
 
-            ApplyBlur(window, blurredWindows);
+            await ApplyBlur(window, blurredWindows);
             window.Show();
-            return tcs.Task;
+            return await tcs.Task;
         }
 
         private Window CreateWindow(object viewModel, TaskCompletionSource<bool?> tcs = null)
@@ -71,10 +64,6 @@ namespace LSS_prototype
             return window;
         }
 
-        // ═══════════════════════════════════════════
-        //  CreateWindow()
-        //  공통 Window 생성 + CloseAction 연결
-        // ═══════════════════════════════════════════
         private Window CreateWindow(object viewModel)
         {
             var window = new Window
@@ -88,7 +77,6 @@ namespace LSS_prototype
                 Background = Brushes.Transparent
             };
 
-            // CloseAction 연결 (ViewModel 에서 창 닫기용)
             try
             {
                 var vm = viewModel as dynamic;
@@ -105,12 +93,7 @@ namespace LSS_prototype
             return window;
         }
 
-        // ═══════════════════════════════════════════
-        //  ApplyBlur() / RemoveBlur()
-        //  CustomMessageWindow 와 완전 동일한 방식
-        //  열린 창 전부 블러 → 뒤 화면 터치 차단
-        // ═══════════════════════════════════════════
-        private void ApplyBlur(Window target, List<Window> blurredWindows)
+        private async Task ApplyBlur(Window target, List<Window> blurredWindows)
         {
             try
             {
@@ -119,77 +102,86 @@ namespace LSS_prototype
                 {
                     if (window != target && window.IsVisible)
                     {
-                        window.Effect = blurEffect;
-                        blurredWindows.Add(window);
+                        // ✅ window 전체가 아닌 Content에만 블러
+                        // → 세션 타이머 등 윈도우 레벨 타이머는 영향 없음
+                        if (window.Content is UIElement content)
+                        {
+                            content.Effect = blurEffect;
+                            blurredWindows.Add(window);
+                        }
                     }
                 }
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
-        private void RemoveBlur(List<Window> blurredWindows)
+        private async Task RemoveBlur(List<Window> blurredWindows)
         {
             try
             {
                 foreach (var window in blurredWindows)
                 {
-                    if (window != null)
-                        window.Effect = null;
+                    if (window?.Content is UIElement content)
+                        content.Effect = null;
                 }
                 blurredWindows.Clear();
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
-        // ═══════════════════════════════════════════
-        //  ShowSetting() / ShowDefault()
-        //  블러 처리 추가
-        // ═══════════════════════════════════════════
-        public void ShowSetting()
+        public async Task ShowSetting()
         {
+            var tcs = new TaskCompletionSource<bool?>();
             var blurredWindows = new List<Window>();
+
             try
             {
-                var owner = Application.Current.Windows
-                    .OfType<Window>()
-                    .FirstOrDefault(w => w.IsActive && !(w is setting));
-
                 var window = new setting();
-                window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-                if (owner != null) window.Owner = owner;
+                window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
-                ApplyBlur(window, blurredWindows);
-                window.Closed += (s, e) => RemoveBlur(blurredWindows);
-                window.ShowDialog();
+                window.Closed += async (s, e) =>
+                {
+                    await RemoveBlur(blurredWindows);
+                    if (!tcs.Task.IsCompleted)
+                        tcs.TrySetResult(null);
+                };
+
+                await ApplyBlur(window, blurredWindows);
+                window.Show();
+                await tcs.Task;
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                RemoveBlur(blurredWindows);
+                await Common.WriteLog(ex);
+                await RemoveBlur(blurredWindows);
             }
         }
 
-        public void ShowDefault()
+        public async Task ShowDefault()
         {
+            var tcs = new TaskCompletionSource<bool?>();
             var blurredWindows = new List<Window>();
+
             try
             {
-                var owner = Application.Current.Windows
-                    .OfType<Window>()
-                    .FirstOrDefault(w => w.IsActive && !(w is Default));
-
                 var window = new Default();
-                window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-                if (owner != null) window.Owner = owner;
+                window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
-                ApplyBlur(window, blurredWindows);
-                window.Closed += (s, e) => RemoveBlur(blurredWindows);
-                window.ShowDialog();
+                window.Closed += async (s, e) =>
+                {
+                    await RemoveBlur(blurredWindows);
+                    if (!tcs.Task.IsCompleted)
+                        tcs.TrySetResult(null);
+                };
+
+                await ApplyBlur(window, blurredWindows);
+                window.Show();
+                await tcs.Task;
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                RemoveBlur(blurredWindows);
+                await Common.WriteLog(ex);
+                await RemoveBlur(blurredWindows);
             }
         }
     }

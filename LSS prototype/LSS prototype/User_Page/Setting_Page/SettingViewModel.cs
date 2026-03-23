@@ -107,24 +107,26 @@ namespace LSS_prototype.User_Page
         // Constructor
         public SettingViewModel()
         {
-            SaveHospitalCommand = new RelayCommand(SaveHospital);
-            SaveMwlFilterCommand = new RelayCommand(SaveMwlFilter);
+            SaveHospitalCommand = new RelayCommand(async _ => await SaveHospital());
+            SaveMwlFilterCommand = new RelayCommand(async _ => await SaveMwlFilter());
 
             CStoreTestCommand = new AsyncRelayCommand(async _ => await CStoreTestAsync());
-            CStoreApplyCommand = new RelayCommand(CStoreApply);
-            CStoreResetCommand = new AsyncRelayCommand(_ => { LoadSettings(true); return Task.CompletedTask; });
+            CStoreApplyCommand = new RelayCommand(async _ => await CStoreApply());
+            CStoreResetCommand = new AsyncRelayCommand(async _ => await LoadSettings(true));
 
             MwlTestCommand = new AsyncRelayCommand(async _ => await MwlTestAsync());
-            MwlApplyCommand = new RelayCommand(MwlApply);
-            MwlResetCommand = new AsyncRelayCommand(_ => { LoadSettings(true); return Task.CompletedTask; });
-
-            // DB에서 초기값 로드
-            LoadSettings();
+            MwlApplyCommand = new RelayCommand(async _ => await MwlApply());
+            MwlResetCommand = new AsyncRelayCommand(async _ =>  await LoadSettings(true));
         }
 
 
+        public async Task InitializeAsync()
+        {
+            await LoadSettings();
+        }
+
         // DB 로드
-        private void LoadSettings(bool showMessage = false)
+        private async Task LoadSettings(bool showMessage = false)
         {
             try
             {
@@ -144,24 +146,24 @@ namespace LSS_prototype.User_Page
 
                 if (showMessage)
                 {
-                    CustomMessageWindow.Show("리셋되었습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    await CustomMessageWindow.ShowAsync("리셋되었습니다.",
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Info);
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
 
         // async 이유: ShowAsync - 메시지창 닫힌 후 다음 코드 실행 보장 필요
-        private  void SaveHospital()
+        private  async Task SaveHospital()
         {
             try
             {
-                var confirm = CustomMessageWindow.Show(
+                var confirm = await CustomMessageWindow.ShowAsync(
                     "병원명을 변경하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo, 0,
                     CustomMessageWindow.MessageIconType.Warning);
@@ -172,28 +174,25 @@ namespace LSS_prototype.User_Page
 
                 if (success)
                 {
-                    CustomMessageWindow.Show(
+                    await CustomMessageWindow.ShowAsync(
                         "병원명이 저장되었습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Info);
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
 
 
-        private void SaveMwlFilter()
+        private async Task SaveMwlFilter()
         {
             try
             {
-                var confirm = CustomMessageWindow.Show(
-                    "MWL 필터를 변경하시겠습니까?",
-                    CustomMessageWindow.MessageBoxType.YesNo, 0,
-                    CustomMessageWindow.MessageIconType.Warning);
+                var confirm = await CustomMessageWindow.ShowAsync("MWL 필터를 변경하시겠습니까?", CustomMessageWindow.MessageBoxType.YesNo, 0, CustomMessageWindow.MessageIconType.Warning);
 
                 if (confirm != CustomMessageWindow.MessageBoxResult.Yes) return;
 
@@ -201,16 +200,16 @@ namespace LSS_prototype.User_Page
 
                 if (success)
                 {
-                        CustomMessageWindow.Show(
-                        "MWL 필터가 저장되었습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                        CustomMessageWindow.MessageIconType.Info);
-                        Common.MwlDescriptionFilter = MwlDescriptionFilter; 
+                    await CustomMessageWindow.ShowAsync(
+                    "MWL 필터가 저장되었습니다.",
+                    CustomMessageWindow.MessageBoxType.Ok, 1,
+                    CustomMessageWindow.MessageIconType.Info);
+                    Common.MwlDescriptionFilter = MwlDescriptionFilter; 
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
@@ -222,16 +221,12 @@ namespace LSS_prototype.User_Page
             {
                 if (string.IsNullOrWhiteSpace(CStoreIP))
                 {
-                    CustomMessageWindow.Show("IP 주소를 입력해주세요.",
-                        CustomMessageWindow.MessageBoxType.Ok, 0,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("IP 주소를 입력해주세요.", CustomMessageWindow.MessageBoxType.Ok, 0, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
                 if (string.IsNullOrWhiteSpace(CStorePort))
                 {
-                    CustomMessageWindow.Show("포트 번호가 올바르지 않습니다.",
-                        CustomMessageWindow.MessageBoxType.Ok, 0,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("포트 번호가 올바르지 않습니다.", CustomMessageWindow.MessageBoxType.Ok, 0, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
@@ -244,12 +239,12 @@ namespace LSS_prototype.User_Page
 
                 await CustomMessageWindow.ShowAsync(
                     "PACS 전송 테스트 성공",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    CustomMessageWindow.MessageBoxType.Ok, 1,
                     CustomMessageWindow.MessageIconType.Info);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
             finally
             {
@@ -280,11 +275,11 @@ namespace LSS_prototype.User_Page
         }
 
 
-        private void CStoreApply()
+        private async Task CStoreApply()
         {
             try
             {
-                var confirm = CustomMessageWindow.Show(
+                var confirm = await CustomMessageWindow.ShowAsync(
                     "C-STORE의 설정값을 \n변경하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo, 0,
                     CustomMessageWindow.MessageIconType.Warning);
@@ -301,15 +296,12 @@ namespace LSS_prototype.User_Page
 
                 if (success)
                 {
-                        CustomMessageWindow.Show(
-                        "C-STORE 설정이 적용되었습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                        CustomMessageWindow.MessageIconType.Info);
+                        await CustomMessageWindow.ShowAsync("C-STORE 설정이 적용되었습니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Info);
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
@@ -321,16 +313,12 @@ namespace LSS_prototype.User_Page
             {
                 if (string.IsNullOrWhiteSpace(MwlIP))
                 {
-                    CustomMessageWindow.Show("IP 주소를 입력해주세요.",
-                        CustomMessageWindow.MessageBoxType.Ok, 0,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("IP 주소를 입력해주세요.", CustomMessageWindow.MessageBoxType.Ok, 0, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
                 if (string.IsNullOrWhiteSpace(MwlPort))
                 {
-                    CustomMessageWindow.Show("포트 번호를 입력해주세요.",
-                        CustomMessageWindow.MessageBoxType.Ok, 0,
-                        CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("포트 번호를 입력해주세요.", CustomMessageWindow.MessageBoxType.Ok, 0, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
@@ -341,24 +329,18 @@ namespace LSS_prototype.User_Page
 
                 await CustomMessageWindow.ShowAsync(
                     "MWL 연결 테스트 성공",
-                    CustomMessageWindow.MessageBoxType.AutoClose, 1,
+                    CustomMessageWindow.MessageBoxType.Ok, 1,
                     CustomMessageWindow.MessageIconType.Info);
             }
             catch (TimeoutException ex)
             {
-                Common.WriteLog(ex);
-                CustomMessageWindow.Show(
-                    "DICOM 서버가 응답하지 않습니다.\n네트워크 또는 서버 상태를 확인해주세요.",
-                    CustomMessageWindow.MessageBoxType.Ok, 0,
-                    CustomMessageWindow.MessageIconType.Warning);
+                await Common.WriteLog(ex);
+                await CustomMessageWindow.ShowAsync("DICOM 서버가 응답하지 않습니다.\n네트워크 또는 서버 상태를 확인해주세요.", CustomMessageWindow.MessageBoxType.Ok, 0, CustomMessageWindow.MessageIconType.Warning);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                CustomMessageWindow.Show(
-                    $"MWL 연결 실패:\n{ex.Message}",
-                    CustomMessageWindow.MessageBoxType.Ok, 0,
-                    CustomMessageWindow.MessageIconType.Warning);
+                await Common.WriteLog(ex);
+                await CustomMessageWindow.ShowAsync($"MWL 연결 실패:\n{ex.Message}", CustomMessageWindow.MessageBoxType.Ok, 0, CustomMessageWindow.MessageIconType.Warning);
             }
             finally
             {
@@ -406,11 +388,11 @@ namespace LSS_prototype.User_Page
 
 
 
-        private void MwlApply()
+        private async Task MwlApply()
         {
             try
             {
-                var confirm = CustomMessageWindow.Show(
+                var confirm = await CustomMessageWindow.ShowAsync(
                     "MWL의 설정값을 \n변경하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo, 0,
                     CustomMessageWindow.MessageIconType.Warning);
@@ -427,15 +409,15 @@ namespace LSS_prototype.User_Page
 
                 if (success)
                 {
-                        CustomMessageWindow.Show(
-                        "MWL 설정이 적용되었습니다.",
-                        CustomMessageWindow.MessageBoxType.AutoClose, 1,
-                        CustomMessageWindow.MessageIconType.Info);
+                    await CustomMessageWindow.ShowAsync(
+                    "MWL 설정이 적용되었습니다.",
+                    CustomMessageWindow.MessageBoxType.Ok, 1,
+                    CustomMessageWindow.MessageIconType.Info);
                 }
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
     }

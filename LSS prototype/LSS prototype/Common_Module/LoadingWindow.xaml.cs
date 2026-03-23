@@ -16,20 +16,23 @@ namespace LSS_prototype
         public LoadingWindow(string message = "처리 중...")
         {
             InitializeComponent();
-            //MessageText.Text = message;
 
-            var owner = Application.Current?.Windows?
-                .OfType<Window>()
-                .FirstOrDefault(w => w.IsActive)
-                ?? Application.Current?.Windows?
-                .OfType<Window>()
-                .FirstOrDefault(w => w.IsVisible);
-
-            if (owner != null && owner != this)
+            // ✅ MainWindow 고정 + IsVisible 체크
+            // IsVisible 없으면 아직 Show() 안 된 창을 Owner로 설정 시 에러 발생
+            var owner = Application.Current?.MainWindow;
+            if (owner != null && owner != this && owner.IsVisible)
             {
                 this.Owner = owner;
                 this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             }
+            else
+            {
+                this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            }
+
+            // ✅ 로딩창 열리는 즉시 세션 모니터에 등록
+            // → 로딩창 위에서 마우스 움직여도 세션 연장됨
+            Loaded += (s, e) => App.ActivityMonitor?.RegisterWindow(this);
         }
 
         public static void Begin(string message = "처리 중...")
@@ -41,25 +44,26 @@ namespace LSS_prototype
             {
                 if (t.IsCanceled) return;
 
-                Application.Current.Dispatcher.Invoke(() =>
+                // ✅ Invoke(동기) → BeginInvoke(비동기)
+                // → UI 스레드 블로킹 없음 → 세션 타이머 정상 동작
+                Application.Current.Dispatcher.BeginInvoke(new System.Action(() =>
                 {
                     if (_instance != null) return;
                     ApplyBlur();
                     _instance = new LoadingWindow(message);
                     _instance.Show();
-                });
+                }));
             });
         }
 
         public static void Update(string message)
         {
-            Application.Current?.Dispatcher.Invoke(() =>
+            // ✅ Invoke → BeginInvoke
+            Application.Current?.Dispatcher.BeginInvoke(new System.Action(() =>
             {
                 if (_instance != null)
-                {
                     _instance.MessageText.Text = message;
-                }
-            });
+            }));
         }
 
         public static void End()
@@ -67,6 +71,9 @@ namespace LSS_prototype
             _cts?.Cancel();
             _cts = null;
 
+            // ✅ End는 Invoke 유지 (순서 보장 필요)
+            // BeginInvoke로 바꾸면 Begin의 창 생성보다 먼저 실행되서
+            // 창이 뜨자마자 바로 닫히는 문제 발생
             Application.Current.Dispatcher.Invoke(() =>
             {
                 RemoveBlur();
@@ -77,12 +84,18 @@ namespace LSS_prototype
 
         private static void ApplyBlur()
         {
-            var blurEffect = new BlurEffect { Radius = 3 }; // 아주 살짝만
+            var blurEffect = new BlurEffect { Radius = 3 };
             foreach (Window w in Application.Current.Windows)
             {
                 if (w is LoadingWindow || !w.IsVisible) continue;
-                w.Effect = blurEffect;
-                _blurredWindows.Add(w);
+
+                // ✅ w.Effect → w.Content.Effect
+                // → 윈도우 레벨 타이머(세션) 영향 없음
+                if (w.Content is System.Windows.UIElement content)
+                {
+                    content.Effect = blurEffect;
+                    _blurredWindows.Add(w);
+                }
             }
         }
 
@@ -90,7 +103,8 @@ namespace LSS_prototype
         {
             foreach (var w in _blurredWindows)
             {
-                if (w != null) w.Effect = null;
+                if (w?.Content is System.Windows.UIElement content)
+                    content.Effect = null;
             }
             _blurredWindows.Clear();
         }

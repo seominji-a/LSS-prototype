@@ -12,42 +12,42 @@ namespace LSS_prototype.Lens_Module
         public byte i2cAddr = ConfigVal.I2CSLAVEADDR * 2;
         public byte[] receivedData;
 
-        public int UsbGetNumDevices(out uint numDevices)
+        // out → 튜플 반환 (retval, numDevices)
+        public async Task<(int retval, uint numDevices)> UsbGetNumDevices()
         {
-            numDevices = 0;
+            uint numDevices = 0;
             try
             {
                 int retval = CP2112_DLL.HidSmbus_GetNumDevices(ref numDevices,
                     ConfigVal.VID, ConfigVal.PID);
-                return retval;
+                return (retval, numDevices);
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, 0);
             }
         }
 
-        public int UsbGetSnDevice(uint index, out string SnString)
+        // out → 튜플 반환 (retval, SnString)
+        public async Task<(int retval, string SnString)> UsbGetSnDevice(uint index)
         {
-            SnString = string.Empty;
             try
             {
                 StringBuilder serialString = new StringBuilder(" ", 260);
                 int retval = CP2112_DLL.HidSmbus_GetString(index,
                     ConfigVal.VID, ConfigVal.PID,
                     serialString, CP2112_DLL.HID_SMBUS_GET_SERIAL_STR);
-                SnString = serialString.ToString();
-                return retval;
+                return (retval, serialString.ToString());
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
-                return -1;
+                await Common.WriteLog(ex);
+                return (-1, string.Empty);
             }
         }
 
-        public int UsbOpen(uint deviceNumber)
+        public async Task<int> UsbOpen(uint deviceNumber)
         {
             try
             {
@@ -57,12 +57,12 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public void UsbClose()
+        public async Task UsbClose()
         {
             try
             {
@@ -70,11 +70,11 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
-        public int UsbSetConfig()
+        public async Task<int> UsbSetConfig()
         {
             try
             {
@@ -100,12 +100,12 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int UsbRead(ushort segmentOffset, ushort receiveSize)
+        public async Task<int> UsbRead(ushort segmentOffset, ushort receiveSize)
         {
             try
             {
@@ -144,6 +144,7 @@ namespace LSS_prototype.Lens_Module
                     totalBytesRead += bytesRead;
 
                 } while (totalBytesRead < receiveSize);
+
                 Array.Resize(ref receiveData, totalBytesRead);
                 receivedData = receiveData;
 
@@ -151,12 +152,12 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public ushort UsbRead2Bytes()
+        public async Task<ushort> UsbRead2Bytes()
         {
             try
             {
@@ -167,12 +168,12 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return 0;
             }
         }
 
-        public int CountRead()
+        public async Task<int> CountRead()
         {
             try
             {
@@ -181,16 +182,16 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }
 
-        public int UsbWrite(ushort segmentOffset, ushort writeData)
+        public async Task<int> UsbWrite(ushort segmentOffset, ushort writeData)
         {
             try
             {
-                byte[] sendData = new byte[ConfigVal.SEGMENTOFFSET_LENGTH + ConfigVal.DATA_LENGTH]; // 2+2
+                byte[] sendData = new byte[ConfigVal.SEGMENTOFFSET_LENGTH + ConfigVal.DATA_LENGTH];
                 sendData[0] = (byte)(segmentOffset >> 8);
                 sendData[1] = (byte)segmentOffset;
                 sendData[2] = (byte)(writeData >> 8);
@@ -202,7 +203,7 @@ namespace LSS_prototype.Lens_Module
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return -1;
             }
         }

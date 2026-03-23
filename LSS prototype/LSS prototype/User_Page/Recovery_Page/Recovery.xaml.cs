@@ -4,6 +4,7 @@ using System.Windows.Input;
 using System.Windows.Ink;
 using System.Windows.Threading;
 using System.Windows;
+using System.Threading.Tasks;
 
 namespace LSS_prototype.User_Page
 {
@@ -31,19 +32,21 @@ namespace LSS_prototype.User_Page
             // Patient.xaml.cs 와 동일
             txtSearch.TextChanged += OnSearchTextChanged;
 
-            Loaded += (s, e) =>
+            Loaded += async  (s, e) =>
             {
+                
                 if (DataContext is RecoveryViewModel vm)
                 {
-                    vm.PropertyChanged += (sender, args) =>
+                    await vm.InitializeAsync();
+                    vm.PropertyChanged += async (sender, args) =>
                     {
                         // ── PreviewVideoPath 변경 → MediaElement 제어 ──
                         if (args.PropertyName == nameof(RecoveryViewModel.PreviewVideoPath))
-                            OnPreviewVideoPathChanged(vm);
+                            await OnPreviewVideoPathChanged(vm);
 
                         // ── CurrentStrokes 변경 → InkCanvas 스케일 변환 후 세팅 ──
                         if (args.PropertyName == nameof(RecoveryViewModel.CurrentStrokes))
-                            ApplyStrokesWithScale(vm);
+                            await ApplyStrokesWithScale(vm);
                     };
                 }
             };
@@ -54,6 +57,9 @@ namespace LSS_prototype.User_Page
                 PreviewVideo.Stop();
                 PreviewVideo.Source = null;
             };
+
+
+
         }
 
         // Patient.xaml 검색로직과 동일 
@@ -73,7 +79,7 @@ namespace LSS_prototype.User_Page
         //  경로 있음 → 2배속 기본값으로 로드 + 재생
         //  경로 없음 → 정지 + 초기화
         // ═══════════════════════════════════════════
-        private void OnPreviewVideoPathChanged(RecoveryViewModel vm)
+        private async Task OnPreviewVideoPathChanged(RecoveryViewModel vm)
         {
             try
             {
@@ -96,14 +102,14 @@ namespace LSS_prototype.User_Page
                     StopAndReset();
                 }
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
         //  MediaElement 이벤트
         // ═══════════════════════════════════════════
 
-        private void PreviewVideo_MediaOpened(object sender, RoutedEventArgs e)
+        private async void PreviewVideo_MediaOpened(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -113,10 +119,10 @@ namespace LSS_prototype.User_Page
                 TxtTotalTime.Text = total.ToString(@"mm\:ss");
                 SliderSeek.Maximum = total.TotalSeconds;
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
-        private void PreviewVideo_MediaEnded(object sender, RoutedEventArgs e)
+        private async void PreviewVideo_MediaEnded(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -126,7 +132,7 @@ namespace LSS_prototype.User_Page
                 SliderSeek.Value = 0;
                 TxtCurrentTime.Text = "00:00";
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
@@ -150,7 +156,7 @@ namespace LSS_prototype.User_Page
         //  버튼 이벤트
         // ═══════════════════════════════════════════
 
-        private void BtnPlayPause_Click(object sender, RoutedEventArgs e)
+        private async void BtnPlayPause_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -172,7 +178,7 @@ namespace LSS_prototype.User_Page
                     _timer.Start();
                 }
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
@@ -183,7 +189,7 @@ namespace LSS_prototype.User_Page
             _isDraggingSeek = true;
         }
 
-        private void PreviewSlider_MouseUp(object sender, MouseButtonEventArgs e)
+        private async void PreviewSlider_MouseUp(object sender, MouseButtonEventArgs e)
         {
             try
             {
@@ -196,7 +202,7 @@ namespace LSS_prototype.User_Page
                     PreviewVideo.Pause();
                 }
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
             finally
             {
                 _isDraggingSeek = false;
@@ -214,7 +220,7 @@ namespace LSS_prototype.User_Page
         // ═══════════════════════════════════════════
         //  정지 + UI 초기화
         // ═══════════════════════════════════════════
-        private void StopAndReset()
+        private async void StopAndReset()
         {
             try
             {
@@ -231,13 +237,13 @@ namespace LSS_prototype.User_Page
                 TxtCurrentTime.Text = "00:00";
                 TxtTotalTime.Text = "00:00";
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
         //  ISF 스케일 변환
         // ═══════════════════════════════════════════
-        private void ApplyStrokesWithScale(RecoveryViewModel vm)
+        private async Task ApplyStrokesWithScale(RecoveryViewModel vm)
         {
             try
             {
@@ -255,10 +261,10 @@ namespace LSS_prototype.User_Page
                 if (currentWidth <= 0 || currentHeight <= 0)
                 {
                     SizeChangedEventHandler handler = null;
-                    handler = (s, ev) =>
+                    handler = async (s, ev) =>
                     {
                         PreviewDrawingCanvas.SizeChanged -= handler;
-                        ApplyStrokesWithScale(vm);
+                        await ApplyStrokesWithScale(vm);
                     };
                     PreviewDrawingCanvas.SizeChanged += handler;
                     return;
@@ -306,7 +312,7 @@ namespace LSS_prototype.User_Page
 
                 PreviewDrawingCanvas.Strokes = cloned;
             }
-            catch (Exception ex) { Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
     }
 }

@@ -33,32 +33,29 @@ namespace LSS_prototype
         public const int DB_VERSION = 57; // DB Version 
 
         // ===== OTP 기능  =====
-        public static bool VerifyMasterOtp(string inputId, string inputOtp)
-            => OtpService.VerifyMasterOtp(inputId, inputOtp);
+        public async static Task<bool> VerifyMasterOtp(string inputId, string inputOtp) => await OtpService.VerifyMasterOtp(inputId, inputOtp);
 
-        public static void CleanupOldLogs()
-            => LogService.CleanupOldLogs();
+        public static void CleanupOldLogs() => LogService.CleanupOldLogs();
 
-        public static bool VerifyOtpOnly(string inputOtp)
-            => OtpService.VerifyOtpOnly(inputOtp);
+        public async static Task<bool> VerifyOtpOnly(string inputOtp) => await OtpService.VerifyOtpOnly(inputOtp);
 
-        public static void WriteLog(
+        public async static Task WriteLog(
             Exception ex,
             [CallerMemberName] string method = "",
             [CallerFilePath] string filePath = "",
             [CallerLineNumber] int line = 0)
-            => LogService.WriteLog(ex, method, filePath, line);
+            => await LogService.WriteLog(ex, method, filePath, line);
 
         public enum LogLevel { Info, Warning, Error } // (기존 위치/이름 유지)
 
         public static void WriteSessionLog(string message)
             => LogService.WriteSessionLog(message);
 
-        public static void ExecuteLogout()
+        public async static Task ExecuteLogout()
         {
             try
             {
-                var result = CustomMessageWindow.Show(
+                var result = await CustomMessageWindow.ShowAsync(
                     "로그아웃 하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo,
                     0,
@@ -88,12 +85,12 @@ namespace LSS_prototype
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
 
-        public static void ForceLogout()
+        public async static Task ForceLogout()
         {
             try
             {
@@ -119,15 +116,15 @@ namespace LSS_prototype
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
             }
         }
 
 
 
-        public static void ExcuteExit()
+        public async static Task ExcuteExit()
         {
-            var result = CustomMessageWindow.Show(
+            var result = await CustomMessageWindow.ShowAsync(
                     "프로그램을 종료하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo,
                     0,
@@ -151,7 +148,7 @@ namespace LSS_prototype
         /// <summary>
         /// 입력된 ID + OTP 6자리가 MASTER 계정 기준으로 유효한지 검증
         /// </summary>
-        public static bool VerifyMasterOtp(string inputId, string inputOtp)
+        public async static Task<bool> VerifyMasterOtp(string inputId, string inputOtp)
         {
             try
             {
@@ -165,7 +162,7 @@ namespace LSS_prototype
                 if (string.IsNullOrWhiteSpace(masterId) ||
                     string.IsNullOrWhiteSpace(masterKey))
                 {
-                    CustomMessageWindow.Show(
+                    await CustomMessageWindow.ShowAsync(
                        "MASTER_ID 또는 MASTER_KEY 환경변수가 설정되지 않았습니다.\n 설정 후 재시작 해주세요",
                        CustomMessageWindow.MessageBoxType.Ok,
                        0,
@@ -206,7 +203,7 @@ namespace LSS_prototype
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return false;
             }
         }
@@ -252,7 +249,7 @@ namespace LSS_prototype
         /// </summary>
         /// <param name="inputOtp"></param>
         /// <returns></returns>
-        public static bool VerifyOtpOnly(string inputOtp)
+        public async static Task<bool> VerifyOtpOnly(string inputOtp)
         {
             try
             {
@@ -263,7 +260,7 @@ namespace LSS_prototype
                 // (프로그램 종료 X → 강제삭제만 차단)
                 if (string.IsNullOrWhiteSpace(masterKey))
                 {
-                    CustomMessageWindow.Show(
+                    await CustomMessageWindow.ShowAsync(
                         "MASTER_KEY 환경변수가 설정되지 않았습니다.\n설정 후 재시작 해주세요.",
                         CustomMessageWindow.MessageBoxType.Ok, 0,
                         CustomMessageWindow.MessageIconType.Warning);
@@ -283,7 +280,7 @@ namespace LSS_prototype
             }
             catch (Exception ex)
             {
-                Common.WriteLog(ex);
+                await Common.WriteLog(ex);
                 return false;
             }
         }
@@ -332,11 +329,11 @@ namespace LSS_prototype
 
         // ══════════════════════════════════════════
         // 예외 로그 기록
-        // catch 블록에서 Common.WriteLog(ex) 로 호출
+        // catch 블록에서 await Common.WriteLog(ex) 로 호출
         // CallerMemberName / CallerFilePath / CallerLineNumber
         // → 호출한 메서드명, 파일경로, 라인번호 자동 수집
         // ══════════════════════════════════════════
-        public static void WriteLog(
+        public async static Task WriteLog(
             Exception ex,
             string method,
             string filePath,
@@ -372,15 +369,26 @@ namespace LSS_prototype
                     File.AppendAllText(logFile, sb.ToString(), Encoding.UTF8);
                 }
 
-                // 사용자에게 알려주기 위한 팝업 표시 
-                Application.Current?.Dispatcher.Invoke(() =>
+                // ✅ UI 스레드 여부에 따라 분기
+                // UI 스레드: await 직접 호출 → await tcs.Task에서 UI 스레드 반납
+                //            → 세션 타이머 정상 동작 + 팝업 OK 누를때까지 대기
+                // 백그라운드 스레드: InvokeAsync + Unwrap → UI 스레드에서 실행
+                if (Application.Current?.Dispatcher.CheckAccess() == true)
                 {
-                    CustomMessageWindow.Show(
+                    await CustomMessageWindow.ShowAsync(
                         ex.Message,
-                        CustomMessageWindow.MessageBoxType.Ok,
-                        0,
+                        CustomMessageWindow.MessageBoxType.Ok, 0,
                         CustomMessageWindow.MessageIconType.Danger);
-                });
+                }
+                else
+                {
+                    await Application.Current?.Dispatcher.InvokeAsync(async () =>
+                        await CustomMessageWindow.ShowAsync(
+                            ex.Message,
+                            CustomMessageWindow.MessageBoxType.Ok, 0,
+                            CustomMessageWindow.MessageIconType.Danger)
+                    ).Task.Unwrap();
+                }
             }
             catch (Exception logEx)
             {
@@ -463,21 +471,14 @@ namespace LSS_prototype
         public const string INSERT_PATIENT = "INSERT INTO PATIENT (PATIENT_NAME, PATIENT_CODE, BIRTH_DATE, SEX, LASTSHOOTDATE, SHOTNUM, SOURCE_TYPE) VALUES (@PatientName, @PatientCode, @BirthDate, @Sex, @LastShootDate, @ShotNum, @SourceType)";
         public const string EDIT_PATIENT = "UPDATE PATIENT SET PATIENT_NAME = @PatientName, PATIENT_CODE = @PatientCode, BIRTH_DATE = @BirthDate, SEX = @Sex WHERE PATIENT_ID = @Patient_id";
         public const string DELETE_PATIENT = "DELETE FROM PATIENT WHERE PATIENT_ID = @Patient_id";
-        public const string PATIENT_CODE_SEARCH = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode";
-
-        public const string PATIENT_DUPL_PATIENT_SEARCH = @"SELECT PATIENT_ID FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND SOURCE_TYPE = @SourceType AND PATIENT_NAME = @PatientName AND BIRTH_DATE = @BirthDate AND SEX = @Sex";
-
-        public const string PATIENT_DUPL_SEARCH = @"SELECT COUNT(*) FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND PATIENT_NAME = @PatientName AND BIRTH_DATE = @BirthDate AND SEX = @Sex AND SOURCE_TYPE = @SourceType";
-
-        public const string UPDATE_PATIENT_SHOT = @"UPDATE PATIENT SET LASTSHOOTDATE = @LastShootDate, SHOTNUM = @ShotNum WHERE PATIENT_ID = @PatientId";
-        // 환자 코드 중복 체크
+        public const string PATIENT_CODE_SEARCH = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode";                                                  // 환자 코드 중복 체크
         public const string PATIENT_CODE_SEARCHSELF = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND PATIENT_ID <> @Patient_id";                   // 수정 시 자기 자신 제외 중복 체크
 
-        public const string SELECT_LOCAL_PATIENTLIST ="SELECT * FROM PATIENT WHERE SOURCE_TYPE = @SourceType ORDER BY REG_DATE DESC";
+        public const string SELECT_LOCAL_PATIENTLIST = "SELECT * FROM PATIENT WHERE SOURCE_TYPE = @SourceType ORDER BY REG_DATE DESC";
 
-        public const string SELECT_EMR_PATIENTLIST ="SELECT * FROM PATIENT WHERE SOURCE_TYPE = @SourceType ORDER BY REG_DATE DESC";
+        public const string SELECT_EMR_PATIENTLIST = "SELECT * FROM PATIENT WHERE SOURCE_TYPE = @SourceType ORDER BY REG_DATE DESC";
 
-        public const string SELECT_PATIENT_BY_CODE_AND_SOURCE ="SELECT PATIENT_ID FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND SOURCE_TYPE = @SourceType LIMIT 1";
+        public const string SELECT_PATIENT_BY_CODE_AND_SOURCE = "SELECT PATIENT_ID FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND SOURCE_TYPE = @SourceType LIMIT 1";
 
         public const string INSERT_EMR_PATIENT = @"INSERT INTO PATIENT(PATIENT_CODE, PATIENT_NAME, BIRTH_DATE, SEX, SOURCE_TYPE, LASTSHOOTDATE, SHOTNUM) VALUES(@PatientCode, @PatientName, @BirthDate, @Sex, @SourceType, @LastShootDate, @ShotNum)";
 
@@ -486,8 +487,6 @@ namespace LSS_prototype
         public const string UPDATE_LOCAL_PATIENT_AFTER_SCAN = @"UPDATE PATIENT SET LASTSHOOTDATE = @LastShootDate, SHOTNUM = @ShotNum WHERE PATIENT_ID = @PatientId AND SOURCE_TYPE = 0";
 
         public const string SELECT_PATIENT_CODE_SOURCE = @"SELECT * FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND SOURCE_TYPE = @SourceType";
-
-        public const string SELECT_PATIENT_CODE_LIMIT = @"SELECT * FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND PATIENT_NAME = @PatientName  AND BIRTH_DATE = @BirthDate AND SEX = @Sex AND SOURCE_TYPE = @SourceType ORDER BY PATIENT_ID LIMIT 1;";
         // ================================================
         // User_Page > Default (카메라 기본값)  -  DB_Manager.Set.cs
         // ================================================
@@ -507,11 +506,11 @@ namespace LSS_prototype
         // ================================================
         // Recycle  -  DB_Manager.Recycle.cs
         // ================================================
-        public const string INSERT_IMAGE_DELETE_LOG ="INSERT INTO DELETE_LOG (DELETED_BY, FILE_TYPE, IMAGE_PATH, PATIENT_CODE, PATIENT_NAME) VALUES (@DeletedBy, @FileType, @ImagePath, @PatientCode, @PatientName)";
+        public const string INSERT_IMAGE_DELETE_LOG = "INSERT INTO DELETE_LOG (DELETED_BY, FILE_TYPE, IMAGE_PATH, PATIENT_CODE, PATIENT_NAME) VALUES (@DeletedBy, @FileType, @ImagePath, @PatientCode, @PatientName)";
         public const string INSERT_NORMAL_VIDEO_DELETE_LOG = "INSERT INTO DELETE_LOG (DELETED_BY, FILE_TYPE, AVI_PATH, PATIENT_CODE, PATIENT_NAME) VALUES (@DeletedBy, @FileType, @AviPath, @PatientCode, @PatientName)";
         public const string INSERT_DICOM_VIDEO_DELETE_LOG = "INSERT INTO DELETE_LOG (DELETED_BY, FILE_TYPE, AVI_PATH, DICOM_PATH, PATIENT_CODE, PATIENT_NAME)  VALUES (@DeletedBy, @FileType, @AviPath, @DicomPath, @PatientCode, @PatientName)";
         public const string SELECT_DELETE_LOGS = "SELECT DELETE_ID, DELETED_BY, DELETED_AT, FILE_TYPE, IMAGE_PATH, AVI_PATH, DICOM_PATH, PATIENT_CODE, IS_RECOVERED, RECOVERED_AT, PATIENT_NAME, IS_FORCE_DELETED FROM DELETE_LOG ORDER BY DELETED_AT DESC";
-        public const string UPDATE_RECOVERED ="UPDATE DELETE_LOG SET IS_RECOVERED = 'Y', RECOVERED_AT = datetime('now', 'localtime') WHERE DELETE_ID = @DeleteId";
+        public const string UPDATE_RECOVERED = "UPDATE DELETE_LOG SET IS_RECOVERED = 'Y', RECOVERED_AT = datetime('now', 'localtime') WHERE DELETE_ID = @DeleteId";
         public const string UPDATE_FORCE_DELETED = "UPDATE DELETE_LOG SET IS_FORCE_DELETED = 'Y', FORCE_DELETED_AT = datetime('now', 'localtime'), FORCE_DELETED_BY = @ForceDeletedBy WHERE DELETE_ID = @DeleteId";
     }
 }
@@ -589,7 +588,7 @@ public class SearchDebouncer : IDisposable
             _ => _callback(searchText),
             null,
             _delayMs,
-            Timeout.Infinite    
+            Timeout.Infinite
         );
     }
 

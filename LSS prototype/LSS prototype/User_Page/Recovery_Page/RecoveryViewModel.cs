@@ -19,7 +19,7 @@ namespace LSS_prototype.User_Page
     class RecoveryViewModel : INotifyPropertyChanged
     {
         // ── 상수 ──
-        private const int EXPIRE_HOURS = 72;    // 72시간 후 만료
+
         private const int PREVIEW_DELAY = 1000; // 미리보기 딜레이 1초
 
         // ── DB 원본 데이터 ──
@@ -250,7 +250,7 @@ namespace LSS_prototype.User_Page
                 {
                     if (DateTime.TryParse(log.DeletedAt, out DateTime deletedAt))
                     {
-                        DateTime expireAt = deletedAt.AddHours(EXPIRE_HOURS);
+                        DateTime expireAt = deletedAt.AddMinutes(Common.EXPIRE_MINUTE);
                         TimeSpan remain = expireAt - DateTime.Now;
 
                         if (remain.TotalSeconds <= 0)
@@ -723,7 +723,7 @@ namespace LSS_prototype.User_Page
             {
                 var targets = FilteredLogs?
                     .Where(x => x.IsChecked)
-                    .OrderBy(x => x.FileType == "PATIENT" ? 1 : 0) // ✅ PATIENT 무조건 맨 마지막 처리
+                    .OrderBy(x => x.FileType == "PATIENT" ? 1 : 0)
                     .ToList();
 
                 if (targets == null || targets.Count == 0)
@@ -732,7 +732,6 @@ namespace LSS_prototype.User_Page
                     return;
                 }
 
-                // ★ OTP 검증
                 var otpDialog = new ForceDeleteOTP();
                 bool passed = await otpDialog.ShowAsync();
                 if (!passed) return;
@@ -761,26 +760,25 @@ namespace LSS_prototype.User_Page
                                 await DeleteFileIfExists(log.DicomPath);
                                 break;
 
-                            // ✅ PATIENT 강제삭제
                             case "PATIENT":
-                                // 1. DELETE_LOG + PATIENT 테이블 트랜잭션
-                                //    PATIENT_CODE + PATIENT_NAME 100% 동일해야 삭제
                                 if (!db.ForceDeletePatientWithLog(log.DeleteId, log.PatientCode, log.PatientName))
                                     break;
 
-                                // 2. DICOM/VIDEO 폴더 삭제
-                                //    환자명_환자코드 조합으로 폴더 찾아서 완전 삭제
                                 string folderName = $"{log.PatientName}_{log.PatientCode}";
                                 string dicomPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DICOM", folderName);
                                 string videoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "VIDEO", folderName);
 
                                 if (Directory.Exists(dicomPath))
                                     Directory.Delete(dicomPath, recursive: true);
-
                                 if (Directory.Exists(videoPath))
                                     Directory.Delete(videoPath, recursive: true);
 
-                                // 3. 전체 리스트 새로고침
+                                // ✅ PATIENT 성공 시에만 세션 로그 기록
+                                Common.WriteSessionLog(
+                                    $"[FORCE DELETE] User:{Common.CurrentUserId} " +
+                                    $"Patient:{log.PatientName}({log.PatientCode}) " +
+                                    $"Type:PATIENT DeleteId:{log.DeleteId}");
+
                                 await LoadLogs();
                                 break;
                         }
@@ -789,10 +787,12 @@ namespace LSS_prototype.User_Page
                         if (log.FileType != "PATIENT")
                             db.UpdateForceDeleted(log.DeleteId);
 
-                        Common.WriteSessionLog(
-                            $"[FORCE DELETE] User:{Common.CurrentUserId} " +
-                            $"Patient:{log.PatientName}({log.PatientCode}) " +
-                            $"Type:{log.FileType} DeleteId:{log.DeleteId}");
+                        // ✅ 이슈 D 수정: PATIENT 세션 로그는 위 case 안에서 성공 시에만 기록
+                        if (log.FileType != "PATIENT")
+                            Common.WriteSessionLog(
+                                $"[FORCE DELETE] User:{Common.CurrentUserId} " +
+                                $"Patient:{log.PatientName}({log.PatientCode}) " +
+                                $"Type:{log.FileType} DeleteId:{log.DeleteId}");
 
                         // ✅ PATIENT 는 LoadLogs() 로 이미 전체 새로고침했으니 스킵
                         if (log.FileType != "PATIENT")

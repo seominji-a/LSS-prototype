@@ -29,6 +29,10 @@ namespace LSS_prototype
         public static string CurrentUserId = string.Empty;            // 현재 로그인한 ID 
         public static string MwlDescriptionFilter = string.Empty;       // 현재 MWL FILTER 값 
 
+        //파일 삭제 시간 
+        public static int EXPIRE_HOURS = 72;    // 72시간 후 만료 ( 쿼리문은 직접 바꿔줘야함 SELECT_EXPIRED_LOGS , 프로그램 실행 시 1회 동작 ) 
+        public static int EXPIRE_MINUTE = 3;    // 3분 후 만료 / 테스트용  ( 쿼리문은 직접 바꿔줘야함  SELECT_EXPIRED_LOGS) 
+
 
         public const int DB_VERSION = 59; // DB Version 
 
@@ -516,6 +520,9 @@ namespace LSS_prototype
         public const string RESTORE_PATIENT = "UPDATE PATIENT SET IS_DELETED = 'N' WHERE PATIENT_CODE = @PatientCode AND PATIENT_NAME = @PatientName";
         public const string DELETE_PATIENT_BY_CODE_AND_NAME = "DELETE FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND PATIENT_NAME = @PatientName";
         public const string FORCE_DELETE_RELATED_LOGS = "UPDATE DELETE_LOG SET IS_FORCE_DELETED = 'Y', FORCE_DELETED_AT = datetime('now', 'localtime'), FORCE_DELETED_BY = @ForceDeletedBy  WHERE PATIENT_CODE = @PatientCode AND PATIENT_NAME = @PatientName AND IS_FORCE_DELETED = 'N' AND FILE_TYPE != 'PATIENT'";
+
+        public const string SELECT_EXPIRED_LOGS = "SELECT * FROM DELETE_LOG WHERE DELETED_AT < datetime('now', 'localtime', '-3 minutes') AND IS_RECOVERED = 'N' AND IS_FORCE_DELETED = 'N'";
+        // 0323 현재 테스트라서 5분 지난 데이터를 삭제 되게끔처리 ( 이부분은 직접 바꿔야함 ( 쿼리문에 상수 추가불가 ) ) 
     }
 }
 

@@ -7,7 +7,7 @@ PRAGMA foreign_keys = ON;
 -- ================================================
 CREATE TABLE IF NOT EXISTS DB_VERSION (
     version INTEGER NOT NULL,
-    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    updated_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
 );
 
 -- ================================================
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS DEVICE
 (
     DEVICE_ID            BIGINT PRIMARY KEY,
     MANUFACTURE_SERIAL   VARCHAR(50) NOT NULL UNIQUE,
-    REG_DATE             TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    REG_DATE             TIMESTAMP   NOT NULL DEFAULT (datetime('now', 'localtime')),
     EXPIRE_DATE          TIMESTAMP   NULL
 );
 
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS USER
     ROLE_CODE      			CHAR(1)       NOT NULL,
     USER_NAME      			VARCHAR(100)  NOT NULL,
     USER_ROLE      			VARCHAR(50)   NOT NULL,
-    REG_DATE       			TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    REG_DATE       			TIMESTAMP     NOT NULL DEFAULT (datetime('now', 'localtime')),
 	PASSWORD_CHANGED_AT 	TEXT,
 
     FOREIGN KEY (DEVICE_ID)
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS PATIENT (
     PATIENT_NAME VARCHAR(50) NOT NULL,
     BIRTH_DATE DATE NOT NULL,
     SEX CHAR(1) NOT NULL,
-    REG_DATE TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    REG_DATE TIMESTAMP NOT NULL DEFAULT (datetime('now', 'localtime')),
     LASTSHOOTDATE DATE,
     SHOTNUM INTEGER NOT NULL DEFAULT 0,
     -- 사용자 삭제는 즉시 DELETE하지않고, IS_DELETED 컬럼을 이용해 판단 
@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS STUDY (
     --DB에 데이터가 저장된 시간(시스템 이벤트 시간)
     --로컬 DB INSERT 시간
     --IMPORT 시점/SYNC 시점
-    CREATED_AT           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CREATED_AT           TIMESTAMP DEFAULT (datetime('now', 'localtime')),
 
     FOREIGN KEY (PATIENT_ID) 
     REFERENCES PATIENT (PATIENT_ID)

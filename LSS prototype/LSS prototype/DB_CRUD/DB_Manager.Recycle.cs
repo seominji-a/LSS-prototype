@@ -28,7 +28,36 @@ namespace LSS_prototype.DB_CRUD
                 }
             }
         }
-
+        /// <summary>
+        /// 만료기한이 지난, 데이터 삭제
+        /// </summary>
+        /// <returns></returns>
+        public List<RecoveryModel> GetExpiredLogs()
+        {
+            var list = new List<RecoveryModel>();
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.SELECT_EXPIRED_LOGS, conn))
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        list.Add(new RecoveryModel
+                        {
+                            DeleteId = Convert.ToInt32(reader["DELETE_ID"]),
+                            FileType = reader["FILE_TYPE"].ToString(),
+                            ImagePath = reader["IMAGE_PATH"] == DBNull.Value ? null : reader["IMAGE_PATH"].ToString(),
+                            AviPath = reader["AVI_PATH"] == DBNull.Value ? null : reader["AVI_PATH"].ToString(),
+                            DicomPath = reader["DICOM_PATH"] == DBNull.Value ? null : reader["DICOM_PATH"].ToString(),
+                            PatientCode = Convert.ToInt32(reader["PATIENT_CODE"]),
+                            PatientName = reader["PATIENT_NAME"].ToString(),
+                        });
+                    }
+                }
+            }
+            return list;
+        }
         public bool InsertNormalVideoDeleteLog(string aviPath, int patientCode, string patientName)
         {
             using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
@@ -96,13 +125,23 @@ namespace LSS_prototype.DB_CRUD
                         using (var cmd = new SQLiteCommand(Query.DELETE_PATIENT_BY_CODE_AND_NAME, conn, transaction))
                         {
                             cmd.Parameters.AddWithValue("@PatientCode", patientCode);
-                            cmd.Parameters.AddWithValue("@PatientName", patientName); //  이름까지 100% 동일해야 삭제 ( 환자코드가 같지만, 사용자가 병합안했을 경우 대비 ,
-                                                                                      //  if 동일한 환자코드 환자 이름이 존재하면 ? -> 애초에 윈도우 파일 자체에 중복된 파일이 생성이 안되므로 해당 케이스는 고려 X ) 0323 박한용
+                            cmd.Parameters.AddWithValue("@PatientName", patientName);
                             if (cmd.ExecuteNonQuery() <= 0)
                             {
                                 transaction.Rollback();
                                 return false;
                             }
+                        }
+
+                        // ✅ 이슈 G 수정: 같은 환자의 IMAGE/VIDEO 행도 IS_FORCE_DELETED = 'Y' 로 업데이트
+                        // PATIENT 강제삭제 시 폴더째 삭제되므로 DELETE_LOG 이력도 동일하게 맞춰줌
+                        // 관련 행 없어도 괜찮으니 결과 체크 안함
+                        using (var cmd = new SQLiteCommand(Query.FORCE_DELETE_RELATED_LOGS, conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@PatientCode", patientCode);
+                            cmd.Parameters.AddWithValue("@PatientName", patientName);
+                            cmd.Parameters.AddWithValue("@ForceDeletedBy", Common.CurrentUserId);
+                            cmd.ExecuteNonQuery();
                         }
 
                         transaction.Commit();

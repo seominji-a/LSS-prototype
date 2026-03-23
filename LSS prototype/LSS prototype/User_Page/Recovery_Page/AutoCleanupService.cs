@@ -21,6 +21,9 @@ namespace LSS_prototype
                 {
                     var db = new DB_Manager();
 
+                    // ✅ 3년 이상 지난 로그 먼저 정리 ( 3년이란 기준은 병원마다 상이하므로 배포할 때, 맞춰서 배포할 것 ) 
+                    db.CleanupOldDeleteLogs();
+
                     // 5분 지났고 복구/강제삭제 안된 행 조회
                     var expiredLogs = db.GetExpiredLogs();
 

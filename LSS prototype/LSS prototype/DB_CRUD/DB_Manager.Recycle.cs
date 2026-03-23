@@ -156,6 +156,20 @@ namespace LSS_prototype.DB_CRUD
             }
         }
 
+
+        /// <summary>
+        /// 3년 이상 지난 delete_log 행 삭제 
+        /// </summary>
+        public void CleanupOldDeleteLogs()
+        {
+            using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.DELETE_OLD_LOGS, conn))
+                    cmd.ExecuteNonQuery();
+            }
+        }
+
         public List<RecoveryModel> GetDeleteLogs()
         {
             var list = new List<RecoveryModel>();

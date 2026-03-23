@@ -100,7 +100,7 @@ namespace LSS_prototype.DB_CRUD
         /// <param name="patientCode"></param>
         /// <param name="patientName"></param>
         /// <returns></returns>
-        public bool ForceDeletePatientWithLog(int deleteId, int patientCode, string patientName)
+        public bool ForceDeletePatientWithLog(int deleteId, int patientCode, string patientName, string deletedBy = null)
         {
             using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
             {
@@ -113,7 +113,7 @@ namespace LSS_prototype.DB_CRUD
                         using (var cmd = new SQLiteCommand(Query.UPDATE_FORCE_DELETED, conn, transaction))
                         {
                             cmd.Parameters.AddWithValue("@DeleteId", deleteId);
-                            cmd.Parameters.AddWithValue("@ForceDeletedBy", Common.CurrentUserId);
+                            cmd.Parameters.AddWithValue("@ForceDeletedBy", deletedBy ?? Common.CurrentUserId); // 
                             if (cmd.ExecuteNonQuery() <= 0)
                             {
                                 transaction.Rollback();
@@ -140,7 +140,7 @@ namespace LSS_prototype.DB_CRUD
                         {
                             cmd.Parameters.AddWithValue("@PatientCode", patientCode);
                             cmd.Parameters.AddWithValue("@PatientName", patientName);
-                            cmd.Parameters.AddWithValue("@ForceDeletedBy", Common.CurrentUserId);
+                            cmd.Parameters.AddWithValue("@ForceDeletedBy", deletedBy ?? Common.CurrentUserId);
                             cmd.ExecuteNonQuery();
                         }
 
@@ -182,6 +182,7 @@ namespace LSS_prototype.DB_CRUD
                             IsRecovered = reader["IS_RECOVERED"].ToString(),
                             RecoveredAt = reader["RECOVERED_AT"] == DBNull.Value ? null : reader["RECOVERED_AT"].ToString(),
                             IsForceDeleted = reader["IS_FORCE_DELETED"].ToString(),
+                            ForceDeletedBy = reader["FORCE_DELETED_BY"] == DBNull.Value ? null : reader["FORCE_DELETED_BY"].ToString(), 
                             PatientDeleted = reader["PATIENT_DELETED"].ToString(),
                         }); ;
                     }
@@ -294,7 +295,7 @@ namespace LSS_prototype.DB_CRUD
         // IS_FORCE_DELETED = Y, FORCE_DELETED_AT = 현재시간
         // DELETE_ID 기준으로 단 1건만 업데이트
         // ================================================
-        public bool UpdateForceDeleted(int deleteId)
+        public bool UpdateForceDeleted(int deleteId, string deletedBy = null)
         {
             using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
             {
@@ -302,7 +303,7 @@ namespace LSS_prototype.DB_CRUD
                 using (var cmd = new SQLiteCommand(Query.UPDATE_FORCE_DELETED, conn))
                 {
                     cmd.Parameters.AddWithValue("@DeleteId", deleteId);
-                    cmd.Parameters.AddWithValue("@ForceDeletedBy", Common.CurrentUserId);
+                    cmd.Parameters.AddWithValue("@ForceDeletedBy", deletedBy ?? Common.CurrentUserId); // system으로 삭제된 경우를 커버하기 위해 
                     return cmd.ExecuteNonQuery() > 0;
                 }
             }

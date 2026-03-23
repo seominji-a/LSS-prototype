@@ -45,14 +45,14 @@ namespace LSS_prototype
                                     // 연결된 isf 파일도 삭제
                                     DeleteIsfFile(log.ImagePath);
                                     // DELETE_LOG IS_FORCE_DELETED = 'Y' 업데이트
-                                    db.UpdateForceDeleted(log.DeleteId);
+                                    db.UpdateForceDeleted(log.DeleteId, "SYSTEM"); 
                                     break;
 
                                 case "NORMAL_VIDEO":
                                     // Del_ 붙은 avi 파일 삭제
                                     DeleteFileIfExists(log.AviPath);
                                     // DELETE_LOG IS_FORCE_DELETED = 'Y' 업데이트
-                                    db.UpdateForceDeleted(log.DeleteId);
+                                    db.UpdateForceDeleted(log.DeleteId, "SYSTEM"); 
                                     break;
 
                                 case "DICOM_VIDEO":
@@ -60,7 +60,8 @@ namespace LSS_prototype
                                     DeleteFileIfExists(log.AviPath);
                                     DeleteFileIfExists(log.DicomPath);
                                     // DELETE_LOG IS_FORCE_DELETED = 'Y' 업데이트
-                                    db.UpdateForceDeleted(log.DeleteId);
+
+                                    db.UpdateForceDeleted(log.DeleteId, "SYSTEM");
                                     break;
 
                                 case "PATIENT":
@@ -71,7 +72,8 @@ namespace LSS_prototype
                                     if (!db.ForceDeletePatientWithLog(
                                         log.DeleteId,
                                         log.PatientCode,
-                                        log.PatientName))
+                                        log.PatientName,
+                                        "SYSTEM"))
                                         break; // 실패 시 세션로그 스킵하고 다음 항목으로
 
                                     // 환자명_환자코드 조합으로 폴더 찾아서 완전 삭제

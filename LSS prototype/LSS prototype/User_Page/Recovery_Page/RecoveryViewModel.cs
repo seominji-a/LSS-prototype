@@ -52,7 +52,7 @@ namespace LSS_prototype.User_Page
         // ── 필터 콤보박스 항목 ──
         public List<string> FilterOptions { get; } = new List<string>
         {
-            "ALL", "IMAGE", "DICOM_VIDEO", "NORMAL_VIDEO"
+            "ALL", "IMAGE", "DICOM_VIDEO", "NORMAL_VIDEO","PATIENT"
         };
 
         // ── 화면에 표시되는 필터링된 목록 ──
@@ -265,9 +265,14 @@ namespace LSS_prototype.User_Page
                         }
                     }
 
-                    if (log.IsRecovered == "Y") log.RemainText = "복구처리";
-                    if (log.IsForceDeleted == "Y") log.RemainText = "강제삭제";
-                    if (log.PatientDeleted == "Y" && log.FileType != "PATIENT") log.RemainText = "환자 삭제";
+                    if (log.PatientDeleted == "Y" && log.FileType != "PATIENT")
+                        log.RemainText = "환자 삭제";
+                    else if (log.IsForceDeleted == "Y" && log.ForceDeletedBy == "SYSTEM")
+                        log.RemainText = "기한만료";
+                    else if (log.IsForceDeleted == "Y")
+                        log.RemainText = "강제삭제";
+                    else if (log.IsRecovered == "Y")
+                        log.RemainText = "복구처리";
 
                     log.IsChecked = false;
                 }

@@ -26,6 +26,13 @@
         set { _isForceDeleted = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsCheckable)); }
     }
 
+    private string _forceDeletedBy;
+    public string ForceDeletedBy
+    {
+        get => _forceDeletedBy;
+        set { _forceDeletedBy = value; OnPropertyChanged(); }
+    }
+
     private string _remainText;
     public string RemainText
     {

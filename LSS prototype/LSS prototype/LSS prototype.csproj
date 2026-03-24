@@ -509,6 +509,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="ImageComment_Page\Comment.md" />
     <None Include="Login_Page\Login.md" />
     <None Include="LSS prototype_TemporaryKey.pfx" />
     <None Include="packages.config" />

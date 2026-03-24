@@ -83,11 +83,14 @@ namespace LSS_prototype
                                     string folderName = $"{log.PatientName}_{log.PatientCode}";
                                     string dicomPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DICOM", folderName);
                                     string videoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "VIDEO", folderName);
+                                    string isfPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ISF", folderName);
 
                                     if (Directory.Exists(dicomPath))
                                         Directory.Delete(dicomPath, recursive: true);
                                     if (Directory.Exists(videoPath))
                                         Directory.Delete(videoPath, recursive: true);
+                                    if (Directory.Exists(isfPath)) 
+                                        Directory.Delete(isfPath, recursive: true);
                                     break;
                             }
 

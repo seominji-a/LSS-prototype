@@ -31,7 +31,7 @@
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
     <InstallUrl>http://192.168.1.35:8080/</InstallUrl>
-    <ApplicationRevision>33</ApplicationRevision>
+    <ApplicationRevision>34</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -546,6 +546,7 @@
     <None Include="Scan_Page\Scandatatotal.md" />
     <None Include="Scan_Page\ScanFlow.md" />
     <None Include="Scan_Page\ScanTable.md" />
+    <None Include="User_Page\Recovery_Page\recovery.md" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

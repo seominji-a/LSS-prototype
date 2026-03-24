@@ -1043,8 +1043,6 @@ namespace LSS_prototype.Patient_Page
 
                     if (repo.SoftDeletePatientWithLog(SelectedPatient.PatientId,SelectedPatient.PatientCode,SelectedPatient.PatientName))
                     {
-                        await DeletePatientFilesAsync(SelectedPatient);
-
                         await CustomMessageWindow.ShowAsync("삭제되었습니다.",
                             CustomMessageWindow.MessageBoxType.Ok, 1,
                             CustomMessageWindow.MessageIconType.Info);

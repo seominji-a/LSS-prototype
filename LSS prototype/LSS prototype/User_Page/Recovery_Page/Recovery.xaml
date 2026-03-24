@@ -149,6 +149,8 @@
             <Setter Property="Height"           Value="62"/>
             <Setter Property="Foreground"       Value="{StaticResource TextDark}"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <!-- IsCheckable=False인 행은 선택 자체를 막음 -->
+            <Setter Property="IsEnabled"        Value="{Binding IsCheckable}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListViewItem">
@@ -161,13 +163,6 @@
                                     Margin="0,2">
                                 <GridViewRowPresenter VerticalAlignment="Center"/>
                             </Border>
-                            <!-- 만료 빨간 줄 -->
-                            <Border x:Name="ExpiredLine"
-                                    Height="1" Margin="0,2"
-                                    Background="#72E24B4A"
-                                    VerticalAlignment="Center"
-                                    Visibility="Collapsed"
-                                    IsHitTestVisible="False"/>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsSelected" Value="True">
@@ -178,45 +173,16 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="RowBorder" Property="BorderBrush" Value="{StaticResource PrimaryFade}"/>
                             </Trigger>
-                            <DataTrigger Binding="{Binding IsExpired}" Value="True">
-                                <Setter TargetName="ExpiredLine" Property="Visibility" Value="Visible"/>
+                            <!-- IsEnabled=False (IsCheckable=False) 인 행 공통 스타일 -->
+                            <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Cursor"  Value="Arrow"/>
                                 <Setter Property="Opacity" Value="0.6"/>
-                            </DataTrigger>
+                            </Trigger>
+                            <!-- 강제삭제/만료삭제 → 빨간 배경 추가 -->
                             <DataTrigger Binding="{Binding IsForceDeleted}" Value="Y">
                                 <Setter TargetName="RowBorder" Property="Background"  Value="#40E24B4A"/>
                                 <Setter TargetName="RowBorder" Property="BorderBrush" Value="#80E24B4A"/>
-                                <Setter Property="Cursor"  Value="Arrow"/>
-                                <Setter Property="Opacity" Value="0.85"/>
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding IsRecovered}" Value="Y">
-                                <Setter Property="Opacity" Value="0.5"/>
-                                <Setter Property="Cursor"  Value="Arrow"/>
-                            </DataTrigger>
-                            <MultiDataTrigger>
-                                <MultiDataTrigger.Conditions>
-                                    <Condition Binding="{Binding PatientDeleted}" Value="Y"/>
-                                    <Condition Binding="{Binding FileType}" Value="IMAGE"/>
-                                </MultiDataTrigger.Conditions>
-                                <Setter Property="Opacity" Value="0.4"/>
-                                <Setter Property="Cursor"  Value="Arrow"/>
-                            </MultiDataTrigger>
-                            <MultiDataTrigger>
-                                <MultiDataTrigger.Conditions>
-                                    <Condition Binding="{Binding PatientDeleted}" Value="Y"/>
-                                    <Condition Binding="{Binding FileType}" Value="DICOM_VIDEO"/>
-                                </MultiDataTrigger.Conditions>
-                                <Setter Property="Opacity" Value="0.4"/>
-                                <Setter Property="Cursor"  Value="Arrow"/>
-                            </MultiDataTrigger>
-                            <MultiDataTrigger>
-                                <MultiDataTrigger.Conditions>
-                                    <Condition Binding="{Binding PatientDeleted}" Value="Y"/>
-                                    <Condition Binding="{Binding FileType}" Value="NORMAL_VIDEO"/>
-                                </MultiDataTrigger.Conditions>
-                                <Setter Property="Opacity" Value="0.4"/>
-                                <Setter Property="Cursor"  Value="Arrow"/>
-                            </MultiDataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -227,9 +193,11 @@
 
         <!-- ★ 체크박스 셀 -->
         <DataTemplate x:Key="CheckBoxCell">
-            <CheckBox IsChecked="{Binding IsChecked, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsCheckable}"
-                      HorizontalAlignment="Center" VerticalAlignment="Center"
-                      Cursor="Hand" Width="48" Height="48">
+            <CheckBox IsChecked="{Binding IsChecked, UpdateSourceTrigger=PropertyChanged}"
+              IsEnabled="{Binding IsCheckable}"
+              Visibility="{Binding IsCheckable, Converter={StaticResource BoolToVisibilityConverter}}"
+              HorizontalAlignment="Center" VerticalAlignment="Center"
+              Cursor="Hand" Width="48" Height="48">
                 <CheckBox.Template>
                     <ControlTemplate TargetType="CheckBox">
                         <Border x:Name="Bd"
@@ -693,15 +661,13 @@
                                 Margin="0,8,0,0" HorizontalAlignment="Center"/>
                     </StackPanel>
 
-
-
                     <!-- 복구 버튼 -->
                     <Button Style="{StaticResource RecoverBtn}"
                             Content="복구"
                             Command="{Binding RecoverCommand}"
                             Margin="0,0,0,0"/>
 
-                    <!-- 복구 버튼 -->
+                    <!-- 즉시 삭제 버튼 -->
                     <Button Style="{StaticResource RecoverBtn}"
                             Background="Red"
                             Content="즉시 삭제"

@@ -772,11 +772,16 @@ namespace LSS_prototype.User_Page
                                 string folderName = $"{log.PatientName}_{log.PatientCode}";
                                 string dicomPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DICOM", folderName);
                                 string videoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "VIDEO", folderName);
+                                string isfPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ISF", folderName); 
 
                                 if (Directory.Exists(dicomPath))
                                     Directory.Delete(dicomPath, recursive: true);
+
                                 if (Directory.Exists(videoPath))
                                     Directory.Delete(videoPath, recursive: true);
+
+                                if (Directory.Exists(isfPath)) 
+                                    Directory.Delete(isfPath, recursive: true);
 
                                 // ✅ PATIENT 성공 시에만 세션 로그 기록
                                 Common.WriteSessionLog(

@@ -523,6 +523,7 @@ namespace LSS_prototype
 
         public const string SELECT_EXPIRED_LOGS = "SELECT * FROM DELETE_LOG WHERE DELETED_AT < datetime('now', 'localtime', '-3 minutes') AND IS_RECOVERED = 'N' AND IS_FORCE_DELETED = 'N'";
         // 0323 현재 테스트라서 5분 지난 데이터를 삭제 되게끔처리 ( 이부분은 직접 바꿔야함 ( 쿼리문에 상수 추가불가 ) ) 
+        public const string DELETE_OLD_LOGS = "DELETE FROM DELETE_LOG WHERE DELETED_AT < date('now', 'localtime', '-3 years')";
     }
 }
 

@@ -1,6 +1,7 @@
 ﻿using LSS_prototype.DB_CRUD;
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -190,9 +191,55 @@ namespace LSS_prototype.Patient_Page
             {
                 var repo = new DB_Manager();
 
-                // 실제 변경사항이 있을 때만 DB 업데이트
                 if (IsDirty())
                 {
+                    // 현재 DB 전체 조회
+                    var locals = repo.GetLocalPatients();
+                    var emrs = repo.GetEmrPatients();
+
+                    var allPatients = locals.Concat(emrs);
+
+                    // 자기 자신 제외하고 같은 코드 찾기
+                    var duplicated = allPatients
+                        .FirstOrDefault(x => x.PatientCode == this.PatientCode
+                                          && x.PatientId != this.Patient_id);
+
+                    if (duplicated != null)
+                    {
+                        bool sameDetail =
+                            duplicated.BirthDate.Date == this.BirthDate.Value.Date &&
+                            string.Equals((duplicated.Sex ?? "").Trim(),
+                                          (this.Sex ?? "").Trim(),
+                                          StringComparison.OrdinalIgnoreCase);
+
+                        // 1. 완전 동일 → 병합 대상
+                        if (sameDetail)
+                        {
+                            await CustomMessageWindow.ShowAsync(
+                                "동일한 환자번호가 이미 존재합니다.\n" +
+                                "생년월일과 성별이 일치하여 병합 대상입니다.\n\n" +
+                                "수정으로 중복 생성할 수 없습니다.\n" +
+                                "병합을 진행해주세요.",
+                                CustomMessageWindow.MessageBoxType.Ok,
+                                0,
+                                CustomMessageWindow.MessageIconType.Warning);
+
+                            return;
+                        }
+
+                        //  2. 코드만 동일 → 완전 차단
+                        await CustomMessageWindow.ShowAsync(
+                            "이미 사용 중인 환자번호입니다.\n" +
+                            "동일한 환자번호로 수정할 수 없습니다.\n"+
+                            "환자 번호를 확인해주세요.",
+                            CustomMessageWindow.MessageBoxType.Ok,
+                            0,
+                            CustomMessageWindow.MessageIconType.Warning);
+
+                        return;
+                    }
+
+                    // 중복 없으면 저장
                     var model = new PatientModel
                     {
                         PatientId = this.Patient_id,
@@ -219,7 +266,6 @@ namespace LSS_prototype.Patient_Page
                 }
                 else if (CanMergeWithoutEdit)
                 {
-                    // 수정 없이 병합만 진행할 수 있도록 true 반환
                     CloseAction?.Invoke(true);
                 }
             }

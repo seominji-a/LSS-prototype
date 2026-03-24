@@ -175,7 +175,7 @@ namespace LSS_prototype.Patient_Page
 
             NavScanCommand = new RelayCommand(NavScan);
             // 0227 박한용 아래코드는 데이터 관련 처리 완료 후 주석 풀고 연동 예정 
-            //NavImageReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new ImageReview_Page.ImageReview()));
+            NavImageReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new ImageReview_Page.ImageReview()));
             //NavVideoReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new VideoReview_Page.VideoReview()));
             _searchDebouncer = new SearchDebouncer(async keyword => await ExecuteSearch(keyword), delayMs: 500);
             _ = EmrSync(_cts.Token); // task 무시하기위해 _ = 사용 (별의미 X )
@@ -475,9 +475,13 @@ namespace LSS_prototype.Patient_Page
                         }
 
                         // 2) 기존 동일 환자가 아니면 신규 환자로 등록
-                        bool isEmr =
-                            group.IsEmrPatient ||
-                            group.SourceType == (int)PatientSourceType.ESync;
+                        bool isLocal =
+                            string.IsNullOrWhiteSpace(group.AccessionNumber) &&
+                            !group.IsEmrPatient &&
+                            group.Source != PatientSource.ESync &&
+                            group.SourceType != (int)PatientSourceType.ESync;
+
+                        bool isEmr = !isLocal;
 
                         plans.Add(new ImportPlan
                         {
@@ -1007,10 +1011,7 @@ namespace LSS_prototype.Patient_Page
 
             var result = await _dialogService.ShowDialogAsync(vm);
 
-            if (result == true)
-            {
-                HandleLocalEditConflictAfterSave(originalLocal);
-            }
+          
         }
 
         private async Task DeletePatient()
@@ -1124,7 +1125,7 @@ namespace LSS_prototype.Patient_Page
                 }
 
                 // DCM 기준 환자 그룹 생성
-                bool forceEsyncImport = true;
+                bool forceEsyncImport = false;
                 List<PatientModel> patientGroups = null;
 
                 try

@@ -34,7 +34,7 @@ namespace LSS_prototype
         public static int EXPIRE_MINUTE = 3;    // 3분 후 만료 / 테스트용  ( 쿼리문은 직접 바꿔줘야함  SELECT_EXPIRED_LOGS) 
 
 
-        public const int DB_VERSION = 59; // DB Version 
+        public const int DB_VERSION = 60; // DB Version 
 
         // ===== OTP 기능  =====
         public async static Task<bool> VerifyMasterOtp(string inputId, string inputOtp) => await OtpService.VerifyMasterOtp(inputId, inputOtp);

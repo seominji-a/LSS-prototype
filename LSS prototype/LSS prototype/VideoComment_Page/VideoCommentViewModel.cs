@@ -1,4 +1,5 @@
-﻿using LSS_prototype.DB_CRUD;
+﻿using FellowOakDicom;
+using LSS_prototype.DB_CRUD;
 using LSS_prototype.Patient_Page;
 using System;
 using System.Collections.Generic;
@@ -17,17 +18,12 @@ namespace LSS_prototype.VideoComment_Page
         // ═══════════════════════════════════════════
         //  경로
         //  VIDEO/박한용_2634/20250313/202503130001/*.avi
-        //  Del_ 파일 제외, 번호순 정렬 → 촬영 순서 보장
         // ═══════════════════════════════════════════
         private string VideoDir => Path.Combine(
             Common.executablePath, "VIDEO",
             $"{_patient.PatientName}_{_patient.PatientCode}",
             _studyId.Substring(0, 8),
             _studyId);
-
-        // ── 환자 / StudyID ──
-        public PatientModel Patient { get; }
-        public string StudyId { get; }
 
         private readonly PatientModel _patient;
         private readonly string _studyId;
@@ -41,11 +37,9 @@ namespace LSS_prototype.VideoComment_Page
         private readonly string[] _slowLabels = { "1x", "x0.5", "x0.25", "x0.16" };
         private readonly double[] _fastSteps = { 1.0, 2.0, 4.0, 6.0 };
         private readonly string[] _fastLabels = { "1x", "x2", "x4", "x6" };
-
         private int _slowIndex = 0;
         private int _fastIndex = 0;
 
-        // ── 배속 표시 색상 ──
         private static readonly SolidColorBrush SpeedNormalBrush =
             new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFFFFF"));
         private static readonly SolidColorBrush SpeedSlowBrush =
@@ -58,12 +52,19 @@ namespace LSS_prototype.VideoComment_Page
         private Action _seekForwardAction;
         private Action _playPauseAction;
 
-        // ── 화면 이동 요청 이벤트 ──
+        // ── 이벤트 ──
         public event Action RequestNavigateToScan;
+        public event Action RequestSave;
+
+        // ═══════════════════════════════════════════
+        //  변경 감지 플래그
+        //  IsCommentDirty → CommentText setter에서 자동 세팅
+        //  페이지 이동/나가기 시 저장 팝업 여부 판단
+        // ═══════════════════════════════════════════
+        public bool IsCommentDirty { get; private set; } = false;
 
         #region 바인딩 프로퍼티
 
-        // xaml.cs PropertyChanged 감지 → MediaElement.Source 변경 + 자동 재생
         private string _currentVideoPath;
         public string CurrentVideoPath
         {
@@ -71,7 +72,6 @@ namespace LSS_prototype.VideoComment_Page
             private set { _currentVideoPath = value; OnPropertyChanged(); }
         }
 
-        // 파일명 변경 시 VideoType 자동 결정
         private string _currentFileName;
         public string CurrentFileName
         {
@@ -86,7 +86,6 @@ namespace LSS_prototype.VideoComment_Page
             }
         }
 
-        // 현재 몇 번째 / 전체 몇 개 (Del_ 제외 목록 기준)
         private string _pageIndicator;
         public string PageIndicator
         {
@@ -111,11 +110,20 @@ namespace LSS_prototype.VideoComment_Page
             set { _selectedAnatomical = value; OnPropertyChanged(); }
         }
 
+        // CommentText: setter에서 IsCommentDirty 자동 세팅
+        // ★ UpdateCurrentFile / Reset 에서는 필드 직접 할당 후 OnPropertyChanged
+        //   → setter 통하면 IsCommentDirty=true 되므로 반드시 이 방식 사용
         private string _commentText;
         public string CommentText
         {
             get => _commentText;
-            set { _commentText = value; OnPropertyChanged(); }
+            set
+            {
+                if (_commentText == value) return;
+                _commentText = value;
+                OnPropertyChanged();
+                IsCommentDirty = true;
+            }
         }
 
         private string _speedLabel = "1x";
@@ -132,7 +140,6 @@ namespace LSS_prototype.VideoComment_Page
             private set { _speedLabelColor = value; OnPropertyChanged(); }
         }
 
-        // xaml.cs PropertyChanged 감지 → MediaElement.SpeedRatio 적용
         private double _currentSpeedRatio = 1.0;
         public double CurrentSpeedRatio
         {
@@ -154,12 +161,16 @@ namespace LSS_prototype.VideoComment_Page
             private set { _videoType = value; OnPropertyChanged(); }
         }
 
+        public PatientModel Patient { get; }
+        public string StudyId { get; }
+
         #endregion
 
         #region 커맨드
 
         public ICommand VideoDeleteCommand { get; }
-        public ICommand CommentSaveCommand { get; }
+        public ICommand SaveCommand { get; }
+        public ICommand ResetCommand { get; }
         public ICommand ExitCommand { get; }
         public ICommand SlowerCommand { get; }
         public ICommand FasterCommand { get; }
@@ -180,7 +191,6 @@ namespace LSS_prototype.VideoComment_Page
             StudyId = studyId;
 
             VideoDeleteCommand = new RelayCommand(async _ => await ExecuteVideoDelete());
-            CommentSaveCommand = new RelayCommand(async _ => await ExecuteCommentSave());
             ExitCommand = new RelayCommand(async _ => await Common.ExcuteExit());
             SlowerCommand = new RelayCommand(async _ => await ExecuteSlower());
             FasterCommand = new RelayCommand(async _ => await ExecuteFaster());
@@ -188,17 +198,21 @@ namespace LSS_prototype.VideoComment_Page
             SeekForwardCommand = new RelayCommand(_ => _seekForwardAction?.Invoke());
             PlayPauseCommand = new RelayCommand(_ => _playPauseAction?.Invoke());
             NavigateBackCommand = new RelayCommand(async _ => await ExecuteNavigateBack());
+            ResetCommand = new RelayCommand(_ => Reset());
+
+            // SAVE: ConfirmSaveAll(팝업) → Yes면 RequestSave 이벤트 발생
+            // → 코드비하인드에서 SaveComment 호출
+            SaveCommand = new AsyncRelayCommand(async _ =>
+            {
+                bool save = await ConfirmSaveAll();
+                if (save) RequestSave?.Invoke();
+            });
         }
 
         #endregion
 
         #region MediaElement Action 주입
 
-        // ═══════════════════════════════════════════
-        //  MediaElement 조작 Action 주입
-        //  ViewModel 이 MediaElement 를 직접 참조하지 않기 위해 Action 으로 분리
-        //  xaml.cs OnLoaded 에서 호출
-        // ═══════════════════════════════════════════
         public void SetMediaActions(Action seekBack, Action seekForward, Action playPause)
         {
             _seekBackAction = seekBack;
@@ -208,20 +222,54 @@ namespace LSS_prototype.VideoComment_Page
 
         #endregion
 
-        #region 초기화
+        #region 저장 여부 확인 팝업 (통합)
 
         // ═══════════════════════════════════════════
-        //  초기화 - VIDEO/ 폴더에서 AVI 파일 목록 수집
-        //  Del_ 파일 제외 + 번호순 정렬
-        //  xaml.cs Loaded 에서 호출
+        //  저장 여부 확인 팝업
+        //  페이지 이동 / 나가기 / SAVE 버튼 공통 사용
+        //  ImageComment의 ConfirmSaveAll과 동일한 패턴
         // ═══════════════════════════════════════════
+        public async Task<bool> ConfirmSaveAll()
+        {
+            try
+            {
+                var result = await CustomMessageWindow.ShowAsync(
+                    "코멘트를 저장하시겠습니까?",
+                    CustomMessageWindow.MessageBoxType.YesNo,
+                    icon: CustomMessageWindow.MessageIconType.Warning);
+
+                return result == CustomMessageWindow.MessageBoxResult.Yes;
+            }
+            catch (Exception ex)
+            {
+                await Common.WriteLog(ex);
+                return false;
+            }
+        }
+
+        #endregion
+
+        #region 플래그 리셋
+
+        public void ResetDirty()
+        {
+            IsCommentDirty = false;
+        }
+
+        #endregion
+
+        #region 초기화
+
         public async Task<bool> Initialize()
         {
             try
             {
                 if (!Directory.Exists(VideoDir))
                 {
-                    await CustomMessageWindow.ShowAsync("재생할 영상 파일이 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync(
+                        "재생할 영상 파일이 없습니다.",
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
                     return false;
                 }
 
@@ -232,12 +280,15 @@ namespace LSS_prototype.VideoComment_Page
 
                 if (_videoFiles.Count == 0)
                 {
-                    await CustomMessageWindow.ShowAsync("재생할 영상 파일이 없습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync(
+                        "재생할 영상 파일이 없습니다.",
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
                     return false;
                 }
 
                 _currentIndex = _videoFiles.Count - 1;
-                UpdateCurrentFile();
+                await UpdateCurrentFile();
                 return true;
             }
             catch (Exception ex) { await Common.WriteLog(ex); return false; }
@@ -245,81 +296,179 @@ namespace LSS_prototype.VideoComment_Page
 
         #endregion
 
-        #region 파일 이동
+        #region 페이지 이동
 
         // ═══════════════════════════════════════════
-        //  이전 파일 이동
+        //  이동 가능 여부 (ImageComment의 CanNavigate와 동일한 패턴)
+        //  false면 코드비하인드에서 저장 팝업 없이 바로 리턴
         // ═══════════════════════════════════════════
+        public bool CanNavigate(bool goNext)
+        {
+            int target = goNext ? _currentIndex + 1 : _currentIndex - 1;
+            return target >= 0 && target < _videoFiles.Count;
+        }
+
         public async Task<bool> MovePrev()
         {
             try
             {
-                if (_currentIndex <= 0)
-                {
-                    await CustomMessageWindow.ShowAsync("첫 번째 영상입니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Info);
-                    return false;
-                }
-
+                if (_currentIndex <= 0) return false;
                 _currentIndex--;
-                UpdateCurrentFile();
+                await UpdateCurrentFile();
                 return true;
             }
             catch (Exception ex) { await Common.WriteLog(ex); return false; }
         }
 
-        // ═══════════════════════════════════════════
-        //  다음 파일 이동
-        // ═══════════════════════════════════════════
         public async Task<bool> MoveNext()
         {
             try
             {
-                if (_currentIndex >= _videoFiles.Count - 1)
-                {
-                    await CustomMessageWindow.ShowAsync("마지막 영상입니다.",
-                        CustomMessageWindow.MessageBoxType.Ok, 1,
-                        CustomMessageWindow.MessageIconType.Info);
-                    return false;
-                }
-
+                if (_currentIndex >= _videoFiles.Count - 1) return false;
                 _currentIndex++;
-                UpdateCurrentFile();
+                await UpdateCurrentFile ();
                 return true;
             }
             catch (Exception ex) { await Common.WriteLog(ex); return false; }
         }
 
         // ═══════════════════════════════════════════
-        //  CurrentVideoPath / FileName 갱신
-        //  CurrentVideoPath 변경 → xaml.cs 트리거 → MediaElement 자동 재생
+        //  현재 파일 갱신 + 코멘트 로드
+        //
+        //  CommentText 로드 시 필드 직접 할당 후 OnPropertyChanged
+        //  → setter 통하면 IsCommentDirty=true 되므로 반드시 이 방식 사용
+        //
+        //  DICOM_VIDEO → dcm 태그에서 로드
+        //  NORMAL_VIDEO → COMMENT TB에서 로드
         // ═══════════════════════════════════════════
-        private void UpdateCurrentFile()
+        private async Task UpdateCurrentFile()
         {
             if (_videoFiles.Count == 0) return;
 
-            CurrentVideoPath = _videoFiles[_currentIndex];
-            CurrentFileName = Path.GetFileNameWithoutExtension(_videoFiles[_currentIndex]);
+            string filePath = _videoFiles[_currentIndex];
+            CurrentVideoPath = filePath;
+            CurrentFileName = Path.GetFileNameWithoutExtension(filePath);
             PageIndicator = $"{_currentIndex + 1:D2}/{_videoFiles.Count:D2}";
+
+            // 코멘트 로드 (VideoType은 CurrentFileName setter에서 이미 결정됨)
+            await LoadComment(filePath);
+        }
+
+        private async Task LoadComment(string filePath)
+        {
+            try
+            {
+                string comment = string.Empty;
+                string fileName = Path.GetFileNameWithoutExtension(filePath);
+
+                if (VideoType == "DICOM VIDEO")
+                {
+                    // DICOM_VIDEO → 대응하는 dcm 파일에서 태그 로드
+                    string dcmPath = GetDicomPathFromAvi(filePath);
+                    if (!string.IsNullOrEmpty(dcmPath) && File.Exists(dcmPath))
+                    {
+                        var dicomFile = DicomFile.Open(dcmPath);
+                        comment = dicomFile.Dataset.GetSingleValueOrDefault(
+                            DicomTag.ImageComments, string.Empty);
+                    }
+                }
+                else
+                {
+                    // NORMAL_VIDEO → COMMENT TB에서 로드
+                    var db = new DB_Manager();
+                    comment = db.SelectComment("NORMAL_VIDEO", fileName);
+                }
+
+                // ★ setter 통하면 IsCommentDirty=true → 필드 직접 할당
+                _commentText = comment;
+                OnPropertyChanged(nameof(CommentText));
+                IsCommentDirty = false;
+            }
+            catch (Exception ex)
+            {
+                await Common.WriteLog(ex);
+            }
+        }
+
+        #endregion
+
+        #region 코멘트 저장
+
+        // ═══════════════════════════════════════════
+        //  SaveComment (코드비하인드에서 호출)
+        //
+        //  DICOM_VIDEO:
+        //    → dcm 태그 (ImageComments) 저장
+        //    → COMMENT TB UPSERT (FILE_TYPE='DICOM_VIDEO')
+        //
+        //  NORMAL_VIDEO:
+        //    → COMMENT TB UPSERT (FILE_TYPE='NORMAL_VIDEO')
+        //
+        //  저장 완료 후 IsCommentDirty 리셋
+        // ═══════════════════════════════════════════
+        public async void SaveComment()
+        {
+            try
+            {
+                string filePath = _videoFiles[_currentIndex];
+                string fileName = Path.GetFileNameWithoutExtension(filePath);
+                var db = new DB_Manager();
+
+                if (VideoType == "DICOM VIDEO")
+                {
+                    // 1. dcm 태그 저장
+                    string dcmPath = GetDicomPathFromAvi(filePath);
+                    if (!string.IsNullOrEmpty(dcmPath) && File.Exists(dcmPath))
+                    {
+                        var dicomFile = DicomFile.Open(dcmPath, FileReadOption.ReadAll);
+
+                        if (string.IsNullOrWhiteSpace(CommentText))
+                            dicomFile.Dataset.Remove(DicomTag.ImageComments);
+                        else
+                            dicomFile.Dataset.AddOrUpdate(DicomTag.ImageComments, CommentText);
+
+                        string tempPath = dcmPath + ".tmp";
+                        dicomFile.Save(tempPath);
+                        File.Delete(dcmPath);
+                        File.Move(tempPath, dcmPath);
+                    }
+
+                    // 2. COMMENT TB UPSERT
+                    db.UpsertComment("DICOM_VIDEO", fileName, CommentText ?? string.Empty);
+                }
+                else
+                {
+                    // NORMAL_VIDEO → COMMENT TB만
+                    db.UpsertComment("NORMAL_VIDEO", fileName, CommentText ?? string.Empty);
+                }
+
+                IsCommentDirty = false;
+            }
+            catch (Exception ex) { await Common.WriteLog(ex); }
+        }
+
+        #endregion
+
+        #region RESET
+
+        // ═══════════════════════════════════════════
+        //  RESET - 입력값 초기화
+        //  CommentText는 필드 직접 할당 → IsCommentDirty=true 방지
+        // ═══════════════════════════════════════════
+        public void Reset()
+        {
+            SelectedPosition = null;
+            SelectedAnatomical = null;
+
+            _commentText = string.Empty;
+            OnPropertyChanged(nameof(CommentText));
+            IsCommentDirty = false;
         }
 
         #endregion
 
         #region 영상 삭제
 
-        // ═══════════════════════════════════════════
-        //  영상 삭제
-        //
-        //  AVI VIDEO (NORMAL_VIDEO):
-        //      AVI 파일만 Del_ 처리
-        //      DB: InsertNormalVideoDeleteLog
-        //
-        //  DICOM VIDEO:
-        //      AVI + DCM 둘 다 Del_ 처리
-        //      AVI 경로 → GetDicomPathFromAvi() 로 DCM 경로 계산
-        //      DB: InsertDicomVideoDeleteLog
-        //
-        //  삭제 후 파일 0개 → RequestNavigateToScan 발생 → Scan 화면 이동
-        // ═══════════════════════════════════════════
         private async Task ExecuteVideoDelete()
         {
             try
@@ -338,28 +487,25 @@ namespace LSS_prototype.VideoComment_Page
                 string fileName = Path.GetFileName(currentFile);
                 string deletedAviPath = Path.Combine(dir, "Del_" + fileName);
 
-                // MediaElement 가 파일을 열고 있으므로 파일 잠금 해제
+                // MediaElement 파일 잠금 해제
                 CurrentVideoPath = null;
 
-                //  Del_ 처리
                 File.Move(currentFile, deletedAviPath);
 
                 var db = new DB_Manager();
 
                 if (VideoType == "AVI VIDEO")
                 {
-                    // NORMAL_VIDEO: AVI 만 Del_
                     db.InsertNormalVideoDeleteLog(
-                        deletedAviPath,
-                        Patient.PatientCode,
-                        Patient.PatientName);
-                    Common.WriteSessionLog($"[NORMAL VIDEO DELETE] User:{Common.CurrentUserId} PatientCode:{Patient.PatientCode} " +
-                        $"PatientName:{Patient.PatientName}  File:{deletedAviPath}");
+                        deletedAviPath, Patient.PatientCode, Patient.PatientName);
+                    Common.WriteSessionLog(
+                        $"[NORMAL VIDEO DELETE] User:{Common.CurrentUserId} " +
+                        $"PatientCode:{Patient.PatientCode} " +
+                        $"PatientName:{Patient.PatientName} File:{deletedAviPath}");
                 }
                 else
                 {
-                    // DICOM_VIDEO: AVI + DCM 둘 다 Del_
-                    string dcmPath = await GetDicomPathFromAvi(currentFile);
+                    string dcmPath = GetDicomPathFromAvi(currentFile);
                     string deletedDcmPath = null;
 
                     if (!string.IsNullOrEmpty(dcmPath) && File.Exists(dcmPath))
@@ -367,85 +513,59 @@ namespace LSS_prototype.VideoComment_Page
                         string dcmDir = Path.GetDirectoryName(dcmPath);
                         string dcmFileName = Path.GetFileName(dcmPath);
                         deletedDcmPath = Path.Combine(dcmDir, "Del_" + dcmFileName);
-                        File.Move(dcmPath, deletedDcmPath); // 추가적으로 한쌍인 .dcm 파일명에도 Del_을 붙여준다. 
+                        File.Move(dcmPath, deletedDcmPath);
                     }
 
-                    db.InsertDicomVideoDeleteLog(deletedAviPath, deletedDcmPath, Patient.PatientCode, Patient.PatientName);
-                    Common.WriteSessionLog($"[DICOM VIDEO DELETE] User:{Common.CurrentUserId} " +
-                                           $"PatientCode:{Patient.PatientCode} PatientName:{Patient.PatientName} " +
-                                           $"AVI:{deletedAviPath} DCM:{deletedDcmPath}");
+                    db.InsertDicomVideoDeleteLog(
+                        deletedAviPath, deletedDcmPath,
+                        Patient.PatientCode, Patient.PatientName);
+                    Common.WriteSessionLog(
+                        $"[DICOM VIDEO DELETE] User:{Common.CurrentUserId} " +
+                        $"PatientCode:{Patient.PatientCode} " +
+                        $"PatientName:{Patient.PatientName} " +
+                        $"AVI:{deletedAviPath} DCM:{deletedDcmPath}");
                 }
 
                 _videoFiles.RemoveAt(_currentIndex);
 
                 if (_videoFiles.Count == 0)
                 {
-                    await CustomMessageWindow.ShowAsync("영상이 삭제되었습니다.\n 저장된 영상이 존재하지 않아\nScan 화면으로 이동합니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Info);
+                    await CustomMessageWindow.ShowAsync(
+                        "영상이 삭제되었습니다.\n저장된 영상이 존재하지 않아\nScan 화면으로 이동합니다.",
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
+                        CustomMessageWindow.MessageIconType.Info);
                     RequestNavigateToScan?.Invoke();
                     return;
                 }
 
-                await CustomMessageWindow.ShowAsync("비디오가 정상적으로 삭제되었습니다.", CustomMessageWindow.MessageBoxType.Ok, 0, CustomMessageWindow.MessageIconType.Info);
+                await CustomMessageWindow.ShowAsync(
+                    "비디오가 정상적으로 삭제되었습니다.",
+                    CustomMessageWindow.MessageBoxType.Ok, 0,
+                    CustomMessageWindow.MessageIconType.Info);
 
-                // 마지막 파일 삭제 시 인덱스 보정
                 if (_currentIndex >= _videoFiles.Count)
                     _currentIndex = _videoFiles.Count - 1;
 
-                UpdateCurrentFile();
-
-           
-
+                await UpdateCurrentFile ();
             }
             catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
-        // ═══════════════════════════════════════════
-        //  AVI 경로 기준으로 DCM 경로 계산
-        //
-        //  AVI:  VIDEO/박한용_2634/20250313/202503130001/박한용_2634_202503130001_1_Dicom.avi
-        //  DCM: DICOM/박한용_2634/20250313/202503130001/Video/박한용_2634_202503130001_1_Dicom.dcm
-        //
-        //  1. VIDEO 루트 → DICOM 루트 변경
-        //  2. 폴더 경로 유지
-        //  3. Video 폴더 추가
-        //  4. 확장자 .avi → .dcm
-        // ═══════════════════════════════════════════
-        private async Task<string> GetDicomPathFromAvi(string aviPath)
-        {
-            try
-            {
-                string videoRoot = Path.Combine(Common.executablePath, "VIDEO");
-                string dicomRoot = Path.Combine(Common.executablePath, "DICOM");
-
-                // VIDEO 루트 기준 상대경로
-                string relative = aviPath.Substring(videoRoot.Length)
-                                         .TrimStart(Path.DirectorySeparatorChar);
-
-                // 확장자 .avi → .dcm
-                string dcmFileName = Path.ChangeExtension(Path.GetFileName(relative), ".dcm");
-                string folderRelative = Path.GetDirectoryName(relative);
-
-                return Path.Combine(dicomRoot, folderRelative, "Video", dcmFileName);
-            }
-            catch (Exception ex) { await Common.WriteLog(ex); return null; }
-        }
-
         #endregion
 
-        #region Comment 저장
+        #region 나가기
 
-        // ═══════════════════════════════════════════
-        //  Comment Save
-        //  TODO: 코멘트 저장 로직 구현 예정
-        // ═══════════════════════════════════════════
-        private async Task ExecuteCommentSave()
+        private async Task ExecuteNavigateBack()
         {
             try
             {
-                // TODO: 코멘트 저장 구현
-                await CustomMessageWindow.ShowAsync("저장되었습니다.",
-                    CustomMessageWindow.MessageBoxType.Ok, 1,
-                    CustomMessageWindow.MessageIconType.Info);
+                if (IsCommentDirty)
+                {
+                    bool save = await ConfirmSaveAll();
+                    if (save) SaveComment();
+                    IsCommentDirty = false;
+                }
+                MainPage.Instance.NavigateTo(new Scan_Page.Scan(Patient, StudyId));
             }
             catch (Exception ex) { await Common.WriteLog(ex); }
         }
@@ -454,10 +574,6 @@ namespace LSS_prototype.VideoComment_Page
 
         #region 배속 제어
 
-        // ═══════════════════════════════════════════
-        //  🐢 느리게
-        //  1x → x0.5 → x0.25 → x0.16 → 1x (복귀)
-        // ═══════════════════════════════════════════
         private async Task ExecuteSlower()
         {
             try
@@ -472,10 +588,6 @@ namespace LSS_prototype.VideoComment_Page
             catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
-        // ═══════════════════════════════════════════
-        //  🐇 빠르게
-        //  1x → x2 → x4 → x6 → 1x (복귀)
-        // ═══════════════════════════════════════════
         private async Task ExecuteFaster()
         {
             try
@@ -492,23 +604,15 @@ namespace LSS_prototype.VideoComment_Page
 
         private enum SpeedMode { Normal, Slow, Fast }
 
-        // ── 배속 적용: SpeedRatio + 라벨 + 색상 한번에 갱신 ──
         private void ApplySpeed(double ratio, string label, SpeedMode mode)
         {
             CurrentSpeedRatio = ratio;
             SpeedLabel = label;
-            if (mode == SpeedMode.Slow)
-                SpeedLabelColor = SpeedSlowBrush;    // 파란색
-            else if (mode == SpeedMode.Fast)
-                SpeedLabelColor = SpeedFastBrush;    // 주황색
-            else
-                SpeedLabelColor = SpeedNormalBrush;  // 흰색
+            SpeedLabelColor = mode == SpeedMode.Slow ? SpeedSlowBrush
+                              : mode == SpeedMode.Fast ? SpeedFastBrush
+                              : SpeedNormalBrush;
         }
 
-        // ═══════════════════════════════════════════
-        //  배속 초기화
-        //  이전/다음 영상 이동 시 xaml.cs 에서 호출
-        // ═══════════════════════════════════════════
         public async Task ResetSpeed()
         {
             try
@@ -522,27 +626,26 @@ namespace LSS_prototype.VideoComment_Page
 
         #endregion
 
-        #region 페이지 이동
+        #region 헬퍼
 
-        // ═══════════════════════════════════════════
-        //  BACK → Scan 화면 복귀
-        //  xaml.cs 에서 CleanupMedia() 먼저 호출 후 이 커맨드 실행
-        // ═══════════════════════════════════════════
-        private async Task ExecuteNavigateBack()
+        // AVI 경로 → DCM 경로 변환
+        // VIDEO/.../파일_Dicom.avi → DICOM/.../Video/파일_Dicom.dcm
+        private string GetDicomPathFromAvi(string aviPath)
         {
             try
             {
-                MainPage.Instance.NavigateTo(
-                    new Scan_Page.Scan(Patient, StudyId));
+                string videoRoot = Path.Combine(Common.executablePath, "VIDEO");
+                string dicomRoot = Path.Combine(Common.executablePath, "DICOM");
+                string relative = aviPath.Substring(videoRoot.Length)
+                                          .TrimStart(Path.DirectorySeparatorChar);
+                string dcmFileName = Path.ChangeExtension(Path.GetFileName(relative), ".dcm");
+                string folderRelative = Path.GetDirectoryName(relative);
+                return Path.Combine(dicomRoot, folderRelative, "Video", dcmFileName);
             }
-            catch (Exception ex) { await Common.WriteLog(ex); }
+            catch { return null; }
         }
 
-        #endregion
-
-        #region 헬퍼
-
-        // ── 파일명에서 인덱스 번호 추출 ──
+        // 파일명에서 인덱스 번호 추출
         // 박한용_2634_202503130001_3_Avi → 3 (뒤에서 두 번째)
         private int ExtractIndex(string fileName)
         {

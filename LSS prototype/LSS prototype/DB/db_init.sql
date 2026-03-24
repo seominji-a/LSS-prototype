@@ -149,3 +149,19 @@ CREATE TABLE DELETE_LOG (
     FORCE_DELETED_AT    DATETIME NULL,
     FORCE_DELETED_BY    TEXT     NULL
 );
+
+
+-- ================================================
+-- COMMENT TABLE ( 2026-03-24 생성자 : 박한용 )
+-- 이미지 및 영상 코멘트 저장 테이블
+-- FILE_TYPE : 'IMAGE' / 'DICOM_VIDEO' / 'NORMAL_VIDEO'
+-- FILE_NAME : 파일명 (확장자 제외)
+-- IMAGE / DICOM_VIDEO → dcm 태그에서 로드, 저장 시 TB에도 기록
+-- NORMAL_VIDEO        → TB에서만 로드/저장
+-- ================================================
+CREATE TABLE COMMENT (
+    FILE_TYPE   TEXT  NOT NULL,
+    FILE_NAME   TEXT  NOT NULL,
+    COMMENT     TEXT  NOT NULL DEFAULT '',
+    PRIMARY KEY (FILE_TYPE, FILE_NAME)
+);

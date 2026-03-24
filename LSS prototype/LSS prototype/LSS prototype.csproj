@@ -230,6 +230,7 @@
       <DependentUpon>CustomMessageWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Common_Module\RelayCommand.cs" />
+    <Compile Include="DB_CRUD\DB_Manager.Comment.cs" />
     <Compile Include="DB_CRUD\DB_Manager.cs" />
     <Compile Include="DB_CRUD\DB_Manager.Recycle.cs" />
     <Compile Include="Dicom_Module\DicomManager.Receive.cs" />

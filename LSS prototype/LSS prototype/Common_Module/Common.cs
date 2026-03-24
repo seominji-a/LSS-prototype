@@ -34,7 +34,7 @@ namespace LSS_prototype
         public static int EXPIRE_MINUTE = 3;    // 3분 후 만료 / 테스트용  ( 쿼리문은 직접 바꿔줘야함  SELECT_EXPIRED_LOGS) 
 
 
-        public const int DB_VERSION = 60; // DB Version 
+        public const int DB_VERSION = 61; // DB Version 
 
         // ===== OTP 기능  =====
         public async static Task<bool> VerifyMasterOtp(string inputId, string inputOtp) => await OtpService.VerifyMasterOtp(inputId, inputOtp);
@@ -519,11 +519,17 @@ namespace LSS_prototype
         public const string RESTORE_PATIENT = "UPDATE PATIENT SET IS_DELETED = 'N' WHERE PATIENT_CODE = @PatientCode AND PATIENT_NAME = @PatientName";
         public const string DELETE_PATIENT_BY_CODE_AND_NAME = "DELETE FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND PATIENT_NAME = @PatientName";
         public const string FORCE_DELETE_RELATED_LOGS = "UPDATE DELETE_LOG SET IS_FORCE_DELETED = 'Y', FORCE_DELETED_AT = datetime('now', 'localtime'), FORCE_DELETED_BY = @ForceDeletedBy  WHERE PATIENT_CODE = @PatientCode AND PATIENT_NAME = @PatientName AND IS_FORCE_DELETED = 'N' ";
-
         public const string SELECT_EXPIRED_LOGS = "SELECT * FROM DELETE_LOG WHERE DELETED_AT < datetime('now', 'localtime', '-3 minutes') AND IS_RECOVERED = 'N' AND IS_FORCE_DELETED = 'N'";
         // 0323 현재 테스트라서 5분 지난 데이터를 삭제 되게끔처리 ( 이부분은 직접 바꿔야함 ( 쿼리문에 상수 추가불가 ) ) 
         public const string DELETE_OLD_LOGS = "DELETE FROM DELETE_LOG WHERE DELETED_AT < date('now', 'localtime', '-3 years')";
         public const string INSERT_PATIENT_FORCE_DELETE_LOG = "INSERT INTO DELETE_LOG (DELETED_BY, FILE_TYPE, PATIENT_CODE, PATIENT_NAME, IS_FORCE_DELETED, FORCE_DELETED_AT, FORCE_DELETED_BY) VALUES (@DeletedBy, 'PATIENT', @PatientCode, @PatientName, 'Y', datetime('now', 'localtime'), @ForceDeletedBy)";
+
+        // ================================================
+        // COMMENT  -  DB_Manager.Comment.cs
+        // ================================================
+        public const string UPSERT_COMMENT = "INSERT INTO COMMENT (FILE_TYPE, FILE_NAME, COMMENT) VALUES (@FileType, @FileName, @Comment) ON CONFLICT(FILE_TYPE, FILE_NAME) DO UPDATE SET COMMENT = @Comment";
+        public const string SELECT_COMMENT = "SELECT COMMENT FROM COMMENT WHERE FILE_TYPE = @FileType AND FILE_NAME = @FileName";
+        public const string DELETE_COMMENT = "DELETE FROM COMMENT WHERE FILE_TYPE = @FileType AND FILE_NAME = @FileName";
     }
 }
 

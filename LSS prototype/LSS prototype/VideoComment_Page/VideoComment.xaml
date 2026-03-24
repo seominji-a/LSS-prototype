@@ -38,13 +38,18 @@
             <Setter Property="FontWeight" Value="Bold"/>
         </Style>
 
-        <!-- 중앙 재생/정지 버튼 (제일 크게) -->
+        <Style x:Key="AccentBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
+            <Setter Property="Background" Value="{StaticResource Accent}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize"   Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+
         <Style x:Key="PlayBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
             <Setter Property="Background" Value="#3B82F6"/>
             <Setter Property="Foreground" Value="White"/>
         </Style>
 
-        <!-- 1초 전/후 + 배속 버튼 -->
         <Style x:Key="SeekBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
             <Setter Property="Background" Value="{StaticResource BtnDark}"/>
             <Setter Property="Foreground" Value="White"/>
@@ -195,8 +200,6 @@
         <Border Grid.Column="0" Background="Black"
                 Margin="10,10,5,10" CornerRadius="8" ClipToBounds="True">
             <Grid>
-
-                <!-- 영상 -->
                 <MediaElement x:Name="VideoPlayer"
                               LoadedBehavior="Manual"
                               UnloadedBehavior="Stop"
@@ -212,11 +215,17 @@
                     <TextBlock Text="{Binding PatientInfo}"
                                Foreground="#BBCCE0" FontSize="15"/>
                 </StackPanel>
-                <!-- Video Type, 파일count 우상단 -->
+
+                <!-- VideoType + PageIndicator 우상단 -->
                 <StackPanel Margin="16,14" VerticalAlignment="Top" HorizontalAlignment="Right">
-                    <TextBlock Text="{Binding VideoType, Mode=OneWay}" Foreground="White" FontSize="18" FontWeight="Bold"  HorizontalAlignment="Right"/>
-                    <TextBlock Text="{Binding PageIndicator}"  Foreground="White" FontSize="18" FontWeight="Bold"  HorizontalAlignment="Right"/>
+                    <TextBlock Text="{Binding VideoType, Mode=OneWay}"
+                               Foreground="White" FontSize="18" FontWeight="Bold"
+                               HorizontalAlignment="Right"/>
+                    <TextBlock Text="{Binding PageIndicator}"
+                               Foreground="White" FontSize="18" FontWeight="Bold"
+                               HorizontalAlignment="Right"/>
                 </StackPanel>
+
                 <!-- ── 하단 컨트롤 오버레이 ── -->
                 <Border VerticalAlignment="Bottom"
                         Background="#CC1C2B3A"
@@ -225,13 +234,11 @@
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <!-- Seek + 시간 -->
                             <RowDefinition Height="8"/>
                             <RowDefinition Height="70"/>
-                            <!-- 컨트롤 한 줄 -->
                         </Grid.RowDefinitions>
 
-                        <!-- Seek 슬라이더 + 시간 한 줄 -->
+                        <!-- Seek 슬라이더 + 시간 -->
                         <Grid Grid.Row="0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -255,10 +262,8 @@
                                        Margin="10,0,0,0"/>
                         </Grid>
 
-                        <!-- ── 컨트롤 한 줄 ── -->
+                        <!-- 컨트롤 버튼 한 줄 -->
                         <Grid Grid.Row="2">
-
-                            <!-- 배속 표시: 절대 좌측 고정 -->
                             <Border HorizontalAlignment="Left" VerticalAlignment="Center"
                                     Background="{StaticResource ValueBg}"
                                     CornerRadius="8" Padding="14,0" Height="44">
@@ -269,12 +274,9 @@
                                            VerticalAlignment="Center"/>
                             </Border>
 
-                            <!-- 버튼 그룹: 정중앙 고정 -->
                             <StackPanel Orientation="Horizontal"
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center">
-
-                                <!-- 🐢 느리게 -->
                                 <Button Style="{StaticResource SeekBtn}"
                                         Width="70" Height="70" Margin="0,0,8,0"
                                         Command="{Binding SlowerCommand}">
@@ -286,7 +288,6 @@
                                     </StackPanel>
                                 </Button>
 
-                                <!-- 1초 전 -->
                                 <Button Style="{StaticResource SeekBtn}"
                                         Width="70" Height="70" Margin="0,0,8,0"
                                         Command="{Binding SeekBackCommand}">
@@ -298,7 +299,6 @@
                                     </StackPanel>
                                 </Button>
 
-                                <!-- ▶ / ⏸ 재생정지 (중앙 제일 크게) -->
                                 <Button Style="{StaticResource PlayBtn}"
                                         Width="100" Height="70"
                                         Command="{Binding PlayPauseCommand}">
@@ -308,7 +308,6 @@
                                                VerticalAlignment="Center"/>
                                 </Button>
 
-                                <!-- 1초 후 -->
                                 <Button Style="{StaticResource SeekBtn}"
                                         Width="70" Height="70" Margin="8,0,0,0"
                                         Command="{Binding SeekForwardCommand}">
@@ -320,7 +319,6 @@
                                     </StackPanel>
                                 </Button>
 
-                                <!-- 🐇 1x 복귀 -->
                                 <Button Style="{StaticResource SeekBtn}"
                                         Width="70" Height="70" Margin="8,0,0,0"
                                         Command="{Binding FasterCommand}">
@@ -331,13 +329,10 @@
                                                    HorizontalAlignment="Center" Margin="0,2,0,0"/>
                                     </StackPanel>
                                 </Button>
-
                             </StackPanel>
                         </Grid>
-
                     </Grid>
                 </Border>
-
             </Grid>
         </Border>
 
@@ -357,24 +352,27 @@
                         <RowDefinition Height="8"/>
                         <RowDefinition Height="52"/>
                         <!-- R2:  Position 콤보 -->
-                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="16"/>
                         <RowDefinition Height="Auto"/>
                         <!-- R4:  Anatomical 라벨 -->
                         <RowDefinition Height="8"/>
                         <RowDefinition Height="52"/>
                         <!-- R6:  Anatomical 콤보 -->
-                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="16"/>
                         <RowDefinition Height="Auto"/>
                         <!-- R8:  Comment 라벨 -->
                         <RowDefinition Height="8"/>
-                        <RowDefinition Height="*"/>
-                        <!-- R10: Comment 입력 -->
-                        <RowDefinition Height="14"/>
+                        <RowDefinition Height="430"/>
+                        <!-- R10: Comment 입력 (고정) -->
+                        <RowDefinition Height="10"/>
                         <RowDefinition Height="66"/>
                         <!-- R12: VIDEO DELETE -->
                         <RowDefinition Height="10"/>
                         <RowDefinition Height="66"/>
-                        <!-- R14: Comment Save -->
+                        <!-- R14: RESET -->
+                        <RowDefinition Height="10"/>
+                        <RowDefinition Height="66"/>
+                        <!-- R16: SAVE -->
                     </Grid.RowDefinitions>
 
                     <!-- Position -->
@@ -419,11 +417,17 @@
                             Style="{StaticResource DangerBtn}"
                             Command="{Binding VideoDeleteCommand}"/>
 
-                    <!-- Comment Save -->
+                    <!-- RESET -->
                     <Button Grid.Row="14"
-                            Content="Comment Save"
+                            Content="RESET"
                             Style="{StaticResource DarkBtn}"
-                            Command="{Binding CommentSaveCommand}"/>
+                            Command="{Binding ResetCommand}"/>
+
+                    <!-- SAVE -->
+                    <Button Grid.Row="16"
+                            Content="SAVE"
+                            Style="{StaticResource AccentBtn}"
+                            Command="{Binding SaveCommand}"/>
 
                 </Grid>
             </Border>

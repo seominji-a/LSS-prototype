@@ -155,7 +155,7 @@ namespace LSS_prototype.ImageComment_Page
             try
             {
                 var result = await CustomMessageWindow.ShowAsync(
-                    "저장하지 않은 정보가 있습니다.\n저장하시겠습니까?",
+                    "코멘트 정보를 저장하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo,
                     icon: CustomMessageWindow.MessageIconType.Warning);
 
@@ -333,6 +333,12 @@ namespace LSS_prototype.ImageComment_Page
                 dicomFile.Save(tempPath);
                 File.Delete(dcmPath);
                 File.Move(tempPath, dcmPath);
+
+                // ── 3. COMMENT TB UPSERT ──
+                // dcm 태그와 동일한 값을 TB에도 기록
+                // FILE_NAME은 확장자 제외한 파일명
+                var db = new DB_Manager();
+                db.UpsertComment("IMAGE", Path.GetFileNameWithoutExtension(dcmPath), CommentText ?? string.Empty);
 
                 // ── 3. IsCommentDirty 리셋 ──
                 IsCommentDirty = false;

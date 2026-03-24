@@ -75,18 +75,6 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
-        private UserModel _selectedUser;
-        public UserModel SelectedUser
-        {
-            get { return _selectedUser; }
-            set
-            {
-                _selectedUser = value;
-                OnPropertyChanged();
-            }
-        }
-
-
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {

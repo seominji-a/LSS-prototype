@@ -8,7 +8,6 @@ namespace LSS_prototype.User_Page
         public User_Edit()
         {
             InitializeComponent();
-            // ✅ 세션 모니터 등록
             Loaded += (s, e) => App.ActivityMonitor?.RegisterWindow(this);
         }
 
@@ -18,6 +17,7 @@ namespace LSS_prototype.User_Page
                 await vm.ExecuteSubmit(txtNewPassword.Password, txtConfirmPassword.Password);
         }
 
+        // ── CapsLock ──
         private void NewPasswordBox_CheckCaps(object sender, RoutedEventArgs e)
         {
             CapsLockWarningNew.Visibility = Keyboard.IsKeyToggled(Key.CapsLock)
@@ -38,6 +38,34 @@ namespace LSS_prototype.User_Page
         private void ConfirmPasswordBox_HideCaps(object sender, RoutedEventArgs e)
         {
             CapsLockWarningConfirm.Visibility = Visibility.Collapsed;
+        }
+
+        // ── 눈 버튼: NEW PASSWORD ──
+        private void BtnShowNewPw_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            txtNewPasswordVisible.Text = txtNewPassword.Password;
+            txtNewPassword.Visibility = Visibility.Collapsed;
+            txtNewPasswordVisible.Visibility = Visibility.Visible;
+        }
+
+        private void BtnShowNewPw_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            txtNewPassword.Visibility = Visibility.Visible;
+            txtNewPasswordVisible.Visibility = Visibility.Collapsed;
+        }
+
+        // ── 눈 버튼: CONFIRM PASSWORD ──
+        private void BtnShowConfirmPw_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            txtConfirmPasswordVisible.Text = txtConfirmPassword.Password;
+            txtConfirmPassword.Visibility = Visibility.Collapsed;
+            txtConfirmPasswordVisible.Visibility = Visibility.Visible;
+        }
+
+        private void BtnShowConfirmPw_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            txtConfirmPassword.Visibility = Visibility.Visible;
+            txtConfirmPasswordVisible.Visibility = Visibility.Collapsed;
         }
     }
 }

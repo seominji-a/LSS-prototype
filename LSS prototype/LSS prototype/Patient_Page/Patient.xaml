@@ -329,6 +329,7 @@
                                     <!-- Description - 우측 하단 -->
                                     <TextBlock x:Name="TxtDescription"
                                                Text="{Binding RequestedProcedureDescription}"
+                                                Visibility="{Binding DataContext.DescriptionVisibility, RelativeSource={RelativeSource AncestorType=ListBox}}"
                                                HorizontalAlignment="Right" VerticalAlignment="Bottom"
                                                FontSize="17" FontWeight="SemiBold"
                                                Foreground="{StaticResource TextMid}"

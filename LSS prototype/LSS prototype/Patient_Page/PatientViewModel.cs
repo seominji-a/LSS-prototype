@@ -40,8 +40,7 @@ namespace LSS_prototype.Patient_Page
         // 첫번째때 연결된 task를 끊어주기위해서 0306 박한용
 
 
-
-        private string _searchText;
+    
 
         private ObservableCollection<PatientModel> _Patients = new ObservableCollection<PatientModel>();
         public ObservableCollection<PatientModel> Users
@@ -53,6 +52,12 @@ namespace LSS_prototype.Patient_Page
                 OnPropertyChanged();
             }
         }
+
+        // MWL 필터가 ALL(빈값)일 때만 Description 표시
+        private string _searchText;
+        public Visibility DescriptionVisibility =>
+            string.IsNullOrEmpty(Common.MwlDescriptionFilter) ? Visibility.Visible : Visibility.Collapsed;
+
         public string SearchText
         {
             get => _searchText;

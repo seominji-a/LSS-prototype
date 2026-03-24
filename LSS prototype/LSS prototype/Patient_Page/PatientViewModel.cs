@@ -475,9 +475,13 @@ namespace LSS_prototype.Patient_Page
                         }
 
                         // 2) 기존 동일 환자가 아니면 신규 환자로 등록
-                        bool isEmr =
-                            group.IsEmrPatient ||
-                            group.SourceType == (int)PatientSourceType.ESync;
+                        bool isLocal =
+                            string.IsNullOrWhiteSpace(group.AccessionNumber) &&
+                            !group.IsEmrPatient &&
+                            group.Source != PatientSource.ESync &&
+                            group.SourceType != (int)PatientSourceType.ESync;
+
+                        bool isEmr = !isLocal;
 
                         plans.Add(new ImportPlan
                         {
@@ -1007,10 +1011,7 @@ namespace LSS_prototype.Patient_Page
 
             var result = await _dialogService.ShowDialogAsync(vm);
 
-            if (result == true)
-            {
-                HandleLocalEditConflictAfterSave(originalLocal);
-            }
+          
         }
 
         private async Task DeletePatient()
@@ -1126,7 +1127,7 @@ namespace LSS_prototype.Patient_Page
                 }
 
                 // DCM 기준 환자 그룹 생성
-                bool forceEsyncImport = true;
+                bool forceEsyncImport = false;
                 List<PatientModel> patientGroups = null;
 
                 try

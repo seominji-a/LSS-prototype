@@ -53,11 +53,14 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
-        // MWL 필터가 ALL(빈값)일 때만 Description 표시
-        private string _searchText;
-        public Visibility DescriptionVisibility =>
-            string.IsNullOrEmpty(Common.MwlDescriptionFilter) ? Visibility.Visible : Visibility.Collapsed;
+        // 어세스 넘버가 없을때 select patient card에 행 미표시를 위한 프로퍼티 
+        public bool IsAccessionNumberVisible => _selectedPatient != null && !string.IsNullOrWhiteSpace(_selectedPatient.AccessionNumber);
 
+        // MWL 필터가 ALL(빈값)일 때만 Description 표시
+
+        public Visibility DescriptionVisibility => string.IsNullOrEmpty(Common.MwlDescriptionFilter)  ? Visibility.Visible   : Visibility.Hidden;  // Collapsed → Hidden
+
+        private string _searchText;
         public string SearchText
         {
             get => _searchText;
@@ -83,6 +86,7 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
+
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
@@ -101,6 +105,9 @@ namespace LSS_prototype.Patient_Page
 
         // SQLite에서 받아온 당일 접수 환자 목록
         private List<PatientModel> _localPatients = new List<PatientModel>();
+
+        public bool IsPatientSelected => _selectedPatient != null;
+
         public ObservableCollection<PatientModel> Patients
         {
             get => _patients;
@@ -111,7 +118,12 @@ namespace LSS_prototype.Patient_Page
         public PatientModel SelectedPatient
         {
             get => _selectedPatient;
-            set { _selectedPatient = value; OnPropertyChanged(); }
+            set { 
+                _selectedPatient = value; OnPropertyChanged();
+                OnPropertyChanged(nameof(IsPatientSelected));        
+                OnPropertyChanged(nameof(IsAccessionNumberVisible));
+                OnPropertyChanged(nameof(DescriptionVisibility)); 
+            }
         }
         public string PageTitle => _showAll ? "Integrated Patient" : "EMR Patient";
 

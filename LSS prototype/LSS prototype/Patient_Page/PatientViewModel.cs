@@ -1025,23 +1025,33 @@ namespace LSS_prototype.Patient_Page
                     return;
                 }
 
-                if (!string.IsNullOrWhiteSpace(SelectedPatient.AccessionNumber))
+                /*if (!string.IsNullOrWhiteSpace(SelectedPatient.AccessionNumber))
                 {
                     await CustomMessageWindow.ShowAsync("EMR 데이터는 삭제가 \n 불가능합니다.",
                             CustomMessageWindow.MessageBoxType.Ok, 1,
                             CustomMessageWindow.MessageIconType.Warning);
                     return;
-                }
+                }*/
 
                 if (await CustomMessageWindow.ShowAsync(
-                        $"{SelectedPatient.PatientName} 환자 정보를 삭제하시겠습니까?",
-                        CustomMessageWindow.MessageBoxType.YesNo, 0, CustomMessageWindow.MessageIconType.Info
+                        $"{SelectedPatient.PatientName} 환자 정보를 삭제하시겠습니까?\n 환자 데이터는 복구가 불가능합니다.",
+                        CustomMessageWindow.MessageBoxType.YesNo, 0, CustomMessageWindow.MessageIconType.Warning
                     ) == CustomMessageWindow.MessageBoxResult.Yes)
                 {
                     var repo = new DB_Manager();
 
-                    if (repo.SoftDeletePatientWithLog(SelectedPatient.PatientId,SelectedPatient.PatientCode,SelectedPatient.PatientName))
+                    if (repo.HardDeletePatientWithLog(SelectedPatient.PatientId, SelectedPatient.PatientCode, SelectedPatient.PatientName))
                     {
+                        // 폴더 즉시 삭제 (DICOM / VIDEO / ISF)
+                        string folderName = $"{SelectedPatient.PatientName}_{SelectedPatient.PatientCode}";
+                        string dicomPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DICOM", folderName);
+                        string videoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "VIDEO", folderName);
+                        string isfPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ISF", folderName);
+
+                        if (Directory.Exists(dicomPath)) Directory.Delete(dicomPath, recursive: true);
+                        if (Directory.Exists(videoPath)) Directory.Delete(videoPath, recursive: true);
+                        if (Directory.Exists(isfPath)) Directory.Delete(isfPath, recursive: true);
+
                         await CustomMessageWindow.ShowAsync("삭제되었습니다.",
                             CustomMessageWindow.MessageBoxType.Ok, 1,
                             CustomMessageWindow.MessageIconType.Info);
@@ -1049,7 +1059,7 @@ namespace LSS_prototype.Patient_Page
                         await LoadPatients();
                     }
 
-                   
+
                 }
             }
             catch (Exception ex)

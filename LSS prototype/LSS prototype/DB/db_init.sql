@@ -44,7 +44,6 @@ CREATE TABLE IF NOT EXISTS USER
 -- ================================================
 -- Patient TABLE ( 2026.02.09 생성자 : 서민지 )
 -- Patient TABLE ( 2026.03.17 수정일 : 서민지 )
--- Patient TABLE ( 2026.03.23 수정일 : 박한용 ) --> 사용자 삭제 기능 추가 
 -- ================================================
 CREATE TABLE IF NOT EXISTS PATIENT (
     PATIENT_ID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,9 +54,6 @@ CREATE TABLE IF NOT EXISTS PATIENT (
     REG_DATE TIMESTAMP NOT NULL DEFAULT (datetime('now', 'localtime')),
     LASTSHOOTDATE DATE,
     SHOTNUM INTEGER NOT NULL DEFAULT 0,
-    -- 사용자 삭제는 즉시 DELETE하지않고, IS_DELETED 컬럼을 이용해 판단 
-    IS_DELETED      TEXT    DEFAULT 'N',
-
     --문자열 보다 enum/코드화
     SOURCE_TYPE INTEGER NOT NULL
 );

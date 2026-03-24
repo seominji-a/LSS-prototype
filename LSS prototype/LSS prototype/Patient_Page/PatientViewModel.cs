@@ -957,6 +957,11 @@ namespace LSS_prototype.Patient_Page
                                 CustomMessageWindow.MessageBoxType.Ok, 1,
                                 CustomMessageWindow.MessageIconType.Info);
                             await LoadPatients();
+
+                            ShowAll = true;
+                            SelectedPatient = Patients.FirstOrDefault(p =>
+                                p.PatientCode == model.PatientCode &&
+                                p.PatientName == model.PatientName);
                         }
                         else
                         {
@@ -1378,6 +1383,21 @@ namespace LSS_prototype.Patient_Page
 
                 ShowAll = true;
                 RefreshPatients();
+
+                if (newLocalCount > 0)
+                {
+                    var lastNewLocal = importPlans
+                        .Where(p => p.ActionType == ImportActionType.NewLocalPatient)
+                        .LastOrDefault();
+
+                    if (lastNewLocal != null)
+                    {
+                        SelectedPatient = Patients.FirstOrDefault(p =>
+                            p.PatientCode == lastNewLocal.Group.PatientCode &&
+                            p.PatientName == lastNewLocal.Group.PatientName);
+                    }
+                }
+
 
                 // importError 폴더가 비어있으면 정리
                 try

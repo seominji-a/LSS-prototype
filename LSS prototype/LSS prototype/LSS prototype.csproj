@@ -251,6 +251,7 @@
     <Compile Include="Common_Module\LoadingWindow.xaml.cs">
       <DependentUpon>LoadingWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ImageReview_Page\ImageReviewViewModel.cs" />
     <Compile Include="Lens_Module\configVal.cs" />
     <Compile Include="Lens_Module\DevAddr.cs" />
     <Compile Include="Lens_Module\LensCtrl.cs" />

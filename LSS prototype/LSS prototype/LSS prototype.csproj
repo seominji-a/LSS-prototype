@@ -230,6 +230,7 @@
       <DependentUpon>CustomMessageWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Common_Module\RelayCommand.cs" />
+    <Compile Include="DB_CRUD\DB_Manager.Comment.cs" />
     <Compile Include="DB_CRUD\DB_Manager.cs" />
     <Compile Include="DB_CRUD\DB_Manager.Recycle.cs" />
     <Compile Include="Dicom_Module\DicomManager.Receive.cs" />
@@ -509,6 +510,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="ImageComment_Page\Comment.md" />
     <None Include="Login_Page\Login.md" />
     <None Include="LSS prototype_TemporaryKey.pfx" />
     <None Include="packages.config" />

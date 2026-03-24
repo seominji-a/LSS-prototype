@@ -2,7 +2,9 @@
 using FellowOakDicom.Network;
 using FellowOakDicom.Network.Client;
 using LSS_prototype.DB_CRUD;
+using LSS_prototype.Dicom_Module;
 using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -79,53 +81,73 @@ namespace LSS_prototype.User_Page
             set { _mwlMyAET = value; OnPropertyChanged(); }
         }
 
-        private string _mwlDescriptionFilter;
-        public string MwlDescriptionFilter
+        // ═══════════════════════════════════════════
+        //  MWL Filter 콤보박스
+        //
+        //  _isLoadingItems 플래그:
+        //  Clear() 시 WPF 바인딩이 SelectedItem=null 로 만들어
+        //  setter가 의도치 않게 DB 저장 / Common 세팅하는 것을 방지
+        // ═══════════════════════════════════════════
+        private bool _isLoadingItems = false;
+
+        private ObservableCollection<string> _mwlDescriptionItems = new ObservableCollection<string>();
+        public ObservableCollection<string> MwlDescriptionItems
         {
-            get => _mwlDescriptionFilter;
-            set { _mwlDescriptionFilter = value; OnPropertyChanged(); }
+            get => _mwlDescriptionItems;
+            set { _mwlDescriptionItems = value; OnPropertyChanged(); }
         }
 
+        private string _selectedMwlDescription;
+        public string SelectedMwlDescription
+        {
+            get => _selectedMwlDescription;
+            set
+            {
+                _selectedMwlDescription = value;
+                OnPropertyChanged();
 
-        // Commands - Hospital
+                // 목록 로딩 중에는 DB 저장 / Common 세팅 차단
+                if (_isLoadingItems) return;
+
+                Common.MwlDescriptionFilter = value == "ALL" ? string.Empty : (value ?? string.Empty);
+                new DB_Manager().UpdateMwlFilter(
+                    value == "ALL" ? string.Empty : (value ?? string.Empty));
+            }
+        }
+
+        // ═══════════════════════════════════════════
+        //  커맨드
+        // ═══════════════════════════════════════════
         public ICommand SaveHospitalCommand { get; }
-
-        // Commands - C-STORE
         public ICommand CStoreTestCommand { get; }
         public ICommand CStoreApplyCommand { get; }
         public ICommand CStoreResetCommand { get; }
-
-        // Commands - MWL
         public ICommand MwlTestCommand { get; }
         public ICommand MwlApplyCommand { get; }
         public ICommand MwlResetCommand { get; }
 
-        // Commands - MWL Filter
-        public ICommand SaveMwlFilterCommand { get; }
-
-
-        // Constructor
+        // ═══════════════════════════════════════════
+        //  생성자
+        // ═══════════════════════════════════════════
         public SettingViewModel()
         {
             SaveHospitalCommand = new RelayCommand(async _ => await SaveHospital());
-            SaveMwlFilterCommand = new RelayCommand(async _ => await SaveMwlFilter());
-
             CStoreTestCommand = new AsyncRelayCommand(async _ => await CStoreTestAsync());
             CStoreApplyCommand = new RelayCommand(async _ => await CStoreApply());
             CStoreResetCommand = new AsyncRelayCommand(async _ => await LoadSettings(true));
-
             MwlTestCommand = new AsyncRelayCommand(async _ => await MwlTestAsync());
             MwlApplyCommand = new RelayCommand(async _ => await MwlApply());
-            MwlResetCommand = new AsyncRelayCommand(async _ =>  await LoadSettings(true));
+            MwlResetCommand = new AsyncRelayCommand(async _ => await LoadSettings(true));
         }
-
 
         public async Task InitializeAsync()
         {
             await LoadSettings();
         }
 
-        // DB 로드
+        // ═══════════════════════════════════════════
+        //  DB 로드
+        // ═══════════════════════════════════════════
         private async Task LoadSettings(bool showMessage = false)
         {
             try
@@ -142,24 +164,33 @@ namespace LSS_prototype.User_Page
                 MwlIP = data.MwlIP;
                 MwlPort = data.MwlPort.ToString();
                 MwlMyAET = data.MwlMyAET;
-                MwlDescriptionFilter = data.MwlDescriptionFilter; // 초기값 로드
+
+                // ── MWL Filter 콤보박스 초기 세팅 ──
+                // _isLoadingItems=true → Clear() 시 setter 호출돼도 DB 저장 차단
+                _isLoadingItems = true;
+                MwlDescriptionItems.Clear();
+                MwlDescriptionItems.Add("ALL");
+
+                string savedFilter = data.MwlDescriptionFilter;
+                if (!string.IsNullOrWhiteSpace(savedFilter) && savedFilter != "ALL")
+                    MwlDescriptionItems.Add(savedFilter);
+
+                _isLoadingItems = false;
+
+                // 저장된 필터값 있으면 선택, 없으면 ALL
+                SelectedMwlDescription = string.IsNullOrWhiteSpace(savedFilter)
+                    ? "ALL"
+                    : savedFilter;
 
                 if (showMessage)
-                {
                     await CustomMessageWindow.ShowAsync("리셋되었습니다.",
                         CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Info);
-                }
             }
-            catch (Exception ex)
-            {
-                await Common.WriteLog(ex);
-            }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
-
-        // async 이유: ShowAsync - 메시지창 닫힌 후 다음 코드 실행 보장 필요
-        private  async Task SaveHospital()
+        private async Task SaveHospital()
         {
             try
             {
@@ -167,54 +198,17 @@ namespace LSS_prototype.User_Page
                     "병원명을 변경하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo, 0,
                     CustomMessageWindow.MessageIconType.Warning);
-
                 if (confirm != CustomMessageWindow.MessageBoxResult.Yes) return;
 
                 bool success = new DB_Manager().UpdateHospitalName(HospitalName);
-
                 if (success)
-                {
-                    await CustomMessageWindow.ShowAsync(
-                        "병원명이 저장되었습니다.",
+                    await CustomMessageWindow.ShowAsync("병원명이 저장되었습니다.",
                         CustomMessageWindow.MessageBoxType.Ok, 1,
                         CustomMessageWindow.MessageIconType.Info);
-                }
             }
-            catch (Exception ex)
-            {
-                await Common.WriteLog(ex);
-            }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
-
-
-        private async Task SaveMwlFilter()
-        {
-            try
-            {
-                var confirm = await CustomMessageWindow.ShowAsync("MWL 필터를 변경하시겠습니까?", CustomMessageWindow.MessageBoxType.YesNo, 0, CustomMessageWindow.MessageIconType.Warning);
-
-                if (confirm != CustomMessageWindow.MessageBoxResult.Yes) return;
-
-                bool success = new DB_Manager().UpdateMwlFilter(MwlDescriptionFilter);
-
-                if (success)
-                {
-                    await CustomMessageWindow.ShowAsync(
-                    "MWL 필터가 저장되었습니다.",
-                    CustomMessageWindow.MessageBoxType.Ok, 1,
-                    CustomMessageWindow.MessageIconType.Info);
-                    Common.MwlDescriptionFilter = MwlDescriptionFilter; 
-                }
-            }
-            catch (Exception ex)
-            {
-                await Common.WriteLog(ex);
-            }
-        }
-
-
-       
         private async Task CStoreTestAsync()
         {
             try
@@ -229,34 +223,23 @@ namespace LSS_prototype.User_Page
                     await CustomMessageWindow.ShowAsync("포트 번호가 올바르지 않습니다.", CustomMessageWindow.MessageBoxType.Ok, 0, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
-
                 string testDcmPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestDicom.dcm");
-
                 LoadingWindow.Begin("PACS 연결 중...");
                 await SendToPacsAsync(testDcmPath, CStoreMyAET, CStoreIP, Convert.ToInt32(CStorePort), CStoreAET);
-                await Task.Delay(3000); // TODO: 테스트용 딜레이 — 실사용 전 제거
+                await Task.Delay(3000);
                 LoadingWindow.End();
-
-                await CustomMessageWindow.ShowAsync(
-                    "PACS 전송 테스트 성공",
+                await CustomMessageWindow.ShowAsync("PACS 전송 테스트 성공",
                     CustomMessageWindow.MessageBoxType.Ok, 1,
                     CustomMessageWindow.MessageIconType.Info);
             }
-            catch (Exception ex)
-            {
-                await Common.WriteLog(ex);
-            }
-            finally
-            {
-                LoadingWindow.End();
-            }
+            catch (Exception ex) { await Common.WriteLog(ex); }
+            finally { LoadingWindow.End(); }
         }
 
         private async Task SendToPacsAsync(string dcmPath, string sourceAET, string targetIP, int targetPort, string targetAET)
         {
             var dicomFile = DicomFile.Open(dcmPath);
             var client = DicomClientFactory.Create(targetIP, targetPort, false, sourceAET, targetAET);
-
             bool success = false;
             string statusMessage = string.Empty;
 
@@ -266,14 +249,10 @@ namespace LSS_prototype.User_Page
                 success = response.Status == DicomStatus.Success;
                 statusMessage = response.Status.ToString();
             };
-
             await client.AddRequestAsync(request);
             await client.SendAsync();
-
-            if (!success)
-                throw new Exception($"PACS 응답 오류: {statusMessage}");
+            if (!success) throw new Exception($"PACS 응답 오류: {statusMessage}");
         }
-
 
         private async Task CStoreApply()
         {
@@ -283,7 +262,6 @@ namespace LSS_prototype.User_Page
                     "C-STORE의 설정값을 \n변경하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo, 0,
                     CustomMessageWindow.MessageIconType.Warning);
-
                 if (confirm != CustomMessageWindow.MessageBoxResult.Yes) return;
 
                 bool success = new DB_Manager().UpdateCStore(new SettingModel
@@ -293,20 +271,24 @@ namespace LSS_prototype.User_Page
                     CStorePort = int.TryParse(CStorePort, out int cp) ? cp : 0,
                     CStoreMyAET = CStoreMyAET
                 });
-
                 if (success)
-                {
-                        await CustomMessageWindow.ShowAsync("C-STORE 설정이 적용되었습니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Info);
-                }
+                    await CustomMessageWindow.ShowAsync("C-STORE 설정이 적용되었습니다.",
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
+                        CustomMessageWindow.MessageIconType.Info);
             }
-            catch (Exception ex)
-            {
-                await Common.WriteLog(ex);
-            }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
-
-
+        // ═══════════════════════════════════════════
+        //  MWL TEST SEND
+        //  흐름:
+        //  1. 서버에서 descriptions 조회
+        //  2. Clear 전에 _selectedMwlDescription 필드 직접 백업
+        //     (setter 거치면 DB 저장되므로 필드 직접 읽기)
+        //  3. _isLoadingItems=true → Clear + 목록 채움
+        //  4. _isLoadingItems=false
+        //  5. 백업값이 새 목록에 있으면 유지, 없으면 ALL
+        // ═══════════════════════════════════════════
         private async Task MwlTestAsync()
         {
             try
@@ -323,70 +305,50 @@ namespace LSS_prototype.User_Page
                 }
 
                 LoadingWindow.Begin("MWL 연결 중...");
-                await QueryWorklistAsync(MwlMyAET, MwlIP, Convert.ToInt32(MwlPort), MwlAET);
-                await Task.Delay(3000); // TODO: 테스트용 딜레이 — 실사용 전 제거
+
+                var dicom = new DicomManager();
+                var descriptions = await dicom.GetWorklistDescriptionsAsync(
+                    MwlMyAET, MwlIP, Convert.ToInt32(MwlPort), MwlAET);
+
+                // ★ Clear 전 현재 선택값을 필드에서 직접 백업
+                string backup = _selectedMwlDescription;
+
+                // ★ _isLoadingItems=true → Clear() 시 setter → DB 저장 차단
+                _isLoadingItems = true;
+                MwlDescriptionItems.Clear();
+                MwlDescriptionItems.Add("ALL");
+                foreach (var d in descriptions)
+                    MwlDescriptionItems.Add(d);
+                _isLoadingItems = false;
+
+                // ★ 백업값이 새 목록에 있으면 유지, 없으면 ALL
+                SelectedMwlDescription = MwlDescriptionItems.Contains(backup)
+                    ? backup
+                    : "ALL";
+
                 LoadingWindow.End();
 
-                await CustomMessageWindow.ShowAsync(
-                    "MWL 연결 테스트 성공",
+                await CustomMessageWindow.ShowAsync("MWL 연결 테스트 성공",
                     CustomMessageWindow.MessageBoxType.Ok, 1,
                     CustomMessageWindow.MessageIconType.Info);
             }
             catch (TimeoutException ex)
             {
                 await Common.WriteLog(ex);
-                await CustomMessageWindow.ShowAsync("DICOM 서버가 응답하지 않습니다.\n네트워크 또는 서버 상태를 확인해주세요.", CustomMessageWindow.MessageBoxType.Ok, 0, CustomMessageWindow.MessageIconType.Warning);
+                await CustomMessageWindow.ShowAsync(
+                    "DICOM 서버가 응답하지 않습니다.\n네트워크 또는 서버 상태를 확인해주세요.",
+                    CustomMessageWindow.MessageBoxType.Ok, 0,
+                    CustomMessageWindow.MessageIconType.Warning);
             }
             catch (Exception ex)
             {
                 await Common.WriteLog(ex);
-                await CustomMessageWindow.ShowAsync($"MWL 연결 실패:\n{ex.Message}", CustomMessageWindow.MessageBoxType.Ok, 0, CustomMessageWindow.MessageIconType.Warning);
+                await CustomMessageWindow.ShowAsync($"MWL 연결 실패:\n{ex.Message}",
+                    CustomMessageWindow.MessageBoxType.Ok, 0,
+                    CustomMessageWindow.MessageIconType.Warning);
             }
-            finally
-            {
-                LoadingWindow.End();
-            }
+            finally { LoadingWindow.End(); }
         }
-
-        private async Task QueryWorklistAsync(string sourceAET, string targetIP, int targetPort, string targetAET)
-        {
-            var client = DicomClientFactory.Create(targetIP, targetPort, false, sourceAET, targetAET);
-            bool hasResponse = false;
-
-            var request = new DicomCFindRequest(DicomQueryRetrieveLevel.NotApplicable)
-            {
-                Dataset = new DicomDataset
-                {
-                    { DicomTag.PatientName,      "*" },
-                    { DicomTag.PatientID,        "*" },
-                    { DicomTag.StudyInstanceUID, ""  },
-                    { DicomTag.StudyDate,        ""  }
-                }
-            };
-
-            request.OnResponseReceived += (req, response) =>
-            {
-                if (response.Status == DicomStatus.Pending ||
-                    response.Status == DicomStatus.Success)
-                    hasResponse = true;
-            };
-
-            await client.AddRequestAsync(request);
-
-            // 5초 안에 응답 없으면 타임아웃
-            // why? 연결이 됐어도 서버측에서 데이터가 없으면 무한대기 상태로 빠지니
-            // 방어코드로 5초 동안 1건의 데이터도 안들어오면 throw 처리
-            var sendTask = client.SendAsync();
-            if (await Task.WhenAny(sendTask, Task.Delay(5000)) == sendTask)
-                await sendTask;
-            else
-                throw new TimeoutException("DICOM 서버가 응답하지 않습니다.");
-
-            if (!hasResponse)
-                throw new Exception("5초 동안 서버 응답이 없습니다.");
-        }
-
-
 
         private async Task MwlApply()
         {
@@ -396,7 +358,6 @@ namespace LSS_prototype.User_Page
                     "MWL의 설정값을 \n변경하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo, 0,
                     CustomMessageWindow.MessageIconType.Warning);
-
                 if (confirm != CustomMessageWindow.MessageBoxResult.Yes) return;
 
                 bool success = new DB_Manager().UpdateMwl(new SettingModel
@@ -406,19 +367,12 @@ namespace LSS_prototype.User_Page
                     MwlPort = int.TryParse(MwlPort, out int mp) ? mp : 0,
                     MwlMyAET = MwlMyAET
                 });
-
                 if (success)
-                {
-                    await CustomMessageWindow.ShowAsync(
-                    "MWL 설정이 적용되었습니다.",
-                    CustomMessageWindow.MessageBoxType.Ok, 1,
-                    CustomMessageWindow.MessageIconType.Info);
-                }
+                    await CustomMessageWindow.ShowAsync("MWL 설정이 적용되었습니다.",
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
+                        CustomMessageWindow.MessageIconType.Info);
             }
-            catch (Exception ex)
-            {
-                await Common.WriteLog(ex);
-            }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
     }
 }

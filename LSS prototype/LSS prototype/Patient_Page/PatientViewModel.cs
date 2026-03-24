@@ -40,8 +40,7 @@ namespace LSS_prototype.Patient_Page
         // 첫번째때 연결된 task를 끊어주기위해서 0306 박한용
 
 
-
-        private string _searchText;
+    
 
         private ObservableCollection<PatientModel> _Patients = new ObservableCollection<PatientModel>();
         public ObservableCollection<PatientModel> Users
@@ -53,6 +52,15 @@ namespace LSS_prototype.Patient_Page
                 OnPropertyChanged();
             }
         }
+
+        // 어세스 넘버가 없을때 select patient card에 행 미표시를 위한 프로퍼티 
+        public bool IsAccessionNumberVisible => _selectedPatient != null && !string.IsNullOrWhiteSpace(_selectedPatient.AccessionNumber);
+
+        // MWL 필터가 ALL(빈값)일 때만 Description 표시
+
+        public Visibility DescriptionVisibility => string.IsNullOrEmpty(Common.MwlDescriptionFilter)  ? Visibility.Visible   : Visibility.Hidden;  // Collapsed → Hidden
+
+        private string _searchText;
         public string SearchText
         {
             get => _searchText;
@@ -64,17 +72,6 @@ namespace LSS_prototype.Patient_Page
 
                 // 입력 바뀔 때마다 디바운서에 전달 → 0.5초 후 DB 검색
                 _searchDebouncer.OnTextChanged(value);
-            }
-        }
-
-        private UserModel _selectedUser;
-        public UserModel SelectedUser
-        {
-            get { return _selectedUser; }
-            set
-            {
-                _selectedUser = value;
-                OnPropertyChanged();
             }
         }
 
@@ -96,6 +93,9 @@ namespace LSS_prototype.Patient_Page
 
         // SQLite에서 받아온 당일 접수 환자 목록
         private List<PatientModel> _localPatients = new List<PatientModel>();
+
+        public bool IsPatientSelected => _selectedPatient != null;
+
         public ObservableCollection<PatientModel> Patients
         {
             get => _patients;
@@ -106,7 +106,12 @@ namespace LSS_prototype.Patient_Page
         public PatientModel SelectedPatient
         {
             get => _selectedPatient;
-            set { _selectedPatient = value; OnPropertyChanged(); }
+            set { 
+                _selectedPatient = value; OnPropertyChanged();
+                OnPropertyChanged(nameof(IsPatientSelected));        
+                OnPropertyChanged(nameof(IsAccessionNumberVisible));
+                OnPropertyChanged(nameof(DescriptionVisibility)); 
+            }
         }
         public string PageTitle => _showAll ? "Integrated Patient" : "EMR Patient";
 
@@ -956,6 +961,11 @@ namespace LSS_prototype.Patient_Page
                                 CustomMessageWindow.MessageBoxType.Ok, 1,
                                 CustomMessageWindow.MessageIconType.Info);
                             await LoadPatients();
+
+                            ShowAll = true;
+                            SelectedPatient = Patients.FirstOrDefault(p =>
+                                p.PatientCode == model.PatientCode &&
+                                p.PatientName == model.PatientName);
                         }
                         else
                         {
@@ -1026,23 +1036,33 @@ namespace LSS_prototype.Patient_Page
                     return;
                 }
 
-                if (!string.IsNullOrWhiteSpace(SelectedPatient.AccessionNumber))
+                /*if (!string.IsNullOrWhiteSpace(SelectedPatient.AccessionNumber))
                 {
                     await CustomMessageWindow.ShowAsync("EMR 데이터는 삭제가 \n 불가능합니다.",
                             CustomMessageWindow.MessageBoxType.Ok, 1,
                             CustomMessageWindow.MessageIconType.Warning);
                     return;
-                }
+                }*/
 
                 if (await CustomMessageWindow.ShowAsync(
-                        $"{SelectedPatient.PatientName} 환자 정보를 삭제하시겠습니까?",
-                        CustomMessageWindow.MessageBoxType.YesNo, 0, CustomMessageWindow.MessageIconType.Info
+                        $"{SelectedPatient.PatientName} 환자 정보를 삭제하시겠습니까?\n 환자 데이터는 복구가 불가능합니다.",
+                        CustomMessageWindow.MessageBoxType.YesNo, 0, CustomMessageWindow.MessageIconType.Warning
                     ) == CustomMessageWindow.MessageBoxResult.Yes)
                 {
                     var repo = new DB_Manager();
 
-                    if (repo.SoftDeletePatientWithLog(SelectedPatient.PatientId,SelectedPatient.PatientCode,SelectedPatient.PatientName))
+                    if (repo.HardDeletePatientWithLog(SelectedPatient.PatientId, SelectedPatient.PatientCode, SelectedPatient.PatientName))
                     {
+                        // 폴더 즉시 삭제 (DICOM / VIDEO / ISF)
+                        string folderName = $"{SelectedPatient.PatientName}_{SelectedPatient.PatientCode}";
+                        string dicomPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DICOM", folderName);
+                        string videoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "VIDEO", folderName);
+                        string isfPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ISF", folderName);
+
+                        if (Directory.Exists(dicomPath)) Directory.Delete(dicomPath, recursive: true);
+                        if (Directory.Exists(videoPath)) Directory.Delete(videoPath, recursive: true);
+                        if (Directory.Exists(isfPath)) Directory.Delete(isfPath, recursive: true);
+
                         await CustomMessageWindow.ShowAsync("삭제되었습니다.",
                             CustomMessageWindow.MessageBoxType.Ok, 1,
                             CustomMessageWindow.MessageIconType.Info);
@@ -1050,7 +1070,7 @@ namespace LSS_prototype.Patient_Page
                         await LoadPatients();
                     }
 
-                   
+
                 }
             }
             catch (Exception ex)
@@ -1364,6 +1384,21 @@ namespace LSS_prototype.Patient_Page
 
                 ShowAll = true;
                 RefreshPatients();
+
+                if (newLocalCount > 0)
+                {
+                    var lastNewLocal = importPlans
+                        .Where(p => p.ActionType == ImportActionType.NewLocalPatient)
+                        .LastOrDefault();
+
+                    if (lastNewLocal != null)
+                    {
+                        SelectedPatient = Patients.FirstOrDefault(p =>
+                            p.PatientCode == lastNewLocal.Group.PatientCode &&
+                            p.PatientName == lastNewLocal.Group.PatientName);
+                    }
+                }
+
 
                 // importError 폴더가 비어있으면 정리
                 try

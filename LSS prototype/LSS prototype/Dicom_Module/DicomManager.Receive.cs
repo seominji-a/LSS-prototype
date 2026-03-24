@@ -59,6 +59,36 @@ namespace LSS_prototype.Dicom_Module
             return result;
         }
 
+
+        /// <summary>
+        /// MWL 서버에서 RequestedProcedureDescription 목록만 추출합니다.
+        /// 필터 없이 전체 조회 후 중복 제거 → Setting 페이지 콤보박스 데이터 소스용
+        /// </summary>
+        public async Task<List<string>> GetWorklistDescriptionsAsync( string sourceAET, string targetIP, int targetPort, string targetAET)
+        {
+            // ★ 필터 잠시 비워서 전체 조회 (Description 목록은 항상 전체가 필요)
+            string saved = Common.MwlDescriptionFilter;
+            Common.MwlDescriptionFilter = string.Empty;
+
+            try
+            {
+                var patients = await GetWorklistPatientsAsync(
+                    sourceAET, targetIP, targetPort, targetAET);
+
+                return patients
+                    .Select(p => p.RequestedProcedureDescription)
+                    .Where(d => !string.IsNullOrWhiteSpace(d))
+                    .Distinct()
+                    .OrderBy(d => d)
+                    .ToList();
+            }
+            finally
+            {
+                // ★ 예외 발생해도 반드시 원복
+                Common.MwlDescriptionFilter = saved;
+            }
+        }
+
         /// <summary>
         /// 전체 환자 대상 MWL C-FIND 요청 Dataset을 생성합니다.
         /// 값이 "*" → 와일드카드 전체 검색
@@ -156,5 +186,8 @@ namespace LSS_prototype.Dicom_Module
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             return Encoding.GetEncoding("EUC-KR").GetString(bytes).Trim();
         }
+
+
+
     }
 }

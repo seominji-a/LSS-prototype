@@ -294,7 +294,7 @@
                                FontWeight="SemiBold"
                                Margin="2,0,0,10"/>
                     <Border Style="{StaticResource InputBoxBorderStyle}">
-                        <TextBox x:Name="UserId" Text="{Binding UserId, UpdateSourceTrigger=PropertyChanged}"
+                        <TextBox x:Name="UserId"  Text="{Binding UserId, UpdateSourceTrigger=PropertyChanged}"
                                  FontSize="24" FontFamily="Arial"
                                  Background="Transparent" BorderThickness="0"
                                  VerticalContentAlignment="Center"
@@ -312,23 +312,46 @@
                                FontWeight="SemiBold"
                                Margin="2,0,0,10"/>
                     <Border Style="{StaticResource InputBoxBorderStyle}">
-                        <PasswordBox x:Name="txtPassword"
-                            FontSize="24"
-                            FontFamily="Arial"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            VerticalContentAlignment="Center"
-                            Padding="18,0"
-                            Foreground="{StaticResource TextDark}"
-                            GotKeyboardFocus="PasswordBox_CheckCaps"
-                            PreviewKeyDown="PasswordBox_CheckCaps">
+                        <Grid>
+                            <!-- 기존 PasswordBox (숨길 때) -->
+                            <PasswordBox x:Name="txtPassword"
+                                FontSize="24" FontFamily="Arial"
+                                Background="Transparent" BorderThickness="0"
+                                VerticalContentAlignment="Center"
+                                Padding="18,0,52,0"
+                                Foreground="{StaticResource TextDark}"
+                                GotKeyboardFocus="PasswordBox_CheckCaps"
+                                PreviewKeyDown="PasswordBox_CheckCaps">
+                                <PasswordBox.InputBindings>
+                                    <KeyBinding Key="Enter"
+                    Command="{Binding LoginCommand}"
+                    CommandParameter="{Binding ElementName=txtPassword}"/>
+                                </PasswordBox.InputBindings>
+                            </PasswordBox>
 
-                            <PasswordBox.InputBindings>
-                                <KeyBinding Key="Enter" 
-                                    Command="{Binding LoginCommand}" 
-                                    CommandParameter="{Binding ElementName=txtPassword}"/>
-                            </PasswordBox.InputBindings>
-                        </PasswordBox>
+                            <!-- 비밀번호 보일 때 TextBox -->
+                            <TextBox x:Name="txtPasswordVisible"
+                                    FontSize="24" FontFamily="Arial"
+                                    Background="Transparent" BorderThickness="0"
+                                    VerticalContentAlignment="Center"
+                                    Padding="18,0,52,0"
+                                    Foreground="{StaticResource TextDark}"
+                                    Visibility="Collapsed"/>
+
+                            <!-- 눈 버튼 -->
+                            <Button x:Name="BtnShowPassword"
+                                    Width="64" Height="64"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Margin="0,0,6,0"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Cursor="Hand"
+                                    PreviewMouseDown="BtnShowPassword_MouseDown"
+                                    PreviewMouseUp="BtnShowPassword_MouseUp">
+                                <TextBlock Text="👁" FontSize="30"/>
+                            </Button>
+                        </Grid>
                     </Border>
                 </StackPanel>
                              

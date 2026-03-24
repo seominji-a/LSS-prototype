@@ -83,10 +83,8 @@
     </Window.Resources>
 
     <Grid>
-        <!-- ✅ 반투명 오버레이 - 뒷배경 터치 차단 -->
         <Grid Background="#7F000000"/>
 
-        <!-- ✅ 중앙 팝업 내용 -->
         <Border Background="{StaticResource Bg}"
                 CornerRadius="20"
                 BorderBrush="#EEEEEE"
@@ -127,6 +125,7 @@
                                  Padding="18,0" Foreground="{StaticResource TextDark}" VerticalContentAlignment="Center"/>
                     </Border>
 
+                    <!-- PASSWORD -->
                     <Grid Margin="0,24,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -137,14 +136,29 @@
                         <TextBlock x:Name="CapsLockWarningNew" Grid.Column="1" Text="Caps Lock is ON" Style="{StaticResource CapsLockStyle}"/>
                     </Grid>
                     <Border Style="{StaticResource InputBoxBorderStyle}">
-                        <PasswordBox x:Name="txtPassword" FontSize="24" FontFamily="Arial"
-                                     Background="Transparent" BorderThickness="0" Padding="18,14"
+                        <Grid>
+                            <PasswordBox x:Name="txtPassword" FontSize="24" FontFamily="Arial"
+                                         Background="Transparent" BorderThickness="0" Padding="18,14,64,14"
+                                         Foreground="{StaticResource TextDark}"
+                                         GotKeyboardFocus="NewPasswordBox_CheckCaps"
+                                         PreviewKeyUp="NewPasswordBox_CheckCaps"
+                                         LostKeyboardFocus="NewPasswordBox_HideCaps"/>
+                            <TextBox x:Name="txtPasswordVisible" FontSize="24" FontFamily="Arial"
+                                     Background="Transparent" BorderThickness="0" Padding="18,14,64,14"
                                      Foreground="{StaticResource TextDark}"
-                                     GotKeyboardFocus="NewPasswordBox_CheckCaps"
-                                     PreviewKeyUp="NewPasswordBox_CheckCaps"
-                                     LostKeyboardFocus="NewPasswordBox_HideCaps"/>
+                                     VerticalContentAlignment="Center"
+                                     IsReadOnly="True" Visibility="Collapsed"/>
+                            <Button Width="64" Height="64"
+                                    HorizontalAlignment="Right" VerticalAlignment="Center"
+                                    Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                    PreviewMouseDown="BtnShowPw_MouseDown"
+                                    PreviewMouseUp="BtnShowPw_MouseUp">
+                                <TextBlock Text="👁" FontSize="28"/>
+                            </Button>
+                        </Grid>
                     </Border>
 
+                    <!-- CONFIRM PASSWORD -->
                     <Grid Margin="0,24,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -155,12 +169,26 @@
                         <TextBlock x:Name="CapsLockWarningConfirm" Grid.Column="1" Text="Caps Lock is ON" Style="{StaticResource CapsLockStyle}"/>
                     </Grid>
                     <Border Style="{StaticResource InputBoxBorderStyle}">
-                        <PasswordBox x:Name="txtConfirmPassword" FontSize="24" FontFamily="Arial"
-                                     Background="Transparent" BorderThickness="0" Padding="18,14"
+                        <Grid>
+                            <PasswordBox x:Name="txtConfirmPassword" FontSize="24" FontFamily="Arial"
+                                         Background="Transparent" BorderThickness="0" Padding="18,14,64,14"
+                                         Foreground="{StaticResource TextDark}"
+                                         GotKeyboardFocus="ConfirmPasswordBox_CheckCaps"
+                                         PreviewKeyUp="ConfirmPasswordBox_CheckCaps"
+                                         LostKeyboardFocus="ConfirmPasswordBox_HideCaps"/>
+                            <TextBox x:Name="txtConfirmPasswordVisible" FontSize="24" FontFamily="Arial"
+                                     Background="Transparent" BorderThickness="0" Padding="18,14,64,14"
                                      Foreground="{StaticResource TextDark}"
-                                     GotKeyboardFocus="ConfirmPasswordBox_CheckCaps"
-                                     PreviewKeyUp="ConfirmPasswordBox_CheckCaps"
-                                     LostKeyboardFocus="ConfirmPasswordBox_HideCaps"/>
+                                     VerticalContentAlignment="Center"
+                                     IsReadOnly="True" Visibility="Collapsed"/>
+                            <Button Width="64" Height="64"
+                                    HorizontalAlignment="Right" VerticalAlignment="Center"
+                                    Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                    PreviewMouseDown="BtnShowConfirmPw_MouseDown"
+                                    PreviewMouseUp="BtnShowConfirmPw_MouseUp">
+                                <TextBlock Text="👁" FontSize="28"/>
+                            </Button>
+                        </Grid>
                     </Border>
 
                     <TextBlock Text="ROLE" FontSize="18" Foreground="{StaticResource TextMuted}"

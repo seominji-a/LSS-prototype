@@ -37,12 +37,7 @@ namespace LSS_prototype.Login_Page
             try
             {
                 var vm = DataContext as ChangePasswordModelView;
-                if (vm == null)
-                {
-                    DialogResult = false;
-                    Close();
-                    return;
-                }
+                if (vm == null) { DialogResult = false; Close(); return; }
                 vm.Cancel();
             }
             catch (Exception ex)
@@ -51,14 +46,11 @@ namespace LSS_prototype.Login_Page
             }
         }
 
+        // ── CapsLock ──
         private void NewPasswordBox_CheckCaps(object sender, RoutedEventArgs e)
         {
-            CapsLockWarningNew.Visibility = Keyboard.IsKeyToggled(Key.CapsLock)? Visibility.Visible : Visibility.Collapsed;
-        }
-
-        private void ConfirmPasswordBox_CheckCaps(object sender, RoutedEventArgs e)
-        {
-            CapsLockWarningConfirm.Visibility = Keyboard.IsKeyToggled(Key.CapsLock) ? Visibility.Visible : Visibility.Collapsed;
+            CapsLockWarningNew.Visibility = Keyboard.IsKeyToggled(Key.CapsLock)
+                ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void NewPasswordBox_HideCaps(object sender, RoutedEventArgs e)
@@ -66,12 +58,46 @@ namespace LSS_prototype.Login_Page
             CapsLockWarningNew.Visibility = Visibility.Collapsed;
         }
 
+        private void ConfirmPasswordBox_CheckCaps(object sender, RoutedEventArgs e)
+        {
+            CapsLockWarningConfirm.Visibility = Keyboard.IsKeyToggled(Key.CapsLock)
+                ? Visibility.Visible : Visibility.Collapsed;
+        }
+
         private void ConfirmPasswordBox_HideCaps(object sender, RoutedEventArgs e)
         {
             CapsLockWarningConfirm.Visibility = Visibility.Collapsed;
         }
 
-     
+        // ── 눈 버튼: NEW PASSWORD ──
+        private void BtnShowNewPw_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            NewPasswordVisible.Text = NewPasswordBox.Password;
+            NewPasswordBox.Visibility = Visibility.Collapsed;
+            NewPasswordVisible.Visibility = Visibility.Visible;
+        }
+
+        private void BtnShowNewPw_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            NewPasswordBox.Visibility = Visibility.Visible;
+            NewPasswordVisible.Visibility = Visibility.Collapsed;
+        }
+
+        // ── 눈 버튼: CONFIRM PASSWORD ──
+        private void BtnShowConfirmPw_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            ConfirmPasswordVisible.Text = ConfirmPasswordBox.Password;
+            ConfirmPasswordBox.Visibility = Visibility.Collapsed;
+            ConfirmPasswordVisible.Visibility = Visibility.Visible;
+        }
+
+        private void BtnShowConfirmPw_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            ConfirmPasswordBox.Visibility = Visibility.Visible;
+            ConfirmPasswordVisible.Visibility = Visibility.Collapsed;
+        }
+
+        // ── LoginIdBox 포커스 ──
         private async void LoginIdBox_Loaded(object sender, RoutedEventArgs e)
         {
             try
@@ -85,7 +111,7 @@ namespace LSS_prototype.Login_Page
             }
             catch (Exception ex)
             {
-                await Common.WriteLog(ex); // ★ await 가능
+                await Common.WriteLog(ex);
             }
         }
     }

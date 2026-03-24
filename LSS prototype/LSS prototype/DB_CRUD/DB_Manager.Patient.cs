@@ -103,13 +103,7 @@ namespace LSS_prototype.DB_CRUD
             }
         }
 
-        /// <summary>
-        /// 임시 삭제 ( Patient화면에서 사용자가 삭제했을때 )
-        /// 2개의 쿼리 동시 성공/실패 보장이돼야함 트랙잭션 처리 필수 0323 박한용
-        /// </summary>
-        /// <param name="patientId"></param>
-        /// <returns></returns>
-        public bool SoftDeletePatientWithLog(int patientId, int patientCode, string patientName)
+        public bool HardDeletePatientWithLog(int patientId, int patientCode, string patientName)
         {
             using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))
             {
@@ -118,28 +112,30 @@ namespace LSS_prototype.DB_CRUD
                 {
                     try
                     {
-                        // 1. 소프트 딜리트 (patientId로 정확한 1개 행만)
-                        using (var cmd = new SQLiteCommand(Query.SOFT_DELETE_PATIENT, conn, transaction))
+                        // 1. PATIENT 테이블 즉시 DELETE
+                        using (var cmd = new SQLiteCommand(Query.DELETE_PATIENT, conn, transaction))
                         {
                             cmd.Parameters.AddWithValue("@Patient_id", patientId);
-                            if (cmd.ExecuteNonQuery() <= 0)
-                            {
-                                transaction.Rollback();
-                                return false;
-                            }
+                            if (cmd.ExecuteNonQuery() <= 0) { transaction.Rollback(); return false; }
                         }
 
-                        // 2. 삭제 로그 INSERT (patientCode + patientName 이력 기록)
-                        using (var cmd = new SQLiteCommand(Query.INSERT_PATIENT_DELETE_LOG, conn, transaction))
+                        // 2. DELETE_LOG에 PATIENT FORCE_DELETE 상태로 바로 INSERT
+                        using (var cmd = new SQLiteCommand(Query.INSERT_PATIENT_FORCE_DELETE_LOG, conn, transaction))
                         {
                             cmd.Parameters.AddWithValue("@DeletedBy", Common.CurrentUserId);
                             cmd.Parameters.AddWithValue("@PatientCode", patientCode);
                             cmd.Parameters.AddWithValue("@PatientName", patientName);
-                            if (cmd.ExecuteNonQuery() <= 0)
-                            {
-                                transaction.Rollback();
-                                return false;
-                            }
+                            cmd.Parameters.AddWithValue("@ForceDeletedBy", "USER_DELETE");  // 이 경우엔 삭제한 사람은 DeleteBy만 보면됨 
+                            if (cmd.ExecuteNonQuery() <= 0) { transaction.Rollback(); return false; }
+                        }
+
+                        // 3. 해당 환자 IMAGE/VIDEO DELETE_LOG 즉시 FORCE_DELETE 처리
+                        using (var cmd = new SQLiteCommand(Query.FORCE_DELETE_RELATED_LOGS, conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@PatientCode", patientCode);
+                            cmd.Parameters.AddWithValue("@PatientName", patientName);
+                            cmd.Parameters.AddWithValue("@ForceDeletedBy", "USER_DELETE");// 이 경우엔 삭제한 사람은 DeleteBy만 보면됨 
+                            cmd.ExecuteNonQuery();
                         }
 
                         transaction.Commit();

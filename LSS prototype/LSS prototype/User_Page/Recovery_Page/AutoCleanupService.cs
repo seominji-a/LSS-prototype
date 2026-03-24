@@ -67,35 +67,9 @@ namespace LSS_prototype
                                     db.UpdateForceDeleted(log.DeleteId, "SYSTEM");
                                     break;
 
-                                case "PATIENT":
-                                    // 트랜잭션으로 3가지 동시 처리
-                                    // 1. DELETE_LOG PATIENT 행 IS_FORCE_DELETED = 'Y'
-                                    // 2. PATIENT 테이블 완전 DELETE
-                                    // 3. 관련 IMAGE/VIDEO 행도 IS_FORCE_DELETED = 'Y'
-                                    if (!db.ForceDeletePatientWithLog(
-                                        log.DeleteId,
-                                        log.PatientCode,
-                                        log.PatientName,
-                                        "SYSTEM"))
-                                        break; // 실패 시 세션로그 스킵하고 다음 항목으로
-
-                                    // 환자명_환자코드 조합으로 폴더 찾아서 완전 삭제
-                                    string folderName = $"{log.PatientName}_{log.PatientCode}";
-                                    string dicomPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DICOM", folderName);
-                                    string videoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "VIDEO", folderName);
-                                    string isfPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ISF", folderName);
-
-                                    if (Directory.Exists(dicomPath))
-                                        Directory.Delete(dicomPath, recursive: true);
-                                    if (Directory.Exists(videoPath))
-                                        Directory.Delete(videoPath, recursive: true);
-                                    if (Directory.Exists(isfPath)) 
-                                        Directory.Delete(isfPath, recursive: true);
-                                    break;
                             }
 
                             // 세션 로그 기록
-                            // PATIENT 실패 시 break 로 여기 못옴 → 실패 로그 안남음 ✅
                             Common.WriteSessionLog(
                                 $"[AUTO CLEANUP] User:{Common.CurrentUserId} " +
                                 $"Patient:{log.PatientName}({log.PatientCode}) " +

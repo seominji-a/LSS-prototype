@@ -197,7 +197,6 @@ namespace LSS_prototype.DB_CRUD
                             RecoveredAt = reader["RECOVERED_AT"] == DBNull.Value ? null : reader["RECOVERED_AT"].ToString(),
                             IsForceDeleted = reader["IS_FORCE_DELETED"].ToString(),
                             ForceDeletedBy = reader["FORCE_DELETED_BY"] == DBNull.Value ? null : reader["FORCE_DELETED_BY"].ToString(), 
-                            PatientDeleted = reader["PATIENT_DELETED"].ToString(),
                         }); ;
                     }
                 }

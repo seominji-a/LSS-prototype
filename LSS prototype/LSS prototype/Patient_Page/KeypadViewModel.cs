@@ -65,7 +65,7 @@ namespace LSS_prototype.Patient_Page
                 InputText += number;
         }
 
-        private void RemoveLast()
+        public void RemoveLast()
         {
             if (!string.IsNullOrEmpty(InputText) && InputText.Length > 0)
             {

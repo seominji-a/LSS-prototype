@@ -265,7 +265,7 @@ namespace LSS_prototype.User_Page
                         }
                     }
 
-                    if (log.PatientDeleted == "Y" && log.FileType != "PATIENT")
+                    if (log.FileType == "PATIENT" || log.ForceDeletedBy == "USER_DELETE")
                         log.RemainText = "환자 삭제";
                     else if (log.IsForceDeleted == "Y" && log.ForceDeletedBy == "SYSTEM")
                         log.RemainText = "기한만료";
@@ -389,7 +389,6 @@ namespace LSS_prototype.User_Page
                 if (_selectedLog.IsExpired) return;
                 if (_selectedLog.IsRecovered == "Y") return;
                 if (_selectedLog.IsForceDeleted == "Y") return;
-                if (_selectedLog.PatientDeleted == "Y" && _selectedLog.FileType != "PATIENT") return; 
 
                 await Task.Delay(PREVIEW_DELAY, ct);
                 if (ct.IsCancellationRequested) return;
@@ -764,49 +763,7 @@ namespace LSS_prototype.User_Page
                                 await DeleteFileIfExists(log.AviPath);
                                 await DeleteFileIfExists(log.DicomPath);
                                 break;
-
-                            case "PATIENT":
-                                if (!db.ForceDeletePatientWithLog(log.DeleteId, log.PatientCode, log.PatientName))
-                                    break;
-
-                                string folderName = $"{log.PatientName}_{log.PatientCode}";
-                                string dicomPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DICOM", folderName);
-                                string videoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "VIDEO", folderName);
-                                string isfPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ISF", folderName); 
-
-                                if (Directory.Exists(dicomPath))
-                                    Directory.Delete(dicomPath, recursive: true);
-
-                                if (Directory.Exists(videoPath))
-                                    Directory.Delete(videoPath, recursive: true);
-
-                                if (Directory.Exists(isfPath)) 
-                                    Directory.Delete(isfPath, recursive: true);
-
-                                // ✅ PATIENT 성공 시에만 세션 로그 기록
-                                Common.WriteSessionLog(
-                                    $"[FORCE DELETE] User:{Common.CurrentUserId} " +
-                                    $"Patient:{log.PatientName}({log.PatientCode}) " +
-                                    $"Type:PATIENT DeleteId:{log.DeleteId}");
-
-                                await LoadLogs();
-                                break;
                         }
-
-                        // ✅ PATIENT 는 ForceDeletePatientWithLog 내부에서 이미 처리했으니 스킵
-                        if (log.FileType != "PATIENT")
-                            db.UpdateForceDeleted(log.DeleteId);
-
-                        // ✅ 이슈 D 수정: PATIENT 세션 로그는 위 case 안에서 성공 시에만 기록
-                        if (log.FileType != "PATIENT")
-                            Common.WriteSessionLog(
-                                $"[FORCE DELETE] User:{Common.CurrentUserId} " +
-                                $"Patient:{log.PatientName}({log.PatientCode}) " +
-                                $"Type:{log.FileType} DeleteId:{log.DeleteId}");
-
-                        // ✅ PATIENT 는 LoadLogs() 로 이미 전체 새로고침했으니 스킵
-                        if (log.FileType != "PATIENT")
-                            await UpdateItemInPlace(log, isRecover: false);
                     }
                     catch (Exception ex)
                     {

@@ -94,7 +94,11 @@
 
             <Button Content="←"
                     Style="{StaticResource KeyButtonStyle}"
-                    Command="{Binding DataContext.BackspaceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                    Command="{Binding DataContext.BackspaceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    PreviewMouseDown="BtnBackspace_MouseDown"
+                    PreviewMouseUp="BtnBackspace_MouseUp"
+                    PreviewTouchDown="BtnBackspace_TouchDown"
+                    PreviewTouchUp="BtnBackspace_TouchUp"/>
 
             <Button Content="0"
                     Style="{StaticResource KeyButtonStyle}"

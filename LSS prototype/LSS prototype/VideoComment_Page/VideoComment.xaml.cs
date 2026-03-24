@@ -14,25 +14,22 @@ namespace LSS_prototype.VideoComment_Page
         // ═══════════════════════════════════════════
         //  코드비하인드 역할
         //  MediaElement UI 조작만 담당
-        //  비즈니스 로직(파일목록, 삭제, 경로, 배속)은 전부 ViewModel
-        //
-        //  터치 이동:
-        //  좌 20% 터치 → 이전 영상 / 우 20% 터치 → 다음 영상
-        //  재생 중 / 정지 중 구분 없이 항상 동작
-        //  이동 시 배속 초기화
-        //
-        //  영상 끝 → 무한 반복 재생
+        //  비즈니스 로직/팝업은 전부 ViewModel
         // ═══════════════════════════════════════════
 
-        // ── 재생 상태 (UI 전용) ──
         private bool _isPlaying = false;
         private bool _isDraggingSeek = false;
         private bool _disposed = false;
 
-        // ── 타이머: 경과시간 + Seek 슬라이더 100ms 주기 업데이트 ──
         private readonly DispatcherTimer _timer;
 
         private VideoCommentViewModel VM => DataContext as VideoCommentViewModel;
+
+        // ═══════════════════════════════════════════
+        //  저장 필요 여부 통합 체크 (ImageComment와 동일한 패턴)
+        //  IsCommentDirty 만 체크 (영상은 ISF 없음)
+        // ═══════════════════════════════════════════
+        private bool HasUnsavedChanges() => VM.IsCommentDirty;
 
         // ═══════════════════════════════════════════
         //  생성자
@@ -43,7 +40,14 @@ namespace LSS_prototype.VideoComment_Page
             DataContext = new VideoCommentViewModel(patient, studyId);
 
             VM.PropertyChanged += OnViewModelPropertyChanged;
-            VM.RequestNavigateToScan += () => MainPage.Instance.NavigateTo(new Scan(patient, studyId)); // 1장있는데, 삭제 후 파일없을때 scan화면으로 이동 
+            VM.RequestNavigateToScan += () => MainPage.Instance.NavigateTo(new Scan(patient, studyId));
+
+            // SAVE 버튼 → RequestSave 이벤트 → SaveComment 호출
+            VM.RequestSave += () =>
+            {
+                VM.SaveComment();
+                // IsCommentDirty 는 SaveComment 내부에서 리셋
+            };
 
             _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
             _timer.Tick += Timer_Tick;
@@ -54,9 +58,6 @@ namespace LSS_prototype.VideoComment_Page
 
         // ═══════════════════════════════════════════
         //  Loaded
-        //  1. MediaElement 조작 Action → ViewModel 에 주입
-        //  2. VM.Initialize() → 파일 목록 수집 + 첫 파일 재생
-        //  3. 터치 이동 이벤트 등록
         // ═══════════════════════════════════════════
         private async void OnLoaded(object sender, RoutedEventArgs e)
         {
@@ -69,9 +70,7 @@ namespace LSS_prototype.VideoComment_Page
                         {
                             if (VideoPlayer.Source == null) return;
                             var target = VideoPlayer.Position - TimeSpan.FromSeconds(1);
-                            VideoPlayer.Position = target < TimeSpan.Zero
-                                ? TimeSpan.Zero
-                                : target;
+                            VideoPlayer.Position = target < TimeSpan.Zero ? TimeSpan.Zero : target;
                         }
                         catch (Exception ex) { await Common.WriteLog(ex); }
                     },
@@ -92,7 +91,6 @@ namespace LSS_prototype.VideoComment_Page
                         try
                         {
                             if (VideoPlayer.Source == null) return;
-
                             if (_isPlaying)
                             {
                                 VideoPlayer.Pause();
@@ -103,7 +101,7 @@ namespace LSS_prototype.VideoComment_Page
                             else
                             {
                                 VideoPlayer.Play();
-                                VideoPlayer.SpeedRatio = VM.CurrentSpeedRatio; // 배속적용
+                                VideoPlayer.SpeedRatio = VM.CurrentSpeedRatio;
                                 _isPlaying = true;
                                 VM.PlayPauseIcon = "⏸";
                                 _timer.Start();
@@ -115,16 +113,13 @@ namespace LSS_prototype.VideoComment_Page
 
                 await VM.Initialize();
 
-                // 터치 이동 이벤트 등록
-                // VideoPlayer 가 아닌 VideoPlayer 의 부모 Grid 에 등록
-                // → 하단 오버레이 영역 제외하고 영상 영역 전체에서 터치 감지
                 VideoPlayer.PreviewMouseDown += OnVideoPreviewMouseDown;
             }
             catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         // ═══════════════════════════════════════════
-        //  Unloaded → 리소스 정리
+        //  Unloaded
         // ═══════════════════════════════════════════
         private async void OnUnloaded(object sender, RoutedEventArgs e)
         {
@@ -132,10 +127,13 @@ namespace LSS_prototype.VideoComment_Page
         }
 
         // ═══════════════════════════════════════════
-        //  터치 이동
-        //  ImageComment 와 동일한 비율 (좌 20% / 우 20%)
-        //  재생 중 / 정지 중 구분 없이 항상 동작
-        //  이동 시 배속 초기화
+        //  좌/우 20% 터치 → 페이지 이동
+        //
+        //  ImageComment와 동일한 패턴:
+        //  1. CanNavigate() 로 이동 가능 여부 먼저 확인
+        //     → 1장이거나 첫/마지막이면 팝업 없이 바로 리턴
+        //  2. 이동 가능한 경우에만 HasUnsavedChanges() 확인
+        //     → 코멘트 변경이 있으면 ConfirmSaveAll() 팝업 (MVVM 패턴)
         // ═══════════════════════════════════════════
         private async void OnVideoPreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
@@ -144,15 +142,25 @@ namespace LSS_prototype.VideoComment_Page
                 if (VideoPlayer.ActualWidth <= 0) return;
 
                 double ratio = e.GetPosition(VideoPlayer).X / VideoPlayer.ActualWidth;
-
                 bool goNext = ratio >= 0.80;
                 bool goPrev = ratio <= 0.20;
-
                 if (!goNext && !goPrev) return;
 
                 e.Handled = true;
 
-                // 배속 초기화 → 다음/이전 영상은 항상 1x 로 시작
+                // ★ 이동 불가면 팝업 없이 바로 리턴 (무한 팝업 방지)
+                if (!VM.CanNavigate(goNext)) return;
+
+                // 변경 사항 있으면 저장 여부 확인
+                if (HasUnsavedChanges())
+                {
+                    bool save = await VM.ConfirmSaveAll();
+                    if (save) VM.SaveComment();
+                    // IsCommentDirty 는 SaveComment 내부에서 리셋
+                    // 저장 안 해도 플래그 리셋 (No 선택 시)
+                    VM.ResetDirty();
+                }
+
                 await VM.ResetSpeed();
 
                 if (goNext)
@@ -165,13 +173,6 @@ namespace LSS_prototype.VideoComment_Page
 
         // ═══════════════════════════════════════════
         //  ViewModel 프로퍼티 변경 감지
-        //
-        //  CurrentVideoPath 변경
-        //    → null : StopAndReset()
-        //    → 경로 : 새 파일 로드 + 자동 재생
-        //
-        //  CurrentSpeedRatio 변경
-        //    → MediaElement.SpeedRatio 적용
         // ═══════════════════════════════════════════
         private async void OnViewModelPropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
@@ -197,7 +198,7 @@ namespace LSS_prototype.VideoComment_Page
             {
                 if (string.IsNullOrEmpty(VM.CurrentVideoPath))
                 {
-                    await StopAndReset ();
+                    await StopAndReset();
                     return;
                 }
 
@@ -220,13 +221,11 @@ namespace LSS_prototype.VideoComment_Page
         //  MediaElement 이벤트
         // ═══════════════════════════════════════════
 
-        // 영상 열림 → 전체시간 표시 + Seek 최대값 설정
         private async void VideoPlayer_MediaOpened(object sender, RoutedEventArgs e)
         {
             try
             {
                 if (!VideoPlayer.NaturalDuration.HasTimeSpan) return;
-
                 var total = VideoPlayer.NaturalDuration.TimeSpan;
                 TxtTotalTime.Text = total.ToString(@"mm\:ss");
                 SliderSeek.Maximum = total.TotalSeconds;
@@ -234,14 +233,12 @@ namespace LSS_prototype.VideoComment_Page
             catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
-        // 영상 끝 → 처음으로 돌아가 무한 반복 재생
         private async void VideoPlayer_MediaEnded(object sender, RoutedEventArgs e)
         {
             try
             {
                 VideoPlayer.Position = TimeSpan.Zero;
                 VideoPlayer.Play();
-
                 SliderSeek.Value = 0;
                 TxtCurrentTime.Text = "00:00";
             }
@@ -250,7 +247,6 @@ namespace LSS_prototype.VideoComment_Page
 
         // ═══════════════════════════════════════════
         //  타이머 Tick → Seek 슬라이더 + 경과시간 업데이트
-        //  매 100ms 호출 → 로그 폭주 방지로 조용히 무시
         // ═══════════════════════════════════════════
         private void Timer_Tick(object sender, EventArgs e)
         {
@@ -269,15 +265,11 @@ namespace LSS_prototype.VideoComment_Page
 
         // ═══════════════════════════════════════════
         //  Seek 슬라이더
-        //  PreviewMouseDown → 드래그 시작 플래그 ON
-        //  PreviewMouseUp   → 이동 + 플래그 OFF (finally 보장)
-        //  ValueChanged     → 드래그 중 경과시간 미리보기
         // ═══════════════════════════════════════════
         private void SliderSeek_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             _isDraggingSeek = true;
         }
-
 
         private async void SliderSeek_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
@@ -300,18 +292,17 @@ namespace LSS_prototype.VideoComment_Page
                     TimeSpan.FromSeconds(SliderSeek.Value).ToString(@"mm\:ss");
         }
 
+
         // ═══════════════════════════════════════════
         //  헬퍼
         // ═══════════════════════════════════════════
-
-        // MediaElement + 타이머 + UI 상태 완전 초기화
         private async Task StopAndReset()
         {
             try
             {
                 _timer.Stop();
                 VideoPlayer.Stop();
-                VideoPlayer.Close(); // 이 close를 해줘야지만 딜레이없이 삭제 및 복구가 가능함.. 다른 페이지에서도 영상 정지 시 꼭 참조할것 ( 0319 박한용 ) 
+                VideoPlayer.Close();
                 VideoPlayer.Source = null;
 
                 _isPlaying = false;
@@ -324,11 +315,6 @@ namespace LSS_prototype.VideoComment_Page
             catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
-
-        // ═══════════════════════════════════════════
-        //  Dispose
-        //  Unloaded 에서 자동 호출
-        // ═══════════════════════════════════════════
         public async Task Dispose()
         {
             if (_disposed) return;

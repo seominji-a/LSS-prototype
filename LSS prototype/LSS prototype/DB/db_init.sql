@@ -44,7 +44,6 @@ CREATE TABLE IF NOT EXISTS USER
 -- ================================================
 -- Patient TABLE ( 2026.02.09 생성자 : 서민지 )
 -- Patient TABLE ( 2026.03.17 수정일 : 서민지 )
--- Patient TABLE ( 2026.03.23 수정일 : 박한용 ) --> 사용자 삭제 기능 추가 
 -- ================================================
 CREATE TABLE IF NOT EXISTS PATIENT (
     PATIENT_ID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,9 +54,6 @@ CREATE TABLE IF NOT EXISTS PATIENT (
     REG_DATE TIMESTAMP NOT NULL DEFAULT (datetime('now', 'localtime')),
     LASTSHOOTDATE DATE,
     SHOTNUM INTEGER NOT NULL DEFAULT 0,
-    -- 사용자 삭제는 즉시 DELETE하지않고, IS_DELETED 컬럼을 이용해 판단 
-    IS_DELETED      TEXT    DEFAULT 'N',
-
     --문자열 보다 enum/코드화
     SOURCE_TYPE INTEGER NOT NULL
 );
@@ -152,4 +148,20 @@ CREATE TABLE DELETE_LOG (
     IS_FORCE_DELETED    TEXT     NOT NULL DEFAULT 'N',
     FORCE_DELETED_AT    DATETIME NULL,
     FORCE_DELETED_BY    TEXT     NULL
+);
+
+
+-- ================================================
+-- COMMENT TABLE ( 2026-03-24 생성자 : 박한용 )
+-- 이미지 및 영상 코멘트 저장 테이블
+-- FILE_TYPE : 'IMAGE' / 'DICOM_VIDEO' / 'NORMAL_VIDEO'
+-- FILE_NAME : 파일명 (확장자 제외)
+-- IMAGE / DICOM_VIDEO → dcm 태그에서 로드, 저장 시 TB에도 기록
+-- NORMAL_VIDEO        → TB에서만 로드/저장
+-- ================================================
+CREATE TABLE COMMENT (
+    FILE_TYPE   TEXT  NOT NULL,
+    FILE_NAME   TEXT  NOT NULL,
+    COMMENT     TEXT  NOT NULL DEFAULT '',
+    PRIMARY KEY (FILE_TYPE, FILE_NAME)
 );

@@ -60,4 +60,6 @@ namespace LSS_prototype.Patient_Page
         public HashSet<string> StudyIds { get; set; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     }
+
+
 }

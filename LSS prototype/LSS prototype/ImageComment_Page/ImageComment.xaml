@@ -4,9 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        
         Height="1080" Width="1920"
-       
         Background="#173753"
         d:DesignWidth="1920" d:DesignHeight="1080">
 
@@ -35,6 +33,13 @@
 
         <Style x:Key="DarkBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
             <Setter Property="Background" Value="{StaticResource BtnDark}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize"   Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+
+        <Style x:Key="AccentBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
+            <Setter Property="Background" Value="{StaticResource Accent}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontSize"   Value="16"/>
             <Setter Property="FontWeight" Value="Bold"/>
@@ -73,14 +78,11 @@
             <Setter Property="FontWeight" Value="Bold"/>
         </Style>
 
-        <!-- 색상 버튼: 터치 편하게 충분히 크게 -->
         <Style x:Key="ColorBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
             <Setter Property="Background" Value="{StaticResource BtnDark}"/>
             <Setter Property="Height"     Value="52"/>
         </Style>
 
-        <!-- ══ 터치 친화적 Slider ══
-             트랙 높이 8px / Thumb 44×44 원형 / 채워진 부분 Accent 색상 -->
         <Style x:Key="TouchSlider" TargetType="Slider">
             <Setter Property="Minimum"           Value="2"/>
             <Setter Property="Maximum"           Value="20"/>
@@ -92,22 +94,14 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-
-                            <!-- 트랙 전체 레이아웃 -->
                             <Border Height="44" Background="Transparent">
                                 <Grid VerticalAlignment="Center">
-
-                                    <!-- 배경 트랙 (전체) -->
                                     <Border Height="8" CornerRadius="4"
                                             Background="{StaticResource BtnDark}"
                                             Margin="22,0"/>
-
-                                    <!-- WPF 필수 파트 : PART_Track -->
                                     <Track x:Name="PART_Track" Margin="0">
                                         <Track.DecreaseRepeatButton>
-                                            <!-- 채워진 부분 (Accent 색) -->
-                                            <RepeatButton Command="Slider.DecreaseLarge"
-                                                          Focusable="False">
+                                            <RepeatButton Command="Slider.DecreaseLarge" Focusable="False">
                                                 <RepeatButton.Template>
                                                     <ControlTemplate TargetType="RepeatButton">
                                                         <Border Height="8" CornerRadius="4,0,0,4"
@@ -118,9 +112,7 @@
                                             </RepeatButton>
                                         </Track.DecreaseRepeatButton>
                                         <Track.IncreaseRepeatButton>
-                                            <!-- 비어있는 부분 (투명) -->
-                                            <RepeatButton Command="Slider.IncreaseLarge"
-                                                          Focusable="False">
+                                            <RepeatButton Command="Slider.IncreaseLarge" Focusable="False">
                                                 <RepeatButton.Template>
                                                     <ControlTemplate TargetType="RepeatButton">
                                                         <Border Background="Transparent"/>
@@ -129,16 +121,12 @@
                                             </RepeatButton>
                                         </Track.IncreaseRepeatButton>
                                         <Track.Thumb>
-                                            <!-- Thumb: 44×44 원형, 흰색 -->
                                             <Thumb>
                                                 <Thumb.Template>
                                                     <ControlTemplate TargetType="Thumb">
                                                         <Grid Width="44" Height="44">
-                                                            <!-- 그림자 효과용 외곽 원 -->
                                                             <Ellipse Fill="#40000000" Margin="-2"/>
-                                                            <!-- 메인 원 -->
                                                             <Ellipse Fill="White"/>
-                                                            <!-- 내부 Accent 점 -->
                                                             <Ellipse Width="14" Height="14"
                                                                      Fill="{StaticResource Accent}"
                                                                      HorizontalAlignment="Center"
@@ -149,7 +137,6 @@
                                             </Thumb>
                                         </Track.Thumb>
                                     </Track>
-
                                 </Grid>
                             </Border>
                         </Grid>
@@ -225,26 +212,21 @@
             <ColumnDefinition Width="440"/>
         </Grid.ColumnDefinitions>
 
-        <!-- ══ 좌측: 이미지만 ══ -->
+        <!-- ══ 좌측: 이미지 ══ -->
         <Border Grid.Column="0" Background="Black"
                 Margin="10,10,5,10" CornerRadius="8" ClipToBounds="True">
             <Grid>
-                <Image x:Name="CapturedImage" Stretch="Uniform"
-        />
-
-                <!-- InkCanvas: 기본 None 모드 → PEN 눌렀을 때만 활성 -->
+                <Image x:Name="CapturedImage" Stretch="Uniform"/>
                 <InkCanvas x:Name="DrawingCanvas" Background="Transparent"/>
 
-                <!-- 환자 정보 -->
                 <!-- 좌상단: 환자 정보 -->
                 <StackPanel Margin="16,12" VerticalAlignment="Top" HorizontalAlignment="Left">
                     <TextBlock Foreground="White" FontSize="18" FontWeight="Bold">
-                            <Run Text="{Binding SelectedPatient.DisplayName, Mode=OneWay}"/>
-                            <Run Text="("/>
-                            <Run Text="{Binding SelectedPatient.PatientCode}"/>
-                            <Run Text=")"/>
+                        <Run Text="{Binding SelectedPatient.DisplayName, Mode=OneWay}"/>
+                        <Run Text="("/>
+                        <Run Text="{Binding SelectedPatient.PatientCode}"/>
+                        <Run Text=")"/>
                     </TextBlock>
-
                     <TextBlock Foreground="White" FontSize="16">
                         <Run Text="{Binding SelectedPatient.BirthDate, StringFormat=yyyy-MM-dd}"/>
                         <Run Text=" / "/>
@@ -252,9 +234,10 @@
                     </TextBlock>
                 </StackPanel>
 
-                <TextBlock Text="{Binding PageIndicator}"  Foreground="White" FontSize="18" FontWeight="Bold"  HorizontalAlignment="Right"/>
-                
-                <!-- 좌/우 10% 터치 영역 안내 오버레이 (None 모드일 때만 표시) -->
+                <TextBlock Text="{Binding PageIndicator}" Foreground="White"
+                           FontSize="18" FontWeight="Bold"
+                           HorizontalAlignment="Right" VerticalAlignment="Top"
+                           Margin="0,12,16,0"/>
             </Grid>
         </Border>
 
@@ -274,38 +257,41 @@
                         <RowDefinition Height="8"/>
                         <RowDefinition Height="52"/>
                         <!-- R2:  Position 콤보 -->
-                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="16"/>
                         <RowDefinition Height="Auto"/>
                         <!-- R4:  Anatomical 라벨 -->
                         <RowDefinition Height="8"/>
                         <RowDefinition Height="52"/>
                         <!-- R6:  Anatomical 콤보 -->
-                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="16"/>
                         <RowDefinition Height="Auto"/>
                         <!-- R8:  Comment 라벨 -->
                         <RowDefinition Height="8"/>
-                        <RowDefinition Height="*"/>
-                        <!-- R10: Comment 입력 -->
-                        <RowDefinition Height="14"/>
+                        <RowDefinition Height="240"/>
+                        <!-- R10: Comment 입력 (높이 고정) -->
+                        <RowDefinition Height="10"/>
                         <RowDefinition Height="66"/>
                         <!-- R12: IMAGE DELETE -->
                         <RowDefinition Height="10"/>
                         <RowDefinition Height="66"/>
-                        <!-- R14: BACK + RESET -->
+                        <!-- R14: RESET -->
+                        <RowDefinition Height="10"/>
+                        <RowDefinition Height="66"/>
+                        <!-- R16: SAVE -->
                         <RowDefinition Height="14"/>
                         <RowDefinition Height="1"/>
-                        <!-- R16: 구분선 -->
+                        <!-- R18: 구분선 -->
                         <RowDefinition Height="12"/>
 
                         <!-- ── 팔레트 영역 ── -->
                         <RowDefinition Height="52"/>
-                        <!-- R18: PEN / ERASE / CLEAR (툴) -->
+                        <!-- R20: PEN / ERASE / CLEAR -->
                         <RowDefinition Height="10"/>
                         <RowDefinition Height="52"/>
-                        <!-- R20: 색상 버튼 1줄 -->
+                        <!-- R22: 색상 버튼 -->
                         <RowDefinition Height="10"/>
                         <RowDefinition Height="52"/>
-                        <!-- R22: 굵기 슬라이더 1줄 -->
+                        <!-- R24: 굵기 슬라이더 -->
                     </Grid.RowDefinitions>
 
                     <!-- Position -->
@@ -335,6 +321,7 @@
                             BorderBrush="{StaticResource CardBorder}"
                             BorderThickness="1" CornerRadius="10">
                         <TextBox x:Name="TxtComment"
+                                 Text="{Binding CommentText, UpdateSourceTrigger=PropertyChanged}"
                                  Background="Transparent" BorderThickness="0"
                                  Foreground="White" FontSize="15"
                                  AcceptsReturn="True" TextWrapping="Wrap"
@@ -348,20 +335,21 @@
                             Style="{StaticResource DangerBtn}"
                             Command="{Binding ImageDeleteCommand}"/>
 
-                    <!-- BACK + RESET -->
-                    <Grid Grid.Row="14">
+                    <!-- RESET -->
+                    <Button Grid.Row="14" x:Name="BtnReset"
+                            Content="RESET" Style="{StaticResource DarkBtn}"
+                            Click="BtnReset_Click"/>
 
-
-                        <Button Grid.Column="2" x:Name="BtnReset"
-                                Content="RESET" Style="{StaticResource DarkBtn}"
-                                Click="BtnReset_Click"/>
-                    </Grid>
+                    <!-- SAVE -->
+                    <Button Grid.Row="16" x:Name="BtnSave"
+                            Content="SAVE" Style="{StaticResource AccentBtn}"
+                            Command="{Binding SaveCommand}"/>
 
                     <!-- 구분선 -->
-                    <Border Grid.Row="16" Background="{StaticResource CardBorder}"/>
+                    <Border Grid.Row="18" Background="{StaticResource CardBorder}"/>
 
-                    <!-- ── R18: 툴 버튼 (PEN / ERASE / CLEAR) ── -->
-                    <Grid Grid.Row="18">
+                    <!-- ── R20: 툴 버튼 (PEN / ERASE / CLEAR) ── -->
+                    <Grid Grid.Row="20">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="8"/>
@@ -399,8 +387,8 @@
                         </Button>
                     </Grid>
 
-                    <!-- ── R20: 색상 버튼 1줄 (터치 크기 충분히) ── -->
-                    <Grid Grid.Row="20">
+                    <!-- ── R22: 색상 버튼 ── -->
+                    <Grid Grid.Row="22">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="8"/>
@@ -429,16 +417,13 @@
                         </Button>
                     </Grid>
 
-                    <!-- ── R22: 굵기 슬라이더 1줄 ── -->
-                    <Grid Grid.Row="22">
+                    <!-- ── R24: 굵기 슬라이더 ── -->
+                    <Grid Grid.Row="24">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
-                            <!-- 라벨 -->
                             <ColumnDefinition Width="*"/>
-                            <!-- 슬라이더 -->
                             <ColumnDefinition Width="10"/>
                             <ColumnDefinition Width="44"/>
-                            <!-- 숫자 -->
                         </Grid.ColumnDefinitions>
 
                         <TextBlock Grid.Column="0"
@@ -463,7 +448,7 @@
                 </Grid>
             </Border>
 
-            <!-- LOGOUT + EXIT -->
+            <!-- BACK + EXIT -->
             <Grid Grid.Row="2" VerticalAlignment="Center">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*"/>
@@ -473,7 +458,7 @@
                         HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                         Margin="0,0,4,0" Click="Back_Click">
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="⬅︎"      FontSize="40" HorizontalAlignment="Center"/>
+                        <TextBlock Text="⬅︎" FontSize="40" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
                 <Button Grid.Column="1" Content="EXIT"

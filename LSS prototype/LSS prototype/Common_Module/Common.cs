@@ -34,7 +34,9 @@ namespace LSS_prototype
         public static int EXPIRE_MINUTE = 3;    // 3분 후 만료 / 테스트용  ( 쿼리문은 직접 바꿔줘야함  SELECT_EXPIRED_LOGS) 
 
 
-        public const int DB_VERSION = 60; // DB Version 
+
+        public const int DB_VERSION = 61; // DB Version 
+
 
         // ===== OTP 기능  =====
         public async static Task<bool> VerifyMasterOtp(string inputId, string inputOtp) => await OtpService.VerifyMasterOtp(inputId, inputOtp);
@@ -466,20 +468,20 @@ namespace LSS_prototype
         // ================================================
         // Patient_Page  -  DB_Manager.Patient.cs
         // ================================================
-        public const string SELECT_PATIENTLIST = "SELECT * FROM PATIENT WHERE IS_DELETED = 'N' ORDER BY REG_DATE DESC";
-        public const string SEARCH_PATIENT = "SELECT PATIENT_ID, PATIENT_CODE, PATIENT_NAME, BIRTH_DATE, SEX, REG_DATE, SOURCE_TYPE, LASTSHOOTDATE, SHOTNUM FROM PATIENT WHERE (PATIENT_NAME LIKE @keyword OR PATIENT_CODE LIKE @keyword) AND IS_DELETED = 'N' ORDER BY PATIENT_ID ASC";
+        public const string SELECT_PATIENTLIST = "SELECT * FROM PATIENT ORDER BY REG_DATE DESC";
+        public const string SEARCH_PATIENT = "SELECT PATIENT_ID, PATIENT_CODE, PATIENT_NAME, BIRTH_DATE, SEX, REG_DATE, SOURCE_TYPE, LASTSHOOTDATE, SHOTNUM FROM PATIENT WHERE (PATIENT_NAME LIKE @keyword OR PATIENT_CODE LIKE @keyword) ORDER BY PATIENT_ID ASC";
         //public const string INSERT_PATIENT = "INSERT INTO PATIENT (PATIENT_NAME, PATIENT_CODE, BIRTH_DATE, SEX) VALUES (@PatientName, @PatientCode, @BirthDate, @Sex)";
         public const string INSERT_PATIENT = "INSERT INTO PATIENT (PATIENT_NAME, PATIENT_CODE, BIRTH_DATE, SEX, LASTSHOOTDATE, SHOTNUM, SOURCE_TYPE) VALUES (@PatientName, @PatientCode, @BirthDate, @Sex, @LastShootDate, @ShotNum, @SourceType)";
         public const string EDIT_PATIENT = "UPDATE PATIENT SET PATIENT_NAME = @PatientName, PATIENT_CODE = @PatientCode, BIRTH_DATE = @BirthDate, SEX = @Sex WHERE PATIENT_ID = @Patient_id";
         public const string DELETE_PATIENT = "DELETE FROM PATIENT WHERE PATIENT_ID = @Patient_id";
-        public const string SOFT_DELETE_PATIENT = "UPDATE PATIENT SET IS_DELETED = 'Y' WHERE PATIENT_ID = @Patient_id";
+        
 
         public const string PATIENT_CODE_SEARCH = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode";                                                  // 환자 코드 중복 체크
         public const string PATIENT_CODE_SEARCHSELF = "SELECT COUNT(1) FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND PATIENT_ID <> @Patient_id";                   // 수정 시 자기 자신 제외 중복 체크
 
-        public const string SELECT_LOCAL_PATIENTLIST = "SELECT * FROM PATIENT WHERE SOURCE_TYPE = @SourceType AND IS_DELETED = 'N' ORDER BY REG_DATE DESC";
+        public const string SELECT_LOCAL_PATIENTLIST = "SELECT * FROM PATIENT WHERE SOURCE_TYPE = @SourceType ORDER BY REG_DATE DESC";
 
-        public const string SELECT_EMR_PATIENTLIST = "SELECT * FROM PATIENT WHERE SOURCE_TYPE = @SourceType AND IS_DELETED = 'N' ORDER BY REG_DATE DESC";
+        public const string SELECT_EMR_PATIENTLIST = "SELECT * FROM PATIENT WHERE SOURCE_TYPE = @SourceType ORDER BY REG_DATE DESC";
 
         public const string SELECT_PATIENT_BY_CODE_AND_SOURCE = "SELECT PATIENT_ID FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND SOURCE_TYPE = @SourceType LIMIT 1";
 
@@ -512,18 +514,24 @@ namespace LSS_prototype
         public const string INSERT_IMAGE_DELETE_LOG = "INSERT INTO DELETE_LOG (DELETED_BY, FILE_TYPE, IMAGE_PATH, PATIENT_CODE, PATIENT_NAME) VALUES (@DeletedBy, @FileType, @ImagePath, @PatientCode, @PatientName)";
         public const string INSERT_NORMAL_VIDEO_DELETE_LOG = "INSERT INTO DELETE_LOG (DELETED_BY, FILE_TYPE, AVI_PATH, PATIENT_CODE, PATIENT_NAME) VALUES (@DeletedBy, @FileType, @AviPath, @PatientCode, @PatientName)";
         public const string INSERT_DICOM_VIDEO_DELETE_LOG = "INSERT INTO DELETE_LOG (DELETED_BY, FILE_TYPE, AVI_PATH, DICOM_PATH, PATIENT_CODE, PATIENT_NAME)  VALUES (@DeletedBy, @FileType, @AviPath, @DicomPath, @PatientCode, @PatientName)";
-        public const string SELECT_DELETE_LOGS = "SELECT d.*, CASE WHEN p.DELETE_ID IS NOT NULL THEN 'Y' ELSE 'N' END AS PATIENT_DELETED FROM DELETE_LOG d LEFT JOIN DELETE_LOG p ON d.PATIENT_CODE = p.PATIENT_CODE AND d.PATIENT_NAME = p.PATIENT_NAME AND p.FILE_TYPE = 'PATIENT' AND p.IS_RECOVERED = 'N' ORDER BY d.DELETED_AT DESC";
-        // 위 DELETE_LOG 쿼리문은 같은 PATIENT_CODE + PATIENT_NAME 을 가진 행 중, FILE_TYPE = 'PATIENT' 인 행이 존재하면 → 그 환자의 모든 파일 로그 PATIENT_DELETED = 'Y' ( why? 환자 자체가 삭제되면, 이미지 영상 백업 및 강제삭제 기능은 무의미 하기때문  0323 박한용) 
+        public const string SELECT_DELETE_LOGS = "SELECT * FROM DELETE_LOG ORDER BY DELETED_AT DESC";
         public const string UPDATE_RECOVERED = "UPDATE DELETE_LOG SET IS_RECOVERED = 'Y', RECOVERED_AT = datetime('now', 'localtime'), RECOVERED_BY = @RecoveredBy WHERE DELETE_ID = @DeleteId";
         public const string UPDATE_FORCE_DELETED = "UPDATE DELETE_LOG SET IS_FORCE_DELETED = 'Y', FORCE_DELETED_AT = datetime('now', 'localtime'), FORCE_DELETED_BY = @ForceDeletedBy WHERE DELETE_ID = @DeleteId";
         public const string INSERT_PATIENT_DELETE_LOG = "INSERT INTO DELETE_LOG (DELETED_BY, FILE_TYPE, PATIENT_CODE, PATIENT_NAME) VALUES (@DeletedBy, 'PATIENT', @PatientCode, @PatientName)";
         public const string RESTORE_PATIENT = "UPDATE PATIENT SET IS_DELETED = 'N' WHERE PATIENT_CODE = @PatientCode AND PATIENT_NAME = @PatientName";
         public const string DELETE_PATIENT_BY_CODE_AND_NAME = "DELETE FROM PATIENT WHERE PATIENT_CODE = @PatientCode AND PATIENT_NAME = @PatientName";
-        public const string FORCE_DELETE_RELATED_LOGS = "UPDATE DELETE_LOG SET IS_FORCE_DELETED = 'Y', FORCE_DELETED_AT = datetime('now', 'localtime'), FORCE_DELETED_BY = @ForceDeletedBy  WHERE PATIENT_CODE = @PatientCode AND PATIENT_NAME = @PatientName AND IS_FORCE_DELETED = 'N' AND FILE_TYPE != 'PATIENT'";
-
+        public const string FORCE_DELETE_RELATED_LOGS = "UPDATE DELETE_LOG SET IS_FORCE_DELETED = 'Y', FORCE_DELETED_AT = datetime('now', 'localtime'), FORCE_DELETED_BY = @ForceDeletedBy  WHERE PATIENT_CODE = @PatientCode AND PATIENT_NAME = @PatientName AND IS_FORCE_DELETED = 'N' ";
         public const string SELECT_EXPIRED_LOGS = "SELECT * FROM DELETE_LOG WHERE DELETED_AT < datetime('now', 'localtime', '-3 minutes') AND IS_RECOVERED = 'N' AND IS_FORCE_DELETED = 'N'";
         // 0323 현재 테스트라서 5분 지난 데이터를 삭제 되게끔처리 ( 이부분은 직접 바꿔야함 ( 쿼리문에 상수 추가불가 ) ) 
         public const string DELETE_OLD_LOGS = "DELETE FROM DELETE_LOG WHERE DELETED_AT < date('now', 'localtime', '-3 years')";
+        public const string INSERT_PATIENT_FORCE_DELETE_LOG = "INSERT INTO DELETE_LOG (DELETED_BY, FILE_TYPE, PATIENT_CODE, PATIENT_NAME, IS_FORCE_DELETED, FORCE_DELETED_AT, FORCE_DELETED_BY) VALUES (@DeletedBy, 'PATIENT', @PatientCode, @PatientName, 'Y', datetime('now', 'localtime'), @ForceDeletedBy)";
+
+        // ================================================
+        // COMMENT  -  DB_Manager.Comment.cs
+        // ================================================
+        public const string UPSERT_COMMENT = "INSERT INTO COMMENT (FILE_TYPE, FILE_NAME, COMMENT) VALUES (@FileType, @FileName, @Comment) ON CONFLICT(FILE_TYPE, FILE_NAME) DO UPDATE SET COMMENT = @Comment";
+        public const string SELECT_COMMENT = "SELECT COMMENT FROM COMMENT WHERE FILE_TYPE = @FileType AND FILE_NAME = @FileName";
+        public const string DELETE_COMMENT = "DELETE FROM COMMENT WHERE FILE_TYPE = @FileType AND FILE_NAME = @FileName";
     }
 }
 

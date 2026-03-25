@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using LSS_prototype.Patient_Page;
 
 namespace LSS_prototype.ImageReview_Page
 {
@@ -9,8 +10,12 @@ namespace LSS_prototype.ImageReview_Page
     {
         public ObservableCollection<ImageItem> Images { get; } = new ObservableCollection<ImageItem>();
 
-        public ImageReviewViewModel()
+        public PatientModel SelectedPatient { get; }
+
+        public ImageReviewViewModel(PatientModel patient)
         {
+            SelectedPatient = patient;
+
             // 임시 테스트 데이터
             Images.Add(new ImageItem
             {
@@ -39,7 +44,6 @@ namespace LSS_prototype.ImageReview_Page
             }
             catch
             {
-                // 이미지 없을 때 null 반환
                 return null;
             }
         }

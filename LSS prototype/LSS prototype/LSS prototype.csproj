@@ -370,6 +370,7 @@
     <Compile Include="VideoReview_Page\VideoReview.xaml.cs">
       <DependentUpon>VideoReview.xaml</DependentUpon>
     </Compile>
+    <Compile Include="VideoReview_Page\VideoReviewViewModel.cs" />
     <Page Include="Common_Module\CustomMessageWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

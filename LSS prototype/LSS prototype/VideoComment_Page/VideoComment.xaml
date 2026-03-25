@@ -132,6 +132,33 @@
             </Setter>
         </Style>
 
+        <Style x:Key="PmBtn" TargetType="Button">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Background"      Value="#2A3F55"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="FontSize"        Value="22"/>
+            <Setter Property="FontWeight"      Value="Bold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Ellipse Fill="{TemplateBinding Background}"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#3B5570"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#3B82F6"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="SeekSlider" TargetType="Slider">
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Template">
@@ -264,110 +291,202 @@
 
                         <!-- 컨트롤 버튼 한 줄 -->
                         <Grid Grid.Row="2">
+                            <!-- 속도 표시 레이블 -->
                             <Border HorizontalAlignment="Left" VerticalAlignment="Center"
-                                    Background="{StaticResource ValueBg}"
-                                    CornerRadius="8" Padding="14,0" Height="44">
+            Background="{StaticResource ValueBg}"
+            CornerRadius="8" Padding="14,0" Height="44">
                                 <TextBlock Text="{Binding SpeedLabel}"
-                                           Foreground="{Binding SpeedLabelColor}"
-                                           FontSize="16" FontWeight="Bold"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"/>
+                   Foreground="{Binding SpeedLabelColor}"
+                   FontSize="16" FontWeight="Bold"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"/>
                             </Border>
 
                             <StackPanel Orientation="Horizontal"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center">
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+
+                                <!-- 느리게 -->
                                 <Button Style="{StaticResource SeekBtn}"
-                                        Width="70" Height="70" Margin="0,0,8,0"
-                                        Command="{Binding SlowerCommand}">
+                Width="70" Height="70" Margin="0,0,8,0"
+                Command="{Binding SlowerCommand}">
                                     <StackPanel VerticalAlignment="Center">
                                         <TextBlock Text="🐢" FontSize="22" HorizontalAlignment="Center"/>
                                         <TextBlock Text="느리게" FontSize="10"
-                                                   Foreground="{StaticResource Inactive}"
-                                                   HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                           Foreground="{StaticResource Inactive}"
+                           HorizontalAlignment="Center" Margin="0,2,0,0"/>
                                     </StackPanel>
                                 </Button>
 
+                                <!-- -1초 -->
                                 <Button Style="{StaticResource SeekBtn}"
-                                         Width="70" Height="70" Margin="0,0,8,0"
-                                         Command="{Binding SeekBackCommand}">
-                                    <Grid>
-                                                 <!-- 화살표 + 원호 -->
-                                        <Viewbox Width="40" Height="40" Stretch="Uniform">
-                                            <Canvas Width="100" Height="100">
-                                                <!-- 원호 -->
-                                                <Path Stroke="White" StrokeThickness="8"
-                                         StrokeStartLineCap="Round"
-                                         StrokeEndLineCap="Round"
-                                         Fill="Transparent"
-                                         Data="M36.89,17.22c4.11-1.42,8.52-2.2,13.11-2.2,22.09,0,40,17.91,40,40s-17.91,40-40,40S10,77.12,10,55.02c0-7.03,1.81-13.63,5-19.37"/>
-                                                <!-- 화살표 머리 -->
-                                                <Path Fill="White"
-                                 Data="M25.19,22.96l19.31,3.67c1.34.25,2.44-1.05,1.97-2.33l-7.09-19.06c-.48-1.28-2.17-1.55-3.01-.48l-12.22,15.4c-.82,1.03-.25,2.57,1.05,2.81Z"/>
-                                                <!-- 1s 텍스트 -->
-                                                <TextBlock Canvas.Left="28" Canvas.Top="38"
-                                 Text="1s" Foreground="White"
-                                 FontFamily="Arial" FontSize="26" FontWeight="Bold"/>
-                                            </Canvas>
-                                        </Viewbox>
-                                    </Grid>
-                                </Button>
-
-                                <Button Style="{StaticResource PlayBtn}"
-                                        Width="100" Height="70"
-                                        Command="{Binding PlayPauseCommand}">
-                                    <Grid>
-                                        <!-- 재생 아이콘 (흰색 삼각형): 정지 상태일 때 표시 -->
-                                        <Viewbox Width="72" Height="72" Stretch="Uniform"
-                                                 Visibility="{Binding PlayIconVisibility}">
-                                            <Canvas Width="100" Height="100">
-                                                <Path Fill="White"
-                                                      Data="M66.53,49.1l-23.98-14.23c-.7-.41-1.57.09-1.57.9v28.46c0,.81.88,1.31,1.57.9l23.98-14.23c.68-.4.68-1.39,0-1.79Z"/>
-                                            </Canvas>
-                                        </Viewbox>
-                                        <!-- 일시정지 아이콘 (흰색 바): 재생 중일 때 표시 -->
-                                        <Viewbox Width="72" Height="72" Stretch="Uniform"
-                                                 Visibility="{Binding PauseIconVisibility}">
-                                            <Canvas Width="100" Height="100">
-                                                <Path Fill="White"
-                                                      Data="M 40.66,35.69 H 44.27 A 1.52,1.52 0 0 1 45.79,37.21 V 62.78 A 1.52,1.52 0 0 1 44.27,64.3 H 40.66 A 1.52,1.52 0 0 1 39.14,62.78 V 37.21 A 1.52,1.52 0 0 1 40.66,35.69 Z"/>
-                                                <Path Fill="White"
-                                                      Data="M 55.73,35.69 H 59.34 A 1.52,1.52 0 0 1 60.86,37.21 V 62.78 A 1.52,1.52 0 0 1 59.34,64.3 H 55.73 A 1.52,1.52 0 0 1 54.21,62.78 V 37.21 A 1.52,1.52 0 0 1 55.73,35.69 Z"/>
-                                            </Canvas>
-                                        </Viewbox>
-                                    </Grid>
-                                </Button>
-
-                                <Button Style="{StaticResource SeekBtn}"
-                                 Width="70" Height="70" Margin="8,0,0,0"
-                                 Command="{Binding SeekForwardCommand}">
+                Width="70" Height="70" Margin="0,0,8,0"
+                Command="{Binding SeekBackCommand}">
                                     <Viewbox Width="40" Height="40" Stretch="Uniform">
                                         <Canvas Width="100" Height="100">
                                             <Path Stroke="White" StrokeThickness="8"
-                                 StrokeStartLineCap="Round"
-                                 StrokeEndLineCap="Round"
-                                 Fill="Transparent"
-                                 Data="M63.11,17.67c-4.11-1.42-8.52-2.2-13.11-2.2-22.09,0-40,17.91-40,40,0,22.09,17.91,40,40,40s40-17.91,40-40c0-7.03-1.81-13.63-5-19.37"/>
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                          Fill="Transparent"
+                          Data="M36.89,17.22c4.11-1.42,8.52-2.2,13.11-2.2,22.09,0,40,17.91,40,40s-17.91,40-40,40S10,77.12,10,55.02c0-7.03,1.81-13.63,5-19.37"/>
                                             <Path Fill="White"
-                                 Data="M74.81,23.4l-19.31,3.67c-1.34.25-2.44-1.05-1.97-2.33l7.09-19.06c.48-1.28,2.17-1.55,3.01-.48l12.22,15.4c.82,1.03.25,2.57-1.05,2.81Z"/>
+                          Data="M25.19,22.96l19.31,3.67c1.34.25,2.44-1.05,1.97-2.33l-7.09-19.06c-.48-1.28-2.17-1.55-3.01-.48l-12.22,15.4c-.82,1.03-.25,2.57,1.05,2.81Z"/>
                                             <TextBlock Canvas.Left="28" Canvas.Top="38"
-                                Text="1s" Foreground="White"
-                                FontFamily="Arial" FontSize="26" FontWeight="Bold"/>
+                               Text="1s" Foreground="White"
+                               FontFamily="Arial" FontSize="26" FontWeight="Bold"/>
                                         </Canvas>
                                     </Viewbox>
                                 </Button>
 
+                                <!-- 재생/일시정지 -->
+                                <Button Style="{StaticResource PlayBtn}"
+                Width="100" Height="70"
+                Command="{Binding PlayPauseCommand}">
+                                    <Grid>
+                                        <Viewbox Width="72" Height="72" Stretch="Uniform"
+                         Visibility="{Binding PlayIconVisibility}">
+                                            <Canvas Width="100" Height="100">
+                                                <Path Fill="White"
+                              Data="M66.53,49.1l-23.98-14.23c-.7-.41-1.57.09-1.57.9v28.46c0,.81.88,1.31,1.57.9l23.98-14.23c.68-.4.68-1.39,0-1.79Z"/>
+                                            </Canvas>
+                                        </Viewbox>
+                                        <Viewbox Width="72" Height="72" Stretch="Uniform"
+                         Visibility="{Binding PauseIconVisibility}">
+                                            <Canvas Width="100" Height="100">
+                                                <Path Fill="White"
+                              Data="M40.66,35.69H44.27A1.52,1.52,0,0,1,45.79,37.21V62.78A1.52,1.52,0,0,1,44.27,64.3H40.66A1.52,1.52,0,0,1,39.14,62.78V37.21A1.52,1.52,0,0,1,40.66,35.69Z"/>
+                                                <Path Fill="White"
+                              Data="M55.73,35.69H59.34A1.52,1.52,0,0,1,60.86,37.21V62.78A1.52,1.52,0,0,1,59.34,64.3H55.73A1.52,1.52,0,0,1,54.21,62.78V37.21A1.52,1.52,0,0,1,55.73,35.69Z"/>
+                                            </Canvas>
+                                        </Viewbox>
+                                    </Grid>
+                                </Button>
+
+                                <!-- +1초 -->
                                 <Button Style="{StaticResource SeekBtn}"
-                                        Width="70" Height="70" Margin="8,0,0,0"
-                                        Command="{Binding FasterCommand}">
+                Width="70" Height="70" Margin="8,0,8,0"
+                Command="{Binding SeekForwardCommand}">
+                                    <Viewbox Width="40" Height="40" Stretch="Uniform">
+                                        <Canvas Width="100" Height="100">
+                                            <Path Stroke="White" StrokeThickness="8"
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                          Fill="Transparent"
+                          Data="M63.11,17.67c-4.11-1.42-8.52-2.2-13.11-2.2-22.09,0-40,17.91-40,40,0,22.09,17.91,40,40,40s40-17.91,40-40c0-7.03-1.81-13.63-5-19.37"/>
+                                            <Path Fill="White"
+                          Data="M74.81,23.4l-19.31,3.67c-1.34.25-2.44-1.05-1.97-2.33l7.09-19.06c.48-1.28,2.17-1.55,3.01-.48l12.22,15.4c.82,1.03.25,2.57-1.05,2.81Z"/>
+                                            <TextBlock Canvas.Left="28" Canvas.Top="38"
+                               Text="1s" Foreground="White"
+                               FontFamily="Arial" FontSize="26" FontWeight="Bold"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Button>
+
+                                <!-- 빠르게 -->
+                                <Button Style="{StaticResource SeekBtn}"
+                Width="70" Height="70" Margin="0,0,0,0"
+                Command="{Binding FasterCommand}">
                                     <StackPanel VerticalAlignment="Center">
                                         <TextBlock Text="🐇" FontSize="22" HorizontalAlignment="Center"/>
                                         <TextBlock Text="빠르게" FontSize="10"
-                                                   Foreground="{StaticResource Inactive}"
-                                                   HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                           Foreground="{StaticResource Inactive}"
+                           HorizontalAlignment="Center" Margin="0,2,0,0"/>
                                     </StackPanel>
                                 </Button>
+
                             </StackPanel>
+
+                            <!-- 계기판 (속도 팝업) — 맨 우측 -->
+                            <Grid x:Name="SpeedBtnArea"
+                                  HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button Style="{StaticResource SeekBtn}"
+                    Width="70" Height="70"
+                    Command="{Binding ToggleSpeedPopupCommand}">
+                                    <Viewbox Width="36" Height="36" Stretch="Uniform">
+                                        <Canvas Width="100" Height="100">
+                                            <Path Stroke="White" StrokeThickness="8"
+                          StrokeStartLineCap="Round" StrokeLineJoin="Round"
+                          StrokeEndLineCap="Round"
+                          Fill="Transparent"
+                          Data="M16.48,82.63c-4.86-6.77-7.73-15.07-7.73-24.04,0-22.78,18.47-41.25,41.25-41.25,5.76,0,11.25,1.18,16.23,3.31"/>
+                                            <Path Stroke="White" StrokeThickness="8"
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                          Fill="Transparent"
+                          Data="M87.38,41.12c2.48,5.3,3.87,11.22,3.87,17.47,0,8.98-2.87,17.29-7.74,24.06"/>
+                                            <Path Fill="White"
+                          Data="M81.8,24.95l-37.49,29.81c-3.27,2.6-3.46,7.51-.39,10.35l1.32,1.22c3.07,2.84,7.95,2.28,10.29-1.19l26.83-39.67c.25-.37-.22-.8-.56-.52Z"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Button>
+
+                                <!-- 속도 팝업 -->
+                                <Popup x:Name="SpeedPopup"
+                   IsOpen="{Binding IsSpeedPopupOpen, Mode=TwoWay}"
+                   PlacementTarget="{Binding ElementName=SpeedBtnArea}"
+                   Placement="Top"
+                   StaysOpen="False"
+                   AllowsTransparency="True"
+                   PopupAnimation="Fade">
+                                    <Border Background="#0F1E2D" CornerRadius="16"
+                    Padding="24" Margin="0,0,0,8" Width="420">
+                                        <Border.Effect>
+                                            <DropShadowEffect Color="Black" Opacity="0.5"
+                                      BlurRadius="16" ShadowDepth="4" Direction="270"/>
+                                        </Border.Effect>
+                                        <StackPanel>
+
+                                            <!-- 현재 속도 표시 -->
+                                            <TextBlock Text="{Binding SpeedLabel}"
+                               FontSize="36" FontWeight="Bold"
+                               Foreground="White" HorizontalAlignment="Center"
+                               Margin="0,0,0,16"/>
+
+                                            <!-- 슬라이더 영역 -->
+                                            <Grid Margin="0,0,0,16">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="48"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="48"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Button Grid.Column="0" Content="−"
+                                Style="{StaticResource PmBtn}"
+                                Width="48" Height="48"
+                                Command="{Binding SpeedDownCommand}"/>
+                                                <Slider Grid.Column="1"
+                                Minimum="0.25" Maximum="4"
+                                TickFrequency="0.25" IsSnapToTickEnabled="True"
+                                Value="{Binding CurrentSpeedRatio, Mode=TwoWay}"
+                                VerticalAlignment="Center"
+                                Margin="12,0"/>
+                                                <Button Grid.Column="2" Content="+"
+                                Style="{StaticResource PmBtn}"
+                                Width="48" Height="48"
+                                Command="{Binding SpeedUpCommand}"/>
+                                            </Grid>
+
+                                            <!-- 프리셋 버튼 -->
+                                            <StackPanel Orientation="Horizontal"
+                                                        HorizontalAlignment="Center">
+                                                <Button Content="x0.25" Style="{StaticResource DarkBtn}"
+                                FontSize="13" Width="68" Height="48" Margin="0,0,6,0"
+                                Command="{Binding SetSpeedCommand}" CommandParameter="0.25"/>
+                                                <Button Content="x0.5"  Style="{StaticResource DarkBtn}"
+                                FontSize="13" Width="68" Height="48" Margin="0,0,6,0"
+                                Command="{Binding SetSpeedCommand}" CommandParameter="0.5"/>
+                                                <Button Content="x1"    Style="{StaticResource DarkBtn}"
+                                FontSize="13" Width="68" Height="48" Margin="0,0,6,0"
+                                Command="{Binding SetSpeedCommand}" CommandParameter="1"/>
+                                                <Button Content="x2"    Style="{StaticResource DarkBtn}"
+                                FontSize="13" Width="68" Height="48" Margin="0,0,6,0"
+                                Command="{Binding SetSpeedCommand}" CommandParameter="2"/>
+                                                <Button Content="x4"    Style="{StaticResource DarkBtn}"
+                                FontSize="13" Width="68" Height="48"
+                                Command="{Binding SetSpeedCommand}" CommandParameter="4"/>
+                                            </StackPanel>
+
+                                        </StackPanel>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+
                         </Grid>
                     </Grid>
                 </Border>

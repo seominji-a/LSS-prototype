@@ -147,7 +147,30 @@ namespace LSS_prototype.VideoComment_Page
         public double CurrentSpeedRatio
         {
             get => _currentSpeedRatio;
-            private set { _currentSpeedRatio = value; OnPropertyChanged(); }
+            set  // TwoWay 슬라이더 바인딩용 (0.25 단위로 스냅)
+            {
+                var snapped = Math.Round(value * 4.0) / 4.0;
+                snapped = Math.Max(0.25, Math.Min(4.0, snapped));
+                if (Math.Abs(_currentSpeedRatio - snapped) < 0.001) return;
+                var label = snapped == 1.0 ? "x1" : $"x{snapped:0.##}";
+                var mode  = snapped < 1.0 ? SpeedMode.Slow
+                          : snapped > 1.0 ? SpeedMode.Fast : SpeedMode.Normal;
+                ApplySpeed(snapped, label, mode);
+            }
+        }
+
+        // ── 속도 팝업 상태 ──
+        private bool _isSpeedPopupOpen;
+        private DateTime _speedPopupLastClosed = DateTime.MinValue;
+        public bool IsSpeedPopupOpen
+        {
+            get => _isSpeedPopupOpen;
+            set
+            {
+                if (_isSpeedPopupOpen && !value) _speedPopupLastClosed = DateTime.UtcNow;
+                _isSpeedPopupOpen = value;
+                OnPropertyChanged();
+            }
         }
 
         private bool _isPlaying;
@@ -208,6 +231,10 @@ namespace LSS_prototype.VideoComment_Page
         public ICommand ToggleMenuCommand { get; }
         public ICommand LogoutCommand { get; }
         public ICommand LockCommand { get; }
+        public ICommand ToggleSpeedPopupCommand { get; }
+        public ICommand SpeedUpCommand { get; }
+        public ICommand SpeedDownCommand { get; }
+        public ICommand SetSpeedCommand { get; }
 
         #endregion
 
@@ -225,6 +252,10 @@ namespace LSS_prototype.VideoComment_Page
             ExitCommand = new AsyncRelayCommand(async _ => await ExecuteExit());
             LockCommand = new AsyncRelayCommand(async _ => await ExecuteLock());
             ToggleMenuCommand = new RelayCommand(_ => ToggleMenu());
+            ToggleSpeedPopupCommand = new RelayCommand(_ => ToggleSpeedPopup());
+            SpeedUpCommand   = new RelayCommand(_ => ExecuteSpeedUp());
+            SpeedDownCommand = new RelayCommand(_ => ExecuteSpeedDown());
+            SetSpeedCommand  = new RelayCommand(p  => ExecuteSetSpeed(p));
             SlowerCommand = new RelayCommand(async _ => await ExecuteSlower());
             FasterCommand = new RelayCommand(async _ => await ExecuteFaster());
             SeekBackCommand = new RelayCommand(_ => _seekBackAction?.Invoke());
@@ -639,11 +670,45 @@ namespace LSS_prototype.VideoComment_Page
 
         private void ApplySpeed(double ratio, string label, SpeedMode mode)
         {
-            CurrentSpeedRatio = ratio;
+            _currentSpeedRatio = ratio;  // backing field 직접 설정 (setter 재귀 방지)
+            OnPropertyChanged(nameof(CurrentSpeedRatio));
             SpeedLabel = label;
             SpeedLabelColor = mode == SpeedMode.Slow ? SpeedSlowBrush
                               : mode == SpeedMode.Fast ? SpeedFastBrush
                               : SpeedNormalBrush;
+        }
+
+        private void ToggleSpeedPopup()
+        {
+            if (!IsSpeedPopupOpen && (DateTime.UtcNow - _speedPopupLastClosed).TotalMilliseconds < 200)
+                return;
+            IsSpeedPopupOpen = !IsSpeedPopupOpen;
+        }
+
+        private void ExecuteSpeedUp()
+        {
+            var next = Math.Min(4.0, Math.Round((_currentSpeedRatio + 0.25) * 4.0) / 4.0);
+            var label = next == 1.0 ? "x1" : $"x{next:0.##}";
+            ApplySpeed(next, label, next < 1.0 ? SpeedMode.Slow : next > 1.0 ? SpeedMode.Fast : SpeedMode.Normal);
+        }
+
+        private void ExecuteSpeedDown()
+        {
+            var next = Math.Max(0.25, Math.Round((_currentSpeedRatio - 0.25) * 4.0) / 4.0);
+            var label = next == 1.0 ? "x1" : $"x{next:0.##}";
+            ApplySpeed(next, label, next < 1.0 ? SpeedMode.Slow : next > 1.0 ? SpeedMode.Fast : SpeedMode.Normal);
+        }
+
+        private void ExecuteSetSpeed(object parameter)
+        {
+            if (parameter == null) return;
+            if (!double.TryParse(parameter.ToString(),
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out double ratio)) return;
+            ratio = Math.Max(0.25, Math.Min(4.0, ratio));
+            var label = ratio == 1.0 ? "x1" : $"x{ratio:0.##}";
+            ApplySpeed(ratio, label, ratio < 1.0 ? SpeedMode.Slow : ratio > 1.0 ? SpeedMode.Fast : SpeedMode.Normal);
         }
 
         public async Task ResetSpeed()

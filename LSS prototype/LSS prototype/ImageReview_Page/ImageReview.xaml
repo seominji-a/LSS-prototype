@@ -280,96 +280,146 @@
 
                     <!-- 날짜 필터 -->
                     <Border Grid.Row="2"
-                            Background="{StaticResource PanelDarkBrush}"
-                            BorderBrush="{StaticResource BorderBrushColor}"
-                            BorderThickness="0,0,0,1"
-                            Padding="12">
+                        Background="{StaticResource PanelDarkBrush}"
+                        BorderBrush="{StaticResource BorderBrushColor}"
+                        BorderThickness="0,0,0,1"
+                        Padding="12">
                         <Button Content="날짜순 ▼"
-                                Style="{StaticResource BaseBtn}"
-                                Background="{StaticResource ButtonBrush}"
-                                BorderBrush="{StaticResource BorderBrushColor}"
-                                BorderThickness="1"
-                                FontSize="16"
-                                FontWeight="Bold"
-                                Height="48"/>
+                            Style="{StaticResource BaseBtn}"
+                            Background="{StaticResource ButtonBrush}"
+                            BorderBrush="{StaticResource BorderBrushColor}"
+                            BorderThickness="1"
+                            FontSize="16"
+                            FontWeight="Bold"
+                            Height="48"/>
                     </Border>
 
-                    <!-- 썸네일 리스트 -->
+                    <!-- 날짜별 썸네일 리스트 -->
                     <ScrollViewer Grid.Row="3"
-                                  VerticalScrollBarVisibility="Auto"
-                                  HorizontalScrollBarVisibility="Disabled"
-                                  Background="{StaticResource PanelBrush}">
+                        VerticalScrollBarVisibility="Auto"
+                        HorizontalScrollBarVisibility="Disabled"
+                        Background="{StaticResource PanelBrush}">
                         <StackPanel Margin="12,12,12,8">
 
-                            <Border Background="#182634"
-                                BorderBrush="{StaticResource BorderBrushColor}"
-                                BorderThickness="1"
-                                CornerRadius="12"
-                                Padding="16"
-                                Height="60"
-                                Margin="0,0,0,12">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <TextBlock Text="2026-03-23"
-                                               Foreground="#F4F8FF"
-                                               FontSize="18"
-                                               FontWeight="Bold"
-                                               VerticalAlignment="Center"/>
-
-                                    <StackPanel Grid.Column="1"
-                                                Orientation="Horizontal"
-                                                VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding HeaderPageText}"
-                                                   Foreground="#9DB0C4"
-                                                   FontSize="14"
-                                                   Margin="0,0,8,0"/>
-                                        <TextBlock Text="▼"
-                                                   Foreground="White"
-                                                   FontWeight="Bold"/>
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-
-                            <ItemsControl ItemsSource="{Binding Images}">
+                            <ItemsControl ItemsSource="{Binding AvailableDates}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Background="#223445"
-                                                BorderBrush="#4F8DFF"
-                                                BorderThickness="1.5"
-                                                CornerRadius="16"
-                                                Padding="8"
-                                                Margin="0,0,0,12">
-                                            <StackPanel>
-                                                <Border Height="170"
-                                                        Background="#1D3555"
-                                                        CornerRadius="12"
-                                                        BorderBrush="#33FFFFFF"
-                                                        BorderThickness="1"
-                                                        ClipToBounds="True">
-                                                    <Grid Background="#1D3555">
-                                                        <Image Source="{Binding Thumbnail}"
-                                                               Stretch="UniformToFill"
-                                                               HorizontalAlignment="Stretch"
-                                                               VerticalAlignment="Center"/>
-                                                    </Grid>
-                                                </Border>
+                                        <StackPanel Margin="0,0,0,12">
 
-                                                <TextBlock Text="{Binding Date, StringFormat=촬영일자 : {0}}"
-                                                           Foreground="#E7EEF9"
-                                                           FontSize="15"
-                                                           FontWeight="Bold"
-                                                           Margin="0,8,0,0"/>
-                                            </StackPanel>
-                                        </Border>
+                                            <!-- 날짜 헤더 -->
+                                            <Border Background="#182634"
+                                                BorderBrush="{StaticResource BorderBrushColor}"
+                                                BorderThickness="1"
+                                                CornerRadius="12"
+                                                Padding="16"
+                                                Height="60">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <TextBlock Text="{Binding DisplayDate}"
+                                                        Foreground="#F4F8FF"
+                                                        FontSize="18"
+                                                        FontWeight="Bold"
+                                                        VerticalAlignment="Center"/>
+
+                                                    <StackPanel Grid.Column="1"
+                                                        Orientation="Horizontal"
+                                                        VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding ImageCountText}"
+                                                            Foreground="#9DB0C4"
+                                                            FontSize="14"
+                                                            Margin="0,0,8,0"/>
+
+                                                        <ToggleButton IsChecked="{Binding IsExpanded, Mode=TwoWay}"
+                                                            Width="28"
+                                                            Height="28"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Cursor="Hand">
+                                                            <TextBlock Text="▼"
+                                                                Foreground="White"
+                                                                FontWeight="Bold"
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"/>
+                                                            <ToggleButton.Style>
+                                                                <Style TargetType="ToggleButton">
+                                                                    <Setter Property="Template">
+                                                                        <Setter.Value>
+                                                                            <ControlTemplate TargetType="ToggleButton">
+                                                                                <ContentPresenter HorizontalAlignment="Center"
+                                                                              VerticalAlignment="Center"/>
+                                                                            </ControlTemplate>
+                                                                        </Setter.Value>
+                                                                    </Setter>
+                                                                </Style>
+                                                            </ToggleButton.Style>
+                                                        </ToggleButton>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+
+                                            <!-- 펼쳐졌을 때만 썸네일 -->
+                                            <ItemsControl ItemsSource="{Binding Images}">
+                                                <ItemsControl.Style>
+                                                    <Style TargetType="ItemsControl">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </ItemsControl.Style>
+
+                                                <ItemsControl.Margin>
+                                                    <Thickness>0,10,0,0</Thickness>
+                                                </ItemsControl.Margin>
+
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Background="#223445"
+                                                            BorderBrush="#4F8DFF"
+                                                            BorderThickness="1.5"
+                                                            CornerRadius="16"
+                                                            Padding="8"
+                                                            Margin="0,0,0,12">
+                                                            <StackPanel>
+                                                                <Border Height="170"
+                                                                Background="#1D3555"
+                                                                CornerRadius="12"
+                                                                BorderBrush="#33FFFFFF"
+                                                                BorderThickness="1"
+                                                                ClipToBounds="True">
+                                                                    <Grid Background="#1D3555">
+                                                                        <Image Source="{Binding Thumbnail}"
+                                                                            Stretch="UniformToFill"
+                                                                            HorizontalAlignment="Stretch"
+                                                                            VerticalAlignment="Center"/>
+                                                                    </Grid>
+                                                                </Border>
+
+                                                                <TextBlock Text="{Binding Date, StringFormat=촬영일자 : {0}}"
+                                                                    Foreground="#E7EEF9"
+                                                                    FontSize="15"
+                                                                    FontWeight="Bold"
+                                                                    Margin="0,8,0,0"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+
+                                        </StackPanel>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
+
                         </StackPanel>
                     </ScrollViewer>
+
 
                     <!-- 우측 패널 하단 -->
                     <Grid Grid.Row="4" Background="{StaticResource PanelBrush}">

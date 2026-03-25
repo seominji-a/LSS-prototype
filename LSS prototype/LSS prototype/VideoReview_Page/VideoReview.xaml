@@ -122,23 +122,20 @@
                            FontWeight="Bold"
                            HorizontalAlignment="Center"/>
             </StackPanel>
-            <StackPanel Margin="14,10,0,0"
-                        VerticalAlignment="Top"
-                        HorizontalAlignment="Left">
-                <TextBlock Text="이름 : 박○○"
-                           Foreground="White"
-                           FontSize="18"
-                           FontWeight="Bold"/>
-                <TextBlock Text="생년월일 : 1997-06-28"
-                           Foreground="White"
-                           FontSize="18"
-                           FontWeight="Bold"
-                           Margin="0,6,0,0"/>
-                <TextBlock Text="환자번호 : 20260323-001"
-                           Foreground="White"
-                           FontSize="18"
-                           FontWeight="Bold"
-                           Margin="0,6,0,0"/>
+            <!-- 좌상단: 환자 정보 -->
+            <StackPanel Margin="16,12" VerticalAlignment="Top" HorizontalAlignment="Left">
+                <TextBlock Foreground="White" FontSize="18" FontWeight="Bold">
+                    <Run Text="{Binding SelectedPatient.DisplayName, Mode=OneWay}"/>
+                    <Run Text="("/>
+                    <Run Text="{Binding SelectedPatient.PatientCode}"/>
+                    <Run Text=")"/>
+                </TextBlock>
+
+                <TextBlock Foreground="White" FontSize="16">
+                    <Run Text="{Binding SelectedPatient.BirthDate, StringFormat=yyyy-MM-dd}"/>
+                    <Run Text=" / "/>
+                    <Run Text="{Binding SelectedPatient.Sex}"/>
+                </TextBlock>
             </StackPanel>
             <TextBlock Text="1 / 12"
                        Margin="0,10,14,0"
@@ -157,9 +154,9 @@
         </Grid>
         <!-- 하단 Nav Bar -->
         <Grid x:Name="NavBar"
-      VerticalAlignment="Bottom"
-      Height="0"
-      ClipToBounds="True">
+            VerticalAlignment="Bottom"
+            Height="0"
+            ClipToBounds="True">
             <Border Background="#E61C2B3A"/>
             <Grid>
                 <Grid.RenderTransform>
@@ -253,18 +250,18 @@
                     </Border>
                     <!-- 날짜 필터 -->
                     <Border Grid.Row="2"
-                            Background="{StaticResource PanelDarkBrush}"
-                            BorderBrush="{StaticResource BorderBrushColor}"
-                            BorderThickness="0,0,0,1"
-                            Padding="12">
+                        Background="{StaticResource PanelDarkBrush}"
+                        BorderBrush="{StaticResource BorderBrushColor}"
+                        BorderThickness="0,0,0,1"
+                        Padding="12">
                         <Button Content="날짜순 ▼"
-                                Style="{StaticResource BaseBtn}"
-                                Background="{StaticResource ButtonBrush}"
-                                BorderBrush="{StaticResource BorderBrushColor}"
-                                BorderThickness="1"
-                                FontSize="16"
-                                FontWeight="Bold"
-                                Height="48"/>
+                            Style="{StaticResource BaseBtn}"
+                            Background="{StaticResource ButtonBrush}"
+                            BorderBrush="{StaticResource BorderBrushColor}"
+                            BorderThickness="1"
+                            FontSize="16"
+                            FontWeight="Bold"
+                            Height="48"/>
                     </Border>
                     <!-- 썸네일 리스트 -->
                     <ScrollViewer Grid.Row="3"

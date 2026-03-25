@@ -286,7 +286,7 @@
                 Command="{Binding GainDecCommand}"/>
             </Grid>
 
-            <!-- 좌상단: 환자 정보 -->
+            <!-- 좌상단: 환자 정보 + 녹화 인디케이터 -->
             <StackPanel Margin="16,12" VerticalAlignment="Top" HorizontalAlignment="Left">
                 <TextBlock Foreground="White" FontSize="18" FontWeight="Bold">
                     <Run Text="{Binding SelectedPatient.DisplayName, Mode=OneWay}"/>
@@ -300,6 +300,50 @@
                     <Run Text=" / "/>
                     <Run Text="{Binding SelectedPatient.Sex}"/>
                 </TextBlock>
+
+                <!-- DICOM 녹화 인디케이터 -->
+                <StackPanel Orientation="Horizontal" Margin="0,6,0,0"
+                            Visibility="{Binding IsDicomRecording, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Ellipse Width="12" Height="12" Fill="#FF3333" VerticalAlignment="Center" Margin="0,0,7,0">
+                        <Ellipse.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever">
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         From="1.0" To="0.0"
+                                                         Duration="0:0:0.6" AutoReverse="True"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Ellipse.Triggers>
+                    </Ellipse>
+                    <TextBlock Foreground="#FF3333" FontSize="15" FontWeight="Bold" VerticalAlignment="Center">
+                        <Run Text="DICOM REC "/>
+                        <Run Text="{Binding RecordingTime}"/>
+                    </TextBlock>
+                </StackPanel>
+
+                <!-- NORMAL 녹화 인디케이터 -->
+                <StackPanel Orientation="Horizontal" Margin="0,6,0,0"
+                            Visibility="{Binding IsVideoRecording, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Ellipse Width="12" Height="12" Fill="#FF3333" VerticalAlignment="Center" Margin="0,0,7,0">
+                        <Ellipse.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever">
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         From="1.0" To="0.0"
+                                                         Duration="0:0:0.6" AutoReverse="True"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Ellipse.Triggers>
+                    </Ellipse>
+                    <TextBlock Foreground="#FF3333" FontSize="15" FontWeight="Bold" VerticalAlignment="Center">
+                        <Run Text="NORMAL REC "/>
+                        <Run Text="{Binding VideoRecordingTime}"/>
+                    </TextBlock>
+                </StackPanel>
             </StackPanel>
 
             <!-- 우상단: Gain / Sharpness -->
@@ -722,8 +766,8 @@
 
                                 <!-- 이미지 썸네일 -->
                                 <Button Grid.Row="0"
-            Command="{Binding ImageCommentCommand}"
-            BorderThickness="0" Padding="0" Cursor="Hand">
+                                Command="{Binding ImageCommentCommand}"
+                                BorderThickness="0" Padding="0" Cursor="Hand">
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
                                             <Border Background="#0A1929" CornerRadius="10" ClipToBounds="True">
@@ -735,8 +779,8 @@
 
                                 <!-- 영상 썸네일 -->
                                 <Button Grid.Row="2"
-            Command="{Binding VideoCommentCommand}"
-            BorderThickness="0" Padding="0" Cursor="Hand">
+                                Command="{Binding VideoCommentCommand}"
+                                BorderThickness="0" Padding="0" Cursor="Hand">
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
                                             <Border Background="#0A1929" CornerRadius="10" ClipToBounds="True">

@@ -1463,6 +1463,15 @@ namespace LSS_prototype.Scan_Page
         {
             try
             {
+                if (_isVideoRecording || _isDicomRecording)
+                {
+                    await CustomMessageWindow.ShowAsync(
+                        "영상 녹화중에는 코멘트 창으로 이동이 불가능합니다.",
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
                 if (string.IsNullOrWhiteSpace(_currentStudyId))
                 {
                     await CustomMessageWindow.ShowAsync(
@@ -1507,6 +1516,15 @@ namespace LSS_prototype.Scan_Page
         {
             try
             {
+                if (_isVideoRecording || _isDicomRecording)
+                {
+                    await CustomMessageWindow.ShowAsync(
+                        "영상 녹화중에는 코멘트 창으로\n이동이 불가능합니다.",
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
                 // StudyID 없으면 영상 촬영 자체가 없는 상태
                 if (string.IsNullOrWhiteSpace(_currentStudyId))
                 {

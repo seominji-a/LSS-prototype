@@ -101,6 +101,9 @@
     <Reference Include="fo-dicom.core, Version=5.2.5.0, Culture=neutral, PublicKeyToken=3a13f649e28eb09a, processorArchitecture=MSIL">
       <HintPath>..\packages\fo-dicom.5.2.5\lib\netstandard2.0\fo-dicom.core.dll</HintPath>
     </Reference>
+    <Reference Include="fo-dicom.Imaging.Desktop, Version=5.2.5.0, Culture=neutral, PublicKeyToken=3a13f649e28eb09a, processorArchitecture=MSIL">
+      <HintPath>..\packages\fo-dicom.Imaging.Desktop.5.2.5\lib\net462\fo-dicom.Imaging.Desktop.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.8.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
     </Reference>
@@ -370,6 +373,7 @@
     <Compile Include="VideoReview_Page\VideoReview.xaml.cs">
       <DependentUpon>VideoReview.xaml</DependentUpon>
     </Compile>
+    <Compile Include="VideoReview_Page\VideoReviewViewModel.cs" />
     <Page Include="Common_Module\CustomMessageWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

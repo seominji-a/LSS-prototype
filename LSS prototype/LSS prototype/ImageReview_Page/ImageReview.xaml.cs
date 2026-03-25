@@ -10,11 +10,13 @@ namespace LSS_prototype.ImageReview_Page
     public partial class ImageReview : UserControl
     {
         private bool _navOpen = false;
+        private PatientModel _selectedPatient;
 
-        public ImageReview()
+        public ImageReview(PatientModel patient)
         {
             InitializeComponent();
-            DataContext = new ImageReviewViewModel();
+            _selectedPatient = patient;
+            DataContext = new ImageReviewViewModel(patient);
         }
 
         private void ToggleNav_Click(object sender, RoutedEventArgs e)
@@ -24,21 +26,5 @@ namespace LSS_prototype.ImageReview_Page
             ToggleBtn.Content = _navOpen ? "❮" : "❯";
         }
 
-        private void PatientButton_Click(object sender, RoutedEventArgs e)
-            => MainPage.Instance.NavigateTo(new Patient());
-
-        private void ScanButton_Click(object sender, RoutedEventArgs e)
-        {
-            // selectedPatient가 있으면 그걸 넘기고,
-            // 없으면 임시 환자 전달 구조를 따로 맞춰야 함
-            // 현재는 예시
-            // MainPage.Instance.NavigateTo(new Scan(selectedPatient));
-        }
-
-        private void VideoReviewButton_Click(object sender, RoutedEventArgs e)
-        {
-            // 실제 VideoReview UserControl 이름에 맞게 수정
-            // MainPage.Instance.NavigateTo(new VideoReview());
-        }
     }
 }

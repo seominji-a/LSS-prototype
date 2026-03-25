@@ -5,7 +5,6 @@ using LSS_prototype.VideoReview_Page;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -36,6 +35,7 @@ namespace LSS_prototype.ImageReview_Page
             LoadAvailableDates();
         }
 
+        //폴더 경로의 파일명에서 로드 가능한 날짜 리스트 생성 함수
         private void LoadAvailableDates()
         {
             AvailableDates.Clear();
@@ -68,6 +68,7 @@ namespace LSS_prototype.ImageReview_Page
             }
         }
 
+        //로드 가능한 날짜의 이미지 로드
         private void LoadImagesForDate(DateFolderItem dateItem)
         {
             dateItem.Images.Clear();
@@ -104,6 +105,7 @@ namespace LSS_prototype.ImageReview_Page
             dateItem.OnPropertyChanged(nameof(DateFolderItem.ImageCountText));
         }
 
+        //폴더 경로의 파일명 구하는 함수
         private string GetPatientFolderPath()
         {
             if (SelectedPatient == null)
@@ -115,27 +117,35 @@ namespace LSS_prototype.ImageReview_Page
             return Path.Combine(baseDicomPath, patientFolderName);
         }
 
+        //dicom 썸네일 생성 함수
         private ImageSource CreateDicomThumbnail(string dcmPath)
         {
             try
             {
                 var dicomImage = new DicomImage(dcmPath);
+                var renderedImage = dicomImage.RenderImage();
 
-                using (var bitmap = dicomImage.RenderImage().AsClonedBitmap())
-                using (var ms = new MemoryStream())
-                {
-                    bitmap.Save(ms, ImageFormat.Bmp);
-                    ms.Position = 0;
+                int width = renderedImage.Width;
+                int height = renderedImage.Height;
 
-                    var image = new BitmapImage();
-                    image.BeginInit();
-                    image.CacheOption = BitmapCacheOption.OnLoad;
-                    image.StreamSource = ms;
-                    image.EndInit();
-                    image.Freeze();
+                // WPFImageManager를 쓰지 않는 현재 구조에서는 raw byte[]로 받기
+                byte[] pixels = renderedImage.As<byte[]>();
 
-                    return image;
-                }
+                // fo-dicom raw image는 보통 BGRA 32비트 기준으로 다루면 맞음
+                int stride = width * 4;
+
+                var bitmap = BitmapSource.Create(
+                    width,
+                    height,
+                    96,
+                    96,
+                    PixelFormats.Bgra32,
+                    null,
+                    pixels,
+                    stride);
+
+                bitmap.Freeze();
+                return bitmap;
             }
             catch
             {
@@ -153,6 +163,9 @@ namespace LSS_prototype.ImageReview_Page
                    rawDate.Substring(6, 2);
         }
 
+        //
+        //네비게이션 관련
+        //
         private void NavigateToPatient()
         {
             MainPage.Instance.NavigateTo(new Patient_Page.Patient());
@@ -175,6 +188,7 @@ namespace LSS_prototype.ImageReview_Page
         }
     }
 
+    //리스트에 포함된 이미지 관련 정보
     public class ImageItem
     {
         public ImageSource Thumbnail { get; set; }
@@ -183,6 +197,7 @@ namespace LSS_prototype.ImageReview_Page
         public string FilePath { get; set; }
     }
 
+    //존재하는 이미지의 촬영 날짜 정보
     public class DateFolderItem : INotifyPropertyChanged
     {
         public string RawDate { get; set; }
@@ -205,6 +220,7 @@ namespace LSS_prototype.ImageReview_Page
             }
         }
 
+        //촬영 날짜에 존재하는 촬영 건수
         public string ImageCountText => $"{Images.Count}장";
 
         public event PropertyChangedEventHandler PropertyChanged;

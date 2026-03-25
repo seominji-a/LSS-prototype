@@ -170,18 +170,18 @@
                     VerticalAlignment="Center">
                     <Button Content="Patient"
                     Style="{StaticResource NavBtn}"
-                    Click="PatientButton_Click"
+                    Command="{Binding NavigatePatientCommand}"
                     Margin="0,0,10,0"/>
                     <Button Content="Scan"
                     Style="{StaticResource NavBtn}"
-                    Click="ScanButton_Click"
+                    Command="{Binding NavigateScanCommand}"
                     Margin="0,0,10,0"/>
                     <Button Content="Image Review"
                     Style="{StaticResource NavBtn}"
+                    Command="{Binding NavigateImageReviewCommand}"
                     Margin="0,0,10,0"/>
                     <Button Content="Video Review"
-                    Style="{StaticResource NavBtnActive}"
-                    Click="VideoReviewButton_Click"/>
+                    Style="{StaticResource NavBtnActive}"/>
                 </StackPanel>
             </Grid>
         </Grid>
@@ -302,7 +302,7 @@
                                     </StackPanel>
                                 </Grid>
                             </Border>
-                            <ItemsControl ItemsSource="{Binding Images}">
+                            <ItemsControl ItemsSource="{Binding Videos}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Border Background="#223445"

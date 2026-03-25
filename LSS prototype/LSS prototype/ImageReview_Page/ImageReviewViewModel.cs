@@ -1,8 +1,11 @@
-﻿using System;
+﻿using LSS_prototype.Patient_Page;
+using LSS_prototype.Scan_Page;
+using LSS_prototype.VideoReview_Page;
+using System;
 using System.Collections.ObjectModel;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using LSS_prototype.Patient_Page;
 
 namespace LSS_prototype.ImageReview_Page
 {
@@ -12,9 +15,19 @@ namespace LSS_prototype.ImageReview_Page
 
         public PatientModel SelectedPatient { get; }
 
+        public ICommand NavigatePatientCommand { get; private set; }
+
+        public ICommand NavigateScanCommand { get; private set; }
+
+        public ICommand NavigateVideoReviewCommand { get; private set; }
+
         public ImageReviewViewModel(PatientModel patient)
         {
             SelectedPatient = patient;
+            NavigatePatientCommand = new RelayCommand(_ => NavigateToPatient());
+            NavigateScanCommand = new RelayCommand(_ => NavigateToScan());
+            NavigateVideoReviewCommand = new RelayCommand(_ => NavigateToVideoReview());
+
 
             // 임시 테스트 데이터
             Images.Add(new ImageItem
@@ -47,6 +60,15 @@ namespace LSS_prototype.ImageReview_Page
                 return null;
             }
         }
+
+        private void NavigateToPatient() =>
+       MainPage.Instance.NavigateTo(new Patient_Page.Patient());
+
+        private void NavigateToScan() =>
+            MainPage.Instance.NavigateTo(new Scan(SelectedPatient));
+
+        private void NavigateToVideoReview() =>
+            MainPage.Instance.NavigateTo(new VideoReview(SelectedPatient));
     }
 
     public class ImageItem

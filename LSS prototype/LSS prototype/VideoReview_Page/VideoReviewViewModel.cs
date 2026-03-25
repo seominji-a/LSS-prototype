@@ -1,11 +1,14 @@
-﻿using LSS_prototype.Patient_Page;
+﻿using LSS_prototype.ImageReview_Page;
+using LSS_prototype.Patient_Page;
+using LSS_prototype.Scan_Page;
 using OpenCvSharp;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Runtime.InteropServices;
 
 namespace LSS_prototype.VideoReview_Page
 {
@@ -14,9 +17,21 @@ namespace LSS_prototype.VideoReview_Page
         public ObservableCollection<VideoItem> Videos { get; } = new ObservableCollection<VideoItem>();
         public PatientModel SelectedPatient { get; }
 
+        public ICommand NavigatePatientCommand { get; private set; }
+
+        public ICommand NavigateScanCommand { get; private set; }
+
+        public ICommand NavigateImageReviewCommand { get; private set; }
+
+
         public VideoReviewViewModel(PatientModel patient)
         {
             SelectedPatient = patient;
+
+            NavigatePatientCommand = new RelayCommand(_ => NavigateToPatient());
+            NavigateScanCommand = new RelayCommand(_ => NavigateToScan());
+            NavigateImageReviewCommand = new RelayCommand(_ => NavigateToImageReview());
+            
 
             Videos.Add(new VideoItem
             {
@@ -72,6 +87,16 @@ namespace LSS_prototype.VideoReview_Page
                 stride
             );
         }
+
+        private void NavigateToPatient() =>
+        MainPage.Instance.NavigateTo(new Patient_Page.Patient());
+
+        private void NavigateToScan() =>
+            MainPage.Instance.NavigateTo(new Scan(SelectedPatient));
+
+        private void NavigateToImageReview() =>
+            MainPage.Instance.NavigateTo(new ImageReview(SelectedPatient));
+
     }
 
     public class VideoItem

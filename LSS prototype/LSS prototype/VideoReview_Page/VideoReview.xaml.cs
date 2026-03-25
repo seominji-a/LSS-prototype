@@ -40,16 +40,5 @@ namespace LSS_prototype.VideoReview_Page
             _navOpen = !_navOpen;
             ToggleBtn.Content = _navOpen ? "❮" : "❯";
         }
-
-        private void PatientButton_Click(object sender, RoutedEventArgs e)
-            => MainPage.Instance.NavigateTo(new Patient());
-        private void ScanButton_Click(object sender, RoutedEventArgs e)
-        {
-            MainPage.Instance.NavigateTo(new Scan(_selectedPatient));
-        }
-        private void VideoReviewButton_Click(object sender, RoutedEventArgs e)
-        {
-            MainPage.Instance.NavigateTo(new VideoReview(_selectedPatient));
-        }
     }
 }

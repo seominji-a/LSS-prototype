@@ -136,24 +136,22 @@
                            HorizontalAlignment="Center"/>
             </StackPanel>
 
-            <StackPanel Margin="14,10,0,0"
-                        VerticalAlignment="Top"
-                        HorizontalAlignment="Left">
-                <TextBlock Text="이름 : 박○○"
-                           Foreground="White"
-                           FontSize="18"
-                           FontWeight="Bold"/>
-                <TextBlock Text="생년월일 : 1997-06-28"
-                           Foreground="White"
-                           FontSize="18"
-                           FontWeight="Bold"
-                           Margin="0,6,0,0"/>
-                <TextBlock Text="환자번호 : 20260323-001"
-                           Foreground="White"
-                           FontSize="18"
-                           FontWeight="Bold"
-                           Margin="0,6,0,0"/>
+            <!-- 좌상단: 환자 정보 -->
+            <StackPanel Margin="16,12" VerticalAlignment="Top" HorizontalAlignment="Left">
+                <TextBlock Foreground="White" FontSize="18" FontWeight="Bold">
+         <Run Text="{Binding SelectedPatient.DisplayName, Mode=OneWay}"/>
+         <Run Text="("/>
+         <Run Text="{Binding SelectedPatient.PatientCode}"/>
+         <Run Text=")"/>
+                </TextBlock>
+
+                <TextBlock Foreground="White" FontSize="16">
+         <Run Text="{Binding SelectedPatient.BirthDate, StringFormat=yyyy-MM-dd}"/>
+         <Run Text=" / "/>
+         <Run Text="{Binding SelectedPatient.Sex}"/>
+                </TextBlock>
             </StackPanel>
+
 
             <TextBlock Text="1 / 12"
                        Margin="0,10,14,0"
@@ -188,12 +186,12 @@
                     VerticalAlignment="Center">
                     <Button Content="Patient"
                     Style="{StaticResource NavBtn}"
-                    Click="PatientButton_Click"
+                    Command="{Binding NavigatePatientCommand}"
                     Margin="0,0,10,0"/>
 
                     <Button Content="Scan"
                     Style="{StaticResource NavBtn}"
-                    Click="ScanButton_Click"
+                    Command="{Binding NavigateScanCommand}"
                     Margin="0,0,10,0"/>
 
                     <Button Content="Image Review"
@@ -202,7 +200,7 @@
 
                     <Button Content="Video Review"
                     Style="{StaticResource NavBtn}"
-                    Click="VideoReviewButton_Click"/>
+                    Command="{Binding NavigateVideoReviewCommand}"/>
                 </StackPanel>
             </Grid>
         </Grid>

@@ -3,9 +3,11 @@ using FellowOakDicom.Imaging;
 using LSS_prototype.Common_Module;
 using LSS_prototype.DB_CRUD;
 using LSS_prototype.Dicom_Module;
+using LSS_prototype.ImageReview_Page;
 using LSS_prototype.Lens_Module;
 using LSS_prototype.Patient_Page;
 using LSS_prototype.User_Page;
+using LSS_prototype.VideoReview_Page;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using System;
@@ -235,6 +237,11 @@ namespace LSS_prototype.Scan_Page
         #region 커맨드
 
         public ICommand NavigatePatientCommand { get; private set; }
+
+        public ICommand NavigateImageReviewCommand { get; private set; }
+
+        public ICommand NavigateVideoReviewCommand { get; private set; }
+
         public ICommand LogoutCommand { get; }
         public ICommand ExitCommand { get; }
         public ICommand ColorMapCommand { get; }
@@ -270,6 +277,9 @@ namespace LSS_prototype.Scan_Page
             _currentStudyId = studyId;
 
             NavigatePatientCommand = new RelayCommand(_ => NavigateToPatient());
+            NavigateImageReviewCommand = new RelayCommand(_ => NavigateToImageReview());
+            NavigateVideoReviewCommand = new RelayCommand(_ => NavigateToVideoReview());
+
             LogoutCommand = new RelayCommand(async _ => await Common.ExecuteLogout());
             ExitCommand = new RelayCommand(async _ => await Common.ExcuteExit());
             ColorMapCommand = new RelayCommand(_ => ToggleColorMap());
@@ -1534,6 +1544,12 @@ namespace LSS_prototype.Scan_Page
 
         private void NavigateToPatient() =>
             MainPage.Instance.NavigateTo(new Patient_Page.Patient());
+
+        private void NavigateToImageReview() =>
+            MainPage.Instance.NavigateTo(new ImageReview(_selectedPatient));
+
+        private void NavigateToVideoReview() =>
+            MainPage.Instance.NavigateTo(new VideoReview(_selectedPatient));
 
         #endregion
 

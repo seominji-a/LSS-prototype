@@ -310,10 +310,10 @@ namespace LSS_prototype.User_Page
                 var descriptions = await dicom.GetWorklistDescriptionsAsync(
                     MwlMyAET, MwlIP, Convert.ToInt32(MwlPort), MwlAET);
 
-                // ★ Clear 전 현재 선택값을 필드에서 직접 백업
+                //   Clear 전 현재 선택값을 필드에서 직접 백업
                 string backup = _selectedMwlDescription;
 
-                // ★ _isLoadingItems=true → Clear() 시 setter → DB 저장 차단
+                //   _isLoadingItems=true → Clear() 시 setter → DB 저장 차단
                 _isLoadingItems = true;
                 MwlDescriptionItems.Clear();
                 MwlDescriptionItems.Add("ALL");
@@ -321,7 +321,7 @@ namespace LSS_prototype.User_Page
                     MwlDescriptionItems.Add(d);
                 _isLoadingItems = false;
 
-                // ★ 백업값이 새 목록에 있으면 유지, 없으면 ALL
+                //   백업값이 새 목록에 있으면 유지, 없으면 ALL
                 SelectedMwlDescription = MwlDescriptionItems.Contains(backup)
                     ? backup
                     : "ALL";

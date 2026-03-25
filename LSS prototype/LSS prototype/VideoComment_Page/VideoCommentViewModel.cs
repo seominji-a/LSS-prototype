@@ -114,7 +114,7 @@ namespace LSS_prototype.VideoComment_Page
         }
 
         // CommentText: setter에서 IsCommentDirty 자동 세팅
-        // ★ UpdateCurrentFile / Reset 에서는 필드 직접 할당 후 OnPropertyChanged
+        //   UpdateCurrentFile / Reset 에서는 필드 직접 할당 후 OnPropertyChanged
         //   → setter 통하면 IsCommentDirty=true 되므로 반드시 이 방식 사용
         private string _commentText;
         public string CommentText
@@ -150,12 +150,22 @@ namespace LSS_prototype.VideoComment_Page
             private set { _currentSpeedRatio = value; OnPropertyChanged(); }
         }
 
-        private string _playPauseIcon = "▶";
-        public string PlayPauseIcon
+        private bool _isPlaying;
+        public bool IsPlaying
         {
-            get => _playPauseIcon;
-            set { _playPauseIcon = value; OnPropertyChanged(); }
+            get => _isPlaying;
+            set
+            {
+                _isPlaying = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(PlayIconVisibility));
+                OnPropertyChanged(nameof(PauseIconVisibility));
+            }
         }
+        // 재생 아이콘: 정지 상태일 때 표시
+        public Visibility PlayIconVisibility  => _isPlaying ? Visibility.Collapsed : Visibility.Visible;
+        // 일시정지 아이콘: 재생 중일 때 표시
+        public Visibility PauseIconVisibility => _isPlaying ? Visibility.Visible   : Visibility.Collapsed;
 
         private string _videoType;
         public string VideoType
@@ -402,7 +412,7 @@ namespace LSS_prototype.VideoComment_Page
                     comment = db.SelectComment("NORMAL_VIDEO", fileName);
                 }
 
-                // ★ setter 통하면 IsCommentDirty=true → 필드 직접 할당
+                //   setter 통하면 IsCommentDirty=true → 필드 직접 할당
                 _commentText = comment;
                 OnPropertyChanged(nameof(CommentText));
                 IsCommentDirty = false;

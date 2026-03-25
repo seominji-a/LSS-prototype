@@ -103,7 +103,7 @@ namespace LSS_prototype.ImageComment_Page
 
         /// <summary>
         /// CommentText setter에서 IsCommentDirty 자동 세팅
-        /// ★ LoadPage / Reset 에서는 필드 직접 할당 후 OnPropertyChanged 호출
+        ///   LoadPage / Reset 에서는 필드 직접 할당 후 OnPropertyChanged 호출
         ///   → setter 통하면 IsCommentDirty=true 되므로 반드시 이 방식 사용
         /// </summary>
         private string _commentText;
@@ -270,7 +270,7 @@ namespace LSS_prototype.ImageComment_Page
                 : new StrokeCollection();
 
             // DICOM Image Comments 태그 로드
-            // ★ setter 통하면 IsCommentDirty=true 되므로 필드 직접 할당
+            //   setter 통하면 IsCommentDirty=true 되므로 필드 직접 할당
             _commentText = dicomFile.Dataset.GetSingleValueOrDefault(DicomTag.ImageComments, string.Empty);
             OnPropertyChanged(nameof(CommentText));
 

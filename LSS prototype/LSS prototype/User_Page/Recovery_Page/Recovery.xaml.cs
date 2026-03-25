@@ -90,7 +90,7 @@ namespace LSS_prototype.User_Page
                     PreviewVideo.Play();
 
                     _isPlaying = true;
-                    TxtPlayPauseIcon.Text = "⏸";
+                    SetPlayPauseIcon(true);
                     SliderSeek.Value = 0;
                     TxtCurrentTime.Text = "00:00";
                     TxtTotalTime.Text = "00:00";
@@ -156,6 +156,13 @@ namespace LSS_prototype.User_Page
         //  버튼 이벤트
         // ═══════════════════════════════════════════
 
+        /// <summary>재생 중이면 일시정지 아이콘, 정지 상태면 재생 아이콘 표시</summary>
+        private void SetPlayPauseIcon(bool isPlaying)
+        {
+            ImgPlay.Visibility  = isPlaying ? Visibility.Collapsed : Visibility.Visible;
+            ImgPause.Visibility = isPlaying ? Visibility.Visible   : Visibility.Collapsed;
+        }
+
         private async void BtnPlayPause_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -166,7 +173,7 @@ namespace LSS_prototype.User_Page
                 {
                     PreviewVideo.Pause();
                     _isPlaying = false;
-                    TxtPlayPauseIcon.Text = "▶";
+                    SetPlayPauseIcon(false);
                     _timer.Stop();
                 }
                 else
@@ -174,7 +181,7 @@ namespace LSS_prototype.User_Page
                     PreviewVideo.Play();
                     PreviewVideo.SpeedRatio = 2.0;
                     _isPlaying = true;
-                    TxtPlayPauseIcon.Text = "⏸";
+                    SetPlayPauseIcon(true);
                     _timer.Start();
                 }
             }
@@ -232,7 +239,7 @@ namespace LSS_prototype.User_Page
 
                 _isPlaying = false;
                 _isDraggingSeek = false;
-                TxtPlayPauseIcon.Text = "▶";
+                SetPlayPauseIcon(false);
                 SliderSeek.Value = 0;
                 TxtCurrentTime.Text = "00:00";
                 TxtTotalTime.Text = "00:00";

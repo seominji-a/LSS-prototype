@@ -333,7 +333,7 @@
                             Style="{StaticResource SaveBtn}"
                             Command="{Binding SaveHospitalCommand}"/>
 
-                    <!-- ★ MWL Filter: TextBox+Save 버튼 → ComboBox 로 교체 -->
+                    <!--   MWL Filter: TextBox+Save 버튼 → ComboBox 로 교체 -->
                     <!-- TEST SEND 클릭 시 MWL 서버에서 Description 목록을 자동으로 채워줌 -->
                     <!-- 사용자는 콤보박스에서 선택만 가능 (수동 입력 불가) -->
                     <TextBlock Grid.Column="6" Text="MWL Filter"

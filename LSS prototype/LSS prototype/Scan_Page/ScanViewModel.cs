@@ -481,7 +481,7 @@ namespace LSS_prototype.Scan_Page
 
                 frame?.Dispose();
                 bitmap?.Dispose();
-                _isBusy = false; // ★ 잠금 해제 
+                _isBusy = false; //   잠금 해제 
             }
         }
 
@@ -1163,7 +1163,7 @@ namespace LSS_prototype.Scan_Page
                     string folderName = Path.GetFileName(dir);
                     if (folderName.StartsWith(today) && folderName.Length == 12)
                     {
-                        // ★ 추가 - 유효한 파일 있을 때만 목록에 추가
+                        //   추가 - 유효한 파일 있을 때만 목록에 추가
                         if (HasValidFiles(folderName, patientFolderName))
                             result.Add(folderName);
                     }
@@ -1181,7 +1181,7 @@ namespace LSS_prototype.Scan_Page
                     string folderName = Path.GetFileName(dir);
                     if (folderName.StartsWith(today) && folderName.Length == 12)
                     {
-                        // ★ 추가 - 유효한 파일 있을 때만 목록에 추가
+                        //   추가 - 유효한 파일 있을 때만 목록에 추가
                         if (HasValidFiles(folderName, patientFolderName))
                             result.Add(folderName);
                     }

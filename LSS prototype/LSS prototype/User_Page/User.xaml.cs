@@ -12,7 +12,7 @@ namespace LSS_prototype.User_Page
             InitializeComponent();
 
             var vm = new UserViewModel();
-            DataContext = vm;  // ★ DataContext 먼저 설정
+            DataContext = vm;  //   DataContext 먼저 설정
 
             txtSearch.TextChanged += OnSearchTextChanged;
             Unloaded += (s, e) => (DataContext as UserViewModel)?.Dispose();

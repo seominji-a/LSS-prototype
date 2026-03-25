@@ -13,46 +13,44 @@ namespace LSS_prototype.Dicom_Module
     public partial class DicomManager
     {
         /// <summary>
-        /// DICOM C-FIND 요청으로 MWL 서버에서 환자 목록을 조회합니다.
-        /// 반환된 PatientModel의 AccessionNumber 유무로 EMR/LOCAL을 구분합니다.
-        ///   AccessionNumber != "" → EMR 환자 (IsEmrPatient = true)
-        ///   AccessionNumber == "" → LOCAL 환자 (IsEmrPatient = false)
-        ///
-        /// ★ descriptionFilter 가 비어있으면 전체 조회
-        /// ★ descriptionFilter 에 값이 있으면 해당 값과 일치하는 환자만 반환
+            /// DICOM C-FIND 요청으로 MWL 서버에서 환자 목록을 조회합니다.
+            /// 반환된 PatientModel의 AccessionNumber 유무로 EMR/LOCAL을 구분합니다.
+            ///   AccessionNumber != "" → EMR 환자 (IsEmrPatient = true)
+            ///   AccessionNumber == "" → LOCAL 환자 (IsEmrPatient = false)
+             ///
+            ///  descriptionFilter 가 비어있으면 전체 조회
+            ///  descriptionFilter 에 값이 있으면 해당 값과 일치하는 환자만 반환
         /// </summary>
-        public async Task<List<PatientModel>> GetWorklistPatientsAsync(string sourceAET, string targetIP, int targetPort, string targetAET)  // 기본값 ICG - 비우면 전체 조회
+        public async Task<List<PatientModel>> GetWorklistPatientsAsync(string sourceAET, string targetIP, int targetPort, string targetAET)
         {
             var result = new List<PatientModel>();
 
-            // C-FIND 요청 생성
+                     // C-FIND 요청 생성
             var request = BuildWorklistRequest();
 
-            // 응답 수신 콜백: Pending 상태 응답마다 PatientModel 변환 후 리스트에 추가
+                    // 응답 수신 콜백: Pending 상태 응답마다 PatientModel 변환 후 리스트에 추가
             request.OnResponseReceived += (_, res) =>
             {
                 if (res.Status == DicomStatus.Pending && res.Dataset != null)
                 {
                     var patient = ParsePatientModel(res.Dataset);
-
-                    // 필터값 비어있으면 전체, 값 있으면 일치하는 환자만 추가
+                     // 필터값 비어있으면 전체, 값 있으면 일치하는 환자만 추가
                     if (!string.IsNullOrEmpty(Common.MwlDescriptionFilter) &&
                         !patient.RequestedProcedureDescription.Contains(Common.MwlDescriptionFilter))
                         return;
-
                     result.Add(patient);
                 }
             };
 
-            // DICOM 클라이언트 생성 및 요청 전송
+                // DICOM 클라이언트 생성 및 요청 전송
             var client = DicomClientFactory.Create(targetIP, targetPort, false, sourceAET, targetAET);
             client.NegotiateAsyncOps();
             await client.AddRequestAsync(request);
 
-            // 5초 타임아웃 적용
+                // 5초 타임아웃 적용
             var sendTask = client.SendAsync();
             if (await Task.WhenAny(sendTask, Task.Delay(5000)) == sendTask)
-                await sendTask; // 정상 완료 → 내부 예외 전파
+                await sendTask;
             else
                 throw new TimeoutException("DICOM 서버가 응답하지 않습니다.");
 
@@ -61,12 +59,12 @@ namespace LSS_prototype.Dicom_Module
 
 
         /// <summary>
-        /// MWL 서버에서 RequestedProcedureDescription 목록만 추출합니다.
-        /// 필터 없이 전체 조회 후 중복 제거 → Setting 페이지 콤보박스 데이터 소스용
+            /// MWL 서버에서 RequestedProcedureDescription 목록만 추출합니다.
+            /// 필터 없이 전체 조회 후 중복 제거 → Setting 페이지 콤보박스 데이터 소스용
         /// </summary>
         public async Task<List<string>> GetWorklistDescriptionsAsync( string sourceAET, string targetIP, int targetPort, string targetAET)
         {
-            // ★ 필터 잠시 비워서 전체 조회 (Description 목록은 항상 전체가 필요)
+            //   필터 잠시 비워서 전체 조회 (Description 목록은 항상 전체가 필요)
             string saved = Common.MwlDescriptionFilter;
             Common.MwlDescriptionFilter = string.Empty;
 
@@ -84,7 +82,7 @@ namespace LSS_prototype.Dicom_Module
             }
             finally
             {
-                // ★ 예외 발생해도 반드시 원복
+                //   예외 발생해도 반드시 원복
                 Common.MwlDescriptionFilter = saved;
             }
         }

@@ -1646,13 +1646,13 @@ namespace LSS_prototype.Patient_Page
 
         private async Task EmrSync(CancellationToken ct = default)
         {
+            bool loadingEnded = false;
             try
             {
                 var db = new DB_Manager();
                 var pacsSet = db.GetPacsSet();
 
                 var dicom = new DicomManager();
-
 
                 LoadingWindow.Begin("MWL 조회 중...");
                 var worklistItems = await dicom.GetWorklistPatientsAsync(pacsSet.MwlMyAET, pacsSet.MwlIP, pacsSet.MwlPort, pacsSet.MwlAET);
@@ -1667,9 +1667,31 @@ namespace LSS_prototype.Patient_Page
                     p.IsEmrPatient = true;
                 }
                 RefreshPatients();
+
+                // ── 데이터 바인딩 완료 후 로딩창 먼저 닫기 ──
+                LoadingWindow.End();
+                loadingEnded = true;
+
+               
+
                 await CustomMessageWindow.ShowAsync("EMR 동기화 완료되었습니다.",
                             CustomMessageWindow.MessageBoxType.Ok, 1,
                             CustomMessageWindow.MessageIconType.Info);
+
+                // ── Description 2종 이상: 로딩창이 닫힌 뒤에 경고 표시 ──
+                if (string.IsNullOrEmpty(Common.MwlDescriptionFilter))
+                {
+                    var distinctCount = worklistItems
+                        .Select(p => p.RequestedProcedureDescription)
+                        .Distinct()
+                        .Count();
+
+                    if (distinctCount >= 2)
+                        await CustomMessageWindow.ShowAsync(
+                            "근적외선 림프조영술(ICG) 대상이 아닌 환자가 포함되어 있습니다\nMWL Filter를 설정해 주십시오.",
+                            CustomMessageWindow.MessageBoxType.Ok,
+                            icon: CustomMessageWindow.MessageIconType.Info);
+                }
             }
             catch (OperationCanceledException) { } // task 해제되는 경우
 
@@ -1680,7 +1702,7 @@ namespace LSS_prototype.Patient_Page
 
             finally
             {
-                LoadingWindow.End();
+                if (!loadingEnded) LoadingWindow.End();
             }
         }
 

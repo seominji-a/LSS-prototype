@@ -73,7 +73,7 @@
         </Style>
 
         <!-- ── 컬럼 헤더 ── -->
-        <!-- ★ 헤더 Thumb(사이즈 조절 핸들) 숨김 → 헤더 사이 흰 선 제거 -->
+        <!--   헤더 Thumb(사이즈 조절 핸들) 숨김 → 헤더 사이 흰 선 제거 -->
         <Style TargetType="GridViewColumnHeader">
             <Setter Property="Background"      Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -122,7 +122,7 @@
             </Setter>
         </Style>
 
-        <!-- ★ 마지막 컬럼 헤더는 Width="*" 로 남은 공간 전부 채움 -->
+        <!--   마지막 컬럼 헤더는 Width="*" 로 남은 공간 전부 채움 -->
         <Style x:Key="ColHeaderLast" TargetType="GridViewColumnHeader" BasedOn="{StaticResource ColHeader}">
             <Setter Property="Template">
                 <Setter.Value>
@@ -191,7 +191,7 @@
 
         <!-- ── Cell DataTemplate ── -->
 
-        <!-- ★ 체크박스 셀 -->
+        <!--   체크박스 셀 -->
         <DataTemplate x:Key="CheckBoxCell">
             <CheckBox IsChecked="{Binding IsChecked, UpdateSourceTrigger=PropertyChanged}"
               IsEnabled="{Binding IsCheckable}"
@@ -371,7 +371,7 @@
                                Foreground="{StaticResource Primary}"
                                VerticalAlignment="Center"/>
 
-                    <!-- ★ 필터 콤보 (App.xaml InputComboBoxStyle) + 검색창 -->
+                    <!--   필터 콤보 (App.xaml InputComboBoxStyle) + 검색창 -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
 
                         <Border Width="200" Height="55" Margin="0,0,10,0"
@@ -469,7 +469,7 @@
                                        EditingMode="None"
                                        Visibility="{Binding IsImageVisible, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                            <!-- ★ 파일타입 좌상단 (이미지/영상 공통) -->
+                            <!--   파일타입 좌상단 (이미지/영상 공통) -->
                             <StackPanel Margin="16,14"
                                         VerticalAlignment="Top" HorizontalAlignment="Left"
                                         Visibility="{Binding IsViewerEmpty, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}">
@@ -548,10 +548,26 @@
                                                 Width="100" Height="70"
                                                 HorizontalAlignment="Center"
                                                 Click="BtnPlayPause_Click">
-                                            <TextBlock x:Name="TxtPlayPauseIcon"
-                                                       Text="⏸" FontSize="36"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"/>
+                                            <Grid>
+                                                <!-- 재생 아이콘 (흰색 삼각형): 정지 상태일 때 표시 -->
+                                                <Viewbox x:Name="ImgPlay" Width="72" Height="72" Stretch="Uniform"
+                                                         Visibility="Visible">
+                                                    <Canvas Width="100" Height="100">
+                                                        <Path Fill="White"
+                                                              Data="M66.53,49.1l-23.98-14.23c-.7-.41-1.57.09-1.57.9v28.46c0,.81.88,1.31,1.57.9l23.98-14.23c.68-.4.68-1.39,0-1.79Z"/>
+                                                    </Canvas>
+                                                </Viewbox>
+                                                <!-- 일시정지 아이콘 (흰색 바): 재생 중일 때 표시 -->
+                                                <Viewbox x:Name="ImgPause" Width="72" Height="72" Stretch="Uniform"
+                                                         Visibility="Collapsed">
+                                                    <Canvas Width="100" Height="100">
+                                                        <Path Fill="White"
+                                                              Data="M 40.66,35.69 H 44.27 A 1.52,1.52 0 0 1 45.79,37.21 V 62.78 A 1.52,1.52 0 0 1 44.27,64.3 H 40.66 A 1.52,1.52 0 0 1 39.14,62.78 V 37.21 A 1.52,1.52 0 0 1 40.66,35.69 Z"/>
+                                                        <Path Fill="White"
+                                                              Data="M 55.73,35.69 H 59.34 A 1.52,1.52 0 0 1 60.86,37.21 V 62.78 A 1.52,1.52 0 0 1 59.34,64.3 H 55.73 A 1.52,1.52 0 0 1 54.21,62.78 V 37.21 A 1.52,1.52 0 0 1 55.73,35.69 Z"/>
+                                                    </Canvas>
+                                                </Viewbox>
+                                            </Grid>
                                         </Button>
 
                                     </Grid>
@@ -562,7 +578,7 @@
                         </Grid>
                     </Border>
 
-                    <!-- ★ 테이블: Background=Transparent + ScrollViewer 비활성화로 흰 영역 완전 제거 -->
+                    <!--   테이블: Background=Transparent + ScrollViewer 비활성화로 흰 영역 완전 제거 -->
                     <ListView Grid.Column="2"
                               x:Name="RecoveryList"
                               ItemsSource="{Binding FilteredLogs}"
@@ -592,7 +608,7 @@
 
                         <ListView.View>
                             <GridView AllowsColumnReorder="False">
-                                <!-- ★ 체크박스 컬럼 -->
+                                <!--   체크박스 컬럼 -->
                                 <GridViewColumn Header="" Width="52"
                                                 HeaderContainerStyle="{StaticResource ColHeaderFirst}"
                                                 CellTemplate="{StaticResource CheckBoxCell}"/>
@@ -626,34 +642,25 @@
         <Border Grid.Column="1" Background="{StaticResource Panel}">
             <DockPanel Margin="14,32,14,14">
 
-                <!-- ★ 하단 버튼 먼저 Dock → 절대 짤리지 않음 -->
+                <!--   하단 버튼 먼저 Dock → 절대 짤리지 않음 -->
                 <StackPanel DockPanel.Dock="Bottom">
                     <Border Height="1" Background="#244A66" Margin="0,0,0,16"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="2*"/>
-                        </Grid.ColumnDefinitions>
-                        <Button Grid.Column="0"
-                                Style="{StaticResource NavBtn}"
-                                HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                                Width="Auto" Margin="0,0,5,0"
-                                Command="{Binding NavigateBackCommand}">
-                            <TextBlock Text="⬅︎" FontSize="28" HorizontalAlignment="Center"/>
-                        </Button>
-                        <Button Grid.Column="1"
-                                Content="EXIT"
-                                Style="{StaticResource ExitBtn}"
-                                HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                                Width="Auto" Margin="5,0,0,0"
-                                Command="{Binding ExitCommand}"/>
-                    </Grid>
+                    <Button Style="{StaticResource ExitBtn}"
+                            Width="120"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Stretch"
+                            Command="{Binding NavigateBackCommand}">
+                        <Viewbox Width="36" Height="36" Stretch="Uniform">
+                            <Path Fill="White"
+                                  Data="M30.27,74.4L4.34,48.47c-1.79-1.79-1.02-4.45.57-6.03l25.56-25.43c1.66-1.66,4.54-.94,5.8.51,1.62,1.87,1.33,4.35-.38,6.06l-17.97,17.95,49.14.02c16.67,0,29.7,13.76,29.63,30.41l-.04,8.1c-.01,2.36-2.19,3.98-4.37,3.89s-4.07-1.93-4.07-4.29l-.02-8.95c-.02-11.34-9.52-20.64-20.94-20.64l-49.35-.03,18.33,18.37c1.63,1.63,1.43,4.24-.1,5.81-1.41,1.45-4.15,1.91-5.85.2Z"/>
+                        </Viewbox>
+                    </Button>
                 </StackPanel>
 
                 <!-- 상단: 로고 + 섹션 타이틀 + 복구 버튼 -->
                 <StackPanel DockPanel.Dock="Top">
 
-                    <!-- ★ LSS 로고 (User.xaml / Patient.xaml 동일 구조) -->
+                    <!--   LSS 로고 (User.xaml / Patient.xaml 동일 구조) -->
                     <StackPanel HorizontalAlignment="Center" Margin="0,0,0,36">
                         <TextBlock Text="LSS" FontSize="28" FontWeight="Bold"
                                    Foreground="White" HorizontalAlignment="Center"/>
@@ -678,6 +685,64 @@
 
             </DockPanel>
         </Border>
+
+        <!-- 전원 메뉴 버튼 오버레이 (우하단 고정) -->
+        <Grid Grid.ColumnSpan="2" Panel.ZIndex="99"
+              HorizontalAlignment="Right" VerticalAlignment="Bottom"
+              Margin="0,0,20,15" x:Name="MenuButtonArea">
+            <Button x:Name="MenuToggleBtn"
+                    Style="{StaticResource MenuToggleStyle}"
+                    Command="{Binding ToggleMenuCommand}">
+                <TextBlock Text="⏻" FontSize="35"/>
+            </Button>
+            <Popup x:Name="MenuPopup"
+                   IsOpen="{Binding IsMenuOpen, Mode=TwoWay}"
+                   PlacementTarget="{Binding ElementName=MenuToggleBtn}"
+                   Placement="Top"
+                   StaysOpen="False"
+                   AllowsTransparency="True"
+                   PopupAnimation="Fade">
+                <Border Background="#1F2937" CornerRadius="10"
+                        Padding="6" Margin="0,0,0,6">
+                    <Border.Effect>
+                        <DropShadowEffect Color="Black" Opacity="0.4"
+                                          BlurRadius="12" ShadowDepth="4" Direction="270"/>
+                    </Border.Effect>
+                    <StackPanel MinWidth="200">
+                        <!-- Lock -->
+                        <Button Style="{StaticResource PopupMenuItemBtn}"
+                                Command="{Binding LockCommand}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets"
+                                           FontSize="22" Width="36" TextAlignment="Center"
+                                           VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                <TextBlock Text="Lock" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <!-- Log Out -->
+                        <Button Style="{StaticResource PopupMenuItemBtn}"
+                                Command="{Binding LogoutCommand}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="&#xF3B1;" FontFamily="Segoe MDL2 Assets"
+                                           FontSize="22" Width="36" TextAlignment="Center"
+                                           VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                <TextBlock Text="Log Out" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <!-- Exit -->
+                        <Button Style="{StaticResource PopupMenuItemBtn}"
+                                Command="{Binding ExitCommand}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="&#xE7E8;" FontFamily="Segoe MDL2 Assets"
+                                           FontSize="22" Width="36" TextAlignment="Center"
+                                           VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                <TextBlock Text="Exit" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Popup>
+        </Grid>
 
     </Grid>
 </UserControl>

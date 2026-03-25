@@ -451,14 +451,15 @@
             <!-- BACK -->
             <Grid Grid.Row="2" VerticalAlignment="Center">
                 <Button Style="{StaticResource ExitBtn}"
-                         Width="120"
-                         HorizontalAlignment="Left"
-                         VerticalAlignment="Stretch"
-                         Margin="0,0,0,0"
-                         Click="Back_Click">
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="⬅︎" FontSize="40" HorizontalAlignment="Center"/>
-                    </StackPanel>
+            Width="120"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Stretch"
+            Margin="0,0,0,0"
+            Click="Back_Click">
+                    <Viewbox Width="36" Height="36" Stretch="Uniform">
+                        <Path Fill="White"
+                  Data="M30.27,74.4L4.34,48.47c-1.79-1.79-1.02-4.45.57-6.03l25.56-25.43c1.66-1.66,4.54-.94,5.8.51,1.62,1.87,1.33,4.35-.38,6.06l-17.97,17.95,49.14.02c16.67,0,29.7,13.76,29.63,30.41l-.04,8.1c-.01,2.36-2.19,3.98-4.37,3.89s-4.07-1.93-4.07-4.29l-.02-8.95c-.02-11.34-9.52-20.64-20.94-20.64l-49.35-.03,18.33,18.37c1.63,1.63,1.43,4.24-.1,5.81-1.41,1.45-4.15,1.91-5.85.2Z"/>
+                    </Viewbox>
                 </Button>
             </Grid>
         </Grid>

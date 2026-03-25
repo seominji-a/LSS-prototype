@@ -21,7 +21,7 @@
         <SolidColorBrush x:Key="TextMuted"   Color="#94A3B8"/>
         <SolidColorBrush x:Key="Panel"       Color="#0F2637"/>
 
-        <!-- ★ BoolToVisibilityConverter 등록 -->
+        <!--   BoolToVisibilityConverter 등록 -->
         <common:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
 
         <Style x:Key="NavBtn" TargetType="Button">
@@ -369,7 +369,7 @@
                     MouseLeftButtonUp="SelectedPatientBorder_Click" Height="180">
                     <StackPanel>
 
-                        <!-- ★ SelectedPatient=null이면 Hidden (공간 유지, 안 보임) -->
+                        <!--   SelectedPatient=null이면 Hidden (공간 유지, 안 보임) -->
                         <StackPanel>
                             <StackPanel.Style>
                                 <Style TargetType="StackPanel">

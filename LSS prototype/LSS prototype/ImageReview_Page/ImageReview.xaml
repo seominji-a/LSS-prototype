@@ -153,6 +153,20 @@
                        VerticalAlignment="Bottom"/>
         </Grid>
 
+        <Grid x:Name="NavBar" VerticalAlignment="Bottom" Height="0" ClipToBounds="True">
+            <Border Background="#E61C2B3A"/>
+            <Grid>
+                <Grid.RenderTransform>
+                    <TranslateTransform x:Name="NavTT" X="1200"/>
+                </Grid.RenderTransform>
+                <StackPanel Orientation="Horizontal" Margin="16,0" VerticalAlignment="Center">
+                    <Button Content="Patient"      Style="{StaticResource NavBtn}"       Command="{Binding NavigatePatientCommand}" Margin="0,0,10,0"/>
+                    <Button Content="Scan"         Style="{StaticResource NavBtnActive}" Margin="0,0,10,0"/>
+                    <Button Content="Image Review" Style="{StaticResource NavBtn}"       Margin="0,0,10,0"/>
+                    <Button Content="Video Review" Style="{StaticResource NavBtn}"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
         <!-- 우측 패널 -->
         <Grid Grid.Column="1">
             <Border Background="{StaticResource PanelBrush}"

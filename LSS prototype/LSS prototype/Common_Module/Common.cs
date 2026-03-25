@@ -35,7 +35,7 @@ namespace LSS_prototype
 
 
 
-        public const int DB_VERSION = 61; // DB Version 
+        public const int DB_VERSION = 62; // DB Version 
 
 
         // ===== OTP 기능  =====

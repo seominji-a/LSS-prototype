@@ -69,35 +69,7 @@
             <Setter Property="Height"     Value="62"/>
         </Style>
 
-        <Style x:Key="PopupMenuItemBtn" TargetType="Button">
-            <Setter Property="Background"       Value="Transparent"/>
-            <Setter Property="Foreground"       Value="White"/>
-            <Setter Property="FontSize"         Value="18"/>
-            <Setter Property="FontWeight"       Value="Normal"/>
-            <Setter Property="BorderThickness"  Value="0"/>
-            <Setter Property="Cursor"           Value="Hand"/>
-            <Setter Property="Padding"          Value="18,14"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                CornerRadius="6" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Left"
-                                              VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#374151"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#4B5563"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        
 
         <Style x:Key="NavBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
             <Setter Property="Background" Value="White"/>
@@ -1020,7 +992,6 @@
             <Grid Grid.Row="1" Background="{StaticResource Panel}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="220"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- 왼쪽: 네비게이션 토글 + 설정 -->
@@ -1036,67 +1007,65 @@
                     </Button>
                 </StackPanel>
 
-                <!-- 오른쪽: 메뉴 버튼 (팝업) -->
-                <Grid Grid.Column="1" Margin="0,0,8,0" x:Name="MenuButtonArea">
-                    <Button x:Name="MenuToggleBtn"
-                            Style="{StaticResource ExitBtn}"
-                            Command="{Binding ToggleMenuCommand}"
-                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="⏻" FontSize="40" HorizontalAlignment="Center"/>
-                           
-                        </StackPanel>
-                    </Button>
-                    <Popup x:Name="MenuPopup"
-                           IsOpen="{Binding IsMenuOpen, Mode=TwoWay}"
-                           PlacementTarget="{Binding ElementName=MenuToggleBtn}"
-                           Placement="Top"
-                           StaysOpen="False"
-                           AllowsTransparency="True"
-                           PopupAnimation="Fade">
-                        <Border Background="#1F2937" CornerRadius="10"
-                                Padding="6" Margin="0,0,0,6">
-                            <Border.Effect>
-                                <DropShadowEffect Color="Black" Opacity="0.4"
-                                                  BlurRadius="12" ShadowDepth="4" Direction="270"/>
-                            </Border.Effect>
-                            <StackPanel MinWidth="200">
-                                <!-- Lock -->
-                                <Button Style="{StaticResource PopupMenuItemBtn}"
-                                        Command="{Binding LockCommand}">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets"
-                                                   FontSize="22" Width="36" TextAlignment="Center"
-                                                   VerticalAlignment="Center" Margin="0,0,14,0"/>
-                                        <TextBlock Text="Lock" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Button>
-                                <!-- Log Out -->
-                                <Button Style="{StaticResource PopupMenuItemBtn}"
-                                        Command="{Binding LogoutCommand}">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xF3B1;" FontFamily="Segoe MDL2 Assets"
-                                                   FontSize="22" Width="36" TextAlignment="Center"
-                                                   VerticalAlignment="Center" Margin="0,0,14,0"/>
-                                        <TextBlock Text="Log Out" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Button>
-                                <!-- Exit -->
-                                <Button Style="{StaticResource PopupMenuItemBtn}"
-                                        Command="{Binding ExitCommand}">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE7E8;" FontFamily="Segoe MDL2 Assets"
-                                                   FontSize="22" Width="36" TextAlignment="Center"
-                                                   VerticalAlignment="Center" Margin="0,0,14,0"/>
-                                        <TextBlock Text="Exit" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Button>
-                            </StackPanel>
-                        </Border>
-                    </Popup>
-                </Grid>
             </Grid>
 
+            <!-- 전원 메뉴 버튼 오버레이 (우하단 고정) -->
+            <Grid Grid.RowSpan="2" Panel.ZIndex="99"
+                  HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                  Margin="0,0,20,17" x:Name="MenuButtonArea">
+                <Button x:Name="MenuToggleBtn"
+                        Style="{StaticResource MenuToggleStyle}"
+                        Command="{Binding ToggleMenuCommand}">
+                    <TextBlock Text="⏻" FontSize="35"/>
+                </Button>
+                <Popup x:Name="MenuPopup"
+                       IsOpen="{Binding IsMenuOpen, Mode=TwoWay}"
+                       PlacementTarget="{Binding ElementName=MenuToggleBtn}"
+                       Placement="Top"
+                       StaysOpen="False"
+                       AllowsTransparency="True"
+                       PopupAnimation="Fade">
+                    <Border Background="#1F2937" CornerRadius="10"
+                            Padding="6" Margin="0,0,0,6">
+                        <Border.Effect>
+                            <DropShadowEffect Color="Black" Opacity="0.4"
+                                              BlurRadius="12" ShadowDepth="4" Direction="270"/>
+                        </Border.Effect>
+                        <StackPanel MinWidth="200">
+                            <!-- Lock -->
+                            <Button Style="{StaticResource PopupMenuItemBtn}"
+                                    Command="{Binding LockCommand}">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="22" Width="36" TextAlignment="Center"
+                                               VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                    <TextBlock Text="Lock" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <!-- Log Out -->
+                            <Button Style="{StaticResource PopupMenuItemBtn}"
+                                    Command="{Binding LogoutCommand}">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="&#xF3B1;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="22" Width="36" TextAlignment="Center"
+                                               VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                    <TextBlock Text="Log Out" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <!-- Exit -->
+                            <Button Style="{StaticResource PopupMenuItemBtn}"
+                                    Command="{Binding ExitCommand}">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="&#xE7E8;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="22" Width="36" TextAlignment="Center"
+                                               VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                    <TextBlock Text="Exit" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </Popup>
+            </Grid>
         </Grid>
     </Grid>
 </UserControl>

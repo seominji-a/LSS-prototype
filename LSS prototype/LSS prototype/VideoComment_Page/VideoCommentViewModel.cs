@@ -1,5 +1,7 @@
 ﻿using FellowOakDicom;
+using LSS_prototype.Auth;
 using LSS_prototype.DB_CRUD;
+using LSS_prototype.Login_Page;
 using LSS_prototype.Patient_Page;
 using System;
 using System.Collections.Generic;
@@ -8,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -161,6 +164,20 @@ namespace LSS_prototype.VideoComment_Page
             private set { _videoType = value; OnPropertyChanged(); }
         }
 
+        // ── 팝업 메뉴 상태 ──
+        private bool _isMenuOpen;
+        private DateTime _menuLastClosed = DateTime.MinValue;
+        public bool IsMenuOpen
+        {
+            get => _isMenuOpen;
+            set
+            {
+                if (_isMenuOpen && !value) _menuLastClosed = DateTime.UtcNow;
+                _isMenuOpen = value;
+                OnPropertyChanged();
+            }
+        }
+
         public PatientModel Patient { get; }
         public string StudyId { get; }
 
@@ -178,6 +195,9 @@ namespace LSS_prototype.VideoComment_Page
         public ICommand SeekForwardCommand { get; }
         public ICommand PlayPauseCommand { get; }
         public ICommand NavigateBackCommand { get; }
+        public ICommand ToggleMenuCommand { get; }
+        public ICommand LogoutCommand { get; }
+        public ICommand LockCommand { get; }
 
         #endregion
 
@@ -191,7 +211,10 @@ namespace LSS_prototype.VideoComment_Page
             StudyId = studyId;
 
             VideoDeleteCommand = new RelayCommand(async _ => await ExecuteVideoDelete());
-            ExitCommand = new RelayCommand(async _ => await Common.ExcuteExit());
+            LogoutCommand = new AsyncRelayCommand(async _ => await ExecuteLogout());
+            ExitCommand = new AsyncRelayCommand(async _ => await ExecuteExit());
+            LockCommand = new AsyncRelayCommand(async _ => await ExecuteLock());
+            ToggleMenuCommand = new RelayCommand(_ => ToggleMenu());
             SlowerCommand = new RelayCommand(async _ => await ExecuteSlower());
             FasterCommand = new RelayCommand(async _ => await ExecuteFaster());
             SeekBackCommand = new RelayCommand(_ => _seekBackAction?.Invoke());
@@ -654,6 +677,49 @@ namespace LSS_prototype.VideoComment_Page
             return int.TryParse(parts[parts.Length - 2], out int idx) ? idx : 0;
         }
 
+        #endregion
+
+        #region  메뉴 액션
+        private async Task ExecuteLogout()
+        {
+            IsMenuOpen = false;
+            await Common.ExecuteLogout();
+        }
+
+        private async Task ExecuteExit()
+        {
+            IsMenuOpen = false;
+            await Common.ExcuteExit();
+        }
+
+        private void ToggleMenu()
+        {
+            if (!IsMenuOpen && (DateTime.UtcNow - _menuLastClosed).TotalMilliseconds < 200)
+                return;
+            IsMenuOpen = !IsMenuOpen;
+        }
+
+        private async Task ExecuteLock()
+        {
+            IsMenuOpen = false;
+
+            var result = await CustomMessageWindow.ShowAsync(
+                "프로그램을 잠금하시겠습니까?",
+                CustomMessageWindow.MessageBoxType.YesNo,
+                0,
+                CustomMessageWindow.MessageIconType.Info);
+
+            if (result != CustomMessageWindow.MessageBoxResult.Yes) return;
+
+            // 잠금 중 세션 타이머 정지 (lock ↔ unlock은 하나의 세션으로 묶음)
+            App.ActivityMonitor.Stop();
+
+            // 현재 창을 숨기고 잠금 화면(SessionLogin) 표시
+            SessionStateManager.SuspendSession();
+            var sessionLoginWindow = new SessionLogin();
+            sessionLoginWindow.Show();
+            Application.Current.MainWindow = sessionLoginWindow;
+        }
         #endregion
 
         #region INotifyPropertyChanged

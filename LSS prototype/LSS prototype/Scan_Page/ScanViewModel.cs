@@ -233,10 +233,16 @@ namespace LSS_prototype.Scan_Page
 
         // ── 팝업 메뉴 상태 ──
         private bool _isMenuOpen;
+        private DateTime _menuLastClosed = DateTime.MinValue;
         public bool IsMenuOpen
         {
             get => _isMenuOpen;
-            set { _isMenuOpen = value; OnPropertyChanged(); }
+            set
+            {
+                if (_isMenuOpen && !value) _menuLastClosed = DateTime.UtcNow;
+                _isMenuOpen = value;
+                OnPropertyChanged();
+            }
         }
 
 
@@ -285,7 +291,7 @@ namespace LSS_prototype.Scan_Page
             LockCommand = new AsyncRelayCommand(async _ => await ExecuteLock());
             LogoutCommand = new AsyncRelayCommand(async _ => await ExecuteLogout());
             ExitCommand = new AsyncRelayCommand(async _ => await ExecuteExit());
-            ToggleMenuCommand = new RelayCommand(_ => IsMenuOpen = !IsMenuOpen);
+            ToggleMenuCommand = new RelayCommand(_ => ToggleMenu());
             ColorMapCommand = new RelayCommand(_ => ToggleColorMap());
 
             _cameraService.FrameArrived += OnFrameArrived;
@@ -1552,6 +1558,13 @@ namespace LSS_prototype.Scan_Page
         #endregion
 
         #region 메뉴 액션
+
+        private void ToggleMenu()
+        {
+            if (!IsMenuOpen && (DateTime.UtcNow - _menuLastClosed).TotalMilliseconds < 200)
+                return;
+            IsMenuOpen = !IsMenuOpen;
+        }
 
         private async Task ExecuteLock()
         {

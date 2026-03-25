@@ -17,14 +17,14 @@ namespace LSS_prototype.Login_Page
     public class LoginViewModel : INotifyPropertyChanged
     {
 
-        #region Fields
+        #region 변수선언부
         private string _userId;
         private bool _showAdminMode;              // 체크박스 노출 여부
         private bool _isAdminMode; // 어드민 체크 여부 확인 변수
         private List<string> _adminIdList = new List<string>();  // 어드민 권한  ID를 저장할 LIST
         #endregion
 
-        #region Commands & Actions
+        #region 커맨드 선언부
         // 버튼과 연결될 객체
         public ICommand LoginCommand { get; }
         /// <summary>
@@ -33,7 +33,7 @@ namespace LSS_prototype.Login_Page
         public Action FocusUserIdAction { get; set; }
         #endregion
 
-        #region Properties
+        #region 프로퍼티
         public string UserId
         {
             get => _userId;
@@ -64,7 +64,7 @@ namespace LSS_prototype.Login_Page
         }
         #endregion
 
-        #region Constructor
+        #region 생성자
         public LoginViewModel()
         {
            LoginCommand = new AsyncRelayCommand(async (param) => await ExecuteLogin(param));

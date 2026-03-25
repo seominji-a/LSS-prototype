@@ -219,6 +219,7 @@ namespace LSS_prototype.Common_Module
                         foreach (IManagedCamera cam in _managedCameras)
                             cam.Init();
                         _camConnection = true;
+                        _camOpen = true;
                         await StartLiveView();
                         CameraReconnected?.Invoke();
                     }

@@ -37,26 +37,52 @@ namespace LSS_prototype.Scan_Page
         }
 
 
-        // 네비 토글
+        // Nav 패널 열기/닫기 토글 (Setting이 열려있으면 먼저 닫음)
         private void ToggleNav_Click(object sender, RoutedEventArgs e)
         {
-            ((Storyboard)Resources[_navOpen ? "NavOut" : "NavIn"]).Begin();
-            _navOpen = !_navOpen;
-            ToggleBtn.Content = _navOpen ? ">" : "<";
+            if (!_navOpen && _settingOpen)
+                CloseSetting();
+
+            RunNavAnimation(!_navOpen);
         }
 
-        // 설정창 토글 (애니메이션 없이 즉시)
+        // Setting 패널 열기/닫기 토글 (Nav가 열려있으면 먼저 닫음)
         private void ToggleSetting_Click(object sender, RoutedEventArgs e)
         {
             _settingOpen = !_settingOpen;
-            SettingPanel.Visibility = _settingOpen
-                ? Visibility.Visible
-                : Visibility.Collapsed;
+            SettingPanel.Visibility = _settingOpen ? Visibility.Visible : Visibility.Collapsed;
+
+            if (_settingOpen && _navOpen)
+                RunNavAnimation(false);
         }
 
+        // Nav 패널 슬라이드 애니메이션 실행 및 상태 업데이트
+        private void RunNavAnimation(bool open)
+        {
+            ((Storyboard)Resources[open ? "NavIn" : "NavOut"]).Begin();
+            _navOpen = open;
+            SetToggleButton(open);
+        }
 
-        private void PatientButton_Click(object sender, RoutedEventArgs e)
-            => MainPage.Instance.NavigateTo(new Patient());
+        // Nav 열림 상태에 따라 토글 버튼 아이콘 변경 (❮ / ❯)
+        private void SetToggleButton(bool navOpen)
+        {
+            ToggleBtn.Content = new TextBlock
+            {
+                Text = navOpen ? "❯" : "❮",
+                Foreground = Brushes.White,
+                FontSize = 40,
+                FontWeight = FontWeights.Bold,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+        }
 
+        // Setting 패널 강제 닫기
+        private void CloseSetting()
+        {
+            _settingOpen = false;
+            SettingPanel.Visibility = Visibility.Collapsed;
+        }
     }
 }

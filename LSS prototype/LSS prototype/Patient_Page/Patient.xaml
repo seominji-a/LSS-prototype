@@ -105,7 +105,7 @@
                                        Foreground="White"
                                        HorizontalAlignment="Right" VerticalAlignment="Center"
                                        Margin="0,0,16,0"/>
-                            <TextBlock x:Name="TxtOn" Text="ALL"
+                            <TextBlock x:Name="TxtOn" Text="LOCAL"
                                        FontSize="20" FontWeight="Bold" FontFamily="Arial"
                                        Foreground="White" Opacity="0"
                                        HorizontalAlignment="Left" VerticalAlignment="Center"

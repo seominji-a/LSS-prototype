@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 
@@ -22,9 +23,11 @@ namespace LSS_prototype.Auth
             _isSessionSuspended = true;
             _suspendedWindows.Clear();
 
-            foreach (Window window in Application.Current.Windows.Cast<Window>().ToList()) 
+            foreach (Window window in Application.Current.Windows.Cast<Window>().ToList())
             {
-                if (window.GetType().Name != "Login")
+                // Login / SessionLogin 창은 잠금 흐름의 주체이므로 숨김 대상에서 제외
+                string typeName = window.GetType().Name;
+                if (typeName != "Login" && typeName != "SessionLogin")
                 {
                     window.Hide();
                     _suspendedWindows.Add(window);
@@ -41,11 +44,18 @@ namespace LSS_prototype.Auth
                 return;
 
             // 숨겨뒀던 창들 다시 보이기
+            // IsLoaded가 false인 창은 이미 닫힌 상태이므로 건너뜀
             foreach (Window window in _suspendedWindows)
             {
-                if (window != null)
+                try
                 {
-                    window.Show();
+                    // IsLoaded 가 true 여도 이미 닫힌 창이면 Show()가 예외를 던질 수 있으므로 방어 처리
+                    if (window != null && window.IsLoaded)
+                        window.Show();
+                }
+                catch (InvalidOperationException)
+                {
+                    // 창이 이미 닫힌 경우 무시
                 }
             }
 

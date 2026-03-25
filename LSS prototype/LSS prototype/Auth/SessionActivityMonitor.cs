@@ -160,10 +160,20 @@ namespace LSS_prototype.Auth
                 var button = FindAncestorOrSelf<Button>(e.OriginalSource as DependencyObject);
                 if (button == null) return;
 
-                string windowName = (sender as Window)?.GetType().Name ?? "Unknown";
-                string buttonName = button.Name ?? "unnamed";
+                // MainPage 내부 콘텐츠(UserControl)의 실제 페이지명 우선 사용
+                // ContentControl 교체 방식이라 sender는 항상 "MainPage(Window)"이므로
+                // CurrentPageName 프로퍼티로 현재 표시 중인 XAML 페이지명을 가져옴
+                var mainPage = sender as MainPage
+                            ?? Application.Current.Windows.OfType<MainPage>().FirstOrDefault();
+
+                string pageName = mainPage?.CurrentPageName;
+                string windowName = !string.IsNullOrEmpty(pageName)
+                    ? pageName
+                    : (sender as Window)?.GetType().Name ?? "Unknown";
+
+                string buttonName    = button.Name ?? "unnamed";
                 string buttonContent = button.Content?.ToString() ?? "";
-                string currentUser = Common.CurrentUserId ?? "Unknown";
+                string currentUser   = Common.CurrentUserId ?? "Unknown";
                 Common.WriteSessionLog(
                 $"[버튼클릭] 사용자: {currentUser} | 화면: {windowName} | 버튼명: {buttonName} | 버튼내용: {buttonContent}");
             }
@@ -240,12 +250,12 @@ namespace LSS_prototype.Auth
 
         private void NavigateToLoginPage()
         {
-            // 기존 창들을 Close()하지 않고 Hide()로 숨김 보관 → 재로그인 시 그대로 복원 가능
+            // 기존 창들을 Close()하지 않고 Hide()로 숨김 보관 → 잠금 해제 시 그대로 복원 가능
             SessionStateManager.SuspendSession();
 
-            var loginWindow = new Login();
-            loginWindow.Show();
-            Application.Current.MainWindow = loginWindow;
+            var sessionLoginWindow = new Login_Page.SessionLogin();
+            sessionLoginWindow.Show();
+            Application.Current.MainWindow = sessionLoginWindow;
         }
 
         // ══════════════════════════════════════════

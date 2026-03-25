@@ -32,5 +32,9 @@ namespace LSS_prototype
         {
             MainContent.Content = page;
         }
+
+        /// <summary>현재 표시 중인 페이지(UserControl)의 클래스명 반환 (세션 로그용)</summary>
+        public string CurrentPageName =>
+            (MainContent?.Content as FrameworkElement)?.GetType().Name ?? string.Empty;
     }
 }

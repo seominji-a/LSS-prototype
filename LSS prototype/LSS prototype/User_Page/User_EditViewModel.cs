@@ -36,7 +36,32 @@ namespace LSS_prototype.User_Page
         {
             try
             {
-                // 1. 빈값 검사
+                // 1. MASTER 계정 + 비밀번호 비어있음 + ID가 바뀐 경우 → ID만 변경
+                if (CanEditId && string.IsNullOrEmpty(newPassword) && LoginId != OriginalLoginId)
+                {
+                    var confirm = await CustomMessageWindow.ShowAsync("ID만 변경하시겠습니까?",
+                        CustomMessageWindow.MessageBoxType.YesNo, 0,
+                        CustomMessageWindow.MessageIconType.Warning);
+
+                    if (confirm != CustomMessageWindow.MessageBoxResult.Yes)
+                        return;
+
+                    var db2 = new DB_Manager();
+                    bool idSuccess = db2.UpdateLoginId(OriginalLoginId, LoginId);
+
+                    if (idSuccess)
+                    {
+                        await CustomMessageWindow.ShowAsync("사용자 정보가 변경되었습니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Info);
+                        CloseAction?.Invoke(true);
+                    }
+                    else
+                    {
+                        await CustomMessageWindow.ShowAsync("변경에 실패했습니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Warning);
+                    }
+                    return;
+                }
+
+                // 3. 빈값 검사
                 if (string.IsNullOrEmpty(newPassword))
                 {
                     await CustomMessageWindow.ShowAsync("비밀번호를 입력해주세요.",
@@ -45,7 +70,7 @@ namespace LSS_prototype.User_Page
                     return;
                 }
 
-                // 2. 비밀번호 일치 검사
+                // 4. 비밀번호 일치 검사
                 if (newPassword != confirmPassword)
                 {
                     await CustomMessageWindow.ShowAsync("비밀번호가 일치하지 않습니다.",
@@ -54,7 +79,7 @@ namespace LSS_prototype.User_Page
                     return;
                 }
 
-                // 3. 유효성 검사 ( 테스트 기간동안 잠시 주석 )
+                // 5. 유효성 검사 ( 테스트 기간동안 잠시 주석 )
                 string error = DB_Manager.ValidatePassword(newPassword);
                 if (error != null)
                 {
@@ -64,7 +89,7 @@ namespace LSS_prototype.User_Page
                     return;
                 }
 
-                // 4. DB 업데이트 ( 경우의수 2가지 )
+                // 6. DB 업데이트 ( 경우의수 2가지 )
                 // 4-1. Master가 아닌 관리자 계정이 수정하는 경우 → 비밀번호만 변경
                 // 4-2. Master 계정이 수정하는 경우 → ID + 비밀번호 변경 가능
 

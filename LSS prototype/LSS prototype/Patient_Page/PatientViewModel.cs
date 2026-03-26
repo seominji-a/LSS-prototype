@@ -23,6 +23,7 @@ using System.Windows.Input;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using System.Runtime.InteropServices;
+using LSS_prototype.Login_Page;
 
 namespace LSS_prototype.Patient_Page
 {
@@ -39,9 +40,6 @@ namespace LSS_prototype.Patient_Page
         // dicom 이 연결끊킨 상태일때 한번의 task가 실행되고 -> 두번째 Patient 호출 시 -> 에러발생 
         // 첫번째때 연결된 task를 끊어주기위해서 0306 박한용
 
-
-    
-
         private ObservableCollection<PatientModel> _Patients = new ObservableCollection<PatientModel>();
         public ObservableCollection<PatientModel> Users
         {
@@ -49,6 +47,20 @@ namespace LSS_prototype.Patient_Page
             set
             {
                 _Patients = value;
+                OnPropertyChanged();
+            }
+        }
+
+        // ── 팝업 메뉴 상태 ──
+        private bool _isMenuOpen;
+        private DateTime _menuLastClosed = DateTime.MinValue;
+        public bool IsMenuOpen
+        {
+            get => _isMenuOpen;
+            set
+            {
+                if (_isMenuOpen && !value) _menuLastClosed = DateTime.UtcNow;
+                _isMenuOpen = value;
                 OnPropertyChanged();
             }
         }
@@ -166,6 +178,9 @@ namespace LSS_prototype.Patient_Page
         public ICommand LogoutCommand { get; }
         public ICommand ExitCommand { get; }
 
+        public ICommand LockCommand { get; }
+        public ICommand ToggleMenuCommand { get; }
+
         public PatientViewModel()
         {
             _dialogService = new Dialog();
@@ -175,8 +190,10 @@ namespace LSS_prototype.Patient_Page
             PatientDeleteCommand = new RelayCommand(async _ => await DeletePatient());
             EmrSyncCommand = new AsyncRelayCommand(async _ => await EmrSync());
             ImportCommand = new RelayCommand(async _ => await ImportPatient());
-            LogoutCommand = new RelayCommand(async _ => await Common.ExecuteLogout());
-            ExitCommand = new RelayCommand(async _ => await Common.ExcuteExit());
+            LogoutCommand = new AsyncRelayCommand(async _ => await ExecuteLogout());
+            ExitCommand = new AsyncRelayCommand(async _ => await ExecuteExit());
+            LockCommand = new AsyncRelayCommand(async _ => await ExecuteLock());
+            ToggleMenuCommand = new RelayCommand(_ => ToggleMenu());
 
             NavScanCommand = new RelayCommand(NavScan);
             // 0227 박한용 아래코드는 데이터 관련 처리 완료 후 주석 풀고 연동 예정 
@@ -191,7 +208,48 @@ namespace LSS_prototype.Patient_Page
         {
             await LoadPatients();
         }
+        #region  메뉴 액션
+        private async Task ExecuteLogout()
+        {
+            IsMenuOpen = false;
+            await Common.ExecuteLogout();
+        }
 
+        private async Task ExecuteExit()
+        {
+            IsMenuOpen = false;
+            await Common.ExcuteExit();
+        }
+
+        private void ToggleMenu()
+        {
+            if (!IsMenuOpen && (DateTime.UtcNow - _menuLastClosed).TotalMilliseconds < 200)
+                return;
+            IsMenuOpen = !IsMenuOpen;
+        }
+
+        private async Task ExecuteLock()
+        {
+            IsMenuOpen = false;
+
+            var result = await CustomMessageWindow.ShowAsync(
+                "프로그램을 잠금하시겠습니까?",
+                CustomMessageWindow.MessageBoxType.YesNo,
+                0,
+                CustomMessageWindow.MessageIconType.Info);
+
+            if (result != CustomMessageWindow.MessageBoxResult.Yes) return;
+
+            // 잠금 중 세션 타이머 정지 (lock ↔ unlock은 하나의 세션으로 묶음)
+            App.ActivityMonitor.Stop();
+
+            // 현재 창을 숨기고 잠금 화면(SessionLogin) 표시
+            SessionStateManager.SuspendSession();
+            var sessionLoginWindow = new SessionLogin();
+            sessionLoginWindow.Show();
+            Application.Current.MainWindow = sessionLoginWindow;
+        }
+        #endregion
         private async void NavScan()
         {
 
@@ -1624,13 +1682,13 @@ namespace LSS_prototype.Patient_Page
 
         private async Task EmrSync(CancellationToken ct = default)
         {
+            bool loadingEnded = false;
             try
             {
                 var db = new DB_Manager();
                 var pacsSet = db.GetPacsSet();
 
                 var dicom = new DicomManager();
-
 
                 LoadingWindow.Begin("MWL 조회 중...");
                 var worklistItems = await dicom.GetWorklistPatientsAsync(pacsSet.MwlMyAET, pacsSet.MwlIP, pacsSet.MwlPort, pacsSet.MwlAET);
@@ -1645,9 +1703,31 @@ namespace LSS_prototype.Patient_Page
                     p.IsEmrPatient = true;
                 }
                 RefreshPatients();
+
+                // ── 데이터 바인딩 완료 후 로딩창 먼저 닫기 ──
+                LoadingWindow.End();
+                loadingEnded = true;
+
+               
+
                 await CustomMessageWindow.ShowAsync("EMR 동기화 완료되었습니다.",
                             CustomMessageWindow.MessageBoxType.Ok, 1,
                             CustomMessageWindow.MessageIconType.Info);
+
+                // ── Description 2종 이상: 로딩창이 닫힌 뒤에 경고 표시 ──
+                if (string.IsNullOrEmpty(Common.MwlDescriptionFilter))
+                {
+                    var distinctCount = worklistItems
+                        .Select(p => p.RequestedProcedureDescription)
+                        .Distinct()
+                        .Count();
+
+                    if (distinctCount >= 2)
+                        await CustomMessageWindow.ShowAsync(
+                            "근적외선 림프조영술(ICG) 대상이 아닌 환자가 포함되어 있습니다\nMWL Filter를 설정해 주십시오.",
+                            CustomMessageWindow.MessageBoxType.Ok,
+                            icon: CustomMessageWindow.MessageIconType.Info);
+                }
             }
             catch (OperationCanceledException) { } // task 해제되는 경우
 
@@ -1658,7 +1738,7 @@ namespace LSS_prototype.Patient_Page
 
             finally
             {
-                LoadingWindow.End();
+                if (!loadingEnded) LoadingWindow.End();
             }
         }
 

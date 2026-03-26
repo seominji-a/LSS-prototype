@@ -1,5 +1,7 @@
 ﻿using FellowOakDicom;
+using LSS_prototype.Auth;
 using LSS_prototype.DB_CRUD;
+using LSS_prototype.Login_Page;
 using LSS_prototype.Patient_Page;
 using System;
 using System.Collections.Generic;
@@ -8,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -111,7 +114,7 @@ namespace LSS_prototype.VideoComment_Page
         }
 
         // CommentText: setter에서 IsCommentDirty 자동 세팅
-        // ★ UpdateCurrentFile / Reset 에서는 필드 직접 할당 후 OnPropertyChanged
+        //   UpdateCurrentFile / Reset 에서는 필드 직접 할당 후 OnPropertyChanged
         //   → setter 통하면 IsCommentDirty=true 되므로 반드시 이 방식 사용
         private string _commentText;
         public string CommentText
@@ -144,21 +147,68 @@ namespace LSS_prototype.VideoComment_Page
         public double CurrentSpeedRatio
         {
             get => _currentSpeedRatio;
-            private set { _currentSpeedRatio = value; OnPropertyChanged(); }
+            set  // TwoWay 슬라이더 바인딩용 (0.25 단위로 스냅)
+            {
+                var snapped = Math.Round(value * 4.0) / 4.0;
+                snapped = Math.Max(0.25, Math.Min(4.0, snapped));
+                if (Math.Abs(_currentSpeedRatio - snapped) < 0.001) return;
+                var label = snapped == 1.0 ? "x1" : $"x{snapped:0.##}";
+                var mode  = snapped < 1.0 ? SpeedMode.Slow
+                          : snapped > 1.0 ? SpeedMode.Fast : SpeedMode.Normal;
+                ApplySpeed(snapped, label, mode);
+            }
         }
 
-        private string _playPauseIcon = "▶";
-        public string PlayPauseIcon
+        // ── 속도 팝업 상태 ──
+        private bool _isSpeedPopupOpen;
+        private DateTime _speedPopupLastClosed = DateTime.MinValue;
+        public bool IsSpeedPopupOpen
         {
-            get => _playPauseIcon;
-            set { _playPauseIcon = value; OnPropertyChanged(); }
+            get => _isSpeedPopupOpen;
+            set
+            {
+                if (_isSpeedPopupOpen && !value) _speedPopupLastClosed = DateTime.UtcNow;
+                _isSpeedPopupOpen = value;
+                OnPropertyChanged();
+            }
         }
+
+        private bool _isPlaying;
+        public bool IsPlaying
+        {
+            get => _isPlaying;
+            set
+            {
+                _isPlaying = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(PlayIconVisibility));
+                OnPropertyChanged(nameof(PauseIconVisibility));
+            }
+        }
+        // 재생 아이콘: 정지 상태일 때 표시
+        public Visibility PlayIconVisibility  => _isPlaying ? Visibility.Collapsed : Visibility.Visible;
+        // 일시정지 아이콘: 재생 중일 때 표시
+        public Visibility PauseIconVisibility => _isPlaying ? Visibility.Visible   : Visibility.Collapsed;
 
         private string _videoType;
         public string VideoType
         {
             get => _videoType;
             private set { _videoType = value; OnPropertyChanged(); }
+        }
+
+        // ── 팝업 메뉴 상태 ──
+        private bool _isMenuOpen;
+        private DateTime _menuLastClosed = DateTime.MinValue;
+        public bool IsMenuOpen
+        {
+            get => _isMenuOpen;
+            set
+            {
+                if (_isMenuOpen && !value) _menuLastClosed = DateTime.UtcNow;
+                _isMenuOpen = value;
+                OnPropertyChanged();
+            }
         }
 
         public PatientModel Patient { get; }
@@ -178,6 +228,13 @@ namespace LSS_prototype.VideoComment_Page
         public ICommand SeekForwardCommand { get; }
         public ICommand PlayPauseCommand { get; }
         public ICommand NavigateBackCommand { get; }
+        public ICommand ToggleMenuCommand { get; }
+        public ICommand LogoutCommand { get; }
+        public ICommand LockCommand { get; }
+        public ICommand ToggleSpeedPopupCommand { get; }
+        public ICommand SpeedUpCommand { get; }
+        public ICommand SpeedDownCommand { get; }
+        public ICommand SetSpeedCommand { get; }
 
         #endregion
 
@@ -191,7 +248,14 @@ namespace LSS_prototype.VideoComment_Page
             StudyId = studyId;
 
             VideoDeleteCommand = new RelayCommand(async _ => await ExecuteVideoDelete());
-            ExitCommand = new RelayCommand(async _ => await Common.ExcuteExit());
+            LogoutCommand = new AsyncRelayCommand(async _ => await ExecuteLogout());
+            ExitCommand = new AsyncRelayCommand(async _ => await ExecuteExit());
+            LockCommand = new AsyncRelayCommand(async _ => await ExecuteLock());
+            ToggleMenuCommand = new RelayCommand(_ => ToggleMenu());
+            ToggleSpeedPopupCommand = new RelayCommand(_ => ToggleSpeedPopup());
+            SpeedUpCommand   = new RelayCommand(_ => ExecuteSpeedUp());
+            SpeedDownCommand = new RelayCommand(_ => ExecuteSpeedDown());
+            SetSpeedCommand  = new RelayCommand(p  => ExecuteSetSpeed(p));
             SlowerCommand = new RelayCommand(async _ => await ExecuteSlower());
             FasterCommand = new RelayCommand(async _ => await ExecuteFaster());
             SeekBackCommand = new RelayCommand(_ => _seekBackAction?.Invoke());
@@ -379,7 +443,7 @@ namespace LSS_prototype.VideoComment_Page
                     comment = db.SelectComment("NORMAL_VIDEO", fileName);
                 }
 
-                // ★ setter 통하면 IsCommentDirty=true → 필드 직접 할당
+                //   setter 통하면 IsCommentDirty=true → 필드 직접 할당
                 _commentText = comment;
                 OnPropertyChanged(nameof(CommentText));
                 IsCommentDirty = false;
@@ -606,11 +670,45 @@ namespace LSS_prototype.VideoComment_Page
 
         private void ApplySpeed(double ratio, string label, SpeedMode mode)
         {
-            CurrentSpeedRatio = ratio;
+            _currentSpeedRatio = ratio;  // backing field 직접 설정 (setter 재귀 방지)
+            OnPropertyChanged(nameof(CurrentSpeedRatio));
             SpeedLabel = label;
             SpeedLabelColor = mode == SpeedMode.Slow ? SpeedSlowBrush
                               : mode == SpeedMode.Fast ? SpeedFastBrush
                               : SpeedNormalBrush;
+        }
+
+        private void ToggleSpeedPopup()
+        {
+            if (!IsSpeedPopupOpen && (DateTime.UtcNow - _speedPopupLastClosed).TotalMilliseconds < 200)
+                return;
+            IsSpeedPopupOpen = !IsSpeedPopupOpen;
+        }
+
+        private void ExecuteSpeedUp()
+        {
+            var next = Math.Min(4.0, Math.Round((_currentSpeedRatio + 0.25) * 4.0) / 4.0);
+            var label = next == 1.0 ? "x1" : $"x{next:0.##}";
+            ApplySpeed(next, label, next < 1.0 ? SpeedMode.Slow : next > 1.0 ? SpeedMode.Fast : SpeedMode.Normal);
+        }
+
+        private void ExecuteSpeedDown()
+        {
+            var next = Math.Max(0.25, Math.Round((_currentSpeedRatio - 0.25) * 4.0) / 4.0);
+            var label = next == 1.0 ? "x1" : $"x{next:0.##}";
+            ApplySpeed(next, label, next < 1.0 ? SpeedMode.Slow : next > 1.0 ? SpeedMode.Fast : SpeedMode.Normal);
+        }
+
+        private void ExecuteSetSpeed(object parameter)
+        {
+            if (parameter == null) return;
+            if (!double.TryParse(parameter.ToString(),
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out double ratio)) return;
+            ratio = Math.Max(0.25, Math.Min(4.0, ratio));
+            var label = ratio == 1.0 ? "x1" : $"x{ratio:0.##}";
+            ApplySpeed(ratio, label, ratio < 1.0 ? SpeedMode.Slow : ratio > 1.0 ? SpeedMode.Fast : SpeedMode.Normal);
         }
 
         public async Task ResetSpeed()
@@ -654,6 +752,49 @@ namespace LSS_prototype.VideoComment_Page
             return int.TryParse(parts[parts.Length - 2], out int idx) ? idx : 0;
         }
 
+        #endregion
+
+        #region  메뉴 액션
+        private async Task ExecuteLogout()
+        {
+            IsMenuOpen = false;
+            await Common.ExecuteLogout();
+        }
+
+        private async Task ExecuteExit()
+        {
+            IsMenuOpen = false;
+            await Common.ExcuteExit();
+        }
+
+        private void ToggleMenu()
+        {
+            if (!IsMenuOpen && (DateTime.UtcNow - _menuLastClosed).TotalMilliseconds < 200)
+                return;
+            IsMenuOpen = !IsMenuOpen;
+        }
+
+        private async Task ExecuteLock()
+        {
+            IsMenuOpen = false;
+
+            var result = await CustomMessageWindow.ShowAsync(
+                "프로그램을 잠금하시겠습니까?",
+                CustomMessageWindow.MessageBoxType.YesNo,
+                0,
+                CustomMessageWindow.MessageIconType.Info);
+
+            if (result != CustomMessageWindow.MessageBoxResult.Yes) return;
+
+            // 잠금 중 세션 타이머 정지 (lock ↔ unlock은 하나의 세션으로 묶음)
+            App.ActivityMonitor.Stop();
+
+            // 현재 창을 숨기고 잠금 화면(SessionLogin) 표시
+            SessionStateManager.SuspendSession();
+            var sessionLoginWindow = new SessionLogin();
+            sessionLoginWindow.Show();
+            Application.Current.MainWindow = sessionLoginWindow;
+        }
         #endregion
 
         #region INotifyPropertyChanged

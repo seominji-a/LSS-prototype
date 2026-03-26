@@ -39,7 +39,7 @@ namespace LSS_prototype.Common_Module
 
         #region 카메라 설정 초기화 (DB값 적용)
 
-        // ★ LensCtrl 함수들이 async Task 로 바뀌었으므로 async Task 로 변환
+        //   LensCtrl 함수들이 async Task 로 바뀌었으므로 async Task 로 변환
         public async Task InitializeCameraSettings(DefaultModel data)
         {
             try
@@ -282,7 +282,7 @@ namespace LSS_prototype.Common_Module
             catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
-        // ★ LensCtrl.Instance.IrisMove 가 async Task 로 바뀌었으므로 await
+        //   LensCtrl.Instance.IrisMove 가 async Task 로 바뀌었으므로 await
         private async Task ApplyIris(double value)
         {
             await LensCtrl.Instance.IrisMove((ushort)value);
@@ -312,7 +312,7 @@ namespace LSS_prototype.Common_Module
                 if (nextZoom > LensCtrl.Instance.zoomMaxAddr)
                     nextZoom = LensCtrl.Instance.zoomMaxAddr;
 
-                // ★ ZoomMove 가 async Task 로 바뀌었으므로 await
+                //   ZoomMove 가 async Task 로 바뀌었으므로 await
                 await LensCtrl.Instance.ZoomMove((ushort)nextZoom);
             }
             catch (Exception ex)
@@ -381,7 +381,7 @@ namespace LSS_prototype.Common_Module
 
         public async Task AutoFocus()
         {
-            await Task.Run(async () =>  // ★ async 람다로 변환 → await 사용 가능
+            await Task.Run(async () =>  //   async 람다로 변환 → await 사용 가능
             {
                 try
                 {
@@ -398,12 +398,12 @@ namespace LSS_prototype.Common_Module
                         int mid1 = (int)(low + (high - low) * (1 - golden));
                         int mid2 = (int)(low + (high - low) * golden);
 
-                        // ★ FocusMove 가 async Task 로 바뀌었으므로 await
+                        //   FocusMove 가 async Task 로 바뀌었으므로 await
                         await LensCtrl.Instance.FocusMove((ushort)mid1);
                         Thread.Sleep(200);
 
                         lock (_frameLock) { frame?.Dispose(); frame = _lastFrame?.Clone(); }
-                        // ★ CalcSharpness 가 async Task<double> 로 바뀌었으므로 await
+                        //   CalcSharpness 가 async Task<double> 로 바뀌었으므로 await
                         double sharp1 = await CalcSharpness(frame);
 
                         await LensCtrl.Instance.FocusMove((ushort)mid2);

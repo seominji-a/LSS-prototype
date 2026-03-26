@@ -69,6 +69,8 @@
             <Setter Property="Height"     Value="62"/>
         </Style>
 
+        
+
         <Style x:Key="NavBtn" TargetType="Button" BasedOn="{StaticResource BaseBtn}">
             <Setter Property="Background" Value="White"/>
             <Setter Property="Foreground" Value="{StaticResource Primary}"/>
@@ -284,7 +286,7 @@
                 Command="{Binding GainDecCommand}"/>
             </Grid>
 
-            <!-- 좌상단: 환자 정보 -->
+            <!-- 좌상단: 환자 정보 + 녹화 인디케이터 -->
             <StackPanel Margin="16,12" VerticalAlignment="Top" HorizontalAlignment="Left">
                 <TextBlock Foreground="White" FontSize="18" FontWeight="Bold">
                     <Run Text="{Binding SelectedPatient.DisplayName, Mode=OneWay}"/>
@@ -298,6 +300,50 @@
                     <Run Text=" / "/>
                     <Run Text="{Binding SelectedPatient.Sex}"/>
                 </TextBlock>
+
+                <!-- DICOM 녹화 인디케이터 -->
+                <StackPanel Orientation="Horizontal" Margin="0,6,0,0"
+                            Visibility="{Binding IsDicomRecording, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Ellipse Width="12" Height="12" Fill="#FF3333" VerticalAlignment="Center" Margin="0,0,7,0">
+                        <Ellipse.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever">
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         From="1.0" To="0.0"
+                                                         Duration="0:0:0.6" AutoReverse="True"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Ellipse.Triggers>
+                    </Ellipse>
+                    <TextBlock Foreground="#FF3333" FontSize="15" FontWeight="Bold" VerticalAlignment="Center">
+                        <Run Text="DICOM REC "/>
+                        <Run Text="{Binding RecordingTime}"/>
+                    </TextBlock>
+                </StackPanel>
+
+                <!-- NORMAL 녹화 인디케이터 -->
+                <StackPanel Orientation="Horizontal" Margin="0,6,0,0"
+                            Visibility="{Binding IsVideoRecording, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Ellipse Width="12" Height="12" Fill="#FF3333" VerticalAlignment="Center" Margin="0,0,7,0">
+                        <Ellipse.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever">
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         From="1.0" To="0.0"
+                                                         Duration="0:0:0.6" AutoReverse="True"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Ellipse.Triggers>
+                    </Ellipse>
+                    <TextBlock Foreground="#FF3333" FontSize="15" FontWeight="Bold" VerticalAlignment="Center">
+                        <Run Text="NORMAL REC "/>
+                        <Run Text="{Binding VideoRecordingTime}"/>
+                    </TextBlock>
+                </StackPanel>
             </StackPanel>
 
             <!-- 우상단: Gain / Sharpness -->
@@ -720,8 +766,8 @@
 
                                 <!-- 이미지 썸네일 -->
                                 <Button Grid.Row="0"
-            Command="{Binding ImageCommentCommand}"
-            BorderThickness="0" Padding="0" Cursor="Hand">
+                                Command="{Binding ImageCommentCommand}"
+                                BorderThickness="0" Padding="0" Cursor="Hand">
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
                                             <Border Background="#0A1929" CornerRadius="10" ClipToBounds="True">
@@ -733,8 +779,8 @@
 
                                 <!-- 영상 썸네일 -->
                                 <Button Grid.Row="2"
-            Command="{Binding VideoCommentCommand}"
-            BorderThickness="0" Padding="0" Cursor="Hand">
+                                Command="{Binding VideoCommentCommand}"
+                                BorderThickness="0" Padding="0" Cursor="Hand">
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
                                             <Border Background="#0A1929" CornerRadius="10" ClipToBounds="True">
@@ -990,7 +1036,6 @@
             <Grid Grid.Row="1" Background="{StaticResource Panel}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="220"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- 왼쪽: 네비게이션 토글 + 설정 -->
@@ -1006,29 +1051,65 @@
                     </Button>
                 </StackPanel>
 
-                <!-- 오른쪽: LOGOUT + EXIT -->
-                <Grid Grid.Column="1" Margin="0,0,8,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*"/>
-                        <ColumnDefinition Width="2*"/>
-                    </Grid.ColumnDefinitions>
-                    <Button Grid.Column="0" Style="{StaticResource ExitBtn}"
-                            Command="{Binding LogoutCommand}"
-                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                            Margin="0,0,4,0">
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="⏻"      FontSize="20" HorizontalAlignment="Center"/>
-                            <TextBlock Text="LOGOUT" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Grid.Column="1" Content="EXIT"
-                            Style="{StaticResource ExitBtn}"
-                            Command="{Binding ExitCommand}"
-                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                            Margin="4,0,0,0"/>
-                </Grid>
             </Grid>
 
+            <!-- 전원 메뉴 버튼 오버레이 (우하단 고정) -->
+            <Grid Grid.RowSpan="2" Panel.ZIndex="99"
+                  HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                  Margin="0,0,20,17" x:Name="MenuButtonArea">
+                <Button x:Name="MenuToggleBtn"
+                        Style="{StaticResource MenuToggleStyle}"
+                        Command="{Binding ToggleMenuCommand}">
+                    <TextBlock Text="⏻" FontSize="35"/>
+                </Button>
+                <Popup x:Name="MenuPopup"
+                       IsOpen="{Binding IsMenuOpen, Mode=TwoWay}"
+                       PlacementTarget="{Binding ElementName=MenuToggleBtn}"
+                       Placement="Top"
+                       StaysOpen="False"
+                       AllowsTransparency="True"
+                       PopupAnimation="Fade">
+                    <Border Background="#1F2937" CornerRadius="10"
+                            Padding="6" Margin="0,0,0,6">
+                        <Border.Effect>
+                            <DropShadowEffect Color="Black" Opacity="0.4"
+                                              BlurRadius="12" ShadowDepth="4" Direction="270"/>
+                        </Border.Effect>
+                        <StackPanel MinWidth="200">
+                            <!-- Lock -->
+                            <Button Style="{StaticResource PopupMenuItemBtn}"
+                                    Command="{Binding LockCommand}">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="22" Width="36" TextAlignment="Center"
+                                               VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                    <TextBlock Text="Lock" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <!-- Log Out -->
+                            <Button Style="{StaticResource PopupMenuItemBtn}"
+                                    Command="{Binding LogoutCommand}">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="&#xF3B1;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="22" Width="36" TextAlignment="Center"
+                                               VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                    <TextBlock Text="Log Out" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <!-- Exit -->
+                            <Button Style="{StaticResource PopupMenuItemBtn}"
+                                    Command="{Binding ExitCommand}">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="&#xE7E8;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="22" Width="36" TextAlignment="Center"
+                                               VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                    <TextBlock Text="Exit" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </Popup>
+            </Grid>
         </Grid>
     </Grid>
 </UserControl>

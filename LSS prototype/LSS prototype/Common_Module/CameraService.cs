@@ -219,6 +219,7 @@ namespace LSS_prototype.Common_Module
                         foreach (IManagedCamera cam in _managedCameras)
                             cam.Init();
                         _camConnection = true;
+                        _camOpen = true;
                         await StartLiveView();
                         CameraReconnected?.Invoke();
                     }
@@ -322,7 +323,7 @@ namespace LSS_prototype.Common_Module
                         processedData = _processedDataBuffer;
                         Marshal.Copy(safeProcessed.Data, processedData, 0, needed);
 
-                        // ★ CalcSharpness 가 async Task<double> 로 변환됐으므로 await 추가
+                        //   CalcSharpness 가 async Task<double> 로 변환됐으므로 await 추가
                         double sharpness = await CalcSharpness(src);
                         SharpnessUpdated?.Invoke(sharpness);
                     }
@@ -399,7 +400,7 @@ namespace LSS_prototype.Common_Module
 
         #region 선명도 계산 및 프레임 계산
 
-        // ★ async Task<double> 로 변환
+        //   async Task<double> 로 변환
         // await Common.WriteLog(ex) 사용을 위해 필요
         public async Task<double> CalcSharpness(Mat src)
         {

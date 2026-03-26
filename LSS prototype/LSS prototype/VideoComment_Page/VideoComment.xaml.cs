@@ -95,7 +95,7 @@ namespace LSS_prototype.VideoComment_Page
                             {
                                 VideoPlayer.Pause();
                                 _isPlaying = false;
-                                VM.PlayPauseIcon = "▶";
+                                VM.IsPlaying = false;
                                 _timer.Stop();
                             }
                             else
@@ -103,7 +103,7 @@ namespace LSS_prototype.VideoComment_Page
                                 VideoPlayer.Play();
                                 VideoPlayer.SpeedRatio = VM.CurrentSpeedRatio;
                                 _isPlaying = true;
-                                VM.PlayPauseIcon = "⏸";
+                                VM.IsPlaying = true;
                                 _timer.Start();
                             }
                         }
@@ -148,7 +148,7 @@ namespace LSS_prototype.VideoComment_Page
 
                 e.Handled = true;
 
-                // ★ 이동 불가면 팝업 없이 바로 리턴 (무한 팝업 방지)
+                //   이동 불가면 팝업 없이 바로 리턴 (무한 팝업 방지)
                 if (!VM.CanNavigate(goNext)) return;
 
                 // 변경 사항 있으면 저장 여부 확인
@@ -205,9 +205,8 @@ namespace LSS_prototype.VideoComment_Page
                 VideoPlayer.Source = new Uri(VM.CurrentVideoPath);
                 VideoPlayer.SpeedRatio = VM.CurrentSpeedRatio;
                 VideoPlayer.Play();
-
                 _isPlaying = true;
-                VM.PlayPauseIcon = "⏸";
+                VM.IsPlaying = true;
                 SliderSeek.Value = 0;
                 TxtCurrentTime.Text = "00:00";
                 TxtTotalTime.Text = "00:00";
@@ -307,7 +306,7 @@ namespace LSS_prototype.VideoComment_Page
 
                 _isPlaying = false;
                 _isDraggingSeek = false;
-                VM.PlayPauseIcon = "▶";
+                VM.IsPlaying = false;
                 SliderSeek.Value = 0;
                 TxtCurrentTime.Text = "00:00";
                 TxtTotalTime.Text = "00:00";

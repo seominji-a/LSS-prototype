@@ -1,4 +1,6 @@
-﻿using LSS_prototype.DB_CRUD;
+﻿using LSS_prototype.Auth;
+using LSS_prototype.DB_CRUD;
+using LSS_prototype.Login_Page;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -26,9 +28,24 @@ namespace LSS_prototype.User_Page
 
         public ICommand DelegateCommand { get; }
         public ICommand DismissCommand { get; }
+        public ICommand LockCommand { get; }
         public ICommand LogoutCommand { get; }
         public ICommand ExitCommand { get; }
+        public ICommand ToggleMenuCommand { get; }
         public ICommand RecoveryCommand { get; }
+
+        private bool _isMenuOpen;
+        private DateTime _menuLastClosed = DateTime.MinValue;
+        public bool IsMenuOpen
+        {
+            get => _isMenuOpen;
+            set
+            {
+                if (_isMenuOpen && !value) _menuLastClosed = DateTime.UtcNow;
+                _isMenuOpen = value;
+                OnPropertyChanged();
+            }
+        }
 
 
 
@@ -84,10 +101,12 @@ namespace LSS_prototype.User_Page
             DefaultCommand = new RelayCommand(async _ => await ExecuteOpenDefault());
             DeleteUserCommand = new RelayCommand(async _ => await ExecuteDeleteUser());
 
-            DelegateCommand = new RelayCommand(async _ => await ExecuteDelegate());
-            DismissCommand = new RelayCommand(async _ => await ExecuteDismiss());
-            LogoutCommand = new RelayCommand(async _ => await Common.ExecuteLogout());
-            ExitCommand = new RelayCommand(async _ => await Common.ExcuteExit());
+            DelegateCommand  = new RelayCommand(async _ => await ExecuteDelegate());
+            DismissCommand   = new RelayCommand(async _ => await ExecuteDismiss());
+            LockCommand      = new AsyncRelayCommand(async _ => await ExecuteLock());
+            LogoutCommand    = new AsyncRelayCommand(async _ => await ExecuteLogout());
+            ExitCommand      = new AsyncRelayCommand(async _ => await ExecuteExit());
+            ToggleMenuCommand = new RelayCommand(_ => ToggleMenu());
 
             _searchDebouncer = new SearchDebouncer(async keyword => await ExecuteSearch(keyword), delayMs: 500);
             RecoveryCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new Recovery()));
@@ -253,6 +272,48 @@ namespace LSS_prototype.User_Page
                 await Common.WriteLog(ex);
             }
         }
+
+        #region 메뉴 액션
+
+        private void ToggleMenu()
+        {
+            if (!IsMenuOpen && (DateTime.UtcNow - _menuLastClosed).TotalMilliseconds < 200)
+                return;
+            IsMenuOpen = !IsMenuOpen;
+        }
+
+        private async Task ExecuteLock()
+        {
+            IsMenuOpen = false;
+
+            var result = await CustomMessageWindow.ShowAsync(
+                "프로그램을 잠금하시겠습니까?",
+                CustomMessageWindow.MessageBoxType.YesNo,
+                0,
+                CustomMessageWindow.MessageIconType.Info);
+
+            if (result != CustomMessageWindow.MessageBoxResult.Yes) return;
+
+            App.ActivityMonitor.Stop();
+            SessionStateManager.SuspendSession();
+            var sessionLoginWindow = new SessionLogin();
+            sessionLoginWindow.Show();
+            Application.Current.MainWindow = sessionLoginWindow;
+        }
+
+        private async Task ExecuteLogout()
+        {
+            IsMenuOpen = false;
+            await Common.ExecuteLogout();
+        }
+
+        private async Task ExecuteExit()
+        {
+            IsMenuOpen = false;
+            await Common.ExcuteExit();
+        }
+
+        #endregion
 
         public void Dispose()
         {

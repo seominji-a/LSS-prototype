@@ -1,10 +1,12 @@
 using FellowOakDicom;
 using FellowOakDicom.Imaging;
+using LSS_prototype.Auth;
 using LSS_prototype.Common_Module;
 using LSS_prototype.DB_CRUD;
 using LSS_prototype.Dicom_Module;
 using LSS_prototype.ImageReview_Page;
 using LSS_prototype.Lens_Module;
+using LSS_prototype.Login_Page;
 using LSS_prototype.Patient_Page;
 using LSS_prototype.User_Page;
 using LSS_prototype.VideoReview_Page;
@@ -231,19 +233,32 @@ namespace LSS_prototype.Scan_Page
             private set { _videoThumbnail = value; OnPropertyChanged(); }
         }
 
+        // ── 팝업 메뉴 상태 ──
+        private bool _isMenuOpen;
+        private DateTime _menuLastClosed = DateTime.MinValue;
+        public bool IsMenuOpen
+        {
+            get => _isMenuOpen;
+            set
+            {
+                if (_isMenuOpen && !value) _menuLastClosed = DateTime.UtcNow;
+                _isMenuOpen = value;
+                OnPropertyChanged();
+            }
+        }
+
 
         #endregion
 
         #region 커맨드
 
         public ICommand NavigatePatientCommand { get; private set; }
-
+        public ICommand LockCommand { get; }
         public ICommand NavigateImageReviewCommand { get; private set; }
-
         public ICommand NavigateVideoReviewCommand { get; private set; }
-
         public ICommand LogoutCommand { get; }
         public ICommand ExitCommand { get; }
+        public ICommand ToggleMenuCommand { get; }
         public ICommand ColorMapCommand { get; }
         public ICommand ZoomIncCommand { get; }
         public ICommand ZoomDecCommand { get; }
@@ -277,11 +292,14 @@ namespace LSS_prototype.Scan_Page
             _currentStudyId = studyId;
 
             NavigatePatientCommand = new RelayCommand(_ => NavigateToPatient());
+            LockCommand = new AsyncRelayCommand(async _ => await ExecuteLock());
+            LogoutCommand = new AsyncRelayCommand(async _ => await ExecuteLogout());
+            ExitCommand = new AsyncRelayCommand(async _ => await ExecuteExit());
+            ToggleMenuCommand = new RelayCommand(_ => ToggleMenu());
+
             NavigateImageReviewCommand = new RelayCommand(_ => NavigateToImageReview());
             NavigateVideoReviewCommand = new RelayCommand(_ => NavigateToVideoReview());
 
-            LogoutCommand = new RelayCommand(async _ => await Common.ExecuteLogout());
-            ExitCommand = new RelayCommand(async _ => await Common.ExcuteExit());
             ColorMapCommand = new RelayCommand(_ => ToggleColorMap());
 
             _cameraService.FrameArrived += OnFrameArrived;
@@ -471,7 +489,7 @@ namespace LSS_prototype.Scan_Page
 
                 frame?.Dispose();
                 bitmap?.Dispose();
-                _isBusy = false; // ★ 잠금 해제 
+                _isBusy = false; //   잠금 해제 
             }
         }
 
@@ -1153,7 +1171,7 @@ namespace LSS_prototype.Scan_Page
                     string folderName = Path.GetFileName(dir);
                     if (folderName.StartsWith(today) && folderName.Length == 12)
                     {
-                        // ★ 추가 - 유효한 파일 있을 때만 목록에 추가
+                        //   추가 - 유효한 파일 있을 때만 목록에 추가
                         if (HasValidFiles(folderName, patientFolderName))
                             result.Add(folderName);
                     }
@@ -1171,7 +1189,7 @@ namespace LSS_prototype.Scan_Page
                     string folderName = Path.GetFileName(dir);
                     if (folderName.StartsWith(today) && folderName.Length == 12)
                     {
-                        // ★ 추가 - 유효한 파일 있을 때만 목록에 추가
+                        //   추가 - 유효한 파일 있을 때만 목록에 추가
                         if (HasValidFiles(folderName, patientFolderName))
                             result.Add(folderName);
                     }
@@ -1453,6 +1471,15 @@ namespace LSS_prototype.Scan_Page
         {
             try
             {
+                if (_isVideoRecording || _isDicomRecording)
+                {
+                    await CustomMessageWindow.ShowAsync(
+                        "영상 녹화중에는 코멘트 창으로 이동이 불가능합니다.",
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
                 if (string.IsNullOrWhiteSpace(_currentStudyId))
                 {
                     await CustomMessageWindow.ShowAsync(
@@ -1497,6 +1524,15 @@ namespace LSS_prototype.Scan_Page
         {
             try
             {
+                if (_isVideoRecording || _isDicomRecording)
+                {
+                    await CustomMessageWindow.ShowAsync(
+                        "영상 녹화중에는 코멘트 창으로\n이동이 불가능합니다.",
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
+                    return;
+                }
+
                 // StudyID 없으면 영상 촬영 자체가 없는 상태
                 if (string.IsNullOrWhiteSpace(_currentStudyId))
                 {
@@ -1550,6 +1586,51 @@ namespace LSS_prototype.Scan_Page
 
         private void NavigateToVideoReview() =>
             MainPage.Instance.NavigateTo(new VideoReview(_selectedPatient));
+
+        #endregion
+
+        #region 메뉴 액션
+
+        private void ToggleMenu()
+        {
+            if (!IsMenuOpen && (DateTime.UtcNow - _menuLastClosed).TotalMilliseconds < 200)
+                return;
+            IsMenuOpen = !IsMenuOpen;
+        }
+
+        private async Task ExecuteLock()
+        {
+            IsMenuOpen = false;
+
+            var result = await CustomMessageWindow.ShowAsync(
+                "프로그램을 잠금하시겠습니까?",
+                CustomMessageWindow.MessageBoxType.YesNo,
+                0,
+                CustomMessageWindow.MessageIconType.Info);
+
+            if (result != CustomMessageWindow.MessageBoxResult.Yes) return;
+
+            // 잠금 중 세션 타이머 정지 (lock ↔ unlock은 하나의 세션으로 묶음)
+            App.ActivityMonitor.Stop();
+
+            // 현재 창을 숨기고 잠금 화면(SessionLogin) 표시
+            SessionStateManager.SuspendSession();
+            var sessionLoginWindow = new SessionLogin();
+            sessionLoginWindow.Show();
+            Application.Current.MainWindow = sessionLoginWindow;
+        }
+
+        private async Task ExecuteLogout()
+        {
+            IsMenuOpen = false;
+            await Common.ExecuteLogout();
+        }
+
+        private async Task ExecuteExit()
+        {
+            IsMenuOpen = false;
+            await Common.ExcuteExit();
+        }
 
         #endregion
 

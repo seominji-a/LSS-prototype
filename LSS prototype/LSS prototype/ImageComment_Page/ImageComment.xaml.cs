@@ -134,7 +134,7 @@ namespace LSS_prototype.ImageComment_Page
 
                 e.Handled = true;
 
-                // ★ 이동 불가면 팝업 없이 바로 리턴
+                //   이동 불가면 팝업 없이 바로 리턴
                 if (!VM.CanNavigate(goNext)) return;
 
                 // 변경 사항 있으면 저장 여부 확인

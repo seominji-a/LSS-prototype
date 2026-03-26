@@ -1,6 +1,8 @@
 ﻿using FellowOakDicom;
 using FellowOakDicom.Imaging;
+using LSS_prototype.Auth;
 using LSS_prototype.DB_CRUD;
+using LSS_prototype.Login_Page;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -10,6 +12,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
@@ -32,6 +35,20 @@ namespace LSS_prototype.User_Page
         private readonly SearchDebouncer _searchDebouncer;
 
         #region 바인딩 프로퍼티
+
+        // ── 팝업 메뉴 상태 ──
+        private bool _isMenuOpen;
+        private DateTime _menuLastClosed = DateTime.MinValue;
+        public bool IsMenuOpen
+        {
+            get => _isMenuOpen;
+            set
+            {
+                if (_isMenuOpen && !value) _menuLastClosed = DateTime.UtcNow;
+                _isMenuOpen = value;
+                OnPropertyChanged();
+            }
+        }
 
         // ── ISF 이미지 크기 (스케일 변환용) ──
         public double PreviewImageWidth { get; private set; }
@@ -203,7 +220,10 @@ namespace LSS_prototype.User_Page
         #region 커맨드
 
         public ICommand NavigateBackCommand { get; }
+        public ICommand LockCommand { get; }
+        public ICommand LogoutCommand { get; }
         public ICommand ExitCommand { get; }
+        public ICommand ToggleMenuCommand { get; }
         public ICommand RecoverCommand { get; }
         public ICommand ForceDeleteCommand { get; }
 
@@ -216,7 +236,10 @@ namespace LSS_prototype.User_Page
             NavigateBackCommand = new RelayCommand(_ =>
                 MainPage.Instance.NavigateTo(new User()));
 
-            ExitCommand = new RelayCommand(async _=> await Common.ExcuteExit());
+            LockCommand = new AsyncRelayCommand(async _ => await ExecuteLock());
+            LogoutCommand = new AsyncRelayCommand(async _ => await ExecuteLogout());
+            ExitCommand = new AsyncRelayCommand(async _ => await ExecuteExit());
+            ToggleMenuCommand = new RelayCommand(_ => ToggleMenu());
             RecoverCommand = new RelayCommand(async _ => await ExecuteRecover());
             ForceDeleteCommand = new RelayCommand(async _ => await ExecuteForceDelete());
 
@@ -233,6 +256,48 @@ namespace LSS_prototype.User_Page
         public void Dispose()
         {
             _searchDebouncer?.Dispose();
+        }
+
+        #endregion
+
+        #region 메뉴 액션
+
+        private void ToggleMenu()
+        {
+            if (!IsMenuOpen && (DateTime.UtcNow - _menuLastClosed).TotalMilliseconds < 200)
+                return;
+            IsMenuOpen = !IsMenuOpen;
+        }
+
+        private async Task ExecuteLock()
+        {
+            IsMenuOpen = false;
+
+            var result = await CustomMessageWindow.ShowAsync(
+                "프로그램을 잠금하시겠습니까?",
+                CustomMessageWindow.MessageBoxType.YesNo,
+                0,
+                CustomMessageWindow.MessageIconType.Info);
+
+            if (result != CustomMessageWindow.MessageBoxResult.Yes) return;
+
+            App.ActivityMonitor.Stop();
+            SessionStateManager.SuspendSession();
+            var sessionLoginWindow = new SessionLogin();
+            sessionLoginWindow.Show();
+            Application.Current.MainWindow = sessionLoginWindow;
+        }
+
+        private async Task ExecuteLogout()
+        {
+            IsMenuOpen = false;
+            await Common.ExecuteLogout();
+        }
+
+        private async Task ExecuteExit()
+        {
+            IsMenuOpen = false;
+            await Common.ExcuteExit();
         }
 
         #endregion

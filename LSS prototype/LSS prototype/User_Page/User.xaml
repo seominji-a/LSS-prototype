@@ -8,7 +8,6 @@
         d:DesignWidth="1920" d:DesignHeight="1080"
         FontFamily="Arial" Background="#F3F5F7">
 
-
     <UserControl.Resources>
         <SolidColorBrush x:Key="Primary"     Color="#173753"/>
         <SolidColorBrush x:Key="PrimaryFade" Color="#3B82F6"/>
@@ -43,12 +42,6 @@
         <Style x:Key="HalfBtn" TargetType="Button" BasedOn="{StaticResource NavBtn}">
             <Setter Property="Width"  Value="107"/>
             <Setter Property="Height" Value="62"/>
-        </Style>
-
-        <Style x:Key="ExitBtn" TargetType="Button" BasedOn="{StaticResource NavBtn}">
-            <Setter Property="Background" Value="#111827"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Width"      Value="Auto"/>
         </Style>
 
         <Style x:Key="SectionLabel" TargetType="TextBlock">
@@ -187,29 +180,22 @@
             <Border x:Name="RoleBadge" BorderThickness="1" CornerRadius="6" Padding="12,5" Margin="14,0" HorizontalAlignment="Left" VerticalAlignment="Center">
                 <Border.Style>
                     <Style TargetType="Border">
-                        <!-- 기본: 파란 배경 -->
-                        <Setter Property="Background" Value="#EFF6FF"/>
-                        <Setter Property="BorderBrush" Value="#BFDBFE"/>
+                        <Setter Property="Background"   Value="#EFF6FF"/>
+                        <Setter Property="BorderBrush"  Value="#BFDBFE"/>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding UserRole}" Value="ADMIN">
-                                <!-- ADMIN: 빨간 배경 -->
-                                <Setter Property="Background" Value="#FEF2F2"/>
+                                <Setter Property="Background"  Value="#FEF2F2"/>
                                 <Setter Property="BorderBrush" Value="#FECACA"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </Border.Style>
-
-                <TextBlock x:Name="TxtRole"
-               Text="{Binding UserRole}"
-               FontSize="15" FontWeight="SemiBold">
+                <TextBlock x:Name="TxtRole" Text="{Binding UserRole}" FontSize="15" FontWeight="SemiBold">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
-                            <!-- 기본: 파란 글자 -->
                             <Setter Property="Foreground" Value="#1D4ED8"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding UserRole}" Value="ADMIN">
-                                    <!-- ADMIN: 빨간 글자 -->
                                     <Setter Property="Foreground" Value="#DC2626"/>
                                 </DataTrigger>
                             </Style.Triggers>
@@ -291,14 +277,16 @@
                     </Border>
                 </Grid>
 
-                <!-- ListView -->
+                <!-- ListView (스크롤 제거) -->
                 <ListView Grid.Row="1"
                           x:Name="UserListView"
                           ItemsSource="{Binding Users}"
                           SelectedItem="{Binding SelectedUser}"
                           ItemContainerStyle="{StaticResource RowItem}"
                           BorderThickness="0"
-                          HorizontalContentAlignment="Stretch">
+                          HorizontalContentAlignment="Stretch"
+                          ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <ListView.Template>
                         <ControlTemplate TargetType="ListView">
                             <Border Background="{StaticResource CardOuter}"
@@ -308,10 +296,7 @@
                                         DockPanel.Dock="Top"
                                         Columns="{Binding View.Columns, RelativeSource={RelativeSource TemplatedParent}}"
                                         ColumnHeaderContainerStyle="{Binding View.ColumnHeaderContainerStyle, RelativeSource={RelativeSource TemplatedParent}}"/>
-                                    <ScrollViewer ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                        <ItemsPresenter Margin="0,8,0,10"/>
-                                    </ScrollViewer>
+                                    <ItemsPresenter Margin="0,8,0,10"/>
                                 </DockPanel>
                             </Border>
                         </ControlTemplate>
@@ -319,7 +304,7 @@
 
                     <ListView.View>
                         <GridView AllowsColumnReorder="False">
-                            <GridViewColumn Header="NAME" Width="560"
+                            <GridViewColumn Header="NAME"      Width="560"
                                             HeaderContainerStyle="{StaticResource ColumnHeaderFirst}"
                                             CellTemplate="{StaticResource NameCellTemplate}"/>
                             <GridViewColumn Header="LOGIN ID"  Width="320"
@@ -339,82 +324,116 @@
 
         <!-- 오른쪽 사이드 패널 -->
         <Border Grid.Column="1" Background="{StaticResource Panel}">
-            <DockPanel Margin="14,32,14,14">
+            <StackPanel Margin="14,32,14,14">
 
-                <!-- 하단 고정 : Home + EXIT -->
-                <StackPanel DockPanel.Dock="Bottom">
-                    <Border Height="1" Background="#244A66" Margin="0,0,0,16"/>
-                    <Button Style="{StaticResource NavBtn}" Content="HOME"
-                            Margin="0,0,0,10" Click="Home_Click"/>
-                    <Grid Grid.Column="1">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="2*"/>
-                        </Grid.ColumnDefinitions>
-                        <Button Grid.Column="0" Style="{StaticResource ExitBtn}"
-                         Command="{Binding LogoutCommand}"
-                         HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                         Margin="0,0,5,0">
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="⏻" FontSize="20" HorizontalAlignment="Center"/>
-                                <TextBlock Text="LOGOUT" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                            </StackPanel>
-                        </Button>
-                        <Button Grid.Column="1" Content="EXIT" Style="{StaticResource ExitBtn}" 
-                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding ExitCommand}"
-                            Margin="5,0,0,0"/>
-                    </Grid>
+                <!-- 로고 -->
+                <StackPanel HorizontalAlignment="Center" Margin="0,0,0,20">
+                    <TextBlock Text="LSS" FontSize="28" FontWeight="Bold"
+                               Foreground="White" HorizontalAlignment="Center"/>
+                    <Border Height="2" Width="44" Background="#2A6496"
+                            Margin="0,8,0,0" HorizontalAlignment="Center"/>
                 </StackPanel>
 
-                <!-- 스크롤 영역 -->
-                <ScrollViewer VerticalScrollBarVisibility="Hidden"
-                              HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel>
+                <!-- HCP MANAGEMENT -->
+                <TextBlock Text="HCP MANAGEMENT" Style="{StaticResource SectionLabel}"/>
+                <Button Style="{StaticResource NavBtn}" Command="{Binding AddUserCommand}"
+                        Content="ADD USER"    Margin="0,0,0,12"/>
+                <Button Style="{StaticResource NavBtn}" Command="{Binding EditUserCommand}"
+                        Content="EDIT USER"   Margin="0,0,0,12"/>
+                <Button Style="{StaticResource NavBtn}" Command="{Binding DeleteUserCommand}"
+                        Content="DELETE USER" Margin="0,0,0,0"/>
 
-                        <!-- 로고 -->
-                        <StackPanel HorizontalAlignment="Center" Margin="0,0,0,36">
-                            <TextBlock Text="LSS" FontSize="28" FontWeight="Bold"
-                                       Foreground="White" HorizontalAlignment="Center"/>
-                            <Border Height="2" Width="44" Background="#2A6496"
-                                    Margin="0,8,0,0" HorizontalAlignment="Center"/>
-                        </StackPanel>
+                <Border Height="1" Background="#1E3F58" Margin="0,16,0,16"/>
 
-                        <!-- USER MANAGEMENT -->
-                        <TextBlock Text="HCP MANAGEMENT" Style="{StaticResource SectionLabel}"/>
-                        <Button Style="{StaticResource NavBtn}" Command="{Binding AddUserCommand}"
-                                Content="ADD USER"    Margin="0,0,0,12"/>
-                        <Button Style="{StaticResource NavBtn}" Command="{Binding EditUserCommand}"
-                                Content="EDIT USER"   Margin="0,0,0,12"/>
-                        <Button Style="{StaticResource NavBtn}" Command="{Binding DeleteUserCommand}"
-                                Content="DELETE USER" Margin="0,0,0,0"/>
+                <!-- ADMIN PRIVILEGES -->
+                <TextBlock Text="ADMIN PRIVILEGES" Style="{StaticResource SectionLabel}"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Style="{StaticResource HalfBtn}" Command="{Binding DelegateCommand}"
+                            Content="DELEGATE" Margin="0,0,7,0"/>
+                    <Button Style="{StaticResource HalfBtn}" Command="{Binding DismissCommand}"
+                            Content="DISMISS"/>
+                </StackPanel>
 
-                        <Border Height="1" Background="#1E3F58" Margin="0,28,0,28"/>
+                <Border Height="1" Background="#1E3F58" Margin="0,16,0,16"/>
 
-                        <!-- ADMIN PRIVILEGES -->
-                        <TextBlock Text="ADMIN PRIVILEGES" Style="{StaticResource SectionLabel}"/>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,12">
-                            <Button Style="{StaticResource HalfBtn}" Command="{Binding DelegateCommand}"
-                                    Content="DELEGATE" Margin="0,0,7,0"/>
-                            <Button Style="{StaticResource HalfBtn}" Command="{Binding DismissCommand}"
-                                    Content="DISMISS"/>
-                        </StackPanel>
+                <!-- SYSTEM SETTINGS -->
+                <TextBlock Text="SYSTEM SETTINGS" Style="{StaticResource SectionLabel}"/>
+                <Button Style="{StaticResource NavBtn}" Command="{Binding SettingCommand}"
+                        Content="DICOM SETUP"    Margin="0,0,0,12"/>
+                <Button Style="{StaticResource NavBtn}" Command="{Binding DefaultCommand}"
+                        Content="CAMERA_DEFAULT" Margin="0,0,0,0"/>
 
-                        <Border Height="1" Background="#1E3F58" Margin="0,28,0,28"/>
+                <Border Height="1" Background="#1E3F58" Margin="0,16,0,16"/>
 
-                        <!-- SYSTEM SETTINGS -->
-                        <TextBlock Text="SYSTEM SETTINGS" Style="{StaticResource SectionLabel}"/>
-                        <Button Style="{StaticResource NavBtn}" Command="{Binding SettingCommand}"
-                                Content="DICOM SETUP" Margin="0,0,0,12"/>
-                        <Button Style="{StaticResource NavBtn}" Command="{Binding DefaultCommand}"
-                                Content="CAMERA_DEFAULT" Margin="0,0,0,0"/>
-                        <!-- RECOVERY -->
-                        <Border Height="1" Background="#1E3F58" Margin="0,28,0,28"/>
-                        <TextBlock Text="RECOVERY" Style="{StaticResource SectionLabel}"/>
-                        <Button Style="{StaticResource NavBtn}" Content="RECOVERY" Margin="0,0,0,0" 
-                                Command="{Binding RecoveryCommand}"/>
-                    </StackPanel>
-                </ScrollViewer>
-            </DockPanel>
+                <!-- RECOVERY -->
+                <TextBlock Text="RECOVERY" Style="{StaticResource SectionLabel}"/>
+                <Button Style="{StaticResource NavBtn}" Command="{Binding RecoveryCommand}"
+                        Content="RECOVERY" Margin="0,0,0,0"/>
+
+                <Border Height="1" Background="#244A66" Margin="0,16,0,16"/>
+
+                <!-- HOME -->
+                <Button Style="{StaticResource NavBtn}" Content="HOME" Click="Home_Click"/>
+
+            </StackPanel>
         </Border>
+
+        <!-- 전원 메뉴 버튼 오버레이 (우하단 고정) — Patient.xaml과 동일 구조 -->
+        <Grid Grid.Column="1"
+              Panel.ZIndex="99"
+              HorizontalAlignment="Right"
+              VerticalAlignment="Bottom"
+              Margin="0,0,20,15"
+              x:Name="MenuButtonArea">
+            <Button x:Name="MenuToggleBtn"
+                    Style="{StaticResource MenuToggleStyle}"
+                    Command="{Binding ToggleMenuCommand}">
+                <TextBlock Text="⏻" FontSize="35"/>
+            </Button>
+            <Popup x:Name="MenuPopup"
+                   IsOpen="{Binding IsMenuOpen, Mode=TwoWay}"
+                   PlacementTarget="{Binding ElementName=MenuToggleBtn}"
+                   Placement="Top"
+                   StaysOpen="False"
+                   AllowsTransparency="True"
+                   PopupAnimation="Fade">
+                <Border Background="#1F2937" CornerRadius="10"
+                        Padding="6" Margin="0,0,0,6">
+                    <Border.Effect>
+                        <DropShadowEffect Color="Black" Opacity="0.4"
+                                          BlurRadius="12" ShadowDepth="4" Direction="270"/>
+                    </Border.Effect>
+                    <StackPanel MinWidth="200">
+                        <Button Style="{StaticResource PopupMenuItemBtn}"
+                                Command="{Binding LockCommand}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets"
+                                           FontSize="22" Width="36" TextAlignment="Center"
+                                           VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                <TextBlock Text="Lock" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource PopupMenuItemBtn}"
+                                Command="{Binding LogoutCommand}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="&#xF3B1;" FontFamily="Segoe MDL2 Assets"
+                                           FontSize="22" Width="36" TextAlignment="Center"
+                                           VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                <TextBlock Text="Log Out" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource PopupMenuItemBtn}"
+                                Command="{Binding ExitCommand}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="&#xE7E8;" FontFamily="Segoe MDL2 Assets"
+                                           FontSize="22" Width="36" TextAlignment="Center"
+                                           VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                <TextBlock Text="Exit" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </Popup>
+        </Grid>
     </Grid>
 </UserControl>

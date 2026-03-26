@@ -238,17 +238,31 @@ namespace LSS_prototype.Auth
                         CustomMessageWindow.MessageIconType.Info);
 
                     AuthToken.SignOut();
-                    NavigateToLoginPage();
+                    NavigateToSessionLogin();
                 }));
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message + " 세션 닫기문제 발생");
-                throw;
+                _ =  Common.WriteLog(ex);
+
+                _timeoutCheckTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                _windowCheckTimer.Change(Timeout.Infinite, Timeout.Infinite);
+
+                Application.Current.Dispatcher.BeginInvoke(new Action(async () =>
+                {
+                    await CustomMessageWindow.ShowAsync(
+                        "세션이 만료되었습니다. \n다시 로그인해주세요.",
+                        CustomMessageWindow.MessageBoxType.Ok,
+                        0,
+                        CustomMessageWindow.MessageIconType.Info);
+
+                    AuthToken.SignOut();
+                    NavigateToSessionLogin();
+                }));
             }
         }
 
-        private void NavigateToLoginPage()
+        private void NavigateToSessionLogin()
         {
             // 기존 창들을 Close()하지 않고 Hide()로 숨김 보관 → 잠금 해제 시 그대로 복원 가능
             SessionStateManager.SuspendSession();

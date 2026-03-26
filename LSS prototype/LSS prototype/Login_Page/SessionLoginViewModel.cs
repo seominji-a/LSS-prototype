@@ -93,7 +93,16 @@ namespace LSS_prototype.Login_Page
                             CustomMessageWindow.MessageBoxType.Ok,
                             0,
                             CustomMessageWindow.MessageIconType.Warning);
-                        passwordBox?.Focus(); 
+
+                        // ShowAsync() 팝업이 완전히 닫힌 뒤에 포커스를 이동해야 함
+                        // 팝업 닫힘 직후 바로 Focus()를 호출하면 UI 스레드가 아직
+                        // 팝업 닫기 작업을 정리 중이라 포커스 이동이 무시될 수 있음
+                        // → Dispatcher.BeginInvoke + DispatcherPriority.Input 으로
+                        //   "UI 입력 처리 단계"에서 포커스 이동을 실행하도록 예약
+                        await Application.Current.Dispatcher.InvokeAsync(
+                        () => passwordBox?.Focus(),
+                        System.Windows.Threading.DispatcherPriority.Input);
+
                         return;
                     }
                 }

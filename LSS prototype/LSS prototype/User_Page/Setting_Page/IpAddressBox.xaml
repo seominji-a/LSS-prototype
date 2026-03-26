@@ -11,16 +11,17 @@
             <Setter Property="FontSize"                   Value="16"/>
             <Setter Property="Foreground"                 Value="#1E293B"/>
             <Setter Property="CaretBrush"                 Value="#1E293B"/>
-            <Setter Property="Width"                      Value="40"/>
+            <Setter Property="Width"                      Value="36"/>
             <Setter Property="MaxLength"                  Value="3"/>
-            <Setter Property="TextAlignment"              Value="Center"/>
-            <Setter Property="VerticalContentAlignment"   Value="Center"/>
+            <Setter Property="VerticalContentAlignment"              Value="Center"/>
+            <Setter Property="HorizontalContentAlignment"   Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
                         <ScrollViewer x:Name="PART_ContentHost"
                                       VerticalAlignment="Center"
-                                      HorizontalScrollBarVisibility="Hidden"
+                                      HorizontalAlignment="Center"
+                                     HorizontalScrollBarVisibility="Hidden"
                                       VerticalScrollBarVisibility="Hidden"/>
                     </ControlTemplate>
                 </Setter.Value>
@@ -31,29 +32,27 @@
     <Border Background="White"
             BorderBrush="#D6DEE8"
             BorderThickness="2"
-            CornerRadius="10"
-            MouseDown="Border_MouseDown">
+            CornerRadius="10" Padding="8,0">
         <StackPanel Orientation="Horizontal"
-                    HorizontalAlignment="Center"
                     VerticalAlignment="Center">
             <TextBox x:Name="Oct1" Style="{StaticResource OctetBox}"
                      PreviewTextInput="Octet_PreviewTextInput"
                      TextChanged="Octet_TextChanged"
                      PreviewKeyDown="Octet_PreviewKeyDown"/>
             <TextBlock Text="." FontSize="16" FontFamily="Consolas"
-                       Foreground="#64748B" VerticalAlignment="Center" Margin="0,0,0,1"/>
+                       Foreground="#64748B" VerticalAlignment="Center" Margin="1,0,1,1"/>
             <TextBox x:Name="Oct2" Style="{StaticResource OctetBox}"
                      PreviewTextInput="Octet_PreviewTextInput"
                      TextChanged="Octet_TextChanged"
                      PreviewKeyDown="Octet_PreviewKeyDown"/>
             <TextBlock Text="." FontSize="16" FontFamily="Consolas"
-                       Foreground="#64748B" VerticalAlignment="Center" Margin="0,0,0,1"/>
+                       Foreground="#64748B" VerticalAlignment="Center" Margin="1,0,1,1"/>
             <TextBox x:Name="Oct3" Style="{StaticResource OctetBox}"
                      PreviewTextInput="Octet_PreviewTextInput"
                      TextChanged="Octet_TextChanged"
                      PreviewKeyDown="Octet_PreviewKeyDown"/>
             <TextBlock Text="." FontSize="16" FontFamily="Consolas"
-                       Foreground="#64748B" VerticalAlignment="Center" Margin="0,0,0,1"/>
+                       Foreground="#64748B" VerticalAlignment="Center" Margin="1,0,1,1"/>
             <TextBox x:Name="Oct4" Style="{StaticResource OctetBox}"
                      PreviewTextInput="Octet_PreviewTextInput"
                      TextChanged="Octet_TextChanged"

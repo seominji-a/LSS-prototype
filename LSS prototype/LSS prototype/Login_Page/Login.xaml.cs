@@ -51,20 +51,42 @@ namespace LSS_prototype.Login_Page
             Application.Current.Shutdown();
         }
 
-        // ── 캡스락 체크 (GotKeyboardFocus + PreviewKeyUp 공용) ──
-        private async void PasswordBox_CheckCaps(object sender, RoutedEventArgs e)
+        // ── 캡스락 체크 ① : PasswordBox 포커스 진입 시 ──
+        // GotKeyboardFocus 이벤트에 연결
+        // → 포커스가 들어온 시점의 CapsLock 상태를 즉시 읽어서 경고 표시
+        private async void PasswordBox_GotFocus(object sender, RoutedEventArgs e)
         {
             try
             {
+                // Admin 체크박스 표시 여부도 이 시점에 같이 갱신
                 var vm = DataContext as LoginViewModel;
                 if (vm != null)
                     vm.UpdateAdminModeVisibilityByUserId();
 
-                // 캡스락 체크 — 포커스 진입 즉시
+                // 포커스 들어온 순간의 CapsLock 상태로 경고 표시/숨김
                 CapsLockWarning.Visibility =
-                    (Console.CapsLock && txtPassword.IsKeyboardFocusWithin)
-                        ? Visibility.Visible
-                        : Visibility.Collapsed;
+                    Console.CapsLock ? Visibility.Visible : Visibility.Collapsed;
+            }
+            catch (Exception ex)
+            {
+                await Common.WriteLog(ex);
+            }
+        }
+
+        // ── 캡스락 체크 ② : 키를 뗄 때마다 ──
+        // PreviewKeyUp 이벤트에 연결
+        // PreviewKeyDown(누를 때)으로 하면 OS가 CapsLock 상태를 반전시키는 타이밍과
+        // 어긋나서 2~3번 눌러야 정상 작동하는 현상이 생김
+        // PreviewKeyUp(뗄 때)은 OS가 CapsLock 반전을 이미 완료한 이후이므로
+        // Console.CapsLock을 그냥 읽으면 항상 정확함 (!반전 트릭 불필요)
+        private async void PasswordBox_PreviewKeyUp(object sender, KeyEventArgs e)
+        {
+            try
+            {
+                // 키를 뗀 시점 = OS가 CapsLock 상태 반전 완료 후
+                // → Console.CapsLock 그대로 읽으면 정확
+                CapsLockWarning.Visibility =
+                    Console.CapsLock ? Visibility.Visible : Visibility.Collapsed;
             }
             catch (Exception ex)
             {

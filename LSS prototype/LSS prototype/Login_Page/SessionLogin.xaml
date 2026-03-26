@@ -132,10 +132,12 @@
                     <RowDefinition Height="Auto"/>  <!-- 0: 타이틀 블록 -->
                     <RowDefinition Height="28"/>    <!-- 1: Gap -->
                     <RowDefinition Height="Auto"/>  <!-- 2: 안내 메시지 -->
-                    <RowDefinition Height="24"/>    <!-- 3: Gap -->
-                    <RowDefinition Height="Auto"/>  <!-- 4: PasswordBox -->
-                    <RowDefinition Height="22"/>    <!-- 5: Gap -->
-                    <RowDefinition Height="Auto"/>  <!-- 6: UNLOCK 버튼 -->
+                    <RowDefinition Height="16"/>    <!-- 3: Gap -->
+                    <RowDefinition Height="Auto"/>  <!-- 4: CapsLock 경고 -->
+                    <RowDefinition Height="6"/>     <!-- 5: Gap -->
+                    <RowDefinition Height="Auto"/>  <!-- 6: PasswordBox -->
+                    <RowDefinition Height="22"/>    <!-- 7: Gap -->
+                    <RowDefinition Height="Auto"/>  <!-- 8: UNLOCK 버튼 -->
                 </Grid.RowDefinitions>
 
                 <!-- ── 타이틀 블록 ── -->
@@ -170,8 +172,17 @@
                     </TextBlock>
                 </StackPanel>
 
+                <!-- ── 캡스락 경고 ── -->
+                <TextBlock x:Name="CapsLockWarning"
+                           Grid.Row="4"
+                           Text="Caps Lock is ON. Password is case-sensitive."
+                           FontFamily="Arial" FontSize="17" FontWeight="SemiBold"
+                           Foreground="#EF4444"
+                           Visibility="Collapsed"
+                           HorizontalAlignment="Center"/>
+
                 <!-- ── 비밀번호 입력 ── -->
-                <Border Grid.Row="4" Style="{StaticResource InputBoxBorderStyle}">
+                <Border Grid.Row="6" Style="{StaticResource InputBoxBorderStyle}">
                     <Grid>
                         <!-- 비밀번호 숨김 상태 -->
                         <PasswordBox x:Name="txtPassword"
@@ -179,7 +190,10 @@
                                      Background="Transparent" BorderThickness="0"
                                      VerticalContentAlignment="Center"
                                      Padding="18,0,52,0"
-                                     Foreground="{StaticResource TextDark}">
+                                     Foreground="{StaticResource TextDark}"
+                                     GotKeyboardFocus="PasswordBox_GotFocus"
+                                     PreviewKeyUp="PasswordBox_PreviewKeyUp"
+                                     LostKeyboardFocus="PasswordBox_HideCaps">
                             <PasswordBox.InputBindings>
                                 <KeyBinding Key="Enter"
                                             Command="{Binding UnlockCommand}"
@@ -213,7 +227,7 @@
                 </Border>
 
                 <!-- ── UNLOCK 버튼 ── -->
-                <Button Grid.Row="6"
+                <Button Grid.Row="8"
                         Style="{StaticResource PrimaryButtonStyle}"
                         Command="{Binding UnlockCommand}"
                         CommandParameter="{Binding ElementName=txtPassword}">

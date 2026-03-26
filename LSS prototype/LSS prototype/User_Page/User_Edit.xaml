@@ -161,7 +161,7 @@
                                          Background="Transparent" BorderThickness="0" Padding="18,14,64,14"
                                          Foreground="{StaticResource TextDark}"
                                          GotKeyboardFocus="NewPasswordBox_CheckCaps"
-                                         PreviewKeyUp="NewPasswordBox_CheckCaps"
+                                         PreviewKeyUp="NewPasswordBox_PreviewKeyUp"
                                          LostKeyboardFocus="NewPasswordBox_HideCaps"/>
                             <TextBox x:Name="txtNewPasswordVisible" FontSize="24" FontFamily="Arial"
                                      Background="Transparent" BorderThickness="0" Padding="18,14,64,14"
@@ -194,7 +194,7 @@
                                          Background="Transparent" BorderThickness="0" Padding="18,14,64,14"
                                          Foreground="{StaticResource TextDark}"
                                          GotKeyboardFocus="ConfirmPasswordBox_CheckCaps"
-                                         PreviewKeyUp="ConfirmPasswordBox_CheckCaps"
+                                         PreviewKeyUp="ConfirmPasswordBox_PreviewKeyUp"
                                          LostKeyboardFocus="ConfirmPasswordBox_HideCaps"/>
                             <TextBox x:Name="txtConfirmPasswordVisible" FontSize="24" FontFamily="Arial"
                                      Background="Transparent" BorderThickness="0" Padding="18,14,64,14"

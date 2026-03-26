@@ -22,7 +22,7 @@
     <Window.Resources>
         <!-- ADMIN 체크박스 관련  -->
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-        
+
         <!-- 고정 조건 -->
         <SolidColorBrush x:Key="Bg" Color="#F3F5F7"/>
         <SolidColorBrush x:Key="Primary" Color="#173753"/>
@@ -320,8 +320,9 @@
                                 VerticalContentAlignment="Center"
                                 Padding="18,0,52,0"
                                 Foreground="{StaticResource TextDark}"
-                                GotKeyboardFocus="PasswordBox_CheckCaps"
-                                PreviewKeyDown="PasswordBox_CheckCaps">
+                                GotKeyboardFocus="PasswordBox_GotFocus"
+                                PreviewKeyUp="PasswordBox_PreviewKeyUp"
+                                LostKeyboardFocus="PasswordBox_HideCaps">
                                 <PasswordBox.InputBindings>
                                     <KeyBinding Key="Enter"
                     Command="{Binding LoginCommand}"
@@ -354,7 +355,7 @@
                         </Grid>
                     </Border>
                 </StackPanel>
-                             
+
                 <!-- 체크박스 -->
                 <!-- Row 6: CapsLock 경고(좌) + Admin Mode(우) -->
                 <Grid Grid.Row="6">

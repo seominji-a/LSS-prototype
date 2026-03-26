@@ -109,6 +109,24 @@
             <Setter Property="Width" Value="210"/>
             <Setter Property="Height" Value="70"/>
         </Style>
+
+        <Style x:Key="ThumbnailButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <ContentPresenter/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <Grid Background="#0F1B28">
@@ -120,20 +138,22 @@
         <!-- 좌측 메인 -->
         <Grid Grid.Column="0" Background="Black">
             <Image Source="{Binding SelectedImage}"
-                   Stretch="Uniform"/>
+           Stretch="Uniform"/>
 
             <StackPanel VerticalAlignment="Center"
-                        HorizontalAlignment="Center">
-                <TextBlock Text="촬영된 사진이"
-                           Foreground="White"
-                           FontSize="34"
-                           FontWeight="Bold"
-                           HorizontalAlignment="Center"/>
-                <TextBlock Text="보여질 공간입니다."
-                           Foreground="White"
-                           FontSize="34"
-                           FontWeight="Bold"
-                           HorizontalAlignment="Center"/>
+                HorizontalAlignment="Center">
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                        <Setter Property="Visibility" Value="Visible"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedImage}" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding SelectedImage}" Value="{x:Null}">
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Style>
             </StackPanel>
 
             <!-- 좌상단: 환자 정보 -->
@@ -153,21 +173,21 @@
             </StackPanel>
 
 
-            <TextBlock Text="1 / 12"
-                       Margin="0,10,14,0"
-                       Foreground="White"
-                       FontSize="22"
-                       FontWeight="Bold"
-                       HorizontalAlignment="Right"
-                       VerticalAlignment="Top"/>
+            <TextBlock Text="{Binding SelectedImageIndexText}"
+           Margin="0,10,14,0"
+           Foreground="White"
+           FontSize="22"
+           FontWeight="Bold"
+           HorizontalAlignment="Right"
+           VerticalAlignment="Top"/>
 
-            <TextBlock Text="촬영일자 : 2026-03-23 14:23:54"
-                       Margin="14,0,0,10"
-                       Foreground="White"
-                       FontSize="18"
-                       FontWeight="Bold"
-                       HorizontalAlignment="Left"
-                       VerticalAlignment="Bottom"/>
+            <TextBlock Text="{Binding SelectedImageDateText}"
+           Margin="14,0,0,10"
+           Foreground="White"
+           FontSize="18"
+           FontWeight="Bold"
+           HorizontalAlignment="Left"
+           VerticalAlignment="Bottom"/>
         </Grid>
 
         <!-- 하단 Nav Bar -->
@@ -284,7 +304,8 @@
                         BorderBrush="{StaticResource BorderBrushColor}"
                         BorderThickness="0,0,0,1"
                         Padding="12">
-                        <Button Content="날짜순 ▼"
+                        <Button Content="{Binding SortButtonText}"
+                            Command="{Binding ToggleSortOrderCommand}"
                             Style="{StaticResource BaseBtn}"
                             Background="{StaticResource ButtonBrush}"
                             BorderBrush="{StaticResource BorderBrushColor}"
@@ -380,34 +401,52 @@
 
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
-                                                        <Border Background="#223445"
-                                                            BorderBrush="#4F8DFF"
-                                                            BorderThickness="1.5"
-                                                            CornerRadius="16"
-                                                            Padding="8"
-                                                            Margin="0,0,0,12">
-                                                            <StackPanel>
-                                                                <Border Height="170"
-                                                                Background="#1D3555"
-                                                                CornerRadius="12"
-                                                                BorderBrush="#33FFFFFF"
-                                                                BorderThickness="1"
-                                                                ClipToBounds="True">
-                                                                    <Grid Background="#1D3555">
-                                                                        <Image Source="{Binding Thumbnail}"
-                                                                            Stretch="UniformToFill"
-                                                                            HorizontalAlignment="Stretch"
-                                                                            VerticalAlignment="Center"/>
-                                                                    </Grid>
-                                                                </Border>
+                                                        <Button Command="{Binding DataContext.SelectImageCommand,
+                                  RelativeSource={RelativeSource AncestorType=UserControl}}"
+                CommandParameter="{Binding}"
+                Style="{StaticResource ThumbnailButtonStyle}">
 
-                                                                <TextBlock Text="{Binding Date, StringFormat=촬영일자 : {0}}"
-                                                                    Foreground="#E7EEF9"
-                                                                    FontSize="15"
-                                                                    FontWeight="Bold"
-                                                                    Margin="0,8,0,0"/>
-                                                            </StackPanel>
-                                                        </Border>
+                                                            <Border x:Name="ThumbOuter"
+                    Background="#223445"
+                    BorderBrush="#4F8DFF"
+                    BorderThickness="1.5"
+                    CornerRadius="16"
+                    Padding="8"
+                    Margin="0,0,0,12">
+                                                                <StackPanel>
+                                                                    <Border Height="170"
+                            Background="#1D3555"
+                            CornerRadius="12"
+                            BorderBrush="#33FFFFFF"
+                            BorderThickness="1"
+                            ClipToBounds="True">
+                                                                        <Grid Background="#1D3555">
+                                                                            <Image Source="{Binding Thumbnail}"
+                                   Stretch="UniformToFill"
+                                   HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Center"/>
+                                                                        </Grid>
+                                                                    </Border>
+
+                                                                    <TextBlock Text="{Binding Date, StringFormat=촬영일자 : {0}}"
+                               Foreground="#E7EEF9"
+                               FontSize="15"
+                               FontWeight="Bold"
+                               Margin="0,8,0,0"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </Button>
+
+                                                        <DataTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=IsMouseOver}" Value="True">
+                                                                <Setter TargetName="ThumbOuter" Property="BorderBrush" Value="#7FB3FF"/>
+                                                            </DataTrigger>
+
+                                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                <Setter TargetName="ThumbOuter" Property="BorderBrush" Value="#FFD54A"/>
+                                                                <Setter TargetName="ThumbOuter" Property="BorderThickness" Value="3"/>
+                                                            </DataTrigger>
+                                                        </DataTemplate.Triggers>
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>

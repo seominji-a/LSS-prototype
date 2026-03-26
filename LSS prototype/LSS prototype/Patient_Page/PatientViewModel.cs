@@ -788,12 +788,12 @@ namespace LSS_prototype.Patient_Page
         }
 
         // 같은 코드지만 병합 후보는 아닌 경우
-        private bool IsSameCodeButDifferentInfo(PatientModel a, PatientModel b)
+        private bool IsSameCodeButDifferentInfo(PatientModel emr, PatientModel local)
         {
-            if (a == null || b == null)
+            if (emr == null || local == null)
                 return false;
 
-            return a.PatientCode == b.PatientCode && !IsMergeCandidatePatient(a, b);
+            return emr.PatientCode == local.PatientCode && !IsMergeCandidatePatient(emr, local);
         }
 
         //LOCAL / import된 EMR 둘 다 뒤져서 같은 환자를 찾습니다.

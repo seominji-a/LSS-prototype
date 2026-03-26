@@ -46,7 +46,7 @@ namespace LSS_prototype
                                     // Del_ 붙은 dcm 파일 삭제
                                     DeleteFileIfExists(log.ImagePath);
                                     // 연결된 isf 파일도 삭제
-                                    DeleteIsfFile(log.ImagePath);
+                                    await DeleteIsfFile(log.ImagePath);
                                     // DELETE_LOG IS_FORCE_DELETED = 'Y' 업데이트
                                     db.UpdateForceDeleted(log.DeleteId, "SYSTEM"); 
                                     break;
@@ -100,7 +100,7 @@ namespace LSS_prototype
 
         // dcm 경로 기반으로 연결된 isf 파일 경로 계산 후 삭제
         // DICOM 폴더 구조 기준으로 ISF 폴더에서 동일한 상대경로로 찾음
-        private static void DeleteIsfFile(string dcmPath)
+        private static async Task DeleteIsfFile(string dcmPath)
         {
             try
             {
@@ -121,7 +121,7 @@ namespace LSS_prototype
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[ISF 삭제 실패] {ex.Message}");
+                await Common.WriteLog(ex);
             }
         }
     }

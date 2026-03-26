@@ -366,8 +366,11 @@ namespace LSS_prototype.User_Page
 
             log.IsChecked = false;
 
+            // IsCheckable=false가 된 행이 현재 선택(포커스) 상태이면 선택 해제
+            // SelectedLog = null → SelectedItem 바인딩 → ListView 선택 자동 해제
+            // LoadPreviewAsync가 즉시 ResetViewer() 처리하므로 별도 호출 불필요
             if (_selectedLog?.DeleteId == log.DeleteId)
-                await ResetViewer();
+                SelectedLog = null;
         }
 
         #endregion
@@ -537,7 +540,7 @@ namespace LSS_prototype.User_Page
                 IsImageVisible = true;
                 IsViewerEmpty = false;
 
-                await LoadIsfStrokes (dcmPath);
+                await LoadIsfStrokes(dcmPath);
             }
             catch (OperationCanceledException) { }
             catch (Exception ex)
@@ -615,14 +618,20 @@ namespace LSS_prototype.User_Page
         {
             try
             {
+                // ── PATIENT는 즉시 삭제 처리 → 복구 불가, 기록 열람 용도 ──
+                // IsCheckable에서 PATIENT는 체크 비활성이므로
+                // 정상적으로는 targets에 PATIENT가 포함될 수 없음
+                // IMAGE / DICOM_VIDEO / NORMAL_VIDEO 만 복구 대상
                 var targets = FilteredLogs?
                         .Where(x => x.IsChecked)
-                        .OrderBy(x => x.FileType == "PATIENT" ? 1 : 0)
-                        .ToList(); // 환자와 환자에 엮인 비디오 및 영상을 다중 선택 후 강제 삭제 했을때를 대비 -> Patient는 무조건 리스트 맨 뒤로 처리 
+                        .ToList();
 
                 if (targets == null || targets.Count == 0)
                 {
-                    await CustomMessageWindow.ShowAsync("복구할 항목을 선택해주세요.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync(
+                        "복구할 항목을 선택해주세요.",
+                        CustomMessageWindow.MessageBoxType.Ok, 2,
+                        CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
@@ -636,47 +645,44 @@ namespace LSS_prototype.User_Page
                 await ResetViewer();
 
                 var db = new DB_Manager();
+                int recoverSuccess = 0;
+                int recoverFail    = 0;
 
                 foreach (var log in targets)
                 {
+                    // 파일 이름 변경 이력 (실패 시 롤백용)
                     var renamedFiles = new List<(string From, string To)>();
 
                     try
                     {
                         switch (log.FileType)
                         {
+                            // ── IMAGE ──
+                            // Del_파일.dcm → 파일.dcm 이름 복원
+                            // 연결된 Del_파일.isf 도 함께 복원
                             case "IMAGE":
                                 await RestoreFile(log.ImagePath, renamedFiles);
                                 await RestoreIsfFile(log.ImagePath, renamedFiles);
                                 break;
 
+                            // ── DICOM_VIDEO ──
+                            // Del_파일.avi + Del_파일.dcm 한 쌍 복원
                             case "DICOM_VIDEO":
                                 await RestoreFile(log.AviPath, renamedFiles);
                                 await RestoreFile(log.DicomPath, renamedFiles);
                                 break;
 
+                            // ── NORMAL_VIDEO ──
+                            // Del_파일.avi 복원
                             case "NORMAL_VIDEO":
                                 await RestoreFile(log.AviPath, renamedFiles);
                                 break;
-
-                            case "PATIENT":
-                                if (!db.RecoverPatientWithLog(log.DeleteId, log.PatientCode, log.PatientName))
-                                    break;
-
-                                Common.WriteSessionLog(
-                                    $"[PATIENT RECOVER] User:{Common.CurrentUserId} " +
-                                    $"Patient:{log.PatientName}({log.PatientCode})");
-
-                                // ✅ 환자 복구 후 전체 새로고침
-                                // → 같은 환자의 이미지/영상 행들 PatientDeleted = 'N' 으로 반영
-                                await LoadLogs();
-                                break;
                         }
 
-                        // ✅ PATIENT 는 RecoverPatientWithLog 내부에서 이미 처리했으니 스킵
-                        if (log.FileType != "PATIENT")
-                            db.UpdateRecovered(log.DeleteId);
+                        // DB 복구 처리 (IS_RECOVERED = Y)
+                        db.UpdateRecovered(log.DeleteId);
 
+                        // 세션 로그
                         switch (log.FileType)
                         {
                             case "IMAGE":
@@ -699,17 +705,18 @@ namespace LSS_prototype.User_Page
                                     $"Patient:{log.PatientName}({log.PatientCode}) " +
                                     $"AVI:{log.AviPath} DCM:{log.DicomPath}");
                                 break;
-                                // ✅ PATIENT 세션 로그는 위에서 이미 처리했으니 제거
                         }
 
-                        // ✅ PATIENT 는 LoadLogs() 로 이미 전체 새로고침했으니 스킵
-                        if (log.FileType != "PATIENT")
-                            await UpdateItemInPlace(log, isRecover: true);
+                        // 목록 InPlace 갱신 (전체 새로고침 없이 해당 행만 갱신)
+                        await UpdateItemInPlace(log, isRecover: true);
+                        recoverSuccess++;
                     }
                     catch (Exception ex)
                     {
+                        recoverFail++;
                         await Common.WriteLog(ex);
 
+                        // 파일 이름 변경 실패 시 역순으로 롤백
                         foreach (var (from, to) in Enumerable.Reverse(renamedFiles))
                         {
                             try
@@ -725,7 +732,16 @@ namespace LSS_prototype.User_Page
                     }
                 }
 
-                await CustomMessageWindow.ShowAsync("복구가 완료되었습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Info);
+                string recoverMsg = recoverFail == 0
+                    ? $"{recoverSuccess}건 복구 완료되었습니다."
+                    : $"{targets.Count}건 중 {recoverSuccess}건 복구 완료 / {recoverFail}건 실패";
+
+                await CustomMessageWindow.ShowAsync(
+                    recoverMsg,
+                    CustomMessageWindow.MessageBoxType.Ok, 2,
+                    recoverFail == 0
+                        ? CustomMessageWindow.MessageIconType.Info
+                        : CustomMessageWindow.MessageIconType.Warning);
             }
             catch (Exception ex)
             {
@@ -808,6 +824,8 @@ namespace LSS_prototype.User_Page
                 await ResetViewer();
 
                 var db = new DB_Manager();
+                int deleteSuccess = 0;
+                int deleteFail    = 0;
 
                 foreach (var log in targets)
                 {
@@ -816,27 +834,44 @@ namespace LSS_prototype.User_Page
                         switch (log.FileType)
                         {
                             case "IMAGE":
-                                await DeleteFileIfExists(log.ImagePath);
+                                DeleteFileIfExists(log.ImagePath);
                                 await DeleteIsfFile(log.ImagePath);
+                                db.UpdateForceDeleted(log.DeleteId, Common.CurrentUserId);
                                 break;
 
                             case "NORMAL_VIDEO":
-                                await DeleteFileIfExists(log.AviPath);
+                                DeleteFileIfExists(log.AviPath);
+                                db.UpdateForceDeleted(log.DeleteId, Common.CurrentUserId);
                                 break;
 
                             case "DICOM_VIDEO":
-                                await DeleteFileIfExists(log.AviPath);
-                                await DeleteFileIfExists(log.DicomPath);
+                                DeleteFileIfExists(log.AviPath);
+                                DeleteFileIfExists(log.DicomPath);
+                                db.UpdateForceDeleted(log.DeleteId, Common.CurrentUserId);
                                 break;
                         }
+
+                        // 강제삭제된 행만 인플레이스 업데이트 (전체 reload 없이 해당 행만 갱신)
+                        await UpdateItemInPlace(log, isRecover: false);
+                        deleteSuccess++;
                     }
                     catch (Exception ex)
                     {
+                        deleteFail++;
                         await Common.WriteLog(ex);
                     }
                 }
 
-                await CustomMessageWindow.ShowAsync("완전 삭제가 완료되었습니다.", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Info);
+                string deleteMsg = deleteFail == 0
+                    ? $"{deleteSuccess}건 완전 삭제 완료되었습니다."
+                    : $"{targets.Count}건 중 {deleteSuccess}건 완전 삭제 완료 / {deleteFail}건 실패";
+
+                await CustomMessageWindow.ShowAsync(
+                    deleteMsg,
+                    CustomMessageWindow.MessageBoxType.Ok, 2,
+                    deleteFail == 0
+                        ? CustomMessageWindow.MessageIconType.Info
+                        : CustomMessageWindow.MessageIconType.Warning);
             }
             catch (Exception ex)
             {
@@ -844,19 +879,11 @@ namespace LSS_prototype.User_Page
             }
         }
 
-        private async Task DeleteFileIfExists(string filePath)
+        private static void DeleteFileIfExists(string filePath)
         {
-            try
-            {
-                if (string.IsNullOrEmpty(filePath)) return;
-                if (!File.Exists(filePath)) return;
-                File.Delete(filePath);
-            }
-            catch (Exception ex)
-            {
-                await Common.WriteLog(ex);
-            }
-            
+            if (string.IsNullOrEmpty(filePath)) return;
+            if (!File.Exists(filePath)) return;
+            File.Delete(filePath);
         }
 
         private async Task DeleteIsfFile(string dcmPath)
@@ -875,7 +902,7 @@ namespace LSS_prototype.User_Page
                                            .TrimStart(Path.DirectorySeparatorChar);
 
                 string isfPath = Path.Combine(isfDir, relative, "Del_" + cleanName + ".isf");
-                await DeleteFileIfExists(isfPath);
+                DeleteFileIfExists(isfPath);
             }
             catch (Exception ex)
             {

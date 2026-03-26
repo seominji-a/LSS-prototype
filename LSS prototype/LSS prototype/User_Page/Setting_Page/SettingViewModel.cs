@@ -196,7 +196,7 @@ namespace LSS_prototype.User_Page
             {
                 if (string.IsNullOrWhiteSpace(HospitalName))
                 {
-                    await CustomMessageWindow.ShowAsync("병원명을 입력해주세요.");
+                    await CustomMessageWindow.ShowAsync("병원명을 입력해주세요.", CustomMessageWindow.MessageBoxType.Ok);
                     return;
                 }
 

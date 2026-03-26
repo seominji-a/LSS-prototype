@@ -273,7 +273,7 @@ namespace LSS_prototype
             string message,
             MessageBoxType type = MessageBoxType.Ok,
             int autoCloseSeconds = 0,
-            MessageIconType icon = MessageIconType.None)
+            MessageIconType icon = MessageIconType.Info)
         {
             var win = new CustomMessageWindow(message, type, autoCloseSeconds, icon);
             return await win.ShowAsync();

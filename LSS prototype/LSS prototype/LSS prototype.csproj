@@ -344,6 +344,9 @@
     <Compile Include="User_Page\Recovery_Page\RecoveryViewModel.cs">
       <DependentUpon>Recovery.xaml</DependentUpon>
     </Compile>
+    <Compile Include="User_Page\Setting_Page\IpAddressBox.xaml.cs">
+      <DependentUpon>IpAddressBox.xaml</DependentUpon>
+    </Compile>
     <Compile Include="User_Page\Setting_Page\setting.xaml.cs">
       <DependentUpon>setting.xaml</DependentUpon>
     </Compile>
@@ -446,6 +449,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="User_Page\Recovery_Page\Recovery.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="User_Page\Setting_Page\IpAddressBox.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

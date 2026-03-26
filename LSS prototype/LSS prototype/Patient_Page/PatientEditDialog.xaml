@@ -155,7 +155,6 @@
                         <ColumnDefinition Width="20"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <!-- ✅ 동료 작업: EditButtonText 바인딩 유지 -->
                     <Button Grid.Column="0" Content="{Binding EditButtonText}" Command="{Binding EditCommand}" Height="65" FontSize="20" FontWeight="Bold" Foreground="White" Cursor="Hand">
                         <Button.Style>
                             <Style TargetType="Button">

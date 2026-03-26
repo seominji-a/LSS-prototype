@@ -519,6 +519,7 @@ namespace LSS_prototype.Scan_Page
         private async Task ToggleVideoRecord()
         {
             if (_isBusy) return;
+            _isBusy = true;
 
             try
             {
@@ -528,7 +529,7 @@ namespace LSS_prototype.Scan_Page
                     await CustomMessageWindow.ShowAsync("DICOM 영상 촬영 중...", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
-                _isBusy = true;
+                
                 if (_isVideoRecording)
                     await StopVideoRecord();
                 else
@@ -777,6 +778,7 @@ namespace LSS_prototype.Scan_Page
         private async Task ToggleDicomRecord()
         {
             if (_isBusy) return;
+            _isBusy = true; // 
             try
             {
                 // AVI Only 촬영 중이면 경고
@@ -785,7 +787,7 @@ namespace LSS_prototype.Scan_Page
                     await CustomMessageWindow.ShowAsync("AVI 영상 촬영 중...", CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
-                _isBusy = true; // 
+                
                 if (_isDicomRecording)
                     await StopDicomRecord();
                 else

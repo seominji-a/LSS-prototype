@@ -13,7 +13,7 @@ namespace LSS_prototype.User_Page
     {
         public Action<bool?> CloseAction { get; set; }
         public ICommand CancelCommand { get; }
-        private DB_Manager _dbManager;
+
 
         private string _userName;
         public string UserName
@@ -38,7 +38,6 @@ namespace LSS_prototype.User_Page
 
         public User_AddViewModel()
         {
-            _dbManager = new DB_Manager();
             CancelCommand = new RelayCommand(_ => CloseAction?.Invoke(false));
         }
 

@@ -36,7 +36,32 @@ namespace LSS_prototype.User_Page
         {
             try
             {
-                // 1. 빈값 검사
+                // 1. MASTER 계정 + 비밀번호 비어있음 + ID가 바뀐 경우 → ID만 변경
+                if (CanEditId && string.IsNullOrEmpty(newPassword) && LoginId != OriginalLoginId)
+                {
+                    var confirm = await CustomMessageWindow.ShowAsync("ID만 변경하시겠습니까?",
+                        CustomMessageWindow.MessageBoxType.YesNo, 0,
+                        CustomMessageWindow.MessageIconType.Warning);
+
+                    if (confirm != CustomMessageWindow.MessageBoxResult.Yes)
+                        return;
+
+                    var db2 = new DB_Manager();
+                    bool idSuccess = db2.UpdateLoginId(OriginalLoginId, LoginId);
+
+                    if (idSuccess)
+                    {
+                        await CustomMessageWindow.ShowAsync("사용자 정보가 변경되었습니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Info);
+                        CloseAction?.Invoke(true);
+                    }
+                    else
+                    {
+                        await CustomMessageWindow.ShowAsync("변경에 실패했습니다.", CustomMessageWindow.MessageBoxType.Ok, 1, CustomMessageWindow.MessageIconType.Warning);
+                    }
+                    return;
+                }
+
+                // 2. 빈값 검사
                 if (string.IsNullOrEmpty(newPassword))
                 {
                     await CustomMessageWindow.ShowAsync("비밀번호를 입력해주세요.",
@@ -45,7 +70,7 @@ namespace LSS_prototype.User_Page
                     return;
                 }
 
-                // 2. 비밀번호 일치 검사
+                // 3. 비밀번호 일치 검사
                 if (newPassword != confirmPassword)
                 {
                     await CustomMessageWindow.ShowAsync("비밀번호가 일치하지 않습니다.",

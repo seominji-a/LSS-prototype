@@ -13,9 +13,9 @@ namespace LSS_prototype.User_Page
     {
         public Action<bool?> CloseAction { get; set; }
         public ICommand CancelCommand { get; }
-        private DB_Manager _dbManager;
 
-        private string _userName;
+
+        private string _userName; 
         public string UserName
         {
             get => _userName;
@@ -38,7 +38,6 @@ namespace LSS_prototype.User_Page
 
         public User_AddViewModel()
         {
-            _dbManager = new DB_Manager();
             CancelCommand = new RelayCommand(_ => CloseAction?.Invoke(false));
         }
 
@@ -57,24 +56,23 @@ namespace LSS_prototype.User_Page
                             CustomMessageWindow.MessageIconType.Warning);
                 return;
             }
-            // 2.사용자가 입력한 2가지 비밀번호 검사
-
-            if(password != confirmPassword)
+            // 2. 검증 함수
+            string error = DB_Manager.ValidatePassword(password);
+            if (error != null)
             {
                 await CustomMessageWindow.ShowAsync(
-                    "비밀번호가 일치하지 않습니다",
+                    error,
                     CustomMessageWindow.MessageBoxType.Ok,
                     2,
                     CustomMessageWindow.MessageIconType.Warning);
                 return;
             }
 
-            //3. 검증 함수 
-            string error = DB_Manager.ValidatePassword(password);
-            if (error != null)
+            // 3. 사용자가 입력한 2가지 비밀번호 검사
+            if (password != confirmPassword)
             {
                 await CustomMessageWindow.ShowAsync(
-                    error,
+                    "비밀번호가 일치하지 않습니다",
                     CustomMessageWindow.MessageBoxType.Ok,
                     2,
                     CustomMessageWindow.MessageIconType.Warning);

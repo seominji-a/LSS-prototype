@@ -63,6 +63,8 @@ namespace LSS_prototype.User_Page
         public void CloseWithResult(bool result)
         {
             _tcs?.TrySetResult(result);
+            // AllowsTransparency=True + WindowStyle=None 조합 WPF 버그 우회
+            Owner?.Activate();
             this.Close();
         }
 

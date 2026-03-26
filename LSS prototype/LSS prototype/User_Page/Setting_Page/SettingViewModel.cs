@@ -194,6 +194,12 @@ namespace LSS_prototype.User_Page
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(HospitalName))
+                {
+                    await CustomMessageWindow.ShowAsync("병원명을 입력해주세요.", CustomMessageWindow.MessageBoxType.Ok);
+                    return;
+                }
+
                 var confirm = await CustomMessageWindow.ShowAsync(
                     "병원명을 변경하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo, 0,
@@ -218,9 +224,9 @@ namespace LSS_prototype.User_Page
                     await CustomMessageWindow.ShowAsync("IP 주소를 입력해주세요.", CustomMessageWindow.MessageBoxType.Ok, 0, CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
-                if (string.IsNullOrWhiteSpace(CStorePort))
+                if (!int.TryParse(CStorePort, out int port))
                 {
-                    await CustomMessageWindow.ShowAsync("포트 번호가 올바르지 않습니다.", CustomMessageWindow.MessageBoxType.Ok, 0, CustomMessageWindow.MessageIconType.Warning);
+                    await CustomMessageWindow.ShowAsync("포트 번호가 올바르지 않습니다.");
                     return;
                 }
                 string testDcmPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestDicom.dcm");

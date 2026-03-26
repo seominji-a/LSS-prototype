@@ -609,15 +609,44 @@ namespace LSS_prototype.Scan_Page
                     try
                     {
                         await Task.Delay(TimeSpan.FromSeconds(30), _aviOnlyCts.Token);
+
+                        // 팝업 전에 영상 먼저 중지
+                        _aviOnlyCts?.Cancel();
+                        if (_aviOnlyLoopTask != null)
+                            await Task.WhenAny(_aviOnlyLoopTask, Task.Delay(1000));
+
                         await Application.Current.Dispatcher.InvokeAsync(async () =>
                         {
-                            await CustomMessageWindow.ShowAsync("30초 녹화 완료. 자동 저장합니다.",
+                            if (!_isVideoRecording) return; // 수동 중지된 경우 처리 안 함
+
+                            _isVideoRecording = false;
+                            IsVideoRecording = false;
+                            VideoRecordingTime = "00:00";
+
+                            _aviOnlyWriter?.Release(); // avi 파일을 생성하는 제일중요한코드
+                            _aviOnlyWriter?.Dispose();
+                            _aviOnlyWriter = null;
+
+                            await CustomMessageWindow.ShowAsync("NORMAL VIDEO는 최대 30초 녹화\n녹화를 중지합니다.",
+                                CustomMessageWindow.MessageBoxType.Ok, 0,
+                                CustomMessageWindow.MessageIconType.Info);
+
+                            if (string.IsNullOrEmpty(_aviOnlySavePath) || !File.Exists(_aviOnlySavePath))
+                            {
+                                _currentVideoIndex--;
+                                await CustomMessageWindow.ShowAsync("저장된 영상 파일이 없습니다.",
+                                    CustomMessageWindow.MessageBoxType.Ok, 2,
+                                    CustomMessageWindow.MessageIconType.Warning);
+                                return;
+                            }
+                            await CustomMessageWindow.ShowAsync("동영상 저장 완료.( NORMAL VIDEO )",
                                 CustomMessageWindow.MessageBoxType.Ok, 2,
                                 CustomMessageWindow.MessageIconType.Info);
-                            await StopVideoRecord();
+                            _ = RefreshThumbnailsAsync();
                         });
                     }
                     catch (OperationCanceledException) { }
+                    catch (Exception ex) { await Common.WriteLog(ex); }
                 });
 
                 frame.Dispose();
@@ -840,16 +869,28 @@ namespace LSS_prototype.Scan_Page
                 {
                     try
                     {
-                        await Task.Delay(TimeSpan.FromMinutes(1), _recordCts.Token);
+                        await Task.Delay(TimeSpan.FromSeconds(10), _recordCts.Token);
+
+                        // 팝업 전에 루프 먼저 중지 (실제 캡처 중단)
+                        _recordCts?.Cancel();
+                        if (_recordLoopTask != null)
+                            await Task.WhenAny(_recordLoopTask, Task.Delay(1000));
+
                         await Application.Current.Dispatcher.InvokeAsync(async () =>
                         {
-                            await CustomMessageWindow.ShowAsync("1분 녹화 완료. 자동 저장합니다.",
-                                CustomMessageWindow.MessageBoxType.Ok, 2,
+                            if (!_isDicomRecording) return; // 수동 중지된 경우 처리 안 함
+
+                            IsDicomRecording = false;
+
+                            await CustomMessageWindow.ShowAsync("DICOM VIDEO는 최대 10초 녹화\n녹화를 중지합니다.",
+                                CustomMessageWindow.MessageBoxType.Ok, 0,
                                 CustomMessageWindow.MessageIconType.Info);
+
                             await StopDicomRecord();
                         });
                     }
                     catch (OperationCanceledException) { }
+                    catch (Exception ex) { await Common.WriteLog(ex); }
                 });
 
                 frame.Dispose();

@@ -196,11 +196,10 @@ namespace LSS_prototype.Patient_Page
             ToggleMenuCommand = new RelayCommand(_ => ToggleMenu());
 
             NavScanCommand = new RelayCommand(NavScan);
-            // 0227 박한용 아래코드는 데이터 관련 처리 완료 후 주석 풀고 연동 예정 
             NavImageReviewCommand = new RelayCommand(NavImageReview);
             NavVideoReviewCommand = new RelayCommand(NavVideoReview);
             _searchDebouncer = new SearchDebouncer(async keyword => await ExecuteSearch(keyword), delayMs: 500);
-            _ = EmrSync(_cts.Token); // task 무시하기위해 _ = 사용 (별의미 X )
+            _ = EmrSync(_cts.Token);
 
         }
 
@@ -1199,6 +1198,16 @@ namespace LSS_prototype.Patient_Page
 
             if (dialog.ShowDialog() != true)
                 return;
+
+            if (!AuthToken.EnsureAuthenticated())
+            {
+                await CustomMessageWindow.ShowAsync(
+                    "세션이 만료되었습니다.\n잠금 해제 후 다시 진행해주세요.",
+                    CustomMessageWindow.MessageBoxType.Ok,
+                    0,
+                    CustomMessageWindow.MessageIconType.Warning);
+                return;
+            }
 
             string[] selectedFiles = dialog.FileNames;
             string importErrorBatchFolder = null;

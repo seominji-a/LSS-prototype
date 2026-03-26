@@ -191,9 +191,9 @@ namespace LSS_prototype.Login_Page
                     }
                     UserId = string.Empty;
                     await LoadAdminIds();
-                    UpdateAdminModeVisibilityByUserId(); // 추가
+                    UpdateAdminModeVisibilityByUserId(); 
                     passwordBox?.Clear();
-                    FocusUserIdAction?.Invoke();         // 추가
+                    FocusUserIdAction?.Invoke();         
                     return; // 비밀번호 변경 이벤트가 일어났을땐, 무조건 해당 함수 한번 종료하고
                     // 다시 사용자가 로그인 버튼을 눌러 해당 함수를 호출하도록 구현 ( 0224 박한용 )
 
@@ -225,8 +225,8 @@ namespace LSS_prototype.Login_Page
                 var pacsSet = new DB_Manager().GetPacsSet();
                 Common.MwlDescriptionFilter = pacsSet?.MwlDescriptionFilter ?? "";
 
-                App.ActivityMonitor.Start(shell); // ← 세션 관리 기능은 테스트때 잠시 주석
-                _ = AutoCleanupService.RunAsync(); // 만료기한 지난 삭제된 데이터 정리
+                App.ActivityMonitor.Start(shell); 
+                _ = AutoCleanupService.RunAsync(); // 만료기한 지난 삭제된 데이터 정리 ( 영상, 이미지 ) 
                 CloseLoginWindow();
             }
             catch (Exception ex)

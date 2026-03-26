@@ -32,9 +32,9 @@ namespace LSS_prototype.Login_Page
 
         #region 커맨드
 
-        public ICommand UnlockCommand  { get; }
-        public ICommand LogoutCommand  { get; }
-        public ICommand ExitCommand    { get; }
+        public ICommand UnlockCommand { get; }
+        public ICommand LogoutCommand { get; }
+        public ICommand ExitCommand { get; }
 
         #endregion
 
@@ -45,9 +45,9 @@ namespace LSS_prototype.Login_Page
             // 잠금 시점의 로그인 ID를 화면에 표시
             CurrentUserName = Common.CurrentUserId;
 
-            UnlockCommand = new AsyncRelayCommand(async p  => await ExecuteUnlock(p));
-            LogoutCommand = new AsyncRelayCommand(async _  => await Common.ExecuteLogout());
-            ExitCommand   = new AsyncRelayCommand(async _  => await Common.ExcuteExit());
+            UnlockCommand = new AsyncRelayCommand(async p => await ExecuteUnlock(p));
+            LogoutCommand = new AsyncRelayCommand(async _ => await Common.ExecuteLogout());
+            ExitCommand = new AsyncRelayCommand(async _ => await Common.ExcuteExit());
         }
 
         #endregion
@@ -71,24 +71,43 @@ namespace LSS_prototype.Login_Page
 
             try
             {
-                // 현재 로그인 사용자의 비밀번호 검증 (기존 Login_check 재사용)
-                var db = new DB_Manager();
-                bool isValid = db.Login_check(
-                    Common.CurrentUserId, password,
-                    out string roleCode, out _, out _);
+                string roleCode = string.Empty;
 
-                if (!isValid)
+                // ── 1) MASTER 계정 OTP 검증 먼저 ──
+                // MASTER 계정은 DB가 아닌 환경변수 기반 OTP 인증이므로
+                // Login_check 보다 먼저 체크해야 함2qj
+                bool isMaster = await Common.VerifyMasterOtp(Common.CurrentUserId, password);
+
+                if (!isMaster)
                 {
-                    await CustomMessageWindow.ShowAsync(
-                        "비밀번호가 올바르지 않습니다.",
-                        CustomMessageWindow.MessageBoxType.Ok,
-                        0,
-                        CustomMessageWindow.MessageIconType.Warning);
-                    passwordBox?.Clear();
-                    return;
+                    // ── 2) 일반 계정 DB 검증 ──
+                    var db = new DB_Manager();
+                    bool isValid = db.Login_check(
+                        Common.CurrentUserId, password,
+                        out roleCode, out _, out _);
+
+                    if (!isValid)
+                    {
+                        await CustomMessageWindow.ShowAsync(
+                            "비밀번호가 올바르지 않습니다.",
+                            CustomMessageWindow.MessageBoxType.Ok,
+                            0,
+                            CustomMessageWindow.MessageIconType.Warning);
+
+                        // ShowAsync() 팝업이 완전히 닫힌 뒤에 포커스를 이동해야 함
+                        // 팝업 닫힘 직후 바로 Focus()를 호출하면 UI 스레드가 아직
+                        // 팝업 닫기 작업을 정리 중이라 포커스 이동이 무시될 수 있음
+                        // → Dispatcher.BeginInvoke + DispatcherPriority.Input 으로
+                        //   "UI 입력 처리 단계"에서 포커스 이동을 실행하도록 예약
+                        await Application.Current.Dispatcher.InvokeAsync(
+                        () => passwordBox?.Focus(),
+                        System.Windows.Threading.DispatcherPriority.Input);
+
+                        return;
+                    }
                 }
 
-                // 잠금 해제 성공 → 이전 화면 복원
+                // ── 3) 잠금 해제 성공 → 세션 복원 ──
                 if (AuthToken.IsAuthenticated)
                 {
                     // 수동 Lock: lock ↔ unlock은 하나의 세션
@@ -98,7 +117,8 @@ namespace LSS_prototype.Login_Page
                 else
                 {
                     // 세션 만료: 타임아웃으로 SignOut()된 상태 → 토큰 재발급
-                    AuthToken.SignIn(Common.CurrentUserId, roleCode);
+                    // MASTER는 roleCode가 "M" 고정
+                    AuthToken.SignIn(Common.CurrentUserId, isMaster ? "M" : roleCode);
                 }
 
                 SessionStateManager.RestoreSession();

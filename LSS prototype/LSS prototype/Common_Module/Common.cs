@@ -462,7 +462,8 @@ namespace LSS_prototype
         // ================================================
         public const string PASSWORD_EDIT = "UPDATE USER SET password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @loginId";
         public const string CREDENTIAL_EDIT_WITH_ROLE = "UPDATE USER SET login_id = @newId, password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate, USER_ROLE = @role WHERE login_id = @oldId"; // 최초 로그인 시 ID+PW+Role 동시 변경
-        public const string CREDENTIAL_EDIT = "UPDATE USER SET login_id = @newId, password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @oldId"; // 관리자가 USER 비밀번호 및 ID 변경 쿼리 
+        public const string CREDENTIAL_EDIT = "UPDATE USER SET login_id = @newId, password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate WHERE login_id = @oldId"; // 관리자가 USER 비밀번호 및 ID 변경 쿼리
+        public const string UPDATE_LOGIN_ID = "UPDATE USER SET login_id = @newId WHERE login_id = @oldId";
         public const string ADMIN_UPDATE = "UPDATE USER SET password_hash = @hash, password_salt = @salt, PASSWORD_CHANGED_AT = @password_changedDate, login_id = @logiId WHERE login_id = @loginId";
 
         // ================================================

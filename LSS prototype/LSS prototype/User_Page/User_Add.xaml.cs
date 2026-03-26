@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using System.Windows.Input;
 
 namespace LSS_prototype.User_Page
@@ -18,10 +19,24 @@ namespace LSS_prototype.User_Page
         }
 
         // ── CapsLock ──
-        private void NewPasswordBox_CheckCaps(object sender, RoutedEventArgs e)
+        private async void NewPasswordBox_CheckCaps(object sender, RoutedEventArgs e)
         {
-            CapsLockWarningNew.Visibility = Keyboard.IsKeyToggled(Key.CapsLock)
-                ? Visibility.Visible : Visibility.Collapsed;
+            try
+            {
+                CapsLockWarningNew.Visibility =
+                    Console.CapsLock ? Visibility.Visible : Visibility.Collapsed;
+            }
+            catch (Exception ex) { await Common.WriteLog(ex); }
+        }
+
+        private async void NewPasswordBox_PreviewKeyUp(object sender, KeyEventArgs e)
+        {
+            try
+            {
+                CapsLockWarningNew.Visibility =
+                    Console.CapsLock ? Visibility.Visible : Visibility.Collapsed;
+            }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         private void NewPasswordBox_HideCaps(object sender, RoutedEventArgs e)
@@ -29,10 +44,24 @@ namespace LSS_prototype.User_Page
             CapsLockWarningNew.Visibility = Visibility.Collapsed;
         }
 
-        private void ConfirmPasswordBox_CheckCaps(object sender, RoutedEventArgs e)
+        private async void ConfirmPasswordBox_CheckCaps(object sender, RoutedEventArgs e)
         {
-            CapsLockWarningConfirm.Visibility = Keyboard.IsKeyToggled(Key.CapsLock)
-                ? Visibility.Visible : Visibility.Collapsed;
+            try
+            {
+                CapsLockWarningConfirm.Visibility =
+                    Console.CapsLock ? Visibility.Visible : Visibility.Collapsed;
+            }
+            catch (Exception ex) { await Common.WriteLog(ex); }
+        }
+
+        private async void ConfirmPasswordBox_PreviewKeyUp(object sender, KeyEventArgs e)
+        {
+            try
+            {
+                CapsLockWarningConfirm.Visibility =
+                    Console.CapsLock ? Visibility.Visible : Visibility.Collapsed;
+            }
+            catch (Exception ex) { await Common.WriteLog(ex); }
         }
 
         private void ConfirmPasswordBox_HideCaps(object sender, RoutedEventArgs e)

@@ -254,6 +254,20 @@ namespace LSS_prototype.DB_CRUD
         }
 
 
+        public bool UpdateLoginId(string oldId, string newId)
+        {
+            using (var conn = new SQLiteConnection("Data Source=" + Common.DB_PATH))
+            {
+                conn.Open();
+                using (var cmd = new SQLiteCommand(Query.UPDATE_LOGIN_ID, conn))
+                {
+                    cmd.Parameters.AddWithValue("@oldId", oldId);
+                    cmd.Parameters.AddWithValue("@newId", newId);
+                    return cmd.ExecuteNonQuery() == 1;
+                }
+            }
+        }
+
         public bool DelegateUser(int user_id)
         {
             using (var conn = new SQLiteConnection($"Data Source={Common.DB_PATH}"))

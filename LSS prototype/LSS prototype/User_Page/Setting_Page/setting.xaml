@@ -50,14 +50,7 @@
             </Setter>
         </Style>
 
-        <Style x:Key="IpInputBox" TargetType="TextBox" BasedOn="{StaticResource InputBox}">
-            <Setter Property="FontFamily"                 Value="Consolas"/>
-            <Setter Property="FontSize"                   Value="16"/>
-            <Setter Property="MaxLength"                  Value="23"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-        </Style>
-
-        <Style x:Key="PortInputBox" TargetType="TextBox" BasedOn="{StaticResource InputBox}">
+<Style x:Key="PortInputBox" TargetType="TextBox" BasedOn="{StaticResource InputBox}">
             <Setter Property="FontSize"  Value="15"/>
             <Setter Property="MaxLength" Value="5"/>
         </Style>
@@ -407,14 +400,8 @@
                                         <ColumnDefinition Width="8"/>
                                         <ColumnDefinition Width="100"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBox Grid.Column="0"
-                                             x:Name="CStoreIPTextBox"
-                                             Style="{StaticResource IpInputBox}"
-                                             Text="     .     .     .     "
-                                             GotFocus="IPTextBox_GotFocus"
-                                             PreviewTextInput="IPTextBox_PreviewTextInput"
-                                             PreviewKeyDown="IPTextBox_PreviewKeyDown"
-                                             SelectionChanged="IPTextBox_SelectionChanged"/>
+                                    <local:IpAddressBox Grid.Column="0"
+                                                     IpAddress="{Binding CStoreIP, UpdateSourceTrigger=PropertyChanged}"/>
                                     <TextBox Grid.Column="2"
                                              Style="{StaticResource PortInputBox}"
                                              Text="{Binding CStorePort, UpdateSourceTrigger=PropertyChanged}"/>
@@ -492,14 +479,8 @@
                                         <ColumnDefinition Width="8"/>
                                         <ColumnDefinition Width="100"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBox Grid.Column="0"
-                                             x:Name="MwlIPTextBox"
-                                             Style="{StaticResource IpInputBox}"
-                                             Text="     .     .     .     "
-                                             GotFocus="IPTextBox_GotFocus"
-                                             PreviewTextInput="IPTextBox_PreviewTextInput"
-                                             PreviewKeyDown="IPTextBox_PreviewKeyDown"
-                                             SelectionChanged="IPTextBox_SelectionChanged"/>
+                                    <local:IpAddressBox Grid.Column="0"
+                                                     IpAddress="{Binding MwlIP, UpdateSourceTrigger=PropertyChanged}"/>
                                     <TextBox Grid.Column="2"
                                              Style="{StaticResource PortInputBox}"
                                              Text="{Binding MwlPort, UpdateSourceTrigger=PropertyChanged}"/>

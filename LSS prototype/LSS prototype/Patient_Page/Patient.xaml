@@ -287,64 +287,125 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Grid>
+                                    <!-- 좌측 상단 -->
                                     <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top">
-                                        <TextBlock x:Name="TxtName" Text="{Binding DisplayName, Mode=OneWay}"
-                                                   FontSize="26" FontWeight="Bold"
-                                                   Foreground="{StaticResource TextDark}"/>
-                                        <TextBlock x:Name="TxtCode" Text="{Binding PatientCode}"
-                                                   FontSize="20" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextMid}" Margin="0,5,0,0"/>
-                                        <TextBlock x:Name="TxtInfo" FontSize="20"
-                                                   Foreground="{StaticResource TextMid}" Margin="0,8,0,0">
-                                            <Run Text="{Binding BirthDate, StringFormat=yyyy-MM-dd}"/>
-                                            <Run Text="  ·  "/>
-                                            <Run Text="{Binding Sex}"/>
+                                        <TextBlock x:Name="TxtName"
+                       Text="{Binding DisplayName, Mode=OneWay}"
+                       FontSize="26"
+                       FontWeight="Bold"
+                       Foreground="{StaticResource TextDark}"/>
+
+                                        <TextBlock x:Name="TxtCode"
+                       Text="{Binding PatientCode}"
+                       FontSize="20"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource TextMid}"
+                       Margin="0,5,0,0"/>
+
+                                        <TextBlock x:Name="TxtInfo"
+                       FontSize="20"
+                       Foreground="{StaticResource TextMid}"
+                       Margin="0,8,0,0">
+                <Run Text="{Binding BirthDate, StringFormat=yyyy-MM-dd}"/>
+                <Run Text="  ·  "/>
+                <Run Text="{Binding Sex}"/>
                                         </TextBlock>
                                     </StackPanel>
 
-                                    <!-- EMR / LOCAL 배지 -->
-                                    <Border x:Name="SourceBadge" CornerRadius="6" BorderThickness="1" Padding="12,5"
-                                            HorizontalAlignment="Right" VerticalAlignment="Top"
-                                            Background="#DCFCE7" BorderBrush="#86EFAC">
-                                        <TextBlock x:Name="TxtSourceLabel" Text="EMR"
-                                                   FontSize="21" FontWeight="SemiBold" Foreground="#15803D"/>
+                                    <!-- EMR / LOCAL / E-SYNC 배지 -->
+                                    <Border x:Name="SourceBadge"
+                CornerRadius="6"
+                BorderThickness="1"
+                Padding="12,5"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Background="#DCFCE7"
+                BorderBrush="#86EFAC">
+                                        <TextBlock x:Name="TxtSourceLabel"
+                       Text="EMR"
+                       FontSize="21"
+                       FontWeight="SemiBold"
+                       Foreground="#15803D"/>
                                     </Border>
 
-                                    <!-- Description - 우측 하단 -->
-                                    <TextBlock x:Name="TxtDescription"
-                                               Text="{Binding RequestedProcedureDescription}"
-                                               Visibility="{Binding DataContext.DescriptionVisibility,
-                                                            RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                               HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                                               FontSize="17" FontWeight="SemiBold"
-                                               Foreground="{StaticResource TextMid}"
-                                               Margin="0,0,4,4"/>
+                                    <!-- 우측 하단 묶음 -->
+                                    <StackPanel HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    Margin="0,0,4,4">
+
+                                        <!-- Description -->
+                                        <TextBlock x:Name="TxtDescription"
+                       Text="{Binding RequestedProcedureDescription}"
+                       Visibility="{Binding DataContext.DescriptionVisibility,
+                                            RelativeSource={RelativeSource AncestorType=ListBox}}"
+                       FontSize="17"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource TextMid}"
+                       TextAlignment="Right"/>
+
+                                        <!-- LastShot + ShotNum -->
+                                        <StackPanel Margin="0,6,0,0">
+                                            <TextBlock x:Name="TxtLastShotDate"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource TextMid}"
+                           TextAlignment="Right">
+                    <Run Text="Last Shot : "/>
+                    <Run Text="{Binding LastShootDate, StringFormat=yyyy-MM-dd}"/>
+                                            </TextBlock>
+
+                                            <TextBlock x:Name="TxtShotNum"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource TextMid}"
+                           Margin="0,4,0,0"
+                           TextAlignment="Right">
+                    <Run Text="Shot Num : "/>
+                    <Run Text="{Binding ShotNum}"/>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </StackPanel>
                                 </Grid>
+
                                 <DataTemplate.Triggers>
                                     <DataTrigger Binding="{Binding Source}" Value="Emr">
-                                        <Setter TargetName="SourceBadge"    Property="Background"  Value="#DCFCE7"/>
-                                        <Setter TargetName="SourceBadge"    Property="BorderBrush" Value="#86EFAC"/>
-                                        <Setter TargetName="TxtSourceLabel" Property="Foreground"  Value="#15803D"/>
-                                        <Setter TargetName="TxtSourceLabel" Property="Text"        Value="EMR"/>
+                                        <Setter TargetName="SourceBadge" Property="Background" Value="#DCFCE7"/>
+                                        <Setter TargetName="SourceBadge" Property="BorderBrush" Value="#86EFAC"/>
+                                        <Setter TargetName="TxtSourceLabel" Property="Foreground" Value="#15803D"/>
+                                        <Setter TargetName="TxtSourceLabel" Property="Text" Value="EMR"/>
                                     </DataTrigger>
+
                                     <DataTrigger Binding="{Binding Source}" Value="Local">
-                                        <Setter TargetName="SourceBadge"    Property="Background"  Value="#EFF6FF"/>
-                                        <Setter TargetName="SourceBadge"    Property="BorderBrush" Value="#BFDBFE"/>
-                                        <Setter TargetName="TxtSourceLabel" Property="Foreground"  Value="#1D4ED8"/>
-                                        <Setter TargetName="TxtSourceLabel" Property="Text"        Value="LOCAL"/>
+                                        <Setter TargetName="SourceBadge" Property="Background" Value="#EFF6FF"/>
+                                        <Setter TargetName="SourceBadge" Property="BorderBrush" Value="#BFDBFE"/>
+                                        <Setter TargetName="TxtSourceLabel" Property="Foreground" Value="#1D4ED8"/>
+                                        <Setter TargetName="TxtSourceLabel" Property="Text" Value="LOCAL"/>
                                     </DataTrigger>
+
                                     <DataTrigger Binding="{Binding Source}" Value="ESync">
-                                        <Setter TargetName="SourceBadge"    Property="Background"  Value="#DCFCE7"/>
-                                        <Setter TargetName="SourceBadge"    Property="BorderBrush" Value="#86EFAC"/>
-                                        <Setter TargetName="TxtSourceLabel" Property="Foreground"  Value="#15803D"/>
-                                        <Setter TargetName="TxtSourceLabel" Property="Text"        Value="E-SYNC"/>
+                                        <Setter TargetName="SourceBadge" Property="Background" Value="#DCFCE7"/>
+                                        <Setter TargetName="SourceBadge" Property="BorderBrush" Value="#86EFAC"/>
+                                        <Setter TargetName="TxtSourceLabel" Property="Foreground" Value="#15803D"/>
+                                        <Setter TargetName="TxtSourceLabel" Property="Text" Value="E-SYNC"/>
                                     </DataTrigger>
+
                                     <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                                        <Setter TargetName="TxtName"        Property="Foreground" Value="White"/>
-                                        <Setter TargetName="TxtCode"        Property="Foreground" Value="#CBD5E1"/>
-                                        <Setter TargetName="TxtInfo"        Property="Foreground" Value="#94A3B8"/>
+                                        <Setter TargetName="TxtName" Property="Foreground" Value="White"/>
+                                        <Setter TargetName="TxtCode" Property="Foreground" Value="#CBD5E1"/>
+                                        <Setter TargetName="TxtInfo" Property="Foreground" Value="#94A3B8"/>
                                         <Setter TargetName="TxtDescription" Property="Foreground" Value="White"/>
+                                        <Setter TargetName="TxtLastShotDate" Property="Foreground" Value="#CBD5E1"/>
+                                        <Setter TargetName="TxtShotNum" Property="Foreground" Value="#CBD5E1"/>
                                     </DataTrigger>
+
+                                    <DataTrigger Binding="{Binding LastShootDate}" Value="{x:Null}">
+                                        <Setter TargetName="TxtLastShotDate" Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+
+                                    <DataTrigger Binding="{Binding ShotNum}" Value="0">
+                                        <Setter TargetName="TxtShotNum" Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                    
                                 </DataTemplate.Triggers>
                             </DataTemplate>
                         </ListBox.ItemTemplate>

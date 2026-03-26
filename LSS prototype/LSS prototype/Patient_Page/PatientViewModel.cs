@@ -719,14 +719,14 @@ namespace LSS_prototype.Patient_Page
 
         // 자동 병합 후보:
         // 같은 코드 + 같은 생년월일 + 같은 성별
-        private bool IsMergeCandidatePatient(PatientModel a, PatientModel b)
+        private bool IsMergeCandidatePatient(PatientModel emr, PatientModel local)
         {
-            if (a == null || b == null)
+            if (emr == null || local == null)
                 return false;
 
-            return a.PatientCode == b.PatientCode
-                && a.BirthDate.Date == b.BirthDate.Date
-                && string.Equals((a.Sex ?? "").Trim(), (b.Sex ?? "").Trim(), StringComparison.OrdinalIgnoreCase);
+            return emr.PatientCode == local.PatientCode
+                && emr.BirthDate.Date == local.BirthDate.Date
+                && string.Equals((emr.Sex ?? "").Trim(), (local.Sex ?? "").Trim(), StringComparison.OrdinalIgnoreCase);
         }
 
         // 같은 코드지만 병합 후보는 아닌 경우
@@ -1028,6 +1028,11 @@ namespace LSS_prototype.Patient_Page
                 return;
             }
 
+            var repo = new DB_Manager();
+
+            // 최신 E-SYNC 다시 조회
+            _importedEmrPatients = repo.GetEmrPatients();
+
             var originalLocal = new PatientModel
             {
                 PatientId = SelectedPatient.PatientId,
@@ -1037,19 +1042,22 @@ namespace LSS_prototype.Patient_Page
                 Sex = SelectedPatient.Sex,
                 AccessionNumber = SelectedPatient.AccessionNumber,
                 IsEmrPatient = SelectedPatient.IsEmrPatient,
-                Source = SelectedPatient.Source
+                Source = SelectedPatient.Source,
+                SourceType = SelectedPatient.SourceType,
+                LastShootDate = SelectedPatient.LastShootDate,
+                ShotNum = SelectedPatient.ShotNum
             };
 
-            // 같은 코드의 E-SYNC 존재 여부
-            //정보 변경이 있으면 저장 가능
-            //정보 변경이 없어도 병합 후보면 버튼 활성화 가능
             bool canMergeWithoutEdit = _importedEmrPatients.Any(x => IsMergeCandidatePatient(x, SelectedPatient));
 
             var vm = new PatientEditViewModel(_dialogService, SelectedPatient, canMergeWithoutEdit);
 
             var result = await _dialogService.ShowDialogAsync(vm);
 
-          
+            if (result == true)
+            {
+                HandleLocalEditConflictAfterSave(originalLocal);
+            }
         }
 
         private async Task DeletePatient()

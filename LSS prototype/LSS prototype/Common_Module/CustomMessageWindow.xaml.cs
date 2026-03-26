@@ -41,6 +41,7 @@ namespace LSS_prototype
 
         private TaskCompletionSource<MessageBoxResult> _tcs;
         private DispatcherTimer _timeoutTimer;
+        private bool _isClosing = false;
 
         public CustomMessageWindow(
     string message,
@@ -106,6 +107,7 @@ namespace LSS_prototype
             Loaded += async (s, e) => await ApplyBlurToAllWindows();
             this.Closed += async (s, e) => await RemoveBlurFromAllWindows();
             Loaded += (s, e) => App.ActivityMonitor?.RegisterWindow(this);
+            this.Closing += (s, e) => { if (!_isClosing) e.Cancel = true; };
         }
 
         private void SetIcon(MessageIconType icon)
@@ -245,6 +247,11 @@ namespace LSS_prototype
             _timeoutTimer?.Stop();
             Result = result;
             _tcs?.TrySetResult(result);
+            // AllowsTransparency=True + WindowStyle=None 조합에서
+            // 팝업 닫힐 때 OS 자동 활성화가 MainWindow를 최소화시키는 WPF 버그 우회
+            // Close() 전에 Owner를 먼저 명시 활성화하면 OS의 자동 활성화 로직이 생략됨
+            Owner?.Activate();
+            _isClosing = true;
             this.Close();
         }
 

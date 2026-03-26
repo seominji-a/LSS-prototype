@@ -351,7 +351,7 @@ namespace LSS_prototype.User_Page
             }
         }
 
-        private async Task UpdateItemInPlace(RecoveryModel log, bool isRecover)
+        private void UpdateItemInPlace(RecoveryModel log, bool isRecover)
         {
             if (isRecover)
             {
@@ -708,7 +708,7 @@ namespace LSS_prototype.User_Page
                         }
 
                         // 목록 InPlace 갱신 (전체 새로고침 없이 해당 행만 갱신)
-                        await UpdateItemInPlace(log, isRecover: true);
+                        UpdateItemInPlace(log, isRecover: true);
                         recoverSuccess++;
                     }
                     catch (Exception ex)
@@ -852,7 +852,7 @@ namespace LSS_prototype.User_Page
                         }
 
                         // 강제삭제된 행만 인플레이스 업데이트 (전체 reload 없이 해당 행만 갱신)
-                        await UpdateItemInPlace(log, isRecover: false);
+                        UpdateItemInPlace(log, isRecover: false);
                         deleteSuccess++;
                     }
                     catch (Exception ex)

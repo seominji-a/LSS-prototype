@@ -1176,6 +1176,16 @@ namespace LSS_prototype.Patient_Page
             if (dialog.ShowDialog() != true)
                 return;
 
+            if (!AuthToken.EnsureAuthenticated())
+            {
+                await CustomMessageWindow.ShowAsync(
+                    "세션이 만료되었습니다.\n잠금 해제 후 다시 진행해주세요.",
+                    CustomMessageWindow.MessageBoxType.Ok,
+                    0,
+                    CustomMessageWindow.MessageIconType.Warning);
+                return;
+            }
+
             string[] selectedFiles = dialog.FileNames;
             string importErrorBatchFolder = null;
 

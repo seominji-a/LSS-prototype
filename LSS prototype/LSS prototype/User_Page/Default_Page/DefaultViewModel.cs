@@ -167,6 +167,9 @@ namespace LSS_prototype.User_Page
         private void ChangeZoom(int delta) =>
             ZoomValue = Clamp(ZoomValue + delta, ZoomMin, ZoomMax);
 
+        private static readonly SolidColorBrush ActiveBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3B82F6"));
+        private static readonly SolidColorBrush InactiveBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3F55"));
+
 
         // 바인딩 프로퍼티
         public string ExposureText => $"{ExposureValue / 1000000:F1}s";
@@ -228,17 +231,10 @@ namespace LSS_prototype.User_Page
         }
 
         // Filter 토글 배경색
-        public SolidColorBrush FilterOnBackground =>
-            FilterValue == 1
-                ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3B82F6"))
-                : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3F55"));
+        public SolidColorBrush FilterOnBackground => FilterValue == 1 ? ActiveBrush : InactiveBrush;
+        public SolidColorBrush FilterOffBackground => FilterValue == 0 ? ActiveBrush : InactiveBrush;
 
-        public SolidColorBrush FilterOffBackground =>
-            FilterValue == 0
-                ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3B82F6"))
-                : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3F55"));
 
-   
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {

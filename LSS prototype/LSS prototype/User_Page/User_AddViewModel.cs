@@ -15,7 +15,7 @@ namespace LSS_prototype.User_Page
         public ICommand CancelCommand { get; }
 
 
-        private string _userName;
+        private string _userName; 
         public string UserName
         {
             get => _userName;

@@ -41,7 +41,7 @@ namespace LSS_prototype.Login_Page
             {
                 var db = new DB_Manager();
                 await db.InitDB();
-                vm?.LoadAdminIds();
+                await vm?.LoadAdminIds();
             };
         }
 

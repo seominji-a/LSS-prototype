@@ -365,8 +365,8 @@
                     <StackPanel Orientation="Horizontal" Margin="16,0" VerticalAlignment="Center">
                         <Button Content="Patient"      Style="{StaticResource NavBtn}"       Command="{Binding NavigatePatientCommand}" Margin="0,0,10,0"/>
                         <Button Content="Scan"         Style="{StaticResource NavBtnActive}" Margin="0,0,10,0"/>
-                        <Button Content="Image Review" Style="{StaticResource NavBtn}"       Margin="0,0,10,0"/>
-                        <Button Content="Video Review" Style="{StaticResource NavBtn}"/>
+                        <Button Content="Image Review" Style="{StaticResource NavBtn}"       Command="{Binding NavigateImageReviewCommand}" Margin="0,0,10,0"/>
+                        <Button Content="Video Review" Style="{StaticResource NavBtn}"       Command="{Binding NavigateVideoReviewCommand}"/>
                     </StackPanel>
                 </Grid>
             </Grid>

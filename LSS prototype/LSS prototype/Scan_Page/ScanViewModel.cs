@@ -4,10 +4,12 @@ using LSS_prototype.Auth;
 using LSS_prototype.Common_Module;
 using LSS_prototype.DB_CRUD;
 using LSS_prototype.Dicom_Module;
+using LSS_prototype.ImageReview_Page;
 using LSS_prototype.Lens_Module;
 using LSS_prototype.Login_Page;
 using LSS_prototype.Patient_Page;
 using LSS_prototype.User_Page;
+using LSS_prototype.VideoReview_Page;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using System;
@@ -252,6 +254,8 @@ namespace LSS_prototype.Scan_Page
 
         public ICommand NavigatePatientCommand { get; private set; }
         public ICommand LockCommand { get; }
+        public ICommand NavigateImageReviewCommand { get; private set; }
+        public ICommand NavigateVideoReviewCommand { get; private set; }
         public ICommand LogoutCommand { get; }
         public ICommand ExitCommand { get; }
         public ICommand ToggleMenuCommand { get; }
@@ -292,6 +296,10 @@ namespace LSS_prototype.Scan_Page
             LogoutCommand = new AsyncRelayCommand(async _ => await ExecuteLogout());
             ExitCommand = new AsyncRelayCommand(async _ => await ExecuteExit());
             ToggleMenuCommand = new RelayCommand(_ => ToggleMenu());
+
+            NavigateImageReviewCommand = new RelayCommand(_ => NavigateToImageReview());
+            NavigateVideoReviewCommand = new RelayCommand(_ => NavigateToVideoReview());
+
             ColorMapCommand = new RelayCommand(_ => ToggleColorMap());
 
             _cameraService.FrameArrived += OnFrameArrived;
@@ -1572,6 +1580,12 @@ namespace LSS_prototype.Scan_Page
 
         private void NavigateToPatient() =>
             MainPage.Instance.NavigateTo(new Patient_Page.Patient());
+
+        private void NavigateToImageReview() =>
+            MainPage.Instance.NavigateTo(new ImageReview(_selectedPatient));
+
+        private void NavigateToVideoReview() =>
+            MainPage.Instance.NavigateTo(new VideoReview(_selectedPatient));
 
         #endregion
 

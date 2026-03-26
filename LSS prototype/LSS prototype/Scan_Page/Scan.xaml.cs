@@ -1,4 +1,6 @@
-﻿using LSS_prototype.Patient_Page;
+﻿using LSS_prototype.ImageReview_Page;
+using LSS_prototype.Patient_Page;
+using LSS_prototype.VideoReview_Page;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,7 +28,7 @@ namespace LSS_prototype.Scan_Page
 
         public Scan(PatientModel selectedPatient, string studyId = null)
         {
-            InitializeComponent();       
+            InitializeComponent();
             DataContext = new ScanViewModel(selectedPatient, studyId);
             Unloaded += (s, e) => (DataContext as ScanViewModel)?.Dispose();
             Loaded += async (s, e) =>
@@ -84,5 +86,6 @@ namespace LSS_prototype.Scan_Page
             _settingOpen = false;
             SettingPanel.Visibility = Visibility.Collapsed;
         }
+
     }
 }

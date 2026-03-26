@@ -197,8 +197,8 @@ namespace LSS_prototype.Patient_Page
 
             NavScanCommand = new RelayCommand(NavScan);
             // 0227 박한용 아래코드는 데이터 관련 처리 완료 후 주석 풀고 연동 예정 
-            NavImageReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new ImageReview_Page.ImageReview()));
-            //NavVideoReviewCommand = new RelayCommand(_ => MainPage.Instance.NavigateTo(new VideoReview_Page.VideoReview()));
+            NavImageReviewCommand = new RelayCommand(NavImageReview);
+            NavVideoReviewCommand = new RelayCommand(NavVideoReview);
             _searchDebouncer = new SearchDebouncer(async keyword => await ExecuteSearch(keyword), delayMs: 500);
             _ = EmrSync(_cts.Token); // task 무시하기위해 _ = 사용 (별의미 X )
 
@@ -263,6 +263,34 @@ namespace LSS_prototype.Patient_Page
             }
             MainPage.Instance.NavigateTo(new Scan_Page.Scan(SelectedPatient));
 
+        }
+
+        private async void NavImageReview()
+        {
+
+            if (SelectedPatient == null)
+            {
+                await CustomMessageWindow.ShowAsync("환자를 먼저 선택해주세요.",
+                      CustomMessageWindow.MessageBoxType.Ok, 2,
+                      CustomMessageWindow.MessageIconType.Warning);
+
+                return;
+            }
+            MainPage.Instance.NavigateTo(new ImageReview_Page.ImageReview(SelectedPatient));
+        }
+
+        private async void NavVideoReview()
+        {
+
+            if (SelectedPatient == null)
+            {
+                await CustomMessageWindow.ShowAsync("환자를 먼저 선택해주세요.",
+                      CustomMessageWindow.MessageBoxType.Ok, 2,
+                      CustomMessageWindow.MessageIconType.Warning);
+
+                return;
+            }
+            MainPage.Instance.NavigateTo(new VideoReview_Page.VideoReview(SelectedPatient));
         }
 
         //중복/충돌 판정용 helper 추가

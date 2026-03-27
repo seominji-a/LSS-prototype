@@ -71,18 +71,7 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
-        private bool _canMergeWithoutEdit;
-        public bool CanMergeWithoutEdit
-        {
-            get => _canMergeWithoutEdit;
-            set
-            {
-                _canMergeWithoutEdit = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(EditButtonText));
-                EditCommand?.RaiseCanExecuteChanged();
-            }
-        }
+       
 
         private bool _isCodeKeypadOpen;
         public bool IsCodeKeypadOpen
@@ -155,7 +144,7 @@ namespace LSS_prototype.Patient_Page
 
         public Action<bool?> CloseAction { get; set; }
 
-        public PatientEditViewModel(IDialogService dialogService, PatientModel selected, bool canMergeWithoutEdit = false)
+        public PatientEditViewModel(IDialogService dialogService, PatientModel selected)
         {
             _dialogService = dialogService;
 
@@ -173,7 +162,7 @@ namespace LSS_prototype.Patient_Page
 
             IsDobConfirmed = true;
             IsCodeConfirmed = true;
-            CanMergeWithoutEdit = canMergeWithoutEdit;
+            
 
             EditCommand = new RelayCommand(async _ => await UpdatePatient(), _ => CanEditPatient());
             CancelCommand = new RelayCommand(Cancel);
@@ -199,13 +188,23 @@ namespace LSS_prototype.Patient_Page
                 Sex != OriginalSex;
         }
 
+        //수정 없이도 버튼 클릭 가능
         private bool CanEditPatient()
         {
-            return IsValid() && (IsDirty() || CanMergeWithoutEdit) && IsDobConfirmed && IsCodeConfirmed;
+            return IsValid() && IsDirty() && IsDobConfirmed && IsCodeConfirmed;
         }
 
-        // ✅ 병합 가능 상태면 항상 MERGE 표시
-        public string EditButtonText => CanMergeWithoutEdit ? "MERGE" : "EDIT";
+
+        private string N(string value)
+        {
+            return (value ?? string.Empty).Trim();
+        }
+
+
+        // 병합 가능 상태면 항상 MERGE 표시
+        public string EditButtonText => "EDIT";
+
+
 
         private async Task UpdatePatient()
         {
@@ -213,61 +212,56 @@ namespace LSS_prototype.Patient_Page
             {
                 var repo = new DB_Manager();
 
-                // ✅ 병합 가능한 상태면 수정 여부와 관계없이 부모 ViewModel 쪽 병합 흐름으로 넘김
-                if (CanMergeWithoutEdit)
+                
+
+                // 일반 수정
+                if (!IsDirty())
+                    return;
+
+                var editingPatient = new PatientModel
                 {
-                    CloseAction?.Invoke(true);
+                    PatientId = this.Patient_id,
+                    PatientCode = this.PatientCode.Value,
+                    PatientName = this.PatientName,
+                    BirthDate = this.BirthDate.Value,
+                    Sex = this.Sex,
+                    AccessionNumber = string.Empty
+                };
+
+                var allOthers = repo.GetAllPatients()
+                    .Where(x => x.PatientId != editingPatient.PatientId)
+                    .ToList();
+
+                var duplicatedCodePatient = allOthers
+                    .FirstOrDefault(x => x.PatientCode == editingPatient.PatientCode);
+
+                if (duplicatedCodePatient != null)
+                {
+                    await CustomMessageWindow.ShowAsync(
+                        "중복된 환자번호가 존재합니다.\n같은 환자번호로 수정할 수 없습니다.",
+                        CustomMessageWindow.MessageBoxType.Ok,
+                        0,
+                        CustomMessageWindow.MessageIconType.Warning);
                     return;
                 }
 
-                // 여기부터는 일반 수정
-                if (IsDirty())
+                if (repo.UpdatePatient(editingPatient))
                 {
-                    var locals = repo.GetLocalPatients();
-                    var emrs = repo.GetEmrPatients();
-                    var allPatients = locals.Concat(emrs);
+                    await CustomMessageWindow.ShowAsync(
+                        "수정되었습니다.",
+                        CustomMessageWindow.MessageBoxType.Ok,
+                        1,
+                        CustomMessageWindow.MessageIconType.Info);
 
-                    var duplicated = allPatients
-                        .FirstOrDefault(x => x.PatientCode == this.PatientCode
-                                          && x.PatientId != this.Patient_id);
-
-                    if (duplicated != null)
-                    {
-                        await CustomMessageWindow.ShowAsync(
-                            "이미 사용 중인 환자번호입니다.\n환자 번호를 확인해주세요.",
-                            CustomMessageWindow.MessageBoxType.Ok,
-                            0,
-                            CustomMessageWindow.MessageIconType.Warning);
-                        return;
-                    }
-
-                    var model = new PatientModel
-                    {
-                        PatientId = this.Patient_id,
-                        PatientCode = this.PatientCode.Value,
-                        PatientName = this.PatientName,
-                        BirthDate = this.BirthDate.Value,
-                        Sex = this.Sex
-                    };
-
-                    if (repo.UpdatePatient(model))
-                    {
-                        await CustomMessageWindow.ShowAsync(
-                            "수정되었습니다.",
-                            CustomMessageWindow.MessageBoxType.Ok,
-                            1,
-                            CustomMessageWindow.MessageIconType.Info);
-
-                        CloseAction?.Invoke(true);
-                    }
-                    else
-                    {
-                        await CustomMessageWindow.ShowAsync(
-                            "수정 중 오류가 발생했습니다.",
-                            CustomMessageWindow.MessageBoxType.Ok,
-                            1,
-                            CustomMessageWindow.MessageIconType.Warning);
-                    }
+                    CloseAction?.Invoke(true);
+                }
+                else
+                {
+                    await CustomMessageWindow.ShowAsync(
+                        "수정 중 오류가 발생했습니다.",
+                        CustomMessageWindow.MessageBoxType.Ok,
+                        1,
+                        CustomMessageWindow.MessageIconType.Warning);
                 }
             }
             catch (Exception ex)
@@ -307,14 +301,127 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
-        private void OpenKeypad(object _)
+        private void OpenKeypad(object _ = null)
         {
-            // 기존 구현 유지
+            if (IsKeypadOpen)
+                return;
+
+            CloseAllKeypads();
+
+            IsDobConfirmed = false;
+
+            KeypadVm = new KeypadViewModel();
+            KeypadVm.IsDateMode = true;
+
+            if (!string.IsNullOrEmpty(BirthDatePreview))
+                KeypadVm.InputText = BirthDatePreview.Replace("-", "");
+
+            KeypadVm.InputChanged += (input) =>
+            {
+                BirthDatePreview = FormatDatePreview(input);
+                BirthDate = null;
+            };
+
+            KeypadVm.CloseRequested += OnKeypadClosed;
+
+            IsKeypadOpen = true;
         }
 
-        private void OpenPatientCodeKeypad(object _)
+        private void OnKeypadClosed(bool? result)
         {
-            // 기존 구현 유지
+            if (KeypadVm != null)
+                KeypadVm.CloseRequested -= OnKeypadClosed;
+
+            IsKeypadOpen = false;
+
+            if (result == true)
+            {
+                BirthDate = KeypadVm.ResultDate;
+                BirthDatePreview = BirthDate?.ToString("yyyy-MM-dd");
+                IsDobConfirmed = true;
+            }
+            else if (result == false)
+            {
+                BirthDate = OriginalBirthDate;
+                BirthDatePreview = OriginalBirthDate?.ToString("yyyy-MM-dd");
+                IsDobConfirmed = false;
+            }
+
+            KeypadVm = null;
+            EditCommand?.RaiseCanExecuteChanged();
+        }
+
+        private void OpenPatientCodeKeypad(object _ = null)
+        {
+            if (IsCodeKeypadOpen)
+                return;
+
+            CloseAllKeypads();
+
+            IsCodeConfirmed = false;
+
+            KeypadVm = new KeypadViewModel();
+            KeypadVm.IsDateMode = false;
+            KeypadVm.MaxLength = 10;
+
+            if (PatientCode.HasValue)
+                KeypadVm.InputText = PatientCode.Value.ToString();
+
+            KeypadVm.InputChanged += (input) =>
+            {
+                if (string.IsNullOrEmpty(input))
+                    PatientCode = null;
+                else if (int.TryParse(input, out int code))
+                    PatientCode = code;
+
+                OnPropertyChanged(nameof(PatientCode));
+            };
+
+            KeypadVm.CloseRequested += OnPatientCodeKeypadClosed;
+
+            IsCodeKeypadOpen = true;
+        }
+
+        private void OnPatientCodeKeypadClosed(bool? result)
+        {
+            if (KeypadVm != null)
+                KeypadVm.CloseRequested -= OnPatientCodeKeypadClosed;
+
+            IsCodeKeypadOpen = false;
+
+            if (result == true)
+            {
+                IsCodeConfirmed = true;
+            }
+            else if (result == false)
+            {
+                PatientCode = OriginalCode;
+                OnPropertyChanged(nameof(PatientCode));
+            }
+
+            KeypadVm = null;
+            EditCommand?.RaiseCanExecuteChanged();
+        }
+
+        private string FormatDatePreview(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return "";
+
+            if (input.Length <= 4)
+                return input;
+
+            if (input.Length <= 6)
+                return input.Insert(4, "-");
+
+            return input.Insert(4, "-").Insert(7, "-");
+        }
+
+        private void CloseAllKeypads()
+        {
+            IsKeypadOpen = false;
+            IsCodeKeypadOpen = false;
+            KeypadVm = null;
         }
     }
 }

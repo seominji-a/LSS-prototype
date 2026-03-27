@@ -5,8 +5,11 @@ using FellowOakDicom.Network.Client;
 using LSS_prototype.Auth;
 using LSS_prototype.DB_CRUD;
 using LSS_prototype.Dicom_Module;
+using LSS_prototype.Login_Page;
 using LSS_prototype.User_Page;
 using Microsoft.Win32;
+using OpenCvSharp;
+using OpenCvSharp.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -15,15 +18,13 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using OpenCvSharp;
-using OpenCvSharp.Extensions;
-using System.Runtime.InteropServices;
-using LSS_prototype.Login_Page;
 
 namespace LSS_prototype.Patient_Page
 {
@@ -51,6 +52,67 @@ namespace LSS_prototype.Patient_Page
             }
         }
 
+        private enum PatientCompareResult
+        {
+            None = 0,
+
+            // accession 동일 또는 code+name+birth+sex 동일
+            ExactMatch = 1,
+
+            // code+birth+sex 동일, 이름 다를 수 있음
+            MergeCandidate = 2,
+
+            // 같은 code인데 Exact/MergeCandidate가 아님
+            Conflict = 3
+        }
+
+        //공통 normalize 함수 추가
+        private string N(string value)
+        {
+            return (value ?? string.Empty).Trim();
+        }
+
+        //비교 기준 원본 통일
+        private PatientCompareResult ComparePatients(PatientModel a, PatientModel b)
+        {
+            if (a == null || b == null)
+                return PatientCompareResult.None;
+
+            bool sameCode = a.PatientCode == b.PatientCode;
+
+            bool sameBirth =
+                a.BirthDate.Date == b.BirthDate.Date;
+
+            bool sameSex =
+                string.Equals(N(a.Sex), N(b.Sex), StringComparison.OrdinalIgnoreCase);
+
+            bool sameName =
+                string.Equals(N(a.PatientName), N(b.PatientName), StringComparison.OrdinalIgnoreCase);
+
+            bool sameAccession =
+                !string.IsNullOrWhiteSpace(N(a.AccessionNumber)) &&
+                !string.IsNullOrWhiteSpace(N(b.AccessionNumber)) &&
+                string.Equals(N(a.AccessionNumber), N(b.AccessionNumber), StringComparison.OrdinalIgnoreCase);
+
+            // 1. accession 같으면 가장 강한 동일성으로 판단
+            if (sameAccession)
+                return PatientCompareResult.ExactMatch;
+
+            // 2. 완전 동일
+            if (sameCode && sameBirth && sameSex && sameName)
+                return PatientCompareResult.ExactMatch;
+
+            // 3. 병합 후보
+            if (sameCode && sameBirth && sameSex)
+                return PatientCompareResult.MergeCandidate;
+
+            // 4. 같은 코드인데 위 조건이 아니면 충돌
+            if (sameCode)
+                return PatientCompareResult.Conflict;
+
+            return PatientCompareResult.None;
+        }
+
         // ── 팝업 메뉴 상태 ──
         private bool _isMenuOpen;
         private DateTime _menuLastClosed = DateTime.MinValue;
@@ -70,7 +132,7 @@ namespace LSS_prototype.Patient_Page
 
         // MWL 필터가 ALL(빈값)일 때만 Description 표시
 
-        public Visibility DescriptionVisibility => string.IsNullOrEmpty(Common.MwlDescriptionFilter)  ? Visibility.Visible   : Visibility.Hidden;  // Collapsed → Hidden
+        public Visibility DescriptionVisibility => string.IsNullOrEmpty(Common.MwlDescriptionFilter) ? Visibility.Visible : Visibility.Hidden;  // Collapsed → Hidden
 
         private string _searchText;
         public string SearchText
@@ -118,11 +180,12 @@ namespace LSS_prototype.Patient_Page
         public PatientModel SelectedPatient
         {
             get => _selectedPatient;
-            set { 
+            set
+            {
                 _selectedPatient = value; OnPropertyChanged();
-                OnPropertyChanged(nameof(IsPatientSelected));        
+                OnPropertyChanged(nameof(IsPatientSelected));
                 OnPropertyChanged(nameof(IsAccessionNumberVisible));
-                OnPropertyChanged(nameof(DescriptionVisibility)); 
+                OnPropertyChanged(nameof(DescriptionVisibility));
             }
         }
         public string PageTitle => _showAll ? "Integrated Patient" : "EMR Patient";
@@ -151,6 +214,7 @@ namespace LSS_prototype.Patient_Page
             NewEmrPatient,
             ExistingEmrPatientAddStudy,
             SkipDuplicateStudy,
+            SkipConflictPatient
         }
 
         private class ImportPlan
@@ -196,10 +260,11 @@ namespace LSS_prototype.Patient_Page
             ToggleMenuCommand = new RelayCommand(_ => ToggleMenu());
 
             NavScanCommand = new RelayCommand(NavScan);
+            // 0227 박한용 아래코드는 데이터 관련 처리 완료 후 주석 풀고 연동 예정 
             NavImageReviewCommand = new RelayCommand(NavImageReview);
             NavVideoReviewCommand = new RelayCommand(NavVideoReview);
             _searchDebouncer = new SearchDebouncer(async keyword => await ExecuteSearch(keyword), delayMs: 500);
-            _ = EmrSync(_cts.Token);
+            _ = EmrSync(_cts.Token); // task 무시하기위해 _ = 사용 (별의미 X )
 
         }
 
@@ -293,12 +358,13 @@ namespace LSS_prototype.Patient_Page
         }
 
         //중복/충돌 판정용 helper 추가
-        //환자 동일성 판단
-        
 
         //환자 충돌 판단
         //patientcode는 같은데 이름/생년월일이 다른 경우
-       
+        private bool IsConflictPatient(PatientModel exsiting, PatientModel incoming)
+        {
+            return ComparePatients(exsiting, incoming) == PatientCompareResult.Conflict;
+        }
 
         //Dicom에서 study 키 추출
         //가능하면 studyinstanceUID, 없으면 studyID, 그것도 없으면 studyDate
@@ -497,54 +563,142 @@ namespace LSS_prototype.Patient_Page
                         if (group == null)
                             continue;
 
-                        var existingPatient = FindExistingPatientForImport(group);
-                        
-
-                        
-
-                        // 1) 기존 환자 존재 → 파일 단위 중복 여부 판단
-                        if (existingPatient != null)
+                        // 0) 먼저 conflict 차단
+                        var conflictPatient = FindConflictPatientForImport(group);
+                        if (conflictPatient != null)
                         {
-                            string[] newFiles = await FilterNewDicomFiles(
-                                existingPatient.PatientName,
-                                existingPatient.PatientCode,
-                                group.DcmFiles);
-
-                            bool hasNewFiles = newFiles.Length > 0;
-
-                            bool existingIsEmr =
-                                !string.IsNullOrWhiteSpace(existingPatient.AccessionNumber) ||
-                                existingPatient.Source == PatientSource.ESync;
-
-                            if (!hasNewFiles)
+                            plans.Add(new ImportPlan
                             {
-                                plans.Add(new ImportPlan
-                                {
-                                    Group = group,
-                                    ExistingPatient = existingPatient,
-                                    ActionType = ImportActionType.SkipDuplicateStudy,
-                                    Reason = $"[중복파일] {group.PatientName}({group.PatientCode})"
-                                });
-                            }
-                            else
-                            {
-                                plans.Add(new ImportPlan
-                                {
-                                    Group = group,
-                                    ExistingPatient = existingPatient,
-                                    ActionType = existingIsEmr
-                                        ? ImportActionType.ExistingEmrPatientAddStudy
-                                        : ImportActionType.ExistingLocalPatientAddStudy,
-                                    Reason = existingIsEmr
-                                        ? $"[기존 EMR 환자] 새 파일 추가: {group.PatientName}"
-                                        : $"[기존 LOCAL 환자] 새 파일 추가: {group.PatientName}"
-                                });
-                            }
+                                Group = group,
+                                ExistingPatient = conflictPatient,
+                                ActionType = ImportActionType.SkipConflictPatient,
+                                Reason =
+                                    $"[충돌] 동일 환자번호({group.PatientCode})가 이미 존재하지만 " +
+                                    $"생년월일/성별이 일치하지 않습니다. " +
+                                    $"기존: {conflictPatient.PatientName} / 가져온 환자: {group.PatientName}"
+                            });
 
                             continue;
                         }
 
-                        // 2) 기존 동일 환자가 아니면 신규 환자로 등록
+                        // 1) exact / merge candidate 찾기
+                        var existingPatient = FindExistingPatientForImport(group);
+
+                        if (existingPatient != null)
+                        {
+                            var compareResult = ComparePatients(existingPatient, group);
+
+                            if (compareResult == PatientCompareResult.Conflict)
+                            {
+                                plans.Add(new ImportPlan
+                                {
+                                    Group = group,
+                                    ExistingPatient = existingPatient,
+                                    ActionType = ImportActionType.SkipConflictPatient,
+                                    Reason =
+                                        $"[충돌] 동일 환자번호({group.PatientCode})의 기존 환자와 정보가 일치하지 않습니다."
+                                });
+
+                                continue;
+                            }
+
+                            bool existingIsEmr =
+                                existingPatient.Source == PatientSource.ESync ||
+                                !string.IsNullOrWhiteSpace(existingPatient.AccessionNumber) ||
+                                existingPatient.IsEmrPatient ||
+                                existingPatient.SourceType == (int)PatientSourceType.ESync;
+
+                            // 2) ExactMatch
+                            if (compareResult == PatientCompareResult.ExactMatch)
+                            {
+                                string[] newFiles = await FilterNewDicomFiles(
+                                    existingPatient.PatientName,
+                                    existingPatient.PatientCode,
+                                    group.DcmFiles);
+
+                                bool hasNewFiles = newFiles.Length > 0;
+
+                                if (!hasNewFiles)
+                                {
+                                    plans.Add(new ImportPlan
+                                    {
+                                        Group = group,
+                                        ExistingPatient = existingPatient,
+                                        ActionType = ImportActionType.SkipDuplicateStudy,
+                                        Reason = $"[중복파일] {group.PatientName}({group.PatientCode})"
+                                    });
+                                }
+                                else
+                                {
+                                    plans.Add(new ImportPlan
+                                    {
+                                        Group = group,
+                                        ExistingPatient = existingPatient,
+                                        ActionType = existingIsEmr
+                                            ? ImportActionType.ExistingEmrPatientAddStudy
+                                            : ImportActionType.ExistingLocalPatientAddStudy,
+                                        Reason = existingIsEmr
+                                            ? $"[기존 EMR 동일 환자] 새 파일 추가: {group.PatientName}"
+                                            : $"[기존 LOCAL 동일 환자] 새 파일 추가: {group.PatientName}"
+                                    });
+                                }
+
+                                continue;
+                            }
+
+                            // 3) MergeCandidate
+                            if (compareResult == PatientCompareResult.MergeCandidate)
+                            {
+                                // 이름만 다르고 code+birth+sex가 같은데
+                                // 기존이 LOCAL이면 -> 새 E-SYNC 환자로 생성해서
+                                // import 후 병합 팝업 대상으로 만든다.
+                                if (!existingIsEmr)
+                                {
+                                    plans.Add(new ImportPlan
+                                    {
+                                        Group = group,
+                                        ExistingPatient = existingPatient,
+                                        ActionType = ImportActionType.NewEmrPatient,
+                                        Reason = $"[병합 후보] LOCAL과 중복 가능성 있음 → 신규 E-SYNC 생성: {group.PatientName}"
+                                    });
+
+                                    continue;
+                                }
+
+                                // 기존이 이미 EMR이면 그 EMR에 추가
+                                string[] newFiles = await FilterNewDicomFiles(
+                                    existingPatient.PatientName,
+                                    existingPatient.PatientCode,
+                                    group.DcmFiles);
+
+                                bool hasNewFiles = newFiles.Length > 0;
+
+                                if (!hasNewFiles)
+                                {
+                                    plans.Add(new ImportPlan
+                                    {
+                                        Group = group,
+                                        ExistingPatient = existingPatient,
+                                        ActionType = ImportActionType.SkipDuplicateStudy,
+                                        Reason = $"[중복파일] {group.PatientName}({group.PatientCode})"
+                                    });
+                                }
+                                else
+                                {
+                                    plans.Add(new ImportPlan
+                                    {
+                                        Group = group,
+                                        ExistingPatient = existingPatient,
+                                        ActionType = ImportActionType.ExistingEmrPatientAddStudy,
+                                        Reason = $"[병합 후보 EMR] 새 파일 추가: {group.PatientName}"
+                                    });
+                                }
+
+                                continue;
+                            }
+                        }
+
+                        // 4) 기존 동일/병합 후보가 없으면 신규 환자
                         bool isLocal =
                             string.IsNullOrWhiteSpace(group.AccessionNumber) &&
                             !group.IsEmrPatient &&
@@ -583,7 +737,7 @@ namespace LSS_prototype.Patient_Page
         {
             try
             {
-                if (plan == null || plan.Group == null || repo == null)
+                if (plan == null || plan.Group == null)
                     return false;
 
                 var group = plan.Group;
@@ -611,9 +765,7 @@ namespace LSS_prototype.Patient_Page
                                 return false;
 
                             await ImportPatientFilesToStructuredFolders(
-                                group.DcmFiles?
-                                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                                    .ToArray() ?? Array.Empty<string>(),
+                                group.DcmFiles.Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
                                 group.PatientName,
                                 group.PatientCode,
                                 string.Empty);
@@ -623,21 +775,20 @@ namespace LSS_prototype.Patient_Page
 
                     case ImportActionType.ExistingLocalPatientAddStudy:
                         {
-                            if (plan.ExistingPatient == null)
-                                return false;
+                            var target = plan.ExistingPatient ?? group;
 
                             var newFiles = await FilterNewDicomFiles(
-                                plan.ExistingPatient.PatientName,
-                                plan.ExistingPatient.PatientCode,
+                                target.PatientName,
+                                target.PatientCode,
                                 group.DcmFiles);
 
-                            if (newFiles == null || newFiles.Length == 0)
+                            if (newFiles.Length == 0)
                                 return false;
 
                             await ImportPatientFilesToStructuredFolders(
                                 newFiles,
-                                plan.ExistingPatient.PatientName,
-                                plan.ExistingPatient.PatientCode,
+                                target.PatientName,
+                                target.PatientCode,
                                 string.Empty);
 
                             return true;
@@ -664,9 +815,7 @@ namespace LSS_prototype.Patient_Page
                                 return false;
 
                             await ImportPatientFilesToStructuredFolders(
-                                group.DcmFiles?
-                                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                                    .ToArray() ?? Array.Empty<string>(),
+                                group.DcmFiles.Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
                                 group.PatientName,
                                 group.PatientCode,
                                 group.AccessionNumber);
@@ -676,22 +825,20 @@ namespace LSS_prototype.Patient_Page
 
                     case ImportActionType.ExistingEmrPatientAddStudy:
                         {
-                            if (plan.ExistingPatient == null)
-                                return false;
+                            var target = plan.ExistingPatient ?? group;
 
                             var emrPatientModel = new PatientModel
                             {
-                                PatientId = plan.ExistingPatient.PatientId,
-                                PatientCode = plan.ExistingPatient.PatientCode,
-                                PatientName = plan.ExistingPatient.PatientName,
-                                Sex = plan.ExistingPatient.Sex,
-                                BirthDate = plan.ExistingPatient.BirthDate,
-                                AccessionNumber = plan.ExistingPatient.AccessionNumber,
+                                PatientCode = target.PatientCode,
+                                PatientName = target.PatientName,
+                                Sex = target.Sex,
+                                BirthDate = target.BirthDate,
+                                AccessionNumber = target.AccessionNumber,
                                 IsEmrPatient = true,
                                 Source = PatientSource.ESync,
                                 SourceType = (int)PatientSourceType.ESync,
-                                LastShootDate = plan.ExistingPatient.LastShootDate,
-                                ShotNum = plan.ExistingPatient.ShotNum
+                                LastShootDate = target.LastShootDate,
+                                ShotNum = target.ShotNum
                             };
 
                             bool upserted = repo.UpsertEmrPatient(emrPatientModel);
@@ -699,23 +846,24 @@ namespace LSS_prototype.Patient_Page
                                 return false;
 
                             var newFiles = await FilterNewDicomFiles(
-                                plan.ExistingPatient.PatientName,
-                                plan.ExistingPatient.PatientCode,
+                                target.PatientName,
+                                target.PatientCode,
                                 group.DcmFiles);
 
-                            if (newFiles == null || newFiles.Length == 0)
+                            if (newFiles.Length == 0)
                                 return false;
 
                             await ImportPatientFilesToStructuredFolders(
                                 newFiles,
-                                plan.ExistingPatient.PatientName,
-                                plan.ExistingPatient.PatientCode,
-                                plan.ExistingPatient.AccessionNumber);
+                                target.PatientName,
+                                target.PatientCode,
+                                target.AccessionNumber);
 
                             return true;
                         }
 
                     case ImportActionType.SkipDuplicateStudy:
+                    case ImportActionType.SkipConflictPatient:
                     default:
                         return false;
                 }
@@ -728,120 +876,124 @@ namespace LSS_prototype.Patient_Page
         }
 
         private string BuildImportSummaryMessage(
-            int successPatientCount,
-            int duplicateSkipPatientCount,
+            int successCount,
+            int duplicateStudySkipCount,
+            int conflictSkipCount,
             int errorPatientCount,
             int errorFileCount)
         {
-            string message =
-                "가져오기 완료" +
-                $"\n완료: {successPatientCount}명";
+            var sb = new StringBuilder();
 
-            if (duplicateSkipPatientCount > 0)
-                message += $"\n중복 제외: {duplicateSkipPatientCount}명";
+            sb.AppendLine($"가져오기 완료: {successCount}건");
+
+            if (duplicateStudySkipCount > 0)
+                sb.AppendLine($"중복 제외: {duplicateStudySkipCount}건");
+
+            if (conflictSkipCount > 0)
+                sb.AppendLine($"충돌 제외: {conflictSkipCount}건");
 
             if (errorPatientCount > 0)
-                message += $"\n오류: {errorPatientCount}명";
+                sb.AppendLine($"실패 환자: {errorPatientCount}건");
 
             if (errorFileCount > 0)
-                message += $"\n\n오류 파일 {errorFileCount}건은 ImportError 폴더에 저장되었습니다.";
+                sb.AppendLine($"실패 파일: {errorFileCount}건");
 
-            if (duplicateSkipPatientCount == 0 && errorPatientCount == 0)
-                message += "\n\n모든 데이터가 정상 처리되었습니다.";
-
-            return message;
+            return sb.ToString().Trim();
         }
         //병합 기준 helper 
         //같은 환자 판정 helper 추가
 
-
-        private bool HasSamePatientCode(PatientModel a, PatientModel b)
+        private bool IsSamePatientIdentity(PatientModel existing, PatientModel incoming)
         {
-            if (a == null || b == null) return false;
-            return a.PatientCode == b.PatientCode;
+            return ComparePatients(existing, incoming) == PatientCompareResult.ExactMatch;
         }
 
-        //시스템 동일 환자 기준 
-        private bool IsSamePatient(PatientModel a, PatientModel b)
+        // 자동 병합 후보:
+        // 같은 코드 + 같은 생년월일 + 같은 성별
+        private bool IsMergeCandidatePatient(PatientModel existing, PatientModel incoming)
         {
-        if (a == null || b == null) return false;
-
-        return a.PatientCode == b.PatientCode
-            && a.BirthDate.Date == b.BirthDate.Date
-            && string.Equals((a.Sex ?? "").Trim(), (b.Sex ?? "").Trim(), StringComparison.OrdinalIgnoreCase)
-            && string.Equals((a.PatientName ?? "").Trim(), (b.PatientName ?? "").Trim(), StringComparison.OrdinalIgnoreCase);
+            return ComparePatients(existing, incoming) == PatientCompareResult.MergeCandidate;
         }
 
-        //같은 번호인데 동일 환자가 아님
-        private bool IsConflictPatient(PatientModel existing, PatientModel incoming)
+        // 같은 코드지만 병합 후보는 아닌 경우
+        private bool IsSameCodeButDifferentInfo(PatientModel existing, PatientModel incoming)
         {
-            if (existing == null || incoming == null) return false;
-            if (existing.PatientCode != incoming.PatientCode) return false;
-
-            return !IsSamePatient(existing, incoming);
+            return ComparePatients(existing, incoming) == PatientCompareResult.Conflict;
         }
-
-        //자동 병합 가능한지
-        private bool CanAutoMerge(PatientModel emr, PatientModel local)
-        {
-            if (emr == null || local == null) return false;
-
-            // 자동 병합 기준 = 동일 환자 + 소스 조합 확인
-            return IsSamePatient(emr, local)
-                && emr.Source == PatientSource.ESync
-                && local.Source == PatientSource.Local;
-        }
-
-
-
 
         //LOCAL / import된 EMR 둘 다 뒤져서 같은 환자를 찾습니다.
-        //import와 edit가 같은 환자 기준 사용
+        //붙일 수 있는 환자 찾기
         private PatientModel FindExistingPatientForImport(PatientModel group)
         {
             if (group == null)
                 return null;
 
-            // 1. accession이 있으면 E-SYNC에서 accession 우선 매칭
-            if (!string.IsNullOrWhiteSpace(group.AccessionNumber))
+            // 1. accession 우선
+            if (!string.IsNullOrWhiteSpace(N(group.AccessionNumber)))
             {
-                var emrByAcc = _importedEmrPatients.FirstOrDefault(x =>
-                    !string.IsNullOrWhiteSpace(x.AccessionNumber) &&
-                    string.Equals(x.AccessionNumber, group.AccessionNumber, StringComparison.OrdinalIgnoreCase));
+                var emrByAccession = _importedEmrPatients.FirstOrDefault(x =>
+                    !string.IsNullOrWhiteSpace(N(x.AccessionNumber)) &&
+                    string.Equals(N(x.AccessionNumber), N(group.AccessionNumber), StringComparison.OrdinalIgnoreCase));
 
-                if (emrByAcc != null)
-                    return emrByAcc;
+                if (emrByAccession != null)
+                    return emrByAccession;
             }
 
-            // 2. LOCAL 동일 환자
-            var localMatch = _localPatients.FirstOrDefault(x => IsSamePatient(x, group));
-            if (localMatch != null)
-                return localMatch;
+            // 2. ExactMatch 우선 탐색
+            var localExact = _localPatients.FirstOrDefault(x =>
+                ComparePatients(x, group) == PatientCompareResult.ExactMatch);
 
-            // 3. E-SYNC 동일 환자
-            var emrMatch = _importedEmrPatients.FirstOrDefault(x => IsSamePatient(x, group));
-            if (emrMatch != null)
-                return emrMatch;
+            if (localExact != null)
+                return localExact;
 
+            var emrExact = _importedEmrPatients.FirstOrDefault(x =>
+                ComparePatients(x, group) == PatientCompareResult.ExactMatch);
+
+            if (emrExact != null)
+                return emrExact;
+
+            // 3. MergeCandidate 탐색
+            // 이름만 다르고 code+birth+sex 같은 경우
+            var localMergeCandidate = _localPatients.FirstOrDefault(x =>
+                ComparePatients(x, group) == PatientCompareResult.MergeCandidate);
+
+            if (localMergeCandidate != null)
+                return localMergeCandidate;
+
+            var emrMergeCandidate = _importedEmrPatients.FirstOrDefault(x =>
+                ComparePatients(x, group) == PatientCompareResult.MergeCandidate);
+
+            if (emrMergeCandidate != null)
+                return emrMergeCandidate;
+
+            // 4. Conflict는 여기서 return하지 않음
+            // 같은 코드인데 birth/sex가 다르면 기존 환자로 자동 매칭하면 안 됨
             return null;
         }
 
         //충돌 환자 찾기 helper 추가
+        //붙이면 안 된는 환자 찾기
         private PatientModel FindConflictPatientForImport(PatientModel group)
         {
             if (group == null)
                 return null;
 
-            var localConflict = _localPatients.FirstOrDefault(x => IsConflictPatient(x, group));
+            var localConflict = _localPatients.FirstOrDefault(x =>
+                ComparePatients(x, group) == PatientCompareResult.Conflict);
+
             if (localConflict != null)
                 return localConflict;
 
-            var emrConflict = _importedEmrPatients.FirstOrDefault(x => IsConflictPatient(x, group));
+            var emrConflict = _importedEmrPatients.FirstOrDefault(x =>
+                ComparePatients(x, group) == PatientCompareResult.Conflict);
+
             if (emrConflict != null)
                 return emrConflict;
 
             return null;
         }
+
+     
 
         //BuildStudyKey() 기반 판정은 유지 불가함에 따라 파일 단위 키를 새로 생성.
         private async Task<string> BuildDicomInstanceKey(DicomDataset ds)
@@ -851,23 +1003,23 @@ namespace LSS_prototype.Patient_Page
                 if (ds == null)
                     return string.Empty;
 
+                // 1순위: SOPInstanceUID
                 string sopUid = ds.GetSingleValueOrDefault(DicomTag.SOPInstanceUID, string.Empty).Trim();
                 if (!string.IsNullOrWhiteSpace(sopUid))
                     return "SOP:" + sopUid;
 
-                // fallback은 너무 넓게 잡지 않고, Study/Series 둘 다 있어야만 사용
+                // 2순위: fallback 조합
                 string studyUid = ds.GetSingleValueOrDefault(DicomTag.StudyInstanceUID, string.Empty).Trim();
                 string seriesUid = ds.GetSingleValueOrDefault(DicomTag.SeriesInstanceUID, string.Empty).Trim();
                 string instanceNumber = ds.GetSingleValueOrDefault(DicomTag.InstanceNumber, string.Empty).Trim();
+                string numberOfFrames = ds.GetSingleValueOrDefault(DicomTag.NumberOfFrames, 1).ToString();
 
-                if (!string.IsNullOrWhiteSpace(studyUid) &&
-                    !string.IsNullOrWhiteSpace(seriesUid) &&
-                    !string.IsNullOrWhiteSpace(instanceNumber))
-                {
-                    return $"FALLBACK:{studyUid}|{seriesUid}|{instanceNumber}";
-                }
+                string key = $"{studyUid}|{seriesUid}|{instanceNumber}|{numberOfFrames}";
+                key = key.Trim('|');
 
-                // 불완전하면 중복 판단에 쓰지 않음
+                if (!string.IsNullOrWhiteSpace(key))
+                    return "FALLBACK:" + key;
+
                 return string.Empty;
             }
             catch (Exception ex)
@@ -1039,20 +1191,6 @@ namespace LSS_prototype.Patient_Page
 
                         var repo = new DB_Manager();
 
-                        _importedEmrPatients = repo.GetEmrPatients();
-
-                        bool existsEsyncSameCode = _importedEmrPatients.Any(x => x.PatientCode == model.PatientCode);
-
-                        if (existsEsyncSameCode)
-                        {
-                            await CustomMessageWindow.ShowAsync(
-                                $"동일 PatientCode({model.PatientCode})의 E-SYNC 환자가 이미 존재합니다.\nLOCAL 환자는 생성할 수 없습니다.",
-                                CustomMessageWindow.MessageBoxType.Ok,
-                                0,
-                                CustomMessageWindow.MessageIconType.Warning);
-                            return;
-                        }
-
                         bool result = repo.AddPatient(model);
 
                         if (result)
@@ -1120,15 +1258,15 @@ namespace LSS_prototype.Patient_Page
                 ShotNum = SelectedPatient.ShotNum
             };
 
-            bool canMergeWithoutEdit = _importedEmrPatients.Any(x => CanAutoMerge(x, SelectedPatient));
 
-            var vm = new PatientEditViewModel(_dialogService, SelectedPatient, canMergeWithoutEdit);
+
+            var vm = new PatientEditViewModel(_dialogService, SelectedPatient);
 
             var result = await _dialogService.ShowDialogAsync(vm);
 
             if (result == true)
             {
-                HandleLocalEditConflictAfterSave(originalLocal);
+                await LoadPatients();
             }
         }
 
@@ -1198,16 +1336,6 @@ namespace LSS_prototype.Patient_Page
 
             if (dialog.ShowDialog() != true)
                 return;
-
-            if (!AuthToken.EnsureAuthenticated())
-            {
-                await CustomMessageWindow.ShowAsync(
-                    "세션이 만료되었습니다.\n잠금 해제 후 다시 진행해주세요.",
-                    CustomMessageWindow.MessageBoxType.Ok,
-                    0,
-                    CustomMessageWindow.MessageIconType.Warning);
-                return;
-            }
 
             string[] selectedFiles = dialog.FileNames;
             string importErrorBatchFolder = null;
@@ -1332,16 +1460,25 @@ namespace LSS_prototype.Patient_Page
                 int newEmrCountPlan = importPlans.Count(x => x.ActionType == ImportActionType.NewEmrPatient);
                 int existingEmrAddStudyCountPlan = importPlans.Count(x => x.ActionType == ImportActionType.ExistingEmrPatientAddStudy);
                 int duplicateStudySkipCountPlan = importPlans.Count(x => x.ActionType == ImportActionType.SkipDuplicateStudy);
+                int conflictSkipCountPlan = importPlans.Count(x => x.ActionType == ImportActionType.SkipConflictPatient);
 
-                int willImportCount = newLocalCountPlan + existingLocalAddStudyCountPlan + newEmrCountPlan + existingEmrAddStudyCountPlan;
-                int willSkipCount = duplicateStudySkipCountPlan;
+                int willImportCount =
+                    newLocalCountPlan +
+                    existingLocalAddStudyCountPlan +
+                    newEmrCountPlan +
+                    existingEmrAddStudyCountPlan;
+
+                int willSkipCount = duplicateStudySkipCountPlan + conflictSkipCountPlan;
 
                 if (willImportCount == 0)
                 {
                     string noImportMessage = "가져올 신규 데이터가 없습니다.";
 
-                    if (willSkipCount > 0)
-                        noImportMessage += $"\n중복 제외: {willSkipCount}건";
+                    if (duplicateStudySkipCountPlan > 0)
+                        noImportMessage += $"\n중복 제외: {duplicateStudySkipCountPlan}건";
+
+                    if (conflictSkipCountPlan > 0)
+                        noImportMessage += $"\n충돌 제외: {conflictSkipCountPlan}건";
 
                     await CustomMessageWindow.ShowAsync(
                         noImportMessage,
@@ -1370,6 +1507,9 @@ namespace LSS_prototype.Patient_Page
 
                 if (duplicateStudySkipCountPlan > 0)
                     confirmMessage += $"\n중복 파일 {duplicateStudySkipCountPlan}건은 제외됩니다.";
+
+                if (conflictSkipCountPlan > 0)
+                    confirmMessage += $"\n충돌 환자 {conflictSkipCountPlan}건은 제외됩니다.";
 
                 if (multiFrameCount > 0)
                     confirmMessage += "\n\n영상이 포함되어 시간이 소요됩니다.";
@@ -1409,6 +1549,7 @@ namespace LSS_prototype.Patient_Page
                 int newEmrCount = 0;
                 int existingEmrAddStudyCount = 0;
                 int duplicateStudySkipCount = 0;
+                int conflictSkipCount = 0;
 
                 int errorPatientCount = 0;
                 int errorFileCount = 0;
@@ -1448,6 +1589,10 @@ namespace LSS_prototype.Patient_Page
                                 {
                                     case ImportActionType.SkipDuplicateStudy:
                                         duplicateStudySkipCount++;
+                                        break;
+
+                                    case ImportActionType.SkipConflictPatient:
+                                        conflictSkipCount++;
                                         break;
                                 }
                             }
@@ -1503,7 +1648,21 @@ namespace LSS_prototype.Patient_Page
                 ShowAll = true;
                 RefreshPatients();
 
-                if (newLocalCount > 0)
+                if (newEmrCount > 0)
+                {
+                    var lastNewEmr = importPlans
+                        .Where(p => p.ActionType == ImportActionType.NewEmrPatient)
+                        .LastOrDefault();
+
+                    if (lastNewEmr != null)
+                    {
+                        SelectedPatient = Patients.FirstOrDefault(p =>
+                            p.PatientCode == lastNewEmr.Group.PatientCode &&
+                            p.PatientName == lastNewEmr.Group.PatientName &&
+                            p.Source == PatientSource.ESync);
+                    }
+                }
+                else if (newLocalCount > 0)
                 {
                     var lastNewLocal = importPlans
                         .Where(p => p.ActionType == ImportActionType.NewLocalPatient)
@@ -1513,7 +1672,8 @@ namespace LSS_prototype.Patient_Page
                     {
                         SelectedPatient = Patients.FirstOrDefault(p =>
                             p.PatientCode == lastNewLocal.Group.PatientCode &&
-                            p.PatientName == lastNewLocal.Group.PatientName);
+                            p.PatientName == lastNewLocal.Group.PatientName &&
+                            p.Source == PatientSource.Local);
                     }
                 }
 
@@ -1544,6 +1704,7 @@ namespace LSS_prototype.Patient_Page
                 string message = BuildImportSummaryMessage(
                     successCount,
                     duplicateStudySkipCount,
+                    conflictSkipCount,
                     errorPatientCount,
                     errorFileCount);
 
@@ -1553,63 +1714,66 @@ namespace LSS_prototype.Patient_Page
                     0,
                     CustomMessageWindow.MessageIconType.Info);
 
-                var duplicatedCodes = await GetDuplicatedPatientCodesAsync();
+                // 이번 import로 새로 생성된 E-SYNC만 대상으로 병합 후보 확인
+                var importedNewEmrGroups = importPlans
+                    .Where(p => p.ActionType == ImportActionType.NewEmrPatient)
+                    .Select(p => p.Group)
+                    .ToList();
 
-                if (duplicatedCodes.Any())
+                if (importedNewEmrGroups.Any())
                 {
                     var mergeCandidates = new List<(PatientModel Local, PatientModel Emr)>();
-                    var warningOnlyCodes = new List<int>();
 
                     // 최신 상태 재조회
                     _localPatients = repo.GetLocalPatients();
-                    _importedEmrPatients = repo.GetEmrPatients();
-
-                    foreach (var code in duplicatedCodes)
+                    foreach (var p in _localPatients)
                     {
-                        var locals = _localPatients
-                            .Where(x => x.PatientCode == code)
-                            .ToList();
-
-                        var emrs = _importedEmrPatients
-                            .Where(x => x.PatientCode == code)
-                            .ToList();
-
-                        // LOCAL / E-SYNC 둘 다 있으면 우선 병합 대상 code로 본다
-                        if (locals.Any() && emrs.Any())
-                        {
-                            bool hasAutoMergeCandidate = false;
-
-                            foreach (var local in locals)
-                            {
-                                var matchedEmr = emrs.FirstOrDefault(emr => CanAutoMerge(emr, local));
-
-                                if (matchedEmr != null)
-                                {
-                                    mergeCandidates.Add((local, matchedEmr));
-                                    hasAutoMergeCandidate = true;
-                                }
-                            }
-
-                            // 같은 code 충돌은 있는데 자동 병합 기준이 안 맞는 경우
-                            if (!hasAutoMergeCandidate)
-                                warningOnlyCodes.Add(code);
-                        }
+                        p.IsEmrPatient = false;
+                        p.Source = PatientSource.Local;
+                        if (p.AccessionNumber == null)
+                            p.AccessionNumber = string.Empty;
                     }
 
-                    // 1) 병합할 code가 하나라도 있으면 우선 병합 여부 질문
-                    if (mergeCandidates.Any() || warningOnlyCodes.Any())
+                    _importedEmrPatients = repo.GetEmrPatients();
+                    foreach (var p in _importedEmrPatients)
                     {
-                        var allConflictCodes = mergeCandidates
-                            .Select(x => x.Local.PatientCode)
-                            .Concat(warningOnlyCodes)
-                            .Distinct()
-                            .OrderBy(x => x)
-                            .ToList();
+                        p.IsEmrPatient = true;
+                        p.Source = PatientSource.ESync;
+                    }
 
-                        string conflictCodeText = string.Join(", ", allConflictCodes);
+                    foreach (var importedGroup in importedNewEmrGroups)
+                    {
+                        var importedEmr = _importedEmrPatients
+                            .Where(x => x.PatientCode == importedGroup.PatientCode)
+                            .OrderByDescending(x => x.PatientId)
+                            .FirstOrDefault(x =>
+                                string.Equals(N(x.PatientName), N(importedGroup.PatientName), StringComparison.OrdinalIgnoreCase) &&
+                                x.BirthDate.Date == importedGroup.BirthDate.Date &&
+                                string.Equals(N(x.Sex), N(importedGroup.Sex), StringComparison.OrdinalIgnoreCase));
+
+                        if (importedEmr == null)
+                            continue;
+
+                        var matchedLocal = _localPatients.FirstOrDefault(local =>
+                            IsMergeCandidatePatient(local, importedEmr));
+
+                        if (matchedLocal != null)
+                            mergeCandidates.Add((matchedLocal, importedEmr));
+                    }
+
+                    if (mergeCandidates.Any())
+                    {
+                        string mergeCodeText = string.Join(", ",
+                            mergeCandidates
+                                .Select(x => x.Local.PatientCode)
+                                .Distinct()
+                                .OrderBy(x => x));
 
                         var popupResult = await CustomMessageWindow.ShowAsync(
-                            $"동일한 PatientCode {conflictCodeText}가 존재합니다.\n병합 가능한 항목은 병합하시겠습니까?",
+                            $"병합 후보가 생성되었습니다.\n" +
+                            $"환자번호: {mergeCodeText}\n" +
+                            $"생년월일과 성별이 일치합니다.\n\n" +
+                            $"병합하시겠습니까?",
                             CustomMessageWindow.MessageBoxType.YesNo,
                             0,
                             CustomMessageWindow.MessageIconType.Warning);
@@ -1629,6 +1793,8 @@ namespace LSS_prototype.Patient_Page
                                     anyMerged = true;
                             }
 
+                            await LoadPatients();
+
                             if (anyMerged)
                             {
                                 await CustomMessageWindow.ShowAsync(
@@ -1640,30 +1806,11 @@ namespace LSS_prototype.Patient_Page
                             else
                             {
                                 await CustomMessageWindow.ShowAsync(
-                                    "병합 가능한 항목이 없거나 병합 중 오류가 발생했습니다.",
+                                    "병합 중 오류가 발생했습니다.",
                                     CustomMessageWindow.MessageBoxType.Ok,
                                     0,
                                     CustomMessageWindow.MessageIconType.Warning);
                             }
-
-                            if (warningOnlyCodes.Any())
-                            {
-                                string warningCodeText = string.Join(", ", warningOnlyCodes.OrderBy(x => x));
-
-                                await CustomMessageWindow.ShowAsync(
-                                    $"다음 PatientCode는 자동 병합 조건이 맞지 않아 병합하지 않았습니다.\n{warningCodeText}\n확인 후 수동 처리해주세요.",
-                                    CustomMessageWindow.MessageBoxType.Ok,
-                                    0,
-                                    CustomMessageWindow.MessageIconType.Warning);
-                            }
-                        }
-                        else
-                        {
-                            await CustomMessageWindow.ShowAsync(
-                                "병합하지 않았습니다.\n확인 후 반드시 병합 또는 수동 처리해주세요.",
-                                CustomMessageWindow.MessageBoxType.Ok,
-                                0,
-                                CustomMessageWindow.MessageIconType.Info);
                         }
                     }
                 }
@@ -1737,7 +1884,7 @@ namespace LSS_prototype.Patient_Page
                 LoadingWindow.End();
                 loadingEnded = true;
 
-               
+
 
                 await CustomMessageWindow.ShowAsync("EMR 동기화 완료되었습니다.",
                             CustomMessageWindow.MessageBoxType.Ok, 1,
@@ -1775,8 +1922,8 @@ namespace LSS_prototype.Patient_Page
         public void Dispose()
         {
             _searchDebouncer?.Dispose();
-            _cts?.Cancel();   
-            _cts?.Dispose();  
+            _cts?.Cancel();
+            _cts?.Dispose();
         }
 
         public void OnSearchTextChanged(string text)
@@ -2197,149 +2344,8 @@ namespace LSS_prototype.Patient_Page
         }
 
         //수정 후 E-SYNC 충돌 검사
-        private async void HandleLocalEditConflictAfterSave(PatientModel originalLocal)
-        {
-            try
-            {
-                var repo = new DB_Manager();
+     
 
-                var updatedLocal = repo.GetAllPatients()
-                    .FirstOrDefault(x => x.PatientId == originalLocal.PatientId);
-
-                if (updatedLocal == null)
-                {
-                    await LoadPatients();
-                    return;
-                }
-
-                _importedEmrPatients = repo.GetEmrPatients();
-
-                var sameCodeEmrs = _importedEmrPatients
-                    .Where(x => x.PatientCode == updatedLocal.PatientCode)
-                    .ToList();
-
-                if (!sameCodeEmrs.Any())
-                {
-                    await LoadPatients();
-                    return;
-                }
-
-                var matchedEmr = sameCodeEmrs.FirstOrDefault(x => CanAutoMerge(x, updatedLocal));
-
-                if (matchedEmr == null)
-                {
-                    await LoadPatients();
-
-                    await CustomMessageWindow.ShowAsync(
-                        "동일 PatientCode의 E-SYNC 환자가 존재하지만 자동 병합 조건이 일치하지 않습니다.\n확인 후 수동 처리해주세요.",
-                        CustomMessageWindow.MessageBoxType.Ok,
-                        0,
-                        CustomMessageWindow.MessageIconType.Warning);
-
-                    return;
-                }
-
-                var popupResult = await CustomMessageWindow.ShowAsync(
-                    "동일 PatientCode의 E-SYNC 환자가 존재하며 자동 병합 조건이 일치합니다.\n병합하시겠습니까?",
-                    CustomMessageWindow.MessageBoxType.YesNo,
-                    0,
-                    CustomMessageWindow.MessageIconType.Warning);
-
-                if (popupResult == CustomMessageWindow.MessageBoxResult.Yes)
-                {
-                    bool merged = await MergeEditedLocalToImportedEmr(originalLocal, updatedLocal, matchedEmr);
-
-                    if (merged)
-                    {
-                        await CustomMessageWindow.ShowAsync(
-                            "병합이 완료되었습니다.",
-                            CustomMessageWindow.MessageBoxType.AutoClose,
-                            1,
-                            CustomMessageWindow.MessageIconType.Info);
-                    }
-                    else
-                    {
-                        await CustomMessageWindow.ShowAsync(
-                            "병합 중 오류가 발생했습니다.",
-                            CustomMessageWindow.MessageBoxType.AutoClose,
-                            2,
-                            CustomMessageWindow.MessageIconType.Warning);
-                    }
-                }
-                else
-                {
-                    await LoadPatients();
-
-                    await CustomMessageWindow.ShowAsync(
-                        "병합하지 않았습니다.\n추후 환자 수정 화면에서 병합해주세요.",
-                        CustomMessageWindow.MessageBoxType.Ok,
-                        0,
-                        CustomMessageWindow.MessageIconType.Info);
-                }
-            }
-            catch (Exception ex)
-            {
-                await Common.WriteLog(ex);
-                await LoadPatients();
-            }
-        }
-
-        //병합 시 ShotNum은 합산이 아니라 재계산 권장
-        //병합 완료 후 대상 폴더 기준으로 재계산
-        private async Task<(int shotNum, DateTime? lastShotDate)> RecalculateStatsFromDicomFolder(string patientRootFolder)
-        {
-            try
-            {
-                var studyKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                DateTime? latest = null;
-
-                if (string.IsNullOrWhiteSpace(patientRootFolder) || !Directory.Exists(patientRootFolder))
-                    return (0, null);
-
-                foreach (var file in Directory.GetFiles(patientRootFolder, "*.dcm", SearchOption.AllDirectories))
-                {
-                    try
-                    {
-                        var dicomFile = DicomFile.Open(file, FileReadOption.ReadAll);
-                        var ds = dicomFile.Dataset;
-
-                        string studyUid = ds.GetSingleValueOrDefault(DicomTag.StudyInstanceUID, string.Empty).Trim();
-                        if (!string.IsNullOrWhiteSpace(studyUid))
-                            studyKeys.Add(studyUid);
-
-                        string rawDate = ds.GetSingleValueOrDefault(DicomTag.StudyDate, string.Empty).Trim();
-                        string rawTime = ds.GetSingleValueOrDefault(DicomTag.StudyTime, string.Empty).Trim();
-
-                        if (!string.IsNullOrWhiteSpace(rawDate))
-                        {
-                            string dtText = rawDate + (rawTime.Length >= 6 ? rawTime.Substring(0, 6) : "000000");
-
-                            if (DateTime.TryParseExact(
-                                dtText,
-                                "yyyyMMddHHmmss",
-                                System.Globalization.CultureInfo.InvariantCulture,
-                                System.Globalization.DateTimeStyles.None,
-                                out var parsed))
-                            {
-                                if (!latest.HasValue || parsed > latest.Value)
-                                    latest = parsed;
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        await Common.WriteLog(ex);
-                    }
-                }
-
-                return (studyKeys.Count, latest);
-            }
-            catch (Exception ex)
-            {
-                await Common.WriteLog(ex);
-                return (0, null);
-            }
-        }
         //LOCAL → E-SYNC 병합
         private async Task<bool> MergeEditedLocalToImportedEmr(
     PatientModel originalLocal,
@@ -2418,17 +2424,30 @@ namespace LSS_prototype.Patient_Page
                 var repo = new DB_Manager();
 
                 // [추가] ShotNum 합산
-                var recalculated = await RecalculateStatsFromDicomFolder(emrTargetFolder);
+                int localShotNum = updatedLocal?.ShotNum ?? 0;
+                int emrShotNum = importedEmr?.ShotNum ?? 0;
+                int mergedShotNum = localShotNum + emrShotNum;
 
-                //기존 합산 로직을 “재계산 로직으로 교체
-                //중복 import 있었으면 계속 누적됨
-                //중복 제거 자동 반영
-                //실제 검사 수만 계산됨
-                //데이터 정합성 유지됨
-                int mergedShotNum = recalculated.shotNum;
-                DateTime? mergedLastShootDate = recalculated.lastShotDate;
+                // [추가] LastShootDate는 더 늦은 날짜 선택
+                DateTime? localLastShootDate = updatedLocal?.LastShootDate;
+                DateTime? emrLastShootDate = importedEmr?.LastShootDate;
+                DateTime? mergedLastShootDate = null;
 
-                
+                if (localLastShootDate.HasValue && emrLastShootDate.HasValue)
+                {
+                    mergedLastShootDate =
+                        localLastShootDate.Value >= emrLastShootDate.Value
+                        ? localLastShootDate.Value
+                        : emrLastShootDate.Value;
+                }
+                else if (localLastShootDate.HasValue)
+                {
+                    mergedLastShootDate = localLastShootDate.Value;
+                }
+                else if (emrLastShootDate.HasValue)
+                {
+                    mergedLastShootDate = emrLastShootDate.Value;
+                }
 
                 // [추가] EMR 환자 DB 값 갱신
                 var mergedEmrPatient = new PatientModel
@@ -3263,7 +3282,7 @@ namespace LSS_prototype.Patient_Page
                         forceEsyncImport ||
                         !string.IsNullOrWhiteSpace(accession);
 
-                    string key = $"{patientCode}|{birthDate:yyyyMMdd}|{sex}";
+                    string key = patientName + "|" + patientCode;
 
                     if (!groups.ContainsKey(key))
                     {

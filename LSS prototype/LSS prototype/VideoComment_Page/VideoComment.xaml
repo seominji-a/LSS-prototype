@@ -306,17 +306,7 @@
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center">
 
-                                <!-- 느리게 -->
-                                <Button Style="{StaticResource SeekBtn}"
-                Width="70" Height="70" Margin="0,0,8,0"
-                Command="{Binding SlowerCommand}">
-                                    <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="🐢" FontSize="22" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="느리게" FontSize="10"
-                           Foreground="{StaticResource Inactive}"
-                           HorizontalAlignment="Center" Margin="0,2,0,0"/>
-                                    </StackPanel>
-                                </Button>
+   
 
                                 <!-- -1초 -->
                                 <Button Style="{StaticResource SeekBtn}"
@@ -380,17 +370,7 @@
                                     </Viewbox>
                                 </Button>
 
-                                <!-- 빠르게 -->
-                                <Button Style="{StaticResource SeekBtn}"
-                Width="70" Height="70" Margin="0,0,0,0"
-                Command="{Binding FasterCommand}">
-                                    <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="🐇" FontSize="22" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="빠르게" FontSize="10"
-                           Foreground="{StaticResource Inactive}"
-                           HorizontalAlignment="Center" Margin="0,2,0,0"/>
-                                    </StackPanel>
-                                </Button>
+                          
 
                             </StackPanel>
 

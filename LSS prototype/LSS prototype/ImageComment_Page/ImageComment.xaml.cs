@@ -20,9 +20,8 @@ namespace LSS_prototype.ImageComment_Page
         private Color _penColor = Color.FromRgb(0xFF, 0x44, 0x44);
         private double _penThickness = 4.0;
 
-        // ISF 드로잉 변경 감지 플래그
-        // ISF 로드 직후 false, 획 추가/삭제 시 true
-        private bool _isDirty = false;
+        // InkCanvas 획 변경 감지 (ISF 드로잉 전용, 텍스트 코멘트와 별개)
+        private bool _isDrawingDirty = false;
 
         private static readonly SolidColorBrush BrushAccent = new SolidColorBrush(Color.FromRgb(0x3B, 0x82, 0xF6));
         private static readonly SolidColorBrush BrushBtnDark = new SolidColorBrush(Color.FromRgb(0x2A, 0x3F, 0x55));
@@ -34,9 +33,9 @@ namespace LSS_prototype.ImageComment_Page
 
         // ═══════════════════════════════════════════
         //  저장 필요 여부 통합 체크
-        //  _isDirty (ISF 드로잉) OR VM.IsCommentDirty (코멘트)
+        //  _isDrawingDirty (ISF 드로잉) OR VM.IsCommentDirty (코멘트)
         // ═══════════════════════════════════════════
-        private bool HasUnsavedChanges() => _isDirty || VM.IsCommentDirty;
+        private bool HasUnsavedChanges() => _isDrawingDirty || VM.IsCommentDirty;
 
         // ═══════════════════════════════════════════
         //  생성자
@@ -53,11 +52,11 @@ namespace LSS_prototype.ImageComment_Page
             VM.RequestNavigateToScan += () => MainPage.Instance.NavigateTo(new Scan(_patient, _studyId));
 
             // SAVE 버튼 → DrawingCanvas 접근 필요하므로 코드비하인드에서 처리
-            VM.RequestSave += () =>
+            VM.RequestSave += async () =>
             {
-                VM.SaveComment(DrawingCanvas.Strokes, DrawingCanvas.ActualWidth, DrawingCanvas.ActualHeight);
-                _isDirty = false;
-                // VM.IsCommentDirty 는 SaveIsf 내부에서 리셋
+                bool success = await VM.SaveComment(DrawingCanvas.Strokes, DrawingCanvas.ActualWidth, DrawingCanvas.ActualHeight);
+                if (success) _isDrawingDirty = false;
+                return;
             };
 
             Loaded += (s, e) => OnLoaded();
@@ -83,7 +82,7 @@ namespace LSS_prototype.ImageComment_Page
         // ═══════════════════════════════════════════
         //  ViewModel 프로퍼티 변경 감지
         //  CurrentImage   → CapturedImage.Source 갱신
-        //  CurrentStrokes → DrawingCanvas.Strokes 갱신 + _isDirty 리셋
+        //  CurrentStrokes → DrawingCanvas.Strokes 갱신 + _isDrawingDirty 리셋
         // ═══════════════════════════════════════════
         private async void OnViewModelPropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
@@ -96,7 +95,7 @@ namespace LSS_prototype.ImageComment_Page
                 {
                     DrawingCanvas.Strokes.StrokesChanged -= OnStrokesChanged;
                     DrawingCanvas.Strokes = VM.CurrentStrokes ?? new StrokeCollection();
-                    _isDirty = false;
+                    _isDrawingDirty = false;
                     DrawingCanvas.Strokes.StrokesChanged += OnStrokesChanged;
                 }
             }
@@ -104,11 +103,11 @@ namespace LSS_prototype.ImageComment_Page
         }
 
         // ═══════════════════════════════════════════
-        //  획 추가/삭제 감지 → _isDirty ON
+        //  획 추가/삭제 감지 → _isDrawingDirty ON
         // ═══════════════════════════════════════════
         private void OnStrokesChanged(object sender, StrokeCollectionChangedEventArgs e)
         {
-            _isDirty = true;
+            _isDrawingDirty = true;
         }
 
         // ═══════════════════════════════════════════
@@ -143,10 +142,10 @@ namespace LSS_prototype.ImageComment_Page
                     bool save = await VM.ConfirmSaveAll();
                     if (save)
                     {
-                        VM.SaveComment(DrawingCanvas.Strokes, DrawingCanvas.ActualWidth, DrawingCanvas.ActualHeight);
-                        // VM.IsCommentDirty 는 SaveIsf 내부에서 리셋
+                        bool success = await VM.SaveComment(DrawingCanvas.Strokes, DrawingCanvas.ActualWidth, DrawingCanvas.ActualHeight);
+                        if (!success) return;
+                        _isDrawingDirty = false;
                     }
-                    _isDirty = false;
                 }
 
                 bool moved = await VM.NavigatePage(goNext);
@@ -270,7 +269,7 @@ namespace LSS_prototype.ImageComment_Page
                 DrawingCanvas.Strokes.Clear();
                 SetDrawingMode(false);
                 VM.Reset();   // CommentText 필드 직접 할당 → IsCommentDirty=false 처리 포함
-                _isDirty = false;
+                _isDrawingDirty = false;
             }
             catch (Exception ex) { await Common.WriteLog(ex); }
         }
@@ -289,10 +288,10 @@ namespace LSS_prototype.ImageComment_Page
                     bool save = await VM.ConfirmSaveAll();
                     if (save)
                     {
-                        VM.SaveComment(DrawingCanvas.Strokes, DrawingCanvas.ActualWidth, DrawingCanvas.ActualHeight);
-                       
+                        bool success = await VM.SaveComment(DrawingCanvas.Strokes, DrawingCanvas.ActualWidth, DrawingCanvas.ActualHeight);
+                        if (!success) return;
+                        _isDrawingDirty = false;
                     }
-                    _isDirty = false;
                 }
 
                 MainPage.Instance.NavigateTo(new Scan(_patient, _studyId));

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "LSS Prototype (Release x64)",
+      "runtimeExecutable": "msbuild",
+      "runtimeArgs": ["LSS prototype.sln", "/p:Configuration=Release", "/p:Platform=x64"],
+      "port": null
+    }
+  ]
+}

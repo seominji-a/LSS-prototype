@@ -40,8 +40,6 @@ namespace LSS_prototype.VideoComment_Page
         private readonly string[] _slowLabels = { "1x", "x0.5", "x0.25", "x0.16" };
         private readonly double[] _fastSteps = { 1.0, 2.0, 4.0, 6.0 };
         private readonly string[] _fastLabels = { "1x", "x2", "x4", "x6" };
-        private int _slowIndex = 0;
-        private int _fastIndex = 0;
 
         private static readonly SolidColorBrush SpeedNormalBrush =
             new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFFFFF"));
@@ -57,7 +55,6 @@ namespace LSS_prototype.VideoComment_Page
 
         // ── 이벤트 ──
         public event Action RequestNavigateToScan;
-        public event Action RequestSave;
 
         // ═══════════════════════════════════════════
         //  변경 감지 플래그
@@ -256,20 +253,16 @@ namespace LSS_prototype.VideoComment_Page
             SpeedUpCommand   = new RelayCommand(_ => ExecuteSpeedUp());
             SpeedDownCommand = new RelayCommand(_ => ExecuteSpeedDown());
             SetSpeedCommand  = new RelayCommand(p  => ExecuteSetSpeed(p));
-            SlowerCommand = new RelayCommand(async _ => await ExecuteSlower());
-            FasterCommand = new RelayCommand(async _ => await ExecuteFaster());
             SeekBackCommand = new RelayCommand(_ => _seekBackAction?.Invoke());
             SeekForwardCommand = new RelayCommand(_ => _seekForwardAction?.Invoke());
             PlayPauseCommand = new RelayCommand(_ => _playPauseAction?.Invoke());
             NavigateBackCommand = new RelayCommand(async _ => await ExecuteNavigateBack());
             ResetCommand = new RelayCommand(_ => Reset());
 
-            // SAVE: ConfirmSaveAll(팝업) → Yes면 RequestSave 이벤트 발생
-            // → 코드비하인드에서 SaveComment 호출
             SaveCommand = new AsyncRelayCommand(async _ =>
             {
                 bool save = await ConfirmSaveAll();
-                if (save) RequestSave?.Invoke();
+                if (save) await SaveCommentAsync();
             });
         }
 
@@ -297,11 +290,19 @@ namespace LSS_prototype.VideoComment_Page
         {
             try
             {
+                if (!IsCommentDirty)
+                {
+                    await CustomMessageWindow.ShowAsync(
+                        "변경된 사항이 없습니다.",
+                        CustomMessageWindow.MessageBoxType.Ok, 1,
+                        CustomMessageWindow.MessageIconType.Info);
+                    return false;
+                }
+
                 var result = await CustomMessageWindow.ShowAsync(
                     "코멘트를 저장하시겠습니까?",
                     CustomMessageWindow.MessageBoxType.YesNo,
                     icon: CustomMessageWindow.MessageIconType.Warning);
-
                 return result == CustomMessageWindow.MessageBoxResult.Yes;
             }
             catch (Exception ex)
@@ -470,7 +471,7 @@ namespace LSS_prototype.VideoComment_Page
         //
         //  저장 완료 후 IsCommentDirty 리셋
         // ═══════════════════════════════════════════
-        public async void SaveComment()
+        public async Task<bool> SaveCommentAsync()
         {
             try
             {
@@ -507,8 +508,9 @@ namespace LSS_prototype.VideoComment_Page
                 }
 
                 IsCommentDirty = false;
+                return true;
             }
-            catch (Exception ex) { await Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); return false; }
         }
 
         #endregion
@@ -626,8 +628,16 @@ namespace LSS_prototype.VideoComment_Page
                 if (IsCommentDirty)
                 {
                     bool save = await ConfirmSaveAll();
-                    if (save) SaveComment();
-                    IsCommentDirty = false;
+                    if (save)
+                    {
+                        bool success = await SaveCommentAsync();
+                        if (!success) return;
+                        IsCommentDirty = false;
+                    }
+                    else
+                    {
+                        IsCommentDirty = false;
+                    }
                 }
                 MainPage.Instance.NavigateTo(new Scan_Page.Scan(Patient, StudyId));
             }
@@ -637,34 +647,6 @@ namespace LSS_prototype.VideoComment_Page
         #endregion
 
         #region 배속 제어
-
-        private async Task ExecuteSlower()
-        {
-            try
-            {
-                _fastIndex = 0;
-                _slowIndex = (_slowIndex + 1) % _slowSteps.Length;
-                ApplySpeed(
-                    _slowSteps[_slowIndex],
-                    _slowLabels[_slowIndex],
-                    _slowIndex == 0 ? SpeedMode.Normal : SpeedMode.Slow);
-            }
-            catch (Exception ex) { await Common.WriteLog(ex); }
-        }
-
-        private async Task ExecuteFaster()
-        {
-            try
-            {
-                _slowIndex = 0;
-                _fastIndex = (_fastIndex + 1) % _fastSteps.Length;
-                ApplySpeed(
-                    _fastSteps[_fastIndex],
-                    _fastLabels[_fastIndex],
-                    _fastIndex == 0 ? SpeedMode.Normal : SpeedMode.Fast);
-            }
-            catch (Exception ex) { await Common.WriteLog(ex); }
-        }
 
         private enum SpeedMode { Normal, Slow, Fast }
 
@@ -715,8 +697,6 @@ namespace LSS_prototype.VideoComment_Page
         {
             try
             {
-                _slowIndex = 0;
-                _fastIndex = 0;
                 ApplySpeed(1.0, "1x", SpeedMode.Normal);
             }
             catch (Exception ex) { await Common.WriteLog(ex); }

@@ -42,13 +42,6 @@ namespace LSS_prototype.VideoComment_Page
             VM.PropertyChanged += OnViewModelPropertyChanged;
             VM.RequestNavigateToScan += () => MainPage.Instance.NavigateTo(new Scan(patient, studyId));
 
-            // SAVE 버튼 → RequestSave 이벤트 → SaveComment 호출
-            VM.RequestSave += () =>
-            {
-                VM.SaveComment();
-                // IsCommentDirty 는 SaveComment 내부에서 리셋
-            };
-
             _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
             _timer.Tick += Timer_Tick;
 
@@ -155,10 +148,16 @@ namespace LSS_prototype.VideoComment_Page
                 if (HasUnsavedChanges())
                 {
                     bool save = await VM.ConfirmSaveAll();
-                    if (save) VM.SaveComment();
-                    // IsCommentDirty 는 SaveComment 내부에서 리셋
-                    // 저장 안 해도 플래그 리셋 (No 선택 시)
-                    VM.ResetDirty();
+                    if (save)
+                    {
+                        bool success = await VM.SaveCommentAsync();
+                        if (!success) return;
+                        VM.ResetDirty();
+                    }
+                    else
+                    {
+                        VM.ResetDirty();
+                    }
                 }
 
                 await VM.ResetSpeed();

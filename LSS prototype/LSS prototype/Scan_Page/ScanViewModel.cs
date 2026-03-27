@@ -1050,8 +1050,28 @@ namespace LSS_prototype.Scan_Page
             {
                 LoadingWindow.End();
                 await Common.WriteLog(ex);
-                await CustomMessageWindow.ShowAsync($"동영상 저장 실패: {ex.Message}",
-                    CustomMessageWindow.MessageBoxType.Ok, 3,
+
+                // AVI + DCM 둘 중 하나라도 실패하면 둘 다 삭제
+                // → 불완전한 쌍 파일이 남아있으면 VideoComment에서 DCM 없는
+                //   DICOM VIDEO 파일이 목록에 남는 불일치 상태가 생기기 때문
+                if (!string.IsNullOrEmpty(_aviSavePath) && File.Exists(_aviSavePath))
+                    File.Delete(_aviSavePath);
+
+                string dcmPath = GenerateDicomVideoPath(
+                    SelectedPatient.PatientName,
+                    SelectedPatient.PatientCode.ToString(),
+                    _currentStudyId,
+                    _currentVideoIndex);
+
+                if (File.Exists(dcmPath))
+                    File.Delete(dcmPath);
+
+                // VideoIndex 롤백 (실패했으므로 인덱스 낭비 방지)
+                _currentVideoIndex--;
+
+                await CustomMessageWindow.ShowAsync(
+                    "녹화에 실패하였습니다.\n다시 녹화해주세요.",
+                    CustomMessageWindow.MessageBoxType.Ok, 0,
                     CustomMessageWindow.MessageIconType.Warning);
             }
             finally
@@ -1731,25 +1751,23 @@ namespace LSS_prototype.Scan_Page
 
                 // ── ImageComment 와 완전히 동일한 방식 ──
                 // DicomImage.RenderImage() → fo-dicom 이 색상 처리
-                var dicomFile = DicomFile.Open(lastFile);
-                var dicomImage = new DicomImage(dicomFile.Dataset);
-                var rendered = dicomImage.RenderImage();
-                var pixels = rendered.As<byte[]>();
+                using (var dicomFile = DicomFile.Open(lastFile))
+                {
+                    var dicomImage = new DicomImage(dicomFile.Dataset);
+                    var rendered = dicomImage.RenderImage();
+                    var pixels = rendered.As<byte[]>();
 
-                var bitmap = new WriteableBitmap(
-                    rendered.Width, rendered.Height, 96, 96,
-                    System.Windows.Media.PixelFormats.Bgra32, null);
+                    var bitmap = new WriteableBitmap(
+                        rendered.Width, rendered.Height, 96, 96,
+                        System.Windows.Media.PixelFormats.Bgra32, null);
 
-                bitmap.WritePixels(
-                    new System.Windows.Int32Rect(0, 0, rendered.Width, rendered.Height),
-                    pixels, rendered.Width * 4, 0);
+                    bitmap.WritePixels(
+                        new System.Windows.Int32Rect(0, 0, rendered.Width, rendered.Height),
+                        pixels, rendered.Width * 4, 0);
 
-                bitmap.Freeze();
-
-                dicomImage = null;
-                dicomFile = null;
-
-                return bitmap;
+                    bitmap.Freeze();
+                    return bitmap;
+                }
             }
             catch (Exception ex) { await Common.WriteLog(ex); return null; }
         }

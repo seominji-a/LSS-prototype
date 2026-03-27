@@ -6,22 +6,22 @@ namespace LSS_prototype.Patient_Page
 {
     internal static class PatientImportComparer
     {
-        public static string N(string value)
+        public static string Normalizing(string value)
             => (value ?? string.Empty).Trim();
 
-        public static PatientCompareResult ComparePatients(PatientModel a, PatientModel b)
+        public static PatientCompareResult ComparePatients(PatientModel exist, PatientModel import)
         {
-            if (a == null || b == null)
+            if (exist == null || import == null)
                 return PatientCompareResult.None;
 
-            bool sameCode = a.PatientCode == b.PatientCode;
-            bool sameBirth = a.BirthDate.Date == b.BirthDate.Date;
-            bool sameSex = string.Equals(N(a.Sex), N(b.Sex), StringComparison.OrdinalIgnoreCase);
-            bool sameName = string.Equals(N(a.PatientName), N(b.PatientName), StringComparison.OrdinalIgnoreCase);
+            bool sameCode = exist.PatientCode == import.PatientCode;
+            bool sameBirth = exist.BirthDate.Date == import.BirthDate.Date;
+            bool sameSex = string.Equals(Normalizing(exist.Sex), Normalizing(import.Sex), StringComparison.OrdinalIgnoreCase);
+            bool sameName = string.Equals(Normalizing(exist.PatientName), Normalizing(import.PatientName), StringComparison.OrdinalIgnoreCase);
             bool sameAccession =
-                !string.IsNullOrWhiteSpace(N(a.AccessionNumber)) &&
-                !string.IsNullOrWhiteSpace(N(b.AccessionNumber)) &&
-                string.Equals(N(a.AccessionNumber), N(b.AccessionNumber), StringComparison.OrdinalIgnoreCase);
+                !string.IsNullOrWhiteSpace(Normalizing(exist.AccessionNumber)) &&
+                !string.IsNullOrWhiteSpace(Normalizing(import.AccessionNumber)) &&
+                string.Equals(Normalizing(exist.AccessionNumber), Normalizing(import.AccessionNumber), StringComparison.OrdinalIgnoreCase);
 
             if (sameAccession) return PatientCompareResult.ExactMatch;
             if (sameCode && sameBirth && sameSex && sameName) return PatientCompareResult.ExactMatch;
@@ -31,8 +31,8 @@ namespace LSS_prototype.Patient_Page
             return PatientCompareResult.None;
         }
 
-        public static bool IsMergeCandidatePatient(PatientModel existing, PatientModel incoming)
-            => ComparePatients(existing, incoming) == PatientCompareResult.MergeCandidate;
+        public static bool IsMergeCandidatePatient(PatientModel exist, PatientModel import)
+            => ComparePatients(exist, import) == PatientCompareResult.MergeCandidate;
 
         public static PatientModel FindExistingPatientForImport(
             PatientModel group,
@@ -41,11 +41,11 @@ namespace LSS_prototype.Patient_Page
         {
             if (group == null) return null;
 
-            if (!string.IsNullOrWhiteSpace(N(group.AccessionNumber)))
+            if (!string.IsNullOrWhiteSpace(Normalizing(group.AccessionNumber)))
             {
                 var emrByAcc = importedEmrPatients.FirstOrDefault(x =>
-                    !string.IsNullOrWhiteSpace(N(x.AccessionNumber)) &&
-                    string.Equals(N(x.AccessionNumber), N(group.AccessionNumber), StringComparison.OrdinalIgnoreCase));
+                    !string.IsNullOrWhiteSpace(Normalizing(x.AccessionNumber)) &&
+                    string.Equals(Normalizing(x.AccessionNumber), Normalizing(group.AccessionNumber), StringComparison.OrdinalIgnoreCase));
                 if (emrByAcc != null) return emrByAcc;
             }
 

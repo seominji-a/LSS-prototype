@@ -134,6 +134,8 @@ namespace LSS_prototype.Patient_Page
 
         public string PageTitle => _showAll ? "Integrated Patient" : "EMR Patient";
 
+        // 체크박스 바인딩용 - FALSE: EMR만 / TRUE:  LOCAL
+
         private bool _showAll = false;
         public bool ShowAll
         {
@@ -236,7 +238,23 @@ namespace LSS_prototype.Patient_Page
                     CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                 return;
             }
-            MainPage.Instance.NavigateTo(new Scan_Page.Scan(SelectedPatient));
+
+            string emrcheck = string.Empty;
+            if (!ShowAll) emrcheck = "EMR"; // EMR화면에서 클릭된 경우
+            else emrcheck = "LOCAL";
+
+            // LOCAL 화면에서 EMR 예약 목록에 없는 환자면 경고 (스캔은 계속 진행)
+            if (ShowAll && !_emrPatients.Any(x => x.PatientCode == SelectedPatient.PatientCode))
+            {
+                await CustomMessageWindow.ShowAsync(
+                    "예약되지않은 환자입니다.",
+                    CustomMessageWindow.MessageBoxType.Ok,
+                    0,
+                    CustomMessageWindow.MessageIconType.Warning);
+            }
+
+            MainPage.Instance.NavigateTo(new Scan_Page.Scan(SelectedPatient, emrcheck, null));
+
         }
 
         private async void NavImageReview()
@@ -247,7 +265,7 @@ namespace LSS_prototype.Patient_Page
                     CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                 return;
             }
-            MainPage.Instance.NavigateTo(new ImageReview_Page.ImageReview(SelectedPatient));
+            MainPage.Instance.NavigateTo(new ImageReview_Page.ImageReview(SelectedPatient, null, null));
         }
 
         private async void NavVideoReview()
@@ -258,7 +276,7 @@ namespace LSS_prototype.Patient_Page
                     CustomMessageWindow.MessageBoxType.Ok, 2, CustomMessageWindow.MessageIconType.Warning);
                 return;
             }
-            MainPage.Instance.NavigateTo(new VideoReview_Page.VideoReview(SelectedPatient));
+            MainPage.Instance.NavigateTo(new VideoReview_Page.VideoReview(SelectedPatient, null, null));
         }
 
         private bool IsMergeCandidatePatient(PatientModel existing, PatientModel incoming)

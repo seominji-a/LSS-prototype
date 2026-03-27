@@ -34,13 +34,13 @@ namespace LSS_prototype.VideoComment_Page
         // ═══════════════════════════════════════════
         //  생성자
         // ═══════════════════════════════════════════
-        public VideoComment(PatientModel patient, string studyId)
+        public VideoComment(PatientModel patient, string studyId, string emrcheck)
         {
             InitializeComponent();
-            DataContext = new VideoCommentViewModel(patient, studyId);
+            DataContext = new VideoCommentViewModel(patient, studyId,emrcheck);
 
             VM.PropertyChanged += OnViewModelPropertyChanged;
-            VM.RequestNavigateToScan += () => MainPage.Instance.NavigateTo(new Scan(patient, studyId));
+            VM.RequestNavigateToScan += () => MainPage.Instance.NavigateTo(new Scan(patient, emrcheck, studyId));
 
             _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
             _timer.Tick += Timer_Tick;

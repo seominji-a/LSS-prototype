@@ -18,7 +18,8 @@ namespace LSS_prototype.Dicom_Module
 
         private const string SOPClassUID = "1.2.840.10008.5.1.4.1.1.77.1.4"; // VL Photographic Image Storage
         private const string SOPClassUIDVideo = "1.2.840.10008.5.1.4.1.1.7";  // Secondary Capture Image Storage
-
+        
+        private static readonly DicomTag GuaranteeTag = new DicomTag(0x0009, 0x0010); // 수동 dicom tag 값 
         // ─────────────────────────────────────────────
         // 생성자
         // ─────────────────────────────────────────────
@@ -86,7 +87,7 @@ namespace LSS_prototype.Dicom_Module
         // 환자 / Study / Series / Instance 태그 설정
         // ─────────────────────────────────────────────
 
-        public void SetPatient(string id, string name, string birthDate, string gender, string age)
+        public void SetPatient(string id, string name, string birthDate, string gender, string age, string guarantee)
         {
             AddIfNotExists(DicomTag.PatientID, id);
             AddIfNotExists(DicomTag.SpecificCharacterSet, "ISO_IR 149");
@@ -95,6 +96,7 @@ namespace LSS_prototype.Dicom_Module
             AddIfNotExists(DicomTag.PatientSex, gender);
             AddIfNotExists(DicomTag.PatientAge, age.PadLeft(3, '0') + "Y");
             AddIfNotExists(DicomTag.AdmittingDiagnosesDescription, "");
+            AddIfNotExists(GuaranteeTag, guarantee); // 수동으로 주입된 상태
         }
 
         /// <summary>

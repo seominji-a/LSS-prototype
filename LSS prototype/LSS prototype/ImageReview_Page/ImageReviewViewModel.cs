@@ -88,11 +88,16 @@ namespace LSS_prototype.ImageReview_Page
             ? "0 / 0"
             : $"{SelectedImageIndex} / {TotalImageCount}";
 
+        private readonly string _emrcheck;
+        private readonly string _studyId;
+
         public ICommand SelectImageCommand { get; private set; }
 
-        public ImageReviewViewModel(PatientModel patient)
+        public ImageReviewViewModel(PatientModel patient, string emrcheck, string studyid)
         {
             SelectedPatient = patient;
+            _emrcheck = emrcheck;
+            _studyId = studyid;
 
             NavigatePatientCommand = new RelayCommand(_ => NavigateToPatient());
             NavigateScanCommand = new RelayCommand(_ => NavigateToScan());
@@ -365,12 +370,12 @@ namespace LSS_prototype.ImageReview_Page
 
         private void NavigateToScan()
         {
-            MainPage.Instance.NavigateTo(new Scan(SelectedPatient));
+            MainPage.Instance.NavigateTo(new Scan(SelectedPatient, _emrcheck, _studyId));
         }
 
         private void NavigateToVideoReview()
         {
-            MainPage.Instance.NavigateTo(new VideoReview(SelectedPatient));
+            MainPage.Instance.NavigateTo(new VideoReview(SelectedPatient, _emrcheck, _studyId));
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

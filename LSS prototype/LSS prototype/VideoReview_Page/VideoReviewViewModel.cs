@@ -23,10 +23,14 @@ namespace LSS_prototype.VideoReview_Page
 
         public ICommand NavigateImageReviewCommand { get; private set; }
 
+        private readonly string _emrcheck;
+        private readonly string _studyId;
 
-        public VideoReviewViewModel(PatientModel patient)
+        public VideoReviewViewModel(PatientModel patient, string emrcheck, string studyid)
         {
             SelectedPatient = patient;
+            _emrcheck = emrcheck;
+            _studyId = studyid;
 
             NavigatePatientCommand = new RelayCommand(_ => NavigateToPatient());
             NavigateScanCommand = new RelayCommand(_ => NavigateToScan());
@@ -92,10 +96,10 @@ namespace LSS_prototype.VideoReview_Page
         MainPage.Instance.NavigateTo(new Patient_Page.Patient());
 
         private void NavigateToScan() =>
-            MainPage.Instance.NavigateTo(new Scan(SelectedPatient));
+            MainPage.Instance.NavigateTo(new Scan(SelectedPatient, _emrcheck, _studyId));
 
         private void NavigateToImageReview() =>
-            MainPage.Instance.NavigateTo(new ImageReview(SelectedPatient));
+            MainPage.Instance.NavigateTo(new ImageReview(SelectedPatient, _emrcheck, _studyId));
 
     }
 

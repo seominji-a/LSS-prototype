@@ -62,6 +62,8 @@ namespace LSS_prototype.ImageComment_Page
         /// </summary>
         public bool IsCommentDirty { get; private set; } = false;
 
+        private string _emrcheck = string.Empty;
+
         #endregion
 
         #region 바인딩 프로퍼티
@@ -154,9 +156,10 @@ namespace LSS_prototype.ImageComment_Page
 
         #region 생성자
 
-        public ImageCommentViewModel(PatientModel selectedPatient, string studyId = null)
+        public ImageCommentViewModel(PatientModel selectedPatient, string emrcheck)
         {
             SelectedPatient = selectedPatient;
+            _emrcheck = emrcheck;
             ImageDeleteCommand = new RelayCommand(async _ => await ExecuteImageDelete());
             ExitCommand = new RelayCommand(async _ => await Common.ExcuteExit());
             LockCommand = new AsyncRelayCommand(async _ => await ExecuteLock());

@@ -69,6 +69,8 @@ namespace LSS_prototype.Scan_Page
         // VIDEO/ 폴더 기준으로 촬영 순서 보장
         private int _currentVideoIndex = 0;
 
+        // ── 보장돤 EMR 환자여부 판단 변수 ──
+        private string _emrcheck = string.Empty;
         #endregion
 
         #region 바인딩 프로퍼티
@@ -286,7 +288,7 @@ namespace LSS_prototype.Scan_Page
 
         #region 생성자
 
-        public ScanViewModel(PatientModel selectedPatient, string studyId = null)
+        public ScanViewModel(PatientModel selectedPatient, string emr_check, string studyId = null)
         {
             SelectedPatient = selectedPatient;
             _currentStudyId = studyId;
@@ -307,6 +309,8 @@ namespace LSS_prototype.Scan_Page
             _cameraService.SharpnessUpdated += (val) => Sharpness = $"{val:F2}";
             _cameraService.CameraDisconnected += OnCameraDisconnected;
             _cameraService.CameraReconnected += OnCameraReconnected;
+
+            _emrcheck = emr_check;
 
             // 초반에는 프레임 도착 전이므로 이미지 스캔 가능 여부를 false로 고정
             CanImageScan = false;
@@ -422,9 +426,7 @@ namespace LSS_prototype.Scan_Page
                 string date = DateTime.Now.ToString("yyyyMMdd");
                 string time = DateTime.Now.ToString("HHmmss");
 
-                string accessionNumber = (SelectedPatient.Dataset != null)
-                    ? SelectedPatient.Dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, "")
-                    : "";
+                string accessionNumber = string.Empty;
 
                 double exposure = await _cameraService.ExposureCurrentRead();
                 double gain = await _cameraService.GainCurrentRead();
@@ -447,12 +449,20 @@ namespace LSS_prototype.Scan_Page
                     ? new DicomManager(SelectedPatient.PatientId.ToString(), "00000001")
                     : new DicomManager(SelectedPatient.PatientId.ToString(), "00000001", SelectedPatient.Dataset);
 
+                // ⑥ Guarantee / AccessionNumber 결정
+                // EMR 화면에서 스캔된 경우만 T, 나머지(LOCAL·예약 없음) 전부 F
+                // LOCAL 환자는 Dataset=null이므로 accessionNumber는 공백 유지
+                SelectedPatient.Guarantee = (_emrcheck == "EMR") ? "T" : "F";
+                if (SelectedPatient.Dataset != null && _emrcheck == "EMR")
+                    accessionNumber = SelectedPatient.Dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, "");
+
                 dm.SetPatient(
                     SelectedPatient.PatientCode.ToString(),
                     SelectedPatient.PatientName,
                     SelectedPatient.BirthDate.ToString("yyyyMMdd"),
                     SelectedPatient.Sex,
-                    CalculateAge(SelectedPatient.BirthDate).ToString()
+                    CalculateAge(SelectedPatient.BirthDate).ToString(),
+                    SelectedPatient.Guarantee
                 );
 
                 dm.SetStudy(_currentStudyId, accessionNumber, date, time, "", hospName, "");
@@ -460,7 +470,7 @@ namespace LSS_prototype.Scan_Page
                 dm.SetContent("1", date, time, instanceIndex.ToString());
                 dm.SetPrivateDataElement(exposure, gain, gamma);
 
-                // ⑥ 경로 생성 및 저장
+                // ⑦ 경로 생성 및 저장
                 // DICOM/박한용_2634/20250313/202503130001/Image/박한용_2634_202503130001_1.dcm
                 string path = GenerateImageSavePath(
                     SelectedPatient.PatientName,
@@ -1004,20 +1014,25 @@ namespace LSS_prototype.Scan_Page
                     var setting = db.GetPacsSet();
                     string hospName = setting?.HospitalName ?? "";
 
-                    string accessionNumber = (SelectedPatient.Dataset != null)
-                        ? SelectedPatient.Dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, "")
-                        : "";
+                    string accessionNumber = "";
 
                     DicomManager dm = (SelectedPatient.Dataset == null)
                         ? new DicomManager(SelectedPatient.PatientId.ToString(), "00000001")
                         : new DicomManager(SelectedPatient.PatientId.ToString(), "00000001", SelectedPatient.Dataset);
+
+                    // EMR 화면에서 스캔된 경우만 T, 나머지(LOCAL·예약 없음) 전부 F
+                    // LOCAL 환자는 Dataset=null이므로 accessionNumber는 공백 유지
+                    SelectedPatient.Guarantee = (_emrcheck == "EMR") ? "T" : "F";
+                    if (SelectedPatient.Dataset != null && _emrcheck == "EMR")
+                        accessionNumber = SelectedPatient.Dataset.GetSingleValueOrDefault(DicomTag.AccessionNumber, "");
 
                     dm.SetPatient(
                         SelectedPatient.PatientCode.ToString(),
                         SelectedPatient.PatientName,
                         SelectedPatient.BirthDate.ToString("yyyyMMdd"),
                         SelectedPatient.Sex,
-                        CalculateAge(SelectedPatient.BirthDate).ToString()
+                        CalculateAge(SelectedPatient.BirthDate).ToString(),
+                        SelectedPatient.Guarantee
                     );
 
                     dm.SetStudy(_currentStudyId, accessionNumber, date, time, "", hospName, "");
@@ -1574,7 +1589,7 @@ namespace LSS_prototype.Scan_Page
                 }
 
                 MainPage.Instance.NavigateTo(
-                    new ImageComment_Page.ImageComment(SelectedPatient, _currentStudyId));
+                    new ImageComment_Page.ImageComment(SelectedPatient, _currentStudyId, _emrcheck));
             }
             catch (Exception ex)
             {
@@ -1632,7 +1647,7 @@ namespace LSS_prototype.Scan_Page
                     return;
                 }
 
-                MainPage.Instance.NavigateTo(new VideoComment_Page.VideoComment(SelectedPatient, _currentStudyId));
+                MainPage.Instance.NavigateTo(new VideoComment_Page.VideoComment(SelectedPatient, _currentStudyId, _emrcheck));
             }
             catch (Exception ex)
             {
@@ -1645,10 +1660,10 @@ namespace LSS_prototype.Scan_Page
             MainPage.Instance.NavigateTo(new Patient_Page.Patient());
 
         private void NavigateToImageReview() =>
-            MainPage.Instance.NavigateTo(new ImageReview(_selectedPatient));
+            MainPage.Instance.NavigateTo(new ImageReview(_selectedPatient,_emrcheck, _currentStudyId));
 
         private void NavigateToVideoReview() =>
-            MainPage.Instance.NavigateTo(new VideoReview(_selectedPatient));
+            MainPage.Instance.NavigateTo(new VideoReview(_selectedPatient,_emrcheck, _currentStudyId));
 
         #endregion
 
@@ -1751,23 +1766,25 @@ namespace LSS_prototype.Scan_Page
 
                 // ── ImageComment 와 완전히 동일한 방식 ──
                 // DicomImage.RenderImage() → fo-dicom 이 색상 처리
-                using (var dicomFile = DicomFile.Open(lastFile))
-                {
-                    var dicomImage = new DicomImage(dicomFile.Dataset);
-                    var rendered = dicomImage.RenderImage();
-                    var pixels = rendered.As<byte[]>();
+                var dicomFile = DicomFile.Open(lastFile);
+                
+                var dicomImage = new DicomImage(dicomFile.Dataset);
+                var rendered = dicomImage.RenderImage();
+                var pixels = rendered.As<byte[]>();
 
-                    var bitmap = new WriteableBitmap(
-                        rendered.Width, rendered.Height, 96, 96,
-                        System.Windows.Media.PixelFormats.Bgra32, null);
+                var bitmap = new WriteableBitmap(
+                    rendered.Width, rendered.Height, 96, 96,
+                    System.Windows.Media.PixelFormats.Bgra32, null);
 
-                    bitmap.WritePixels(
-                        new System.Windows.Int32Rect(0, 0, rendered.Width, rendered.Height),
-                        pixels, rendered.Width * 4, 0);
+                bitmap.WritePixels(
+                    new System.Windows.Int32Rect(0, 0, rendered.Width, rendered.Height),
+                    pixels, rendered.Width * 4, 0);
 
-                    bitmap.Freeze();
-                    return bitmap;
-                }
+                bitmap.Freeze();
+                dicomImage = null; 
+                dicomFile = null;  
+                return bitmap;
+                
             }
             catch (Exception ex) { await Common.WriteLog(ex); return null; }
         }

@@ -46,6 +46,7 @@ namespace LSS_prototype.Patient_Page
         public string AccessionNumber { get; set; }//  중요 EMR과 LOCAL 데이터를 나누는 기준 컬럼 
 
         public bool IsEmrPatient { get; set; }   // 화면 표시용(저장 안 함)
+        public string Guarantee { get; set; } // EMR에서 찍은 데이터라는 것을 보장함 
 
         //화면 및 로직용
         public PatientSource Source { get; set; }

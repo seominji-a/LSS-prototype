@@ -28,6 +28,7 @@ namespace LSS_prototype.ImageComment_Page
 
         private readonly PatientModel _patient;
         private readonly string _studyId;
+        private readonly string _emrcheck;
 
         private ImageCommentViewModel VM => DataContext as ImageCommentViewModel;
 
@@ -40,16 +41,16 @@ namespace LSS_prototype.ImageComment_Page
         // ═══════════════════════════════════════════
         //  생성자
         // ═══════════════════════════════════════════
-        public ImageComment(PatientModel selectedPatient, string studyId)
+        public ImageComment(PatientModel selectedPatient, string studyId, string emrcheck)
         {
+            InitializeComponent();
             _patient = selectedPatient;
             _studyId = studyId;
-
-            InitializeComponent();
-            DataContext = new ImageCommentViewModel(selectedPatient, studyId);
+            _emrcheck = emrcheck;
+            DataContext = new ImageCommentViewModel(selectedPatient, _emrcheck);
 
             VM.PropertyChanged += OnViewModelPropertyChanged;
-            VM.RequestNavigateToScan += () => MainPage.Instance.NavigateTo(new Scan(_patient, _studyId));
+            VM.RequestNavigateToScan += () => MainPage.Instance.NavigateTo(new Scan(_patient, emrcheck, _studyId));
 
             // SAVE 버튼 → DrawingCanvas 접근 필요하므로 코드비하인드에서 처리
             VM.RequestSave += async () =>
@@ -294,7 +295,7 @@ namespace LSS_prototype.ImageComment_Page
                     }
                 }
 
-                MainPage.Instance.NavigateTo(new Scan(_patient, _studyId));
+                MainPage.Instance.NavigateTo(new Scan(_patient, _emrcheck, _studyId));
             }
             catch (Exception ex) { await Common.WriteLog(ex); }
         }

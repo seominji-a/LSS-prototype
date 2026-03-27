@@ -30,6 +30,7 @@ namespace LSS_prototype.VideoComment_Page
 
         private readonly PatientModel _patient;
         private readonly string _studyId;
+        private readonly string _emrcheck;
 
         // ── AVI 파일 목록 + 현재 인덱스 ──
         private List<string> _videoFiles = new List<string>();
@@ -237,10 +238,11 @@ namespace LSS_prototype.VideoComment_Page
 
         #region 생성자
 
-        public VideoCommentViewModel(PatientModel patient, string studyId)
+        public VideoCommentViewModel(PatientModel patient, string studyId, string emrcheck)
         {
             _patient = patient;
             _studyId = studyId;
+            _emrcheck = emrcheck;
             Patient = patient;
             StudyId = studyId;
 
@@ -639,7 +641,7 @@ namespace LSS_prototype.VideoComment_Page
                         IsCommentDirty = false;
                     }
                 }
-                MainPage.Instance.NavigateTo(new Scan_Page.Scan(Patient, StudyId));
+                MainPage.Instance.NavigateTo(new Scan_Page.Scan(Patient, _emrcheck ,StudyId));
             }
             catch (Exception ex) { await Common.WriteLog(ex); }
         }

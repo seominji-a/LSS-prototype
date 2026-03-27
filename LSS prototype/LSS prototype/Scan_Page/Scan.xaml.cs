@@ -26,10 +26,16 @@ namespace LSS_prototype.Scan_Page
         private bool _navOpen = false;
         private bool _settingOpen = false;
 
-        public Scan(PatientModel selectedPatient, string studyId = null)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="selectedPatient"></param>
+        /// <param name="emrYN">EMR을 클릭하고 스캔창으로 넘어온 환자인지? ESYNC 즉 LOCAL화면에서 넘어온 환자인지 구분 </param>
+        /// <param name="studyId"></param>
+        public Scan(PatientModel selectedPatient,  string emrcheck, string studyId)
         {
             InitializeComponent();
-            DataContext = new ScanViewModel(selectedPatient, studyId);
+            DataContext = new ScanViewModel(selectedPatient, emrcheck, studyId);
             Unloaded += (s, e) => (DataContext as ScanViewModel)?.Dispose();
             Loaded += async (s, e) =>
             {

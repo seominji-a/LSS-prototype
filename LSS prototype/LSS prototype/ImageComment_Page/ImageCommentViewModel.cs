@@ -45,7 +45,7 @@ namespace LSS_prototype.ImageComment_Page
         public event Action RequestNavigateToScan;
 
         /// <summary>SAVE 버튼 → 코드비하인드에서 DrawingCanvas 접근 필요하므로 이벤트로 위임</summary>
-        public event Action RequestSave;
+        public event Func<Task> RequestSave;
 
         #endregion
 
@@ -61,6 +61,8 @@ namespace LSS_prototype.ImageComment_Page
         /// 둘 중 하나라도 true면 페이지 이동/나가기 시 저장 팝업
         /// </summary>
         public bool IsCommentDirty { get; private set; } = false;
+
+        private string _emrcheck = string.Empty;
 
         #endregion
 
@@ -154,21 +156,21 @@ namespace LSS_prototype.ImageComment_Page
 
         #region 생성자
 
-        public ImageCommentViewModel(PatientModel selectedPatient, string studyId = null)
+        public ImageCommentViewModel(PatientModel selectedPatient, string emrcheck)
         {
             SelectedPatient = selectedPatient;
+            _emrcheck = emrcheck;
             ImageDeleteCommand = new RelayCommand(async _ => await ExecuteImageDelete());
             ExitCommand = new RelayCommand(async _ => await Common.ExcuteExit());
             LockCommand = new AsyncRelayCommand(async _ => await ExecuteLock());
             LogoutCommand = new AsyncRelayCommand(async _ => await ExecuteLogout());
             ToggleMenuCommand = new RelayCommand(_ => ToggleMenu());
 
-            // SAVE: ConfirmSaveAll(팝업) → Yes면 RequestSave 이벤트 발생
-            // → 코드비하인드에서 DrawingCanvas 접근 후 SaveIsf 호출
             SaveCommand = new AsyncRelayCommand(async _ =>
             {
                 bool save = await ConfirmSaveAll();
-                if (save) RequestSave?.Invoke();
+                if (save && RequestSave != null)
+                    await RequestSave.Invoke();
             });
         }
 
@@ -321,7 +323,7 @@ namespace LSS_prototype.ImageComment_Page
         /// 2. DICOM Image Comments 태그 저장
         /// 3. IsCommentDirty 리셋 (_isDirty 는 코드비하인드에서 리셋)
         /// </summary>
-        public async void SaveComment(StrokeCollection strokes, double canvasWidth, double canvasHeight)
+        public async Task<bool> SaveComment(StrokeCollection strokes, double canvasWidth, double canvasHeight)
         {
             try
             {
@@ -367,8 +369,9 @@ namespace LSS_prototype.ImageComment_Page
 
                 IsCommentDirty = false;
                 // _isDirty 는 코드비하인드에서 리셋
+                return true;
             }
-            catch (Exception ex) { await Common.WriteLog(ex); }
+            catch (Exception ex) { await Common.WriteLog(ex); return false; }
         }
 
         /// <summary>

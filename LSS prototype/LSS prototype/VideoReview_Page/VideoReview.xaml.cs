@@ -27,11 +27,11 @@ namespace LSS_prototype.VideoReview_Page
         private bool _navOpen = false;
         private PatientModel _selectedPatient;
 
-        public VideoReview(PatientModel patient)
+        public VideoReview(PatientModel patient, string emrcheck, string studyid)
         {
             InitializeComponent();
             _selectedPatient = patient;
-            DataContext = new VideoReviewViewModel(patient);
+            DataContext = new VideoReviewViewModel(patient, emrcheck, studyid);
         }
 
         private void ToggleNav_Click(object sender, RoutedEventArgs e)

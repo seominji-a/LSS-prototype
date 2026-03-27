@@ -140,7 +140,7 @@ namespace LSS_prototype.Auth
             if (AuthToken.IsAuthenticated)
             {
                 AuthToken.Touch();
-                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss}] 세션 연장");
+                //System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss}] 세션 연장");
             }
         }
 

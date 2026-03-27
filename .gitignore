@@ -12,3 +12,4 @@ obj/
 LSS_V1.0.0.zip
 LSS prototype/CLAUDE.md
 LSS prototype/.claude/settings.local.json
+LSS prototype/.claude/launch.json

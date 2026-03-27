@@ -12,11 +12,11 @@ namespace LSS_prototype.ImageReview_Page
         private bool _navOpen = false;
         private PatientModel _selectedPatient;
 
-        public ImageReview(PatientModel patient)
+        public ImageReview(PatientModel patient, string emrcheck, string studyid)
         {
             InitializeComponent();
             _selectedPatient = patient;
-            DataContext = new ImageReviewViewModel(patient);
+            DataContext = new ImageReviewViewModel(patient, emrcheck, studyid);
         }
 
         private void ToggleNav_Click(object sender, RoutedEventArgs e)

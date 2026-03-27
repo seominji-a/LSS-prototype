@@ -303,6 +303,9 @@
     <Compile Update="Patient_Page\PatientListViewModel.cs">
       <DependentUpon>Patient.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Patient_Page\PatientImportComparer.cs" />
+    <Compile Include="Patient_Page\PatientImportModels.cs" />
+    <Compile Include="Patient_Page\PatientImportService.cs" />
     <Compile Include="Patient_Page\PatientModel.cs" />
     <Compile Update="Patient_Page\PatientModel.cs">
       <DependentUpon>Patient.xaml</DependentUpon>
